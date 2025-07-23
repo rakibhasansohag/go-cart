@@ -5,6 +5,9 @@ import { Geist, Geist_Mono, Barlow } from 'next/font/google';
 // Global css
 import './globals.css';
 
+// Theme Provider
+import { ThemeProvider } from 'next-themes';
+
 // Fonts
 const geistSans = Geist({
 	variable: '--font-geist-sans',
@@ -66,14 +69,21 @@ export default function RootLayout({
 	children: React.ReactNode;
 }>) {
 	return (
-		<html lang='en'>
+		<html lang='en' suppressHydrationWarning>
 			<head>
 				<link rel='icon' type='image/svg+xml' href='/goCart.svg' />
 			</head>
 			<body
-				className={`${geistSans.variable} ${geistMono.variable} antialiased ${barlowFont.variable}`}
+				className={`${geistSans.variable} ${geistMono.variable} antialiased ${barlowFont.variable} scroll-smooth antialiased`}
 			>
-				{children}
+				<ThemeProvider
+					attribute='class'
+					defaultTheme='dark'
+					enableSystem
+					disableTransitionOnChange
+				>
+					{children}
+				</ThemeProvider>
 			</body>
 		</html>
 	);
