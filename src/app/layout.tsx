@@ -1,17 +1,28 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css";
+// Next.js
+import type { Metadata } from 'next';
+import { Geist, Geist_Mono, Barlow } from 'next/font/google';
 
+// Global css
+import './globals.css';
+
+// Fonts
 const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
+	variable: '--font-geist-sans',
+	subsets: ['latin'],
 });
 
 const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+	variable: '--font-geist-mono',
+	subsets: ['latin'],
 });
 
+const barlowFont = Barlow({
+	variable: '--font-barlow',
+	subsets: ['latin'],
+	weight: ['100', '200', '300', '400', '500', '600', '700', '800', '900'],
+});
+
+// Metadata
 export const metadata: Metadata = {
 	title: 'GoCart | Multi-Vendor E-commerce Platform',
 	description:
@@ -49,19 +60,21 @@ export const metadata: Metadata = {
 	// themeColor: '#10b981',
 };
 
-
 export default function RootLayout({
-  children,
+	children,
 }: Readonly<{
-  children: React.ReactNode;
+	children: React.ReactNode;
 }>) {
-  return (
-    <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        {children}
-      </body>
-    </html>
-  );
+	return (
+		<html lang='en'>
+			<head>
+				<link rel='icon' type='image/svg+xml' href='/goCart.svg' />
+			</head>
+			<body
+				className={`${geistSans.variable} ${geistMono.variable} antialiased ${barlowFont.variable}`}
+			>
+				{children}
+			</body>
+		</html>
+	);
 }
