@@ -2,6 +2,17 @@
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono, Barlow } from 'next/font/google';
 
+
+// Clerk Provider
+import {
+	ClerkProvider,
+	SignInButton,
+	SignUpButton,
+	SignedIn,
+	SignedOut,
+	UserButton,
+} from '@clerk/nextjs';
+
 // Global css
 import './globals.css';
 
@@ -69,22 +80,24 @@ export default function RootLayout({
 	children: React.ReactNode;
 }>) {
 	return (
-		<html lang='en' suppressHydrationWarning>
-			<head>
-				<link rel='icon' type='image/svg+xml' href='/goCart.svg' />
-			</head>
-			<body
-				className={`${geistSans.variable} ${geistMono.variable} antialiased ${barlowFont.variable} scroll-smooth antialiased`}
-			>
-				<ThemeProvider
-					attribute='class'
-					defaultTheme='dark'
-					enableSystem
-					disableTransitionOnChange
+		<ClerkProvider>
+			<html lang='en' suppressHydrationWarning>
+				<head>
+					<link rel='icon' type='image/svg+xml' href='/goCart.svg' />
+				</head>
+				<body
+					className={`${geistSans.variable} ${geistMono.variable} antialiased ${barlowFont.variable} scroll-smooth antialiased`}
 				>
-					{children}
-				</ThemeProvider>
-			</body>
-		</html>
+					<ThemeProvider
+						attribute='class'
+						defaultTheme='dark'
+						enableSystem
+						disableTransitionOnChange
+					>
+						{children}
+					</ThemeProvider>
+				</body>
+			</html>
+		</ClerkProvider>
 	);
 }

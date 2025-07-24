@@ -19,7 +19,7 @@ function ThemeToggle() {
 
 	return (
 		<DropdownMenu>
-			<DropdownMenuTrigger>
+			<DropdownMenuTrigger asChild>
 				<Button
 					variant={'outline'}
 					size={'icon'}
