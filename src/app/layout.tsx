@@ -80,7 +80,7 @@ export default function RootLayout({
 	children: React.ReactNode;
 }>) {
 	return (
-		<ClerkProvider>
+		<ClerkProvider afterSignOutUrl={'/'}>
 			<html lang='en' suppressHydrationWarning>
 				<head>
 					<link rel='icon' type='image/svg+xml' href='/goCart.svg' />

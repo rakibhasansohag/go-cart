@@ -1,12 +1,17 @@
-import React from 'react';
+import { ThemeProvider } from 'next-themes';
+import { ReactNode } from 'react';
 
-function DashboardLayout({ children }: { children: React.ReactNode }) {
+export default function DashboardLayout({ children }: { children: ReactNode }) {
 	return (
 		<div>
-			<h1>DashboardLayout admin</h1>
-			{children}
+			<ThemeProvider
+				attribute='class'
+				defaultTheme='light'
+				enableSystem
+				disableTransitionOnChange
+			>
+				{children}
+			</ThemeProvider>
 		</div>
 	);
 }
-
-export default DashboardLayout;
