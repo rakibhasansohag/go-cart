@@ -4,7 +4,10 @@ import { redirect } from 'next/navigation';
 
 // Clerk
 import { currentUser } from '@clerk/nextjs/server';
+
+// Components
 import Header from '@/components/dashboard/Header/Header';
+import Sidebar from '@/components/dashboard/Sidebar/Sidebar';
 
 export default async function AdminDashboardLayout({
 	children,
@@ -17,7 +20,7 @@ export default async function AdminDashboardLayout({
 	return (
 		<div className='w-full h-full'>
 			{/* Sidebar */}
-
+			<Sidebar />
 			<div className='ml-[300px]'>
 				{/* Header */}
 				<Header />
