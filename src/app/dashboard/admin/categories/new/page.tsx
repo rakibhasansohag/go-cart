@@ -1,7 +1,9 @@
+import CategoryDetails from '../../../../../components/dashboard/forms/category-details';
+
 const AdminNewCategoricPage = () => {
 	return (
-		<div>
-			<h1> New Add Categories</h1>
+		<div className='w-full'>
+			<CategoryDetails />
 		</div>
 	);
 };
