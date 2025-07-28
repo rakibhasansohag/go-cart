@@ -10,24 +10,34 @@ generator client {
 }
 
 datasource db {
-  provider = "mysql"
-  url      = env("DATABASE_URL")
+  provider     = "mysql"
+  url          = env("DATABASE_URL")
   relationMode = "prisma"
 }
-
 
 enum Role {
   USER
   ADMIN
-  SELLER  
+  SELLER
 }
 
 model User {
-  id       String @id @default(uuid())
-  email    String @unique
+  id      String @id @default(uuid())
+  email   String @unique
+  name    String
+  picture String @db.Text
+  role    Role   @default(USER)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Category {
+  id       String  @id @default(uuid())
   name     String
-  picture  String @db.Text
-  role     Role @default(USER)
+  url      String
+  image    String
+  featured Boolean @default(false)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

@@ -38,8 +38,11 @@ export default function SidebarNavAdmin({
 					<CommandGroup className='overflow-visible pt-0 relative'>
 						{menuLinks.map((link, index) => {
 							let icon;
+							
 							const iconSearch = icons.find((icon) => icon.value === link.icon);
+
 							if (iconSearch) icon = <iconSearch.path />;
+
 							return (
 								<CommandItem
 									key={index}
