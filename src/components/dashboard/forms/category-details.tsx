@@ -11,6 +11,10 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import z from 'zod';
 
+
+// V4
+import { v4 } from 'uuid';
+
 // UI Components
 import {
 	Card,
@@ -33,6 +37,9 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import ImageUpload from '../shared/image-upload';
+import { upsertCategory } from '../../../queries/category';
+import { toast } from 'sonner';
+import { useRouter } from 'next/navigation';
 
 interface CategoryDetailsProps {
 	data?: Category;
@@ -40,17 +47,24 @@ interface CategoryDetailsProps {
 }
 
 const CategoryDetails = ({ data, cloudinary_key }: CategoryDetailsProps) => {
+
+	const router = useRouter()
+
 	const form = useForm<z.infer<typeof CategoryFormSchema>>({
 		mode: 'onChange', // Form validation mode
 		resolver: zodResolver(CategoryFormSchema), // Resolver for form validation
 		defaultValues: {
 			// Setting default form values from data (if available)
-			name: data?.name,
+			name: data?.name || '',
 			image: data?.image ? [{ url: data?.image }] : [],
-			url: data?.url,
-			featured: data?.featured,
+			url: data?.url || '',
+			featured: data?.featured || false,
 		},
 	});
+
+	console.log('data =>>>' , data)
+
+
 
 	// Loading status based on form submission
 	const isLoading = form.formState.isSubmitting;
@@ -68,10 +82,56 @@ const CategoryDetails = ({ data, cloudinary_key }: CategoryDetailsProps) => {
 	}, [data, form]);
 
 	// Submit handler for form submission
-	const handleSubmit = async (values: z.infer<typeof CategoryDetails>) => {
-		console.log(values);
-	};
+	const handleSubmit = async () => {
 
+		
+		try {
+			const values = form.getValues();
+			
+			// Upserting Category data
+			const response = await upsertCategory({
+				id: data?.id ? data.id : v4(),
+				name: values?.name.trim(),
+				image: values?.image[0].url,
+				url: values?.url.trim(),
+				featured: values.featured!,
+				createdAt: new Date(),
+				updatedAt: new Date(),
+			});
+
+			console.log('Upsert data:', response);
+
+			// displaying success message
+			toast.success(
+				data?.id
+					? 'Category has been updated.'
+					: `Congratulations! '${response?.name}' is now created.`,
+			);
+
+			// Redirect or Refresh data
+			if (data?.id) {
+				router.refresh();
+			} else {
+				router.push('/dashboard/admin/categories');
+			}
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		} catch (error: any) {
+			console.error('Full error details:', {
+				error,
+				formState: form.getValues(),
+				formErrors: form.formState.errors,
+			});
+			toast.error(
+				`Operation failed: ${
+					error instanceof Error ? error.message : 'Unknown error'
+				}`,
+			);
+    
+		}
+	};
+useEffect(() => {
+	console.log('Form mounted with initial values:', form.getValues());
+}, []);
 	return (
 		<AlertDialog>
 			<Card>
@@ -123,7 +183,11 @@ const CategoryDetails = ({ data, cloudinary_key }: CategoryDetailsProps) => {
 									<FormItem className='flex-1'>
 										<FormLabel>Category name</FormLabel>
 										<FormControl>
-											<Input placeholder='Name' {...field} />
+											<Input
+												placeholder='Name'
+												{...field}
+											
+											/>
 										</FormControl>
 										<FormMessage />
 									</FormItem>
@@ -137,7 +201,11 @@ const CategoryDetails = ({ data, cloudinary_key }: CategoryDetailsProps) => {
 									<FormItem className='flex-1'>
 										<FormLabel>Category url</FormLabel>
 										<FormControl>
-											<Input placeholder='/category-url' {...field} />
+											<Input
+												placeholder='/category-url'
+												{...field}
+												
+											/>
 										</FormControl>
 										<FormMessage />
 									</FormItem>

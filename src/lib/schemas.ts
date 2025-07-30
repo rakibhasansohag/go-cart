@@ -10,14 +10,12 @@ export const CategoryFormSchema = z.object({
 			message:
 				'Only letters, numbers, and spaces are allowed in the category name.',
 		}),
-
 	image: z
 		.object({
 			url: z.string(),
 		})
 		.array()
 		.length(1, 'Choose a category image.'),
-
 	url: z
 		.string()
 		.nonempty('Category url is required')
@@ -27,6 +25,5 @@ export const CategoryFormSchema = z.object({
 			message:
 				'Only letters, numbers, hyphen, and underscore are allowed in the category url, and consecutive occurrences of hyphens, underscores, or spaces are not permitted.',
 		}),
-
 	featured: z.boolean().default(false).optional(),
 });
