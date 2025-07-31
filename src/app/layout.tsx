@@ -19,6 +19,7 @@ import './globals.css';
 // Theme Provider
 import { ThemeProvider } from 'next-themes';
 import { Toaster } from '@/components/ui/sonner';
+import ModalProvider from '../providers/modal-provider';
 
 // Fonts
 const geistSans = Geist({
@@ -95,7 +96,9 @@ export default function RootLayout({
 						enableSystem
 						disableTransitionOnChange
 					>
-						<main>{children}</main>
+						<main>
+							<ModalProvider>{children}</ModalProvider>
+						</main>
 						<Toaster position='top-right' />
 					</ThemeProvider>
 				</body>
