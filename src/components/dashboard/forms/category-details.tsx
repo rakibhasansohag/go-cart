@@ -47,8 +47,7 @@ interface CategoryDetailsProps {
 }
 
 const CategoryDetails = ({ data, cloudinary_key }: CategoryDetailsProps) => {
-
-	const router = useRouter()
+	const router = useRouter();
 
 	const form = useForm<z.infer<typeof CategoryFormSchema>>({
 		mode: 'onChange', // Form validation mode
@@ -61,10 +60,6 @@ const CategoryDetails = ({ data, cloudinary_key }: CategoryDetailsProps) => {
 			featured: data?.featured || false,
 		},
 	});
-
-	console.log('data =>>>' , data)
-
-
 
 	// Loading status based on form submission
 	const isLoading = form.formState.isSubmitting;
@@ -83,11 +78,9 @@ const CategoryDetails = ({ data, cloudinary_key }: CategoryDetailsProps) => {
 
 	// Submit handler for form submission
 	const handleSubmit = async () => {
-
-		
 		try {
 			const values = form.getValues();
-			
+
 			// Upserting Category data
 			const response = await upsertCategory({
 				id: data?.id ? data.id : v4(),
@@ -114,7 +107,7 @@ const CategoryDetails = ({ data, cloudinary_key }: CategoryDetailsProps) => {
 			} else {
 				router.push('/dashboard/admin/categories');
 			}
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		} catch (error: any) {
 			console.error('Full error details:', {
 				error,
@@ -126,12 +119,9 @@ const CategoryDetails = ({ data, cloudinary_key }: CategoryDetailsProps) => {
 					error instanceof Error ? error.message : 'Unknown error'
 				}`,
 			);
-    
 		}
 	};
-useEffect(() => {
-	console.log('Form mounted with initial values:', form.getValues());
-}, []);
+
 	return (
 		<AlertDialog>
 			<Card>
@@ -183,11 +173,7 @@ useEffect(() => {
 									<FormItem className='flex-1'>
 										<FormLabel>Category name</FormLabel>
 										<FormControl>
-											<Input
-												placeholder='Name'
-												{...field}
-											
-											/>
+											<Input placeholder='Name' {...field} />
 										</FormControl>
 										<FormMessage />
 									</FormItem>
@@ -201,11 +187,7 @@ useEffect(() => {
 									<FormItem className='flex-1'>
 										<FormLabel>Category url</FormLabel>
 										<FormControl>
-											<Input
-												placeholder='/category-url'
-												{...field}
-												
-											/>
+											<Input placeholder='/category-url' {...field} />
 										</FormControl>
 										<FormMessage />
 									</FormItem>

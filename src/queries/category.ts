@@ -9,7 +9,7 @@ import { db } from '@/lib/db';
 // Prisma model
 import { Category } from '@prisma/client';
 
-// Function: upsertCategory
+// Point:  Function: upsertCategory
 // Description: This function is responsible for inserting or updating a category in the database.
 // It checks if a category already exists using its name or URL. If it exists, the function updates it;
 // otherwise, it creates a new category. Note: Only users with Admin privileges can perform this action.
@@ -85,4 +85,19 @@ export const upsertCategory = async (category: Category) => {
 		console.dir(error);
 		throw error;
 	}
+};
+
+
+// Point:  Function: getAllCategories
+// Description: Retrieves all categories from the database.
+// Permission Level: Public
+// Returns: Array of categories sorted by updatedAt date in descending order.
+export const getAllCategories = async (storeUrl?: string) => {
+//  Retreive all categories from the database
+const categories = await db.category.findMany({
+	orderBy: {
+		updatedAt: "desc"
+	}
+})
+return categories
 };
