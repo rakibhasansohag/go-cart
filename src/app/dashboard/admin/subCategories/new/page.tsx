@@ -6,7 +6,7 @@ async function AdminNewSubCategoryPage() {
 	const categories = await getAllCategories();
 	return (
 		<div>
-			<SubCategoryDetails categories={categories} />
+			<SubCategoryDetails categories={categories} goBack />
 		</div>
 	);
 }

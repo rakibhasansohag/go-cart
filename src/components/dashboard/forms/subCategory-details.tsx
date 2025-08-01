@@ -52,15 +52,18 @@ import {
 	SelectValue,
 } from '@/components/ui/select';
 import { toast } from 'sonner';
+import { ArrowLeft } from 'lucide-react';
 
 interface SubCategoryDetailsProps {
 	data?: SubCategory;
 	categories: Category[];
+	goBack?: boolean;
 }
 
 const SubCategoryDetails: FC<SubCategoryDetailsProps> = ({
 	data,
 	categories,
+	goBack,
 }) => {
 	// Initializing necessary hooks
 
@@ -133,141 +136,158 @@ const SubCategoryDetails: FC<SubCategoryDetailsProps> = ({
 		}
 	};
 
-	return (
-		<AlertDialog>
-			<Card className='w-full'>
-				<CardHeader>
-					<CardTitle>SubCategory Information</CardTitle>
-					<CardDescription>
-						{data?.id
-							? `Update ${data?.name} SubCategory information.`
-							: ' Lets create a subCategory. You can edit subCategory later from the subCategories table or the subCategory page.'}
-					</CardDescription>
-				</CardHeader>
-				<CardContent>
-					<Form {...form}>
-						<form
-							onSubmit={form.handleSubmit(handleSubmit)}
-							className='space-y-4'
-						>
-							<FormField
-								control={form.control}
-								name='image'
-								render={({ field }) => (
-									<FormItem>
-										<FormControl>
-											<ImageUpload
-												type='profile'
-												value={field.value.map((image) => image.url)}
-												disabled={isLoading}
-												onChange={(url) => field.onChange([{ url }])}
-												onRemove={(url) =>
-													field.onChange([
-														...field.value.filter(
-															(current) => current.url !== url,
-														),
-													])
-												}
-											/>
-										</FormControl>
-										<FormMessage />
-									</FormItem>
-								)}
-							/>
-							<FormField
-								disabled={isLoading}
-								control={form.control}
-								name='name'
-								render={({ field }) => (
-									<FormItem className='flex-1'>
-										<FormLabel>SubCategory name</FormLabel>
-										<FormControl>
-											<Input placeholder='Name' {...field} />
-										</FormControl>
-										<FormMessage />
-									</FormItem>
-								)}
-							/>
-							<FormField
-								disabled={isLoading}
-								control={form.control}
-								name='url'
-								render={({ field }) => (
-									<FormItem className='flex-1'>
-										<FormLabel>SubCategory url</FormLabel>
-										<FormControl>
-											<Input placeholder='/subCategory-url' {...field} />
-										</FormControl>
-										<FormMessage />
-									</FormItem>
-								)}
-							/>
-							<FormField
-								disabled={isLoading}
-								control={form.control}
-								name='categoryId'
-								render={({ field }) => (
-									<FormItem className='flex-1'>
-										<FormLabel>Category</FormLabel>
-										<Select
-											disabled={isLoading || categories.length == 0}
-											onValueChange={field.onChange}
-											value={field.value}
-											defaultValue={field.value}
-										>
-											<FormControl>
-												<SelectTrigger>
-													<SelectValue
-														defaultValue={field.value}
-														placeholder='Select a category'
-													/>
-												</SelectTrigger>
-											</FormControl>
-											<SelectContent>
-												{categories.map((category) => (
-													<SelectItem key={category.id} value={category.id}>
-														{category.name}
-													</SelectItem>
-												))}
-											</SelectContent>
-										</Select>
-										<FormMessage />
-									</FormItem>
-								)}
-							/>
-							<FormField
-								control={form.control}
-								name='featured'
-								render={({ field }) => (
-									<FormItem className='flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4'>
-										<FormControl>
-											<Checkbox
-												checked={field.value}
-												onCheckedChange={field.onChange}
-											/>
-										</FormControl>
-										<div className='space-y-1 leading-none'>
-											<FormLabel>Featured</FormLabel>
-											<FormDescription>
-												This SubCategory will appear on the home page
-											</FormDescription>
-										</div>
-									</FormItem>
-								)}
-							/>
+	const HandleGoBack = () => {
+		router.back();
+	};
 
-							<Button type='submit' disabled={isLoading}>
-								{isLoading
-									? 'loading...'
-									: data?.id
-									? 'Save SubCategory information'
-									: 'Create SubCategory'}
-							</Button>
-						</form>
-					</Form>
-				</CardContent>
-			</Card>
-		</AlertDialog>
+	return (
+		<>
+			{goBack && (
+				<div
+					className='flex items-center gap-2
+				mb-4'
+				>
+					<Button onClick={() => HandleGoBack()}>
+						{' '}
+						<ArrowLeft className='' /> Go Back
+					</Button>
+				</div>
+			)}
+			<AlertDialog>
+				<Card className='w-full'>
+					<CardHeader>
+						<CardTitle>SubCategory Information</CardTitle>
+						<CardDescription>
+							{data?.id
+								? `Update ${data?.name} SubCategory information.`
+								: ' Lets create a subCategory. You can edit subCategory later from the subCategories table or the subCategory page.'}
+						</CardDescription>
+					</CardHeader>
+					<CardContent>
+						<Form {...form}>
+							<form
+								onSubmit={form.handleSubmit(handleSubmit)}
+								className='space-y-4'
+							>
+								<FormField
+									control={form.control}
+									name='image'
+									render={({ field }) => (
+										<FormItem>
+											<FormControl>
+												<ImageUpload
+													type='profile'
+													value={field.value.map((image) => image.url)}
+													disabled={isLoading}
+													onChange={(url) => field.onChange([{ url }])}
+													onRemove={(url) =>
+														field.onChange([
+															...field.value.filter(
+																(current) => current.url !== url,
+															),
+														])
+													}
+												/>
+											</FormControl>
+											<FormMessage />
+										</FormItem>
+									)}
+								/>
+								<FormField
+									disabled={isLoading}
+									control={form.control}
+									name='name'
+									render={({ field }) => (
+										<FormItem className='flex-1'>
+											<FormLabel>SubCategory name</FormLabel>
+											<FormControl>
+												<Input placeholder='Name' {...field} />
+											</FormControl>
+											<FormMessage />
+										</FormItem>
+									)}
+								/>
+								<FormField
+									disabled={isLoading}
+									control={form.control}
+									name='url'
+									render={({ field }) => (
+										<FormItem className='flex-1'>
+											<FormLabel>SubCategory url</FormLabel>
+											<FormControl>
+												<Input placeholder='/subCategory-url' {...field} />
+											</FormControl>
+											<FormMessage />
+										</FormItem>
+									)}
+								/>
+								<FormField
+									disabled={isLoading}
+									control={form.control}
+									name='categoryId'
+									render={({ field }) => (
+										<FormItem className='flex-1'>
+											<FormLabel>Category</FormLabel>
+											<Select
+												disabled={isLoading || categories.length == 0}
+												onValueChange={field.onChange}
+												value={field.value}
+												defaultValue={field.value}
+											>
+												<FormControl>
+													<SelectTrigger>
+														<SelectValue
+															defaultValue={field.value}
+															placeholder='Select a category'
+														/>
+													</SelectTrigger>
+												</FormControl>
+												<SelectContent>
+													{categories.map((category) => (
+														<SelectItem key={category.id} value={category.id}>
+															{category.name}
+														</SelectItem>
+													))}
+												</SelectContent>
+											</Select>
+											<FormMessage />
+										</FormItem>
+									)}
+								/>
+								<FormField
+									control={form.control}
+									name='featured'
+									render={({ field }) => (
+										<FormItem className='flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4'>
+											<FormControl>
+												<Checkbox
+													checked={field.value}
+													onCheckedChange={field.onChange}
+												/>
+											</FormControl>
+											<div className='space-y-1 leading-none'>
+												<FormLabel>Featured</FormLabel>
+												<FormDescription>
+													This SubCategory will appear on the home page
+												</FormDescription>
+											</div>
+										</FormItem>
+									)}
+								/>
+
+								<Button type='submit' disabled={isLoading}>
+									{isLoading
+										? 'loading...'
+										: data?.id
+										? 'Save SubCategory information'
+										: 'Create SubCategory'}
+								</Button>
+							</form>
+						</Form>
+					</CardContent>
+				</Card>
+			</AlertDialog>
+		</>
 	);
 };
 
