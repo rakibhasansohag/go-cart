@@ -4,6 +4,7 @@
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
 
+
 // Cloudinary
 import { CldUploadWidget } from 'next-cloudinary';
 import { Button } from '@/components/ui/button';
@@ -19,6 +20,7 @@ interface ImageUploadProps {
 	dontShowPreview?: boolean;
 	error?: boolean;
 	cloudinary_key?: string;
+	
 }
 
 const ImageUpload = ({
@@ -30,9 +32,12 @@ const ImageUpload = ({
 	dontShowPreview,
 	error,
 	cloudinary_key,
+	
 }: ImageUploadProps) => {
 	const [isMounted, setIsMounted] = useState(false);
 	const [isBouncing, setIsBouncing] = useState(false); // Add state for bounce
+	const [isUploading, setIsUploading] = useState(false); // track upload start
+	const [hideModal, setHideModal] = useState(false); // hide modal
 
 	useEffect(() => {
 		if (error) {
@@ -57,6 +62,36 @@ const ImageUpload = ({
 		onChange(result.info.secure_url);
 	};
 
+	const widgetOptions = {
+		uploadPreset: cloudinary_key,
+
+		options: {
+			styles: {
+				palette: {
+					window: '#FFFFFF',
+					windowBorder: '#90A0B3',
+					tabIcon: '#0078FF',
+					menuIcons: '#5A616A',
+					textDark: '#000000',
+					textLight: '#FFFFFF',
+					link: '#0078FF',
+					action: '#0078FF',
+					inactiveTabIcon: '#0E2F5A',
+					error: '#F44235',
+					inProgress: '#0078FF',
+					complete: '#20B832',
+					sourceBg: '#E4EBF1',
+				},
+				frame: {
+					background: '#FEFEFE',
+				},
+				toolbar: {
+					background: '#FFFFFF',
+				},
+			},
+		},
+	};
+
 	if (type === 'profile') {
 		return (
 			<div
@@ -77,10 +112,23 @@ const ImageUpload = ({
 						className='w-52 h-52 rounded-full object-cover absolute top-0 left-0 bottom-0 right-0'
 					/>
 				)}
-				<CldUploadWidget onSuccess={onUpload} uploadPreset={cloudinary_key}>
+
+				<CldUploadWidget
+					onSuccess={onUpload}
+					uploadPreset={cloudinary_key}
+					options={{
+						styles: {
+							frame: {
+								background: '#FFFFFF',
+							},
+						},
+					}}
+				>
 					{({ open }) => {
 						const onClick = () => {
-							open();
+							setTimeout(() => {
+								open();
+							}, 200);
 						};
 
 						return (
@@ -127,10 +175,22 @@ const ImageUpload = ({
 						className='w-full h-full rounded-lg object-cover'
 					/>
 				)}
-				<CldUploadWidget onSuccess={onUpload} uploadPreset={cloudinary_key}>
+				<CldUploadWidget
+					onSuccess={onUpload}
+					uploadPreset={cloudinary_key}
+					options={{
+						styles: {
+							frame: {
+								background: '#FFFFFF',
+							},
+						},
+					}}
+				>
 					{({ open }) => {
 						const onClick = () => {
-							open();
+							setTimeout(() => {
+								open();
+							}, 200);
 						};
 
 						return (
@@ -191,19 +251,38 @@ const ImageUpload = ({
 							</div>
 						))}
 				</div>
-				<CldUploadWidget onSuccess={onUpload} uploadPreset={cloudinary_key}>
+				<CldUploadWidget
+					onSuccess={(result) => {
+						setIsUploading(false); // done uploading
+						setHideModal(false); // hide modal
+						onUpload(result);
+					}}
+					uploadPreset={cloudinary_key}
+					options={widgetOptions}
+				>
 					{({ open }) => {
-						const onClick = () => {
-							open();
-						};
+						// eslint-disable-next-line react-hooks/rules-of-hooks
+						useEffect(() => {
+							if (isUploading && !hideModal) {
+								// Open Cloudinary after modal is fully closed
+								setTimeout(() => {
+									document.body.style.overflow = 'auto';
+									open?.(); // safe now
+								}, 200); // wait for modal fade-out (match your transition time)
+							}
+						}, [isUploading, hideModal]);
 
+						const handleUploadClick = () => {
+							setHideModal(true); // first, close modal
+							setIsUploading(true); // mark we want to upload
+						};
 						return (
 							<>
 								<button
 									type='button'
 									className='flex items-center font-medium text-[17px] py-3 px-6 text-white bg-gradient-to-t from-blue-500 to-blue-300 border-none shadow-lg rounded-full hover:shadow-md active:shadow-sm'
 									disabled={disabled}
-									onClick={onClick}
+									onClick={handleUploadClick}
 								>
 									<svg
 										viewBox='0 0 640 512'

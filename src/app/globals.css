@@ -125,3 +125,43 @@
   }
 }
 
+
+
+/* Ensure Cloudinary widget appears above all modals */
+.cloudinary-widget-overlay,
+.cloudinary_upload_widget,
+.cloudinary-widget {
+  z-index: 10000 !important;
+}
+
+/* Fix for Cloudinary widget iframe */
+iframe[src*="cloudinary"] {
+  z-index: 10000 !important;
+}
+
+/* Alternative approach: Target the widget by its container */
+#cloudinary-widget,
+[id*="cloudinary"],
+.cloudinary-upload-widget {
+  z-index: 10000 !important;
+}
+
+/* Ensure widget overlay covers everything */
+.cloudinary-widget-overlay {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  z-index: 10000 !important;
+}
+
+/* Fix for potential backdrop issues */
+[data-radix-dialog-overlay] {
+  z-index: 999 !important;
+}
+
+/* Ensure dialog content stays below widget */
+[data-radix-dialog-content] {
+  z-index: 999 !important;
+}

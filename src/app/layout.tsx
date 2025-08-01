@@ -20,6 +20,7 @@ import './globals.css';
 import { ThemeProvider } from 'next-themes';
 import { Toaster } from '@/components/ui/sonner';
 import ModalProvider from '../providers/modal-provider';
+import UploadPreloader from '../providers/UploadProvider';
 
 // Fonts
 const geistSans = Geist({
@@ -96,6 +97,7 @@ export default function RootLayout({
 						enableSystem
 						disableTransitionOnChange
 					>
+						{' '}
 						<main>
 							<ModalProvider>{children}</ModalProvider>
 						</main>

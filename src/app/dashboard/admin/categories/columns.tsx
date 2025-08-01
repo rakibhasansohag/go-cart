@@ -125,6 +125,7 @@ const CellActions: React.FC<CellActionsProps> = ({ rowData }) => {
 	// Hooks
 	const { setOpen, setClose } = useModal();
 	const [loading, setLoading] = useState(false);
+	
 
 	const CLOUDINARY_CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_PRESET;
 	if (!CLOUDINARY_CLOUD_NAME) throw new Error('Missing Cloudinary Cloud Name');
@@ -149,19 +150,15 @@ const CellActions: React.FC<CellActionsProps> = ({ rowData }) => {
 						className='flex gap-2'
 						onClick={() => {
 							setOpen(
-								// Custom modal component
 								<CustomModal>
-									{/* Store details component */}
 									<CategoryDetails
 										data={{ ...rowData }}
 										cloudinary_key={CLOUDINARY_CLOUD_NAME}
 									/>
 								</CustomModal>,
-								async () => {
-									return {
-										rowData: await getCategory(rowData?.id),
-									};
-								},
+								async () => ({
+									rowData: await getCategory(rowData?.id),
+								}),
 							);
 						}}
 					>

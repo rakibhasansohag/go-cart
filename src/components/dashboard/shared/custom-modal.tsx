@@ -34,9 +34,12 @@ const CustomModal = ({
 			<DialogContent
 				aria-description='Modal content'
 				className={cn(
-					'overflow-y-scroll md:max-h-[700px] md:h-fit h-screen bg-card',
+					'overflow-y-scroll md:max-h-[700px] md:h-fit h-screen bg-card z-[999]',
 					maxWidth,
 				)}
+				style={{
+					isolation: 'isolate',
+				}}
 			>
 				<DialogTitle className='text-2xl font-bold'>{heading}</DialogTitle>
 
