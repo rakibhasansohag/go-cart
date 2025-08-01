@@ -31,8 +31,7 @@ const ImageUpload = ({
 	type,
 	dontShowPreview,
 	error,
-	cloudinary_key,
-	
+	cloudinary_key = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_PRESET,
 }: ImageUploadProps) => {
 	const [isMounted, setIsMounted] = useState(false);
 	const [isBouncing, setIsBouncing] = useState(false); // Add state for bounce

@@ -152,3 +152,4 @@ export const deleteCategory = async (categoryId: string) => {
   });
   return response;
 };
+
