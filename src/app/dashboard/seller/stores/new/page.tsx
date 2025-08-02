@@ -1,9 +1,10 @@
 import React from 'react';
+import StoreDetails from '@/components/dashboard/forms/store-details';
 
 function SellerStoreNewPage() {
 	return (
 		<div>
-			<h2>this is the seller store new</h2>
+			<StoreDetails />
 		</div>
 	);
 }

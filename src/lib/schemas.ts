@@ -1,5 +1,5 @@
 import * as z from 'zod';
-
+// Point: Category
 export const CategoryFormSchema = z.object({
 	name: z
 		.string()
@@ -28,7 +28,7 @@ export const CategoryFormSchema = z.object({
 	featured: z.boolean().default(false).optional(),
 });
 
-
+// Point: SubCategory
 export const SubCategoryFormSchema = z.object({
 	name: z
 		.string()
@@ -56,4 +56,48 @@ export const SubCategoryFormSchema = z.object({
 		}),
 	categoryId: z.string().uuid(),
 	featured: z.boolean().default(false).optional(),
+});
+
+// Point: Store
+export const StoreFormSchema = z.object({
+	name: z
+		.string()
+		.nonempty('Store name is required.')
+		.min(2, { message: 'Store name must be at least 2 characters long.' })
+		.max(50, { message: 'Store name cannot exceed 50 characters.' })
+		.regex(/^(?!.*(?:[-_& ]){2,})[a-zA-Z0-9_ &-]+$/, {
+			message:
+				'Only letters, numbers, space, hyphen, and underscore are allowed in the store name, and no consecutive special characters.',
+		}),
+	description: z
+		.string()
+		.nonempty('Store description is required.')
+		.min(30, {
+			message: 'Store description must be at least 30 characters long.',
+		})
+		.max(500, { message: 'Store description cannot exceed 500 characters.' }),
+	email: z
+		.string()
+		.nonempty('Store email is required.')
+		.email({ message: 'Invalid email format.' }),
+	phone: z
+		.string()
+		.nonempty('Store phone number is required.')
+		.regex(/^\+?\d+$/, { message: 'Invalid phone number format.' }),
+	logo: z.object({ url: z.string() }).array().length(1, 'Choose a logo image.'),
+	cover: z
+		.object({ url: z.string() })
+		.array()
+		.length(1, 'Choose a cover image.'),
+	url: z
+		.string()
+		.nonempty('Store url is required.')
+		.min(2, { message: 'Store url must be at least 2 characters long.' })
+		.max(50, { message: 'Store url cannot exceed 50 characters.' })
+		.regex(/^(?!.*(?:[-_ ]){2,})[a-zA-Z0-9_-]+$/, {
+			message:
+				'Only letters, numbers, hyphen, and underscore are allowed in the store url, and consecutive occurrences are not permitted.',
+		}),
+	featured: z.boolean().default(false).optional(),
+	status: z.string().default('PENDING').optional(),
 });
