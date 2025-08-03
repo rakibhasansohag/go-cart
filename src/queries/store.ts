@@ -64,8 +64,7 @@ export const upsertStore = async (store: Partial<Store>) => {
 		}
 
 		// Upsert store details into the database
-		
-    const storeDetails = await db.store.upsert({
+		const storeDetails = await db.store.upsert({
 			where: {
 				id: store.id,
 			},
@@ -79,7 +78,6 @@ export const upsertStore = async (store: Partial<Store>) => {
 		});
 
 		return storeDetails;
- 
 	} catch (error) {
 		console.log(error)
 		throw error;
