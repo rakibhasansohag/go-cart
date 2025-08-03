@@ -83,3 +83,4 @@ export const upsertStore = async (store: Partial<Store>) => {
 		throw error;
 	}
 };
+

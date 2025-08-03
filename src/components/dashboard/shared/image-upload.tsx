@@ -257,24 +257,18 @@ const ImageUpload = ({
 						onUpload(result);
 					}}
 					uploadPreset={cloudinary_key}
-					options={widgetOptions}
 				>
 					{({ open }) => {
-						// eslint-disable-next-line react-hooks/rules-of-hooks
-						useEffect(() => {
-							if (isUploading && !hideModal) {
-								// Open Cloudinary after modal is fully closed
-								setTimeout(() => {
-									document.body.style.overflow = 'auto';
-									open?.(); // safe now
-								}, 200); // wait for modal fade-out (match your transition time)
-							}
-						}, [isUploading, hideModal]);
+						const onClick = () => {
+							open();
+						};
 
 						const handleUploadClick = () => {
-							setHideModal(true); // first, close modal
-							setIsUploading(true); // mark we want to upload
+							setIsUploading(true);
+							setHideModal(true);
+							open();
 						};
+
 						return (
 							<>
 								<button
