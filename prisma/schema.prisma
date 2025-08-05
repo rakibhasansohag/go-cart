@@ -155,7 +155,7 @@ model ProductVariant {
   id                 String  @id @default(uuid())
   variantName        String  @db.LongText
   variantDescription String? @db.LongText
-  variantImage       String
+  variantImage       String?
   slug               String  @unique
   isSale             Boolean @default(false)
   saleEndDate        String?
