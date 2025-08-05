@@ -43,6 +43,7 @@ interface DataTableProps<TData, TValue> {
 	heading?: string;
 	subheading?: string;
 	noHeader?: true;
+	maxWidth?: string;
 }
 
 export default function DataTable<TData, TValue>({
@@ -56,6 +57,7 @@ export default function DataTable<TData, TValue>({
 	subheading,
 	noHeader,
 	newTabLink,
+	maxWidth,
 }: DataTableProps<TData, TValue>) {
 	// Modal state
 	const { setOpen } = useModal();
@@ -95,6 +97,7 @@ export default function DataTable<TData, TValue>({
 										<CustomModal
 											heading={heading || ''}
 											subheading={subheading || ''}
+											maxWidth={maxWidth}
 										>
 											{modalChildren}
 										</CustomModal>,

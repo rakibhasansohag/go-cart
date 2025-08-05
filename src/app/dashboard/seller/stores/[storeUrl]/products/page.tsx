@@ -48,6 +48,7 @@ export default async function SellerProductsPage({
 			data={products}
 			columns={columns}
 			searchPlaceholder='Search product name...'
+			maxWidth='lg:max-w-6xl'
 		/>
 	);
 }
