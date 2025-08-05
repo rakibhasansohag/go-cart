@@ -167,8 +167,9 @@ export const ProductFormSchema = z.object({
 		.uuid({ message: 'Product sub-category ID must be a valid UUID.' }),
 	offerTagId: z
 		.string()
-		.uuid({ message: 'Product offer tag ID must be a valid UUID.' })
-		.optional(),
+		.uuid({ message: 'Offer tag ID must be a valid UUID.' })
+		.optional()
+		.or(z.literal('').transform(() => undefined)),
 	brand: z
 		.string()
 		.nonempty('Product brand is required.')

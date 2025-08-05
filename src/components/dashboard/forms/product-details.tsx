@@ -178,24 +178,26 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 			images: data?.images || [],
 			variantImage: data?.variantImage ? [{ url: data.variantImage }] : [],
 			categoryId: data?.categoryId,
-			offerTagId: data?.offerTagId,
 			subCategoryId: data?.subCategoryId,
+
+			offerTagId: data?.offerTagId ?? '',
+
 			brand: data?.brand,
 			sku: data?.sku,
-			colors: data?.colors,
-			sizes: data?.sizes,
-
-			product_specs: data?.product_specs,
-			variant_specs: data?.variant_specs,
-			keywords: data?.keywords,
-			questions: data?.questions,
-			isSale: data?.isSale || false,
 			weight: data?.weight,
-
-			saleEndDate:
-				data?.saleEndDate || format(new Date(), "yyyy-MM-dd'T'HH:mm:ss"),
-			freeShippingForAllCountries: data?.freeShippingForAllCountries,
-			freeShippingCountriesIds: data?.freeShippingCountriesIds || [],
+			colors: data?.colors || [{ color: '' }],
+			sizes: data?.sizes || [
+				{ size: '', price: 0.01, quantity: 1, discount: 0 },
+			],
+			product_specs: data?.product_specs || [{ name: '', value: '' }],
+			variant_specs: data?.variant_specs || [{ name: '', value: '' }],
+			keywords: data?.keywords || [],
+			questions: data?.questions || [{ question: '', answer: '' }],
+			isSale: data?.isSale ?? false,
+			saleEndDate: data?.saleEndDate || new Date().toISOString(),
+			freeShippingForAllCountries: data?.freeShippingForAllCountries ?? false,
+			freeShippingCountriesIds:
+				data?.freeShippingCountriesIds?.map((id) => id) || [],
 			shippingFeeMethod: data?.shippingFeeMethod,
 		},
 	});
@@ -240,8 +242,10 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 
 	// Submit handler for form submission
 	const handleSubmit = async () => {
-		const values = form.getValues();
+		console.log('click');
 		try {
+			const values = form.getValues();
+			console.log(values);
 			// Upserting product data
 			const response = await upsertProduct(
 				{
@@ -255,7 +259,9 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 					variantImage: values.variantImage[0].url,
 					categoryId: values.categoryId,
 					subCategoryId: values.subCategoryId,
-					offerTagId: values.offerTagId || '',
+
+					offerTagId: values.offerTagId?.trim() ? values.offerTagId : undefined,
+
 					isSale: values.isSale!,
 					saleEndDate: values.saleEndDate,
 					brand: values.brand,
@@ -297,6 +303,7 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 		}
 	};
 
+	// ERROR :  GOT SOME PROBLEM in here
 	// Handle keywords input
 	const [keywords, setKeywords] = useState<string[]>(data?.keywords || []);
 
@@ -322,7 +329,16 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 		form.setValue('product_specs', productSpecs);
 		form.setValue('variant_specs', variantSpecs);
 		form.setValue('questions', questions);
-	}, [colors, sizes, keywords, productSpecs, questions, variantSpecs, data]);
+	}, [
+		colors,
+		sizes,
+		keywords,
+		productSpecs,
+		questions,
+		variantSpecs,
+		data,
+		form,
+	]);
 
 	//Countries options
 	type CountryOption = {

@@ -259,10 +259,6 @@ const ImageUpload = ({
 					uploadPreset={cloudinary_key}
 				>
 					{({ open }) => {
-						const onClick = () => {
-							open();
-						};
-
 						const handleUploadClick = () => {
 							setIsUploading(true);
 							setHideModal(true);
