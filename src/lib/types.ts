@@ -1,5 +1,6 @@
 import { Prisma, ShippingFeeMethod } from '@prisma/client';
 import { getAllSubCategories } from '../queries/subCategory';
+import { getAllStoreProducts } from '../queries/product';
 
 export interface DashboardSidebarMenuInterface {
 	label: string;
@@ -48,3 +49,8 @@ export type ProductWithVariantType = {
 	createdAt: Date;
 	updatedAt: Date;
 };
+
+// Store product
+export type StoreProductType = Prisma.PromiseReturnType<
+	typeof getAllStoreProducts
+>[0];
