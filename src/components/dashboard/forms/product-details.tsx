@@ -702,7 +702,7 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 														placeholder='Product weight'
 														min={0.01}
 														step={0.01}
-														className='!shadow-none rounded-md !text-sm'
+														className='!shadow-none rounded-md !text-sm pl-2'
 													/>
 												</FormControl>
 												<FormMessage />

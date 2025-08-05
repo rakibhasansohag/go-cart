@@ -238,3 +238,107 @@ const handleCreateVariant = async (product: ProductWithVariantType) => {
 	const new_variant = await db.productVariant.create({ data: variantData });
 	return new_variant;
 };
+
+// Point:  Function: getProductVariant
+// Description: Retrieves details of a specific product variant from the database.
+// Access Level: Public
+// Parameters:
+//   - productId: The id of the product to which the variant belongs.
+//   - variantId: The id of the variant to be retrieved.
+// Returns: Details of the requested product variant.
+export const getProductVariant = async (
+  productId: string,
+  variantId: string
+) => {
+  // Retrieve product variant details from the database
+  const product = await db.product.findUnique({
+    where: {
+      id: productId,
+    },
+    include: {
+      category: true,
+      subCategory: true,
+      variants: {
+        where: {
+          id: variantId,
+        },
+        include: {
+          images: true,
+          colors: {
+            select: {
+              name: true,
+            },
+          },
+          sizes: {
+            select: {
+              size: true,
+              quantity: true,
+              price: true,
+              discount: true,
+            },
+          },
+        },
+      },
+    },
+  });
+  if (!product) return;
+  return {
+    productId: product?.id,
+    variantId: product?.variants[0].id,
+    name: product.name,
+    description: product?.description,
+    variantName: product.variants[0].variantName,
+    variantDescription: product.variants[0].variantDescription,
+    images: product.variants[0].images,
+    categoryId: product.categoryId,
+    subCategoryId: product.subCategoryId,
+    isSale: product.variants[0].isSale,
+    brand: product.brand,
+    sku: product.variants[0].sku,
+    colors: product.variants[0].colors,
+    sizes: product.variants[0].sizes,
+    keywords: product.variants[0].keywords.split(","),
+  };
+};
+
+// Point: Function: getProductMainInfo
+// Description: Retrieves the main information of a specific product from the database.
+// Access Level: Public
+// Parameters:
+//   - productId: The ID of the product to be retrieved.
+// Returns: An object containing the main information of the product or null if the product is not found.
+export const getProductMainInfo = async (productId: string) => {
+  // Retrieve the product from the database
+  const product = await db.product.findUnique({
+    where: {
+      id: productId,
+    },
+    include: {
+      questions: true,
+      specs: true,
+    },
+  });
+  if (!product) return null;
+ 
+  // Return the main information of the product
+  return {
+    productId: product.id,
+    name: product.name,
+    description: product.description,
+    brand: product.brand,
+    categoryId: product.categoryId,
+    subCategoryId: product.subCategoryId,
+    offerTagId: product.offerTagId || undefined,
+    storeId: product.storeId,
+    shippingFeeMethod: product.shippingFeeMethod,
+    questions: product.questions.map((q) => ({
+      question: q.question,
+      answer: q.answer,
+    })),
+    product_specs: product.specs.map((spec) => ({
+      name: spec.name,
+      value: spec.value,
+    })),
+  };
+};
+
