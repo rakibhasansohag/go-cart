@@ -299,3 +299,67 @@ iframe[src*="cloudinary"] {
 .scrollbar::-webkit-scrollbar {
   width: 5px;
 }
+
+/* Dark‐mode overrides for react-datetime-picker */
+.dark .react-datetime-picker,
+.dark .react-datetime-picker__wrapper,
+.dark .react-datetime-picker__inputGroup,
+.dark .react-datetime-picker__inputGroup input {
+  background-color: var(--secondary) !important;
+  color: var(--foreground) !important;
+  border-color: var(--border) !important;
+}
+
+.dark .react-calendar,
+.dark .react-calendar * {
+  background-color: var(--secondary) !important;
+  color: var(--foreground) !important;
+  border-color: var(--border) !important;
+}
+
+.dark .react-clock,
+.dark .react-clock * {
+  background-color: var(--secondary) !important;
+  color: var(--foreground) !important;
+  border-color: var(--border) !important;
+}
+
+/* 1) Calendar cell hover in dark mode */
+.dark .react-calendar__tile:enabled:hover,
+.dark .react-calendar__tile:enabled:focus {
+  background: var(--primary) !important;       
+  color: var(--card-foreground) !important;     
+}
+
+/* Optional: highlight today */
+.dark .react-calendar__tile--now {
+  background: var(--accent) !important;
+  color: var(--card-foreground) !important;
+}
+
+/* 2) Time picker shows on click and matches dark theme */
+.dark .react-datetime-picker__clock {
+  z-index: 9999 !important;                    
+  background-color: var(--secondary) !important;
+  color: var(--foreground) !important;
+}
+
+
+/* Style the AM/PM dropdown if present */
+.dark .react-datetime-picker__inputGroup__amPm {
+  background-color: var(--secondary) !important;
+  color: var(--foreground) !important;
+  border-color: var(--border) !important;
+}
+
+.dark .react-datetime-picker__clock .react-datetime-picker__clock--open {
+  background-color: var(--secondary) !important;
+  color: var(--foreground) !important;
+  border-color: var(--border) !important;
+}
+
+.dark .react-clock__hand, .react-clock__hour-hand {
+  background-color: var(--color-white) !important;
+  color: var(--color-white) !important;
+  border-color: var(--border) !important;
+}
