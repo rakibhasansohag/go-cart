@@ -46,6 +46,8 @@ import ImageUpload from '../shared/image-upload';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { MultiSelect } from 'react-multi-select-component';
 
+import { Controller } from 'react-hook-form';
+
 // Queries
 import { upsertProduct } from '@/queries/product';
 import { getAllCategoriesForCategory } from '@/queries/category';
@@ -499,7 +501,7 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 										</TabsList>
 									)}
 									<TabsContent value='product'>
-										<FormField
+										<Controller
 											disabled={isLoading}
 											control={form.control}
 											name='description'
@@ -509,7 +511,7 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 														<JoditEditor
 															ref={productDescEditor}
 															config={config}
-															value={form.getValues().description}
+															value={field.value}
 															onChange={(content) => {
 																form.setValue('description', content);
 															}}
@@ -521,7 +523,7 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 										/>
 									</TabsContent>
 									<TabsContent value='variant'>
-										<FormField
+										<Controller
 											disabled={isLoading}
 											control={form.control}
 											name='variantDescription'
@@ -531,7 +533,7 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 														<JoditEditor
 															ref={variantDescEditor}
 															config={config}
-															value={form.getValues().variantDescription || ''}
+															value={field.value}
 															onChange={(content) => {
 																form.setValue('variantDescription', content);
 															}}
