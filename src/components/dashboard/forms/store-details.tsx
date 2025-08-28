@@ -119,7 +119,7 @@ const StoreDetails: FC<StoreDetailsProps> = ({ data }) => {
 			toast.success(
 				data?.id
 					? 'Store has been updated.'
-					: `Congratulations! ${response?.name} Store is now created.`,
+					: `Congratulations!  Store is now created.`,
 			);
 
 			// Redirect or Refresh data

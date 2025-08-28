@@ -311,3 +311,153 @@ export const OfferTagFormSchema = z.object({
 				'Only letters, numbers, hyphen, and underscore are allowed. No consecutive special characters.',
 		}),
 });
+
+
+//  Point:  Store shipping defaults (store-level) 
+export const StoreShippingFormSchema = z.object({
+  defaultShippingService: z
+    .string()
+    .nonempty("Shipping service name is required.")
+    .trim()
+    .min(2, { message: "Shipping service name must be at least 2 characters long." })
+    .max(50, { message: "Shipping service name cannot exceed 50 characters." }),
+
+  defaultShippingFeePerItem: z
+    .number({ error: "Default shipping fee per item must be a number." })
+    .min(0, { message: "Default shipping fee per item cannot be negative." }),
+
+  defaultShippingFeeForAdditionalItem: z
+    .number({ error: "Default additional item fee must be a number." })
+    .min(0, { message: "Default additional item fee cannot be negative." }),
+
+  defaultShippingFeePerKg: z
+    .number({ error: "Default shipping fee per kg must be a number." })
+    .min(0, { message: "Default shipping fee per kg cannot be negative." }),
+
+  defaultShippingFeeFixed: z
+    .number({ error: "Default fixed shipping fee must be a number." })
+    .min(0, { message: "Default fixed shipping fee cannot be negative." }),
+
+  defaultDeliveryTimeMin: z
+    .number({ error: "Minimum delivery time must be a number." })
+    .int({ message: "Minimum delivery time must be an integer." })
+    .min(0, { message: "Minimum delivery time cannot be negative." }),
+
+  defaultDeliveryTimeMax: z
+    .number({ error: "Maximum delivery time must be a number." })
+    .int({ message: "Maximum delivery time must be an integer." })
+    .min(0, { message: "Maximum delivery time cannot be negative." }),
+
+  returnPolicy: z
+    .string()
+    .nonempty("Return policy is required.")
+    .trim()
+    .min(5, { message: "Return policy must be at least 5 characters long." })
+    .max(2000, { message: "Return policy is too long." }),
+});
+
+// Point: Single shipping rate (per country / service) 
+export const ShippingRateFormSchema = z.object({
+  shippingService: z
+    .string()
+    .nonempty("Shipping service name is required.")
+    .trim()
+    .min(2, { message: "Shipping service name must be at least 2 characters long." })
+    .max(50, { message: "Shipping service name cannot exceed 50 characters." }),
+
+  countryId: z.string().uuid("countryId must be a valid UUID.").optional(),
+
+  countryName: z.string().trim().max(100, { message: "Country name cannot exceed 100 characters." }).optional(),
+
+  shippingFeePerItem: z
+    .number({ error: "Shipping fee per item must be a number." })
+    .min(0, { message: "Shipping fee per item cannot be negative." }),
+
+  shippingFeeForAdditionalItem: z
+    .number({ error: "Shipping fee for additional item must be a number." })
+    .min(0, { message: "Shipping fee for additional item cannot be negative." }),
+
+  shippingFeePerKg: z
+    .number({ error: "Shipping fee per kg must be a number." })
+    .min(0, { message: "Shipping fee per kg cannot be negative." }),
+
+  shippingFeeFixed: z
+    .number({ error: "Fixed shipping fee must be a number." })
+    .min(0, { message: "Fixed shipping fee cannot be negative." }),
+
+  deliveryTimeMin: z
+    .number({ error: "Minimum delivery time must be a number." })
+    .int({ message: "Minimum delivery time must be an integer." })
+    .min(0, { message: "Minimum delivery time cannot be negative." }),
+
+  deliveryTimeMax: z
+    .number({ error: "Maximum delivery time must be a number." })
+    .int({ message: "Maximum delivery time must be an integer." })
+    .min(0, { message: "Maximum delivery time cannot be negative." }),
+
+  returnPolicy: z
+    .string()
+    .nonempty("Return policy is required.")
+    .trim()
+    .min(1, { message: "Return policy is required." }),
+});
+
+// Point: Shipping address schema (checkout / user) 
+export const ShippingAddressSchema = z.object({
+  countryId: z.string().nonempty("Country is mandatory.").uuid("Country must be a valid UUID."),
+
+  firstName: z
+    .string()
+    .nonempty("First name is mandatory.")
+    .trim()
+    .min(2, { message: "First name should be at least 2 characters long." })
+    .max(50, { message: "First name cannot exceed 50 characters." })
+    .regex(/^[a-zA-Z\s'-]+$/, { message: "First name contains invalid characters." }),
+
+  lastName: z
+    .string()
+    .nonempty("Last name is mandatory.")
+    .trim()
+    .min(2, { message: "Last name should be at least 2 characters long." })
+    .max(50, { message: "Last name cannot exceed 50 characters." })
+    .regex(/^[a-zA-Z\s'-]+$/, { message: "Last name contains invalid characters." }),
+
+  phone: z
+    .string()
+    .nonempty("Phone number is mandatory.")
+    .trim()
+    .regex(/^\+?\d+$/, { message: "Invalid phone number format." }),
+
+  address1: z
+    .string()
+    .nonempty("Address line 1 is mandatory.")
+    .trim()
+    .min(5, { message: "Address line 1 should be at least 5 characters long." })
+    .max(200, { message: "Address line 1 cannot exceed 200 characters." }),
+
+  address2: z.string().trim().max(200, { message: "Address line 2 cannot exceed 200 characters." }).optional(),
+
+  state: z
+    .string()
+    .nonempty("State is mandatory.")
+    .trim()
+    .min(2, { message: "State should be at least 2 characters long." })
+    .max(100, { message: "State cannot exceed 100 characters." }),
+
+  city: z
+    .string()
+    .nonempty("City is mandatory.")
+    .trim()
+    .min(2, { message: "City should be at least 2 characters long." })
+    .max(100, { message: "City cannot exceed 100 characters." }),
+
+  zip_code: z
+    .string()
+    .nonempty("Zip code is mandatory.")
+    .trim()
+    .min(2, { message: "Zip code should be at least 2 characters long." })
+    .max(20, { message: "Zip code cannot exceed 20 characters." })
+    .regex(/^[A-Za-z0-9 -]+$/, { message: "Zip code contains invalid characters." }),
+
+  default: z.boolean().default(false).optional(),
+});
