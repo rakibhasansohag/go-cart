@@ -34,6 +34,8 @@ import { updateStoreDefaultShippingDetails } from '@/queries/store';
 
 // Types
 import { StoreDefaultShippingType } from '@/lib/types';
+
+// Toast
 import { toast } from 'sonner';
 
 interface StoreDefaultShippingDetailsProps {
@@ -146,11 +148,11 @@ const StoreDefaultShippingDetails: FC<StoreDefaultShippingDetailsProps> = ({
 											<FormLabel>Shipping fee per item</FormLabel>
 											<FormControl>
 												<NumberInput
-													defaultValue={field.value}
+													defaultValue={field?.value}
 													onValueChange={field.onChange}
 													min={0}
 													step={0.1}
-													className='!pl-1 !shadow-none rounded-md'
+													className='!pl-2 !shadow-none rounded-md'
 												/>
 											</FormControl>
 											<FormMessage />
@@ -170,7 +172,7 @@ const StoreDefaultShippingDetails: FC<StoreDefaultShippingDetailsProps> = ({
 													onValueChange={field.onChange}
 													min={0}
 													step={0.1}
-													className='!pl-1 !shadow-none rounded-md'
+													className='!pl-2 !shadow-none rounded-md'
 												/>
 											</FormControl>
 											<FormMessage />
@@ -192,7 +194,7 @@ const StoreDefaultShippingDetails: FC<StoreDefaultShippingDetailsProps> = ({
 													onValueChange={field.onChange}
 													min={0}
 													step={0.1}
-													className='!pl-1 !shadow-none rounded-md'
+													className='!pl-2 !shadow-none rounded-md'
 												/>
 											</FormControl>
 											<FormMessage />
@@ -212,7 +214,7 @@ const StoreDefaultShippingDetails: FC<StoreDefaultShippingDetailsProps> = ({
 													onValueChange={field.onChange}
 													min={0}
 													step={0.1}
-													className='!pl-1 !shadow-none rounded-md'
+													className='!pl-2 !shadow-none rounded-md'
 												/>
 											</FormControl>
 											<FormMessage />
@@ -233,7 +235,7 @@ const StoreDefaultShippingDetails: FC<StoreDefaultShippingDetailsProps> = ({
 													defaultValue={field.value}
 													onValueChange={field.onChange}
 													min={1}
-													className='!shadow-none rounded-md'
+													className='!shadow-none rounded-md pl-2'
 												/>
 											</FormControl>
 											<FormMessage />
@@ -253,7 +255,7 @@ const StoreDefaultShippingDetails: FC<StoreDefaultShippingDetailsProps> = ({
 													defaultValue={field.value}
 													onValueChange={field.onChange}
 													min={1}
-													className='!shadow-none rounded-md'
+													className='!shadow-none rounded-md pl-2'
 												/>
 											</FormControl>
 											<FormMessage />

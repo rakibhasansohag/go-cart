@@ -16,6 +16,7 @@ export async function seedCountries() {
 					code: country.code,
 				},
 			});
+		console.log('Country seeded:', country.name);
 		}
 	} catch (error) {
 		console.error('Error seeding countries:', error);

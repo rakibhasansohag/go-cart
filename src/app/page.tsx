@@ -1,8 +1,7 @@
-import { Button } from '../components/ui/button';
 import ThemeToggle from '../components/shared/theme-toggle';
 import { UserButton } from '@clerk/nextjs';
 
-export default function Home() {
+export default async function Home() {
 	return (
 		<div>
 			<nav className='flex items-center py-10 gap-x-5 justify-end'>

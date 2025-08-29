@@ -100,9 +100,8 @@ const ShippingRateDetails: FC<ShippingRateDetailsProps> = ({
 	}, [data, form]);
 
 	// Submit handler for form submission
-	const handleSubmit = async (
-		values: z.infer<typeof ShippingRateFormSchema>,
-	) => {
+	const handleSubmit = async () => {
+		const values = form.getValues();
 		try {
 			// Upserting category data
 			const response = await upsertShippingRate(storeUrl, {
@@ -121,9 +120,11 @@ const ShippingRateDetails: FC<ShippingRateDetailsProps> = ({
 				updatedAt: new Date(),
 			});
 
+			console.log('shippingRate Values ==>', response);
+
 			if (response.id) {
 				// Displaying success message
-				toast.success('Shipping rates updated sucessfully !');
+				toast.success('Shipping rates updated successfully !');
 
 				// Redirect or Refresh data
 				router.refresh();
