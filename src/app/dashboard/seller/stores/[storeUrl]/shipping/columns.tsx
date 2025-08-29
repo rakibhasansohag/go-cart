@@ -33,7 +33,11 @@ export const columns: ColumnDef<CountryWithShippingRatesType>[] = [
 		accessorKey: 'countryName',
 		header: 'Country',
 		cell: ({ row }) => {
-			return <span>{row.original.countryName}</span>;
+			return (
+				<span className='inline-block max-w-[180px] whitespace-normal break-words'>
+					{row.original.countryName}
+				</span>
+			);
 		},
 	},
 	{
@@ -125,7 +129,7 @@ export const columns: ColumnDef<CountryWithShippingRatesType>[] = [
 		header: 'Return policy',
 		cell: ({ row }) => {
 			return (
-				<span>
+				<span className='inline-block max-w-[180px] whitespace-normal break-words'>
 					{row.original.shippingRate?.returnPolicy
 						? `${row.original.shippingRate?.returnPolicy}`
 						: 'Default'}

@@ -128,6 +128,8 @@ const ShippingRateDetails: FC<ShippingRateDetailsProps> = ({
 
 				// Redirect or Refresh data
 				router.refresh();
+
+				// Closing the dialog
 			}
 		} catch (error: any) {
 			// Handling form submission errors

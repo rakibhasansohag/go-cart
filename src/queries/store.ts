@@ -2,8 +2,8 @@
 
 import { currentUser } from '@clerk/nextjs/server';
 import { ShippingRate, Store } from '@prisma/client';
-import { db } from '../lib/db';
-import { StoreDefaultShippingType } from '../lib/types';
+import { db } from '@/lib/db';
+import { StoreDefaultShippingType } from '@/lib/types';
 
 // Point:   Function: upsertStore
 // Description: Upserts store details into the database, ensuring uniqueness of name,url, email, and phone number.
