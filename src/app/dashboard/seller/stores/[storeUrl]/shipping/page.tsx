@@ -12,15 +12,14 @@ export default async function SellerStoreShippingPage({
 }: {
 	params: { storeUrl: string };
 }) {
-	const shippingDetails = await getStoreDefaultShippingDetails(params.storeUrl);
-	const shippingRates = await getStoreShippingRates(params.storeUrl);
+	const { storeUrl } = await params;
+
+	const shippingDetails = await getStoreDefaultShippingDetails(storeUrl);
+	const shippingRates = await getStoreShippingRates(storeUrl);
 	if (!shippingDetails || !shippingRates) return redirect('/');
 	return (
 		<div>
-			<StoreDefaultShippingDetails
-				data={shippingDetails}
-				storeUrl={params.storeUrl}
-			/>
+			<StoreDefaultShippingDetails data={shippingDetails} storeUrl={storeUrl} />
 			<DataTable
 				filterValue='countryName'
 				data={shippingRates}

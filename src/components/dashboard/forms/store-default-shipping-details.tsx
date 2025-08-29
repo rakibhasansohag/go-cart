@@ -77,9 +77,9 @@ const StoreDefaultShippingDetails: FC<StoreDefaultShippingDetailsProps> = ({
 	}, [data, form]);
 
 	// Submit handler for form submission
-	const handleSubmit = async (
-		values: z.infer<typeof StoreShippingFormSchema>,
-	) => {
+	const handleSubmit = async () => {
+		const values = form.getValues();
+
 		try {
 			// Upserting category data
 			const response = await updateStoreDefaultShippingDetails(storeUrl, {
@@ -94,7 +94,7 @@ const StoreDefaultShippingDetails: FC<StoreDefaultShippingDetailsProps> = ({
 				returnPolicy: values.returnPolicy,
 			});
 
-			if (response.id) {
+			if (response?.id) {
 				// Displaying success message
 				toast.success('Store Default shipping details has been updated.');
 
