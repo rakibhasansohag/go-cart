@@ -5,7 +5,7 @@ const nextConfig = {
 			process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
 	},
 	images: {
-		domains: ['res.cloudinary.com'],
+		domains: ['res.cloudinary.com', 'img.clerk.com'],
 	},
 };
 
