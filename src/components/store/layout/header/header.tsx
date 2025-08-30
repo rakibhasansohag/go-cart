@@ -6,6 +6,7 @@ import { cookies } from 'next/headers';
 import { Country } from '@/lib/types';
 
 import CountryLanguageCurrencySelector from './country-lang-curr-selector';
+import Cart from './cart';
 
 export default async function Header() {
 	// Get cookies from the store
@@ -35,6 +36,7 @@ export default async function Header() {
 						</Link>
 						<div className='flex lg:hidden'>
 							<UserMenu />
+							<Cart />
 						</div>
 					</div>
 					<Search />
@@ -45,6 +47,7 @@ export default async function Header() {
 					</div>
 					<CountryLanguageCurrencySelector userCountry={userCountry} />
 					<UserMenu />
+					<Cart />
 				</div>
 			</div>
 		</div>

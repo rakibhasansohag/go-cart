@@ -138,13 +138,6 @@
 /* optional animation plugin CSS */
 @import "tw-animate-css";
 
-/* -------------------------
-   Your theme variables
-   -------------------------
-   Keep your existing :root and .dark variables here.
-   I kept your original oklch values but removed a few quotes.
-*/
-
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -187,7 +180,7 @@
   --blue-primary: #0D6EFD;
 }
 
-/* Core token values (your original values) */
+/* Core token values for Tailwind */
 :root {
   --radius: 0.625rem;
   --background: oklch(1 0 0);
@@ -221,8 +214,21 @@
   --sidebar-accent-foreground: oklch(0.208 0.042 265.755);
   --sidebar-border: oklch(0.929 0.013 255.508);
   --sidebar-ring: oklch(0.704 0.04 256.788);
+
+  --main-primary: #191919;          
+  --main-secondary: #757575;        
+
+  --orange-background: #e23246;     
+  --orange-hover: #FA6338;
+  --orange-primary: #FA6338;
+  --orange-secondary: #d3031c;
+  --orange-border: #ffe6e7;
+
   --blue-primary: #0D6EFD;
 }
+
+
+
 
 /* dark mode variable overrides */
 .dark {
@@ -257,6 +263,22 @@
   --sidebar-accent-foreground: oklch(0.984 0.003 247.858);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.551 0.027 264.364);
+
+  
+  --main-primary: #e6e6e6;      
+
+ 
+  --main-secondary: #bdbdbd;
+
+  
+  --orange-background: #ff7b84; 
+  --orange-hover:      #ff8a50; 
+  --orange-primary:    #ff8a50; 
+  --orange-secondary:  #ff5252; 
+  --orange-border:     #4b1b1b; 
+
+  
+  --blue-primary: #69a9ff;
 }
 
 /* -------------------------
@@ -266,6 +288,7 @@
 */
 :root,
 .dark {
+  
   /* map core tokens */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -307,12 +330,14 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
-  /* example form controls default */
+  
   input, textarea, select, button {
     color: inherit;
     background-color: transparent;
   }
 }
+
+
 
 /* -------------------------
    Utilities: custom classes 
@@ -347,19 +372,34 @@
   /* helper for ring (works with existing tailwind ring utilities) */
   .ring-ring { --tw-ring-color: var(--color-ring); }
 
-  /* shortcut for the blue primary you had */
+  /* shortcut for the blue primary */
   .bg-blue-primary { background-color: var(--blue-primary) !important; }
   .text-blue-primary { color: var(--blue-primary) !important; }
 
-  /* small radius helpers using your radius tokens */
+  /* small radius helpers using existing radius tokens */
   .rounded-radius-lg { border-radius: var(--radius); }
   .rounded-radius-md { border-radius: calc(var(--radius) - 2px); }
   .rounded-radius-sm { border-radius: calc(var(--radius) - 4px); }
 
-  /* text truncation utilities for long policy text */
-  .wrap-normal { white-space: normal; word-break: break-word; overflow-wrap: anywhere; }
+  /* custom text colors */
+  .text-main-primary {
+    color: var(--main-primary) !important;
+  }
+  .text-main-secondary {
+    color: var(--main-secondary) !important;
+  }
 
-  /* optional: a convenient "card" helper */
+  /* orange family (text variants) */
+  .text-orange-background { color: var(--orange-background) !important; }
+  .text-orange-hover      { color: var(--orange-hover) !important; }
+  .text-orange-primary    { color: var(--orange-primary) !important; }
+  .text-orange-secondary { color: var(--orange-secondary) !important; }
+  .text-orange-border     { color: var(--orange-border) !important; }
+
+  /* blue */
+  .text-blue-primary { color: var(--blue-primary) !important; }
+
+  /* a convenient "card" helper */
   .card-surface {
     background-color: var(--color-card);
     color: var(--color-card-foreground);
@@ -608,3 +648,5 @@ iframe[src*="cloudinary"] {
   color: var(--color-white) !important;
   border-color: var(--border) !important;
 }
+
+

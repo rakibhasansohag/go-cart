@@ -77,11 +77,14 @@ export default async function UserMenu() {
 									</div>
 								)}
 								{user && (
-									<p className='my-3 text-center text-sm text-main-primary cursor-pointer'>
+									<Button
+										className='w-full h-10 my-4 text-sm text-main-primary bg-main-primary hover:bg-main-primary/90 focus-visible:ring-2 focus-visible:ring-main-primary/50 focus-visible:ring-offset-2 focus-visible:ring-offset-white'
+										asChild
+									>
 										<SignOutButton />
-									</p>
+									</Button>
 								)}
-								<Separator />
+								<Separator className='mt-4' />
 							</div>
 							{/* Links */}
 							<div className='max-w-[calc(100vh-180px)] text-main-secondary overflow-y-auto overflow-x-hidden pt-0 px-2 pb-4'>
