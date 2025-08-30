@@ -17,14 +17,14 @@ export default function DownloadApp() {
 				</span>
 				<div className='ml-1'>
 					<b className='max-w-[90px] inline-block font-medium text-xs text-white'>
-						Download the GoShop app
+						Download the GoCart app
 					</b>
 				</div>
 			</div>
 			{/* Content */}
 			<div className='absolute hidden top-0 group-hover:block cursor-pointer'>
 				<div className='relative mt-12 -ml-20 w-[300px] bg-white rounded-3xl text-main-primary pt-2 px-1 pb-6 z-50 shadow-lg'>
-					{/* Traingle */}
+					{/* Triangle */}
 					<div
 						className='w-0 h-0 absolute -top-1.5 left-36 border-l-[10px] border-l-transparent
            border-b-[10px] border-white border-r-[10px] border-r-transparent'
@@ -33,7 +33,7 @@ export default function DownloadApp() {
 						<div className='flex'>
 							<div className='mx-3'>
 								<h3 className='font-bold text-[20px] text-main-primary m-0 max-w-40 mx-auto'>
-									Download the GoShop app
+									Download the GoCart app
 								</h3>
 								<div className='mt-4 flex items-center gap-x-2'>
 									<Link

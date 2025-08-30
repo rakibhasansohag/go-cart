@@ -5,7 +5,20 @@ const nextConfig = {
 			process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
 	},
 	images: {
-		domains: ['res.cloudinary.com', 'img.clerk.com'],
+		remotePatterns: [
+			{
+				protocol: 'https',
+				hostname: 'res.cloudinary.com',
+				port: '',
+				pathname: '/**',
+			},
+			{
+				protocol: 'https',
+				hostname: 'img.clerk.com',
+				port: '',
+				pathname: '/**',
+			},
+		],
 	},
 };
 

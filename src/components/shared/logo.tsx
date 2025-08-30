@@ -15,7 +15,7 @@ const Logo: FC<LogoProps> = ({ width, height }) => {
 		<div className='z-50' style={{ width: width, height: height }}>
 			<Image
 				src={LogoImg}
-				alt='GoShop'
+				alt='GoCart LOGO'
 				className='w-full h-full object-cover overflow-visible'
 			/>
 		</div>

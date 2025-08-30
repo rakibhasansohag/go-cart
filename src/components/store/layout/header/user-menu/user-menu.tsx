@@ -44,6 +44,7 @@ export default async function UserMenu() {
 			</div>
 			{/* Content */}
 			<div
+				// ERROR: If the content doesn't have a width, the triangle will be hidden and also if the user link is overflowing than give the left of 214px will fine in large device and more
 				className={cn(
 					'hidden absolute top-0 -left-20 group-hover:block cursor-pointer',
 					{
@@ -65,7 +66,7 @@ export default async function UserMenu() {
 								) : (
 									<div className='space-y-1'>
 										<Link href='/sign-in'>
-											<Button>Sign in</Button>
+											<Button className='text-main-primary'>Sign in</Button>
 										</Link>
 										<Link
 											href='/sign-up'
@@ -100,10 +101,10 @@ export default async function UserMenu() {
 								<ul className='pt-2.5 pr-4 pb-1 pl-4 w-[288px]'>
 									{extraLinks.map((item, i) => (
 										<li key={i}>
-											<Link href={item.link} legacyBehavior>
-												<a className='block text-sm text-main-primary py-1.5 hover:underline'>
+											<Link href={item.link}>
+												<span className='block text-sm text-main-primary py-1.5 hover:underline'>
 													{item.title}
-												</a>
+												</span>
 											</Link>
 										</li>
 									))}
