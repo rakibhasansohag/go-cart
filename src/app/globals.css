@@ -215,7 +215,7 @@
   --sidebar-border: oklch(0.929 0.013 255.508);
   --sidebar-ring: oklch(0.704 0.04 256.788);
 
-  --main-primary: #191919;          
+  --main-primary: #e6e6e6;          
   --main-secondary: #757575;        
 
   --orange-background: #e23246;     
@@ -265,8 +265,7 @@
   --sidebar-ring: oklch(0.551 0.027 264.364);
 
   
-  --main-primary: #e6e6e6;      
-
+  --main-primary: #191919;      
  
   --main-secondary: #bdbdbd;
 
@@ -286,6 +285,7 @@
    -------------------------
    @see https://tailwindcss.com/docs/adding-base-styles
 */
+
 :root,
 .dark {
   

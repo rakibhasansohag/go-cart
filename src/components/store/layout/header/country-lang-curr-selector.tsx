@@ -25,7 +25,7 @@ export default function CountryLanguageCurrencySelector({
 	const router = useRouter();
 
 	// State to manage countries dropdown visibility
-	const [show, setshow] = useState(false);
+	const [show, setShow] = useState(false);
 
 	const handleCountryClick = async (country: string) => {
 		// Find the country data based on the selected country name
@@ -86,7 +86,7 @@ export default function CountryLanguageCurrencySelector({
 							<CountrySelector
 								id={'countries'}
 								open={show}
-								onToggle={() => setshow(!show)}
+								onToggle={() => setShow(!show)}
 								onChange={(val) => handleCountryClick(val)}
 								selectedValue={
 									(countries.find(
