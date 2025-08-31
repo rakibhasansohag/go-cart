@@ -1,7 +1,8 @@
 import React from 'react';
 import Header from '../../components/store/layout/header/header';
 
-function HomePage() {
+
+async function HomePage() {
 	return (
 		<>
 			<Header />

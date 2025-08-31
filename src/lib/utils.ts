@@ -4,6 +4,8 @@ import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { db } from './db';
 import ColorThief from 'colorthief';
+import { Country } from './types';
+import countries from '@/data/countries.json';
 
 export function cn(...inputs: ClassValue[]) {
 	return twMerge(clsx(inputs));
@@ -78,3 +80,55 @@ export const getDominantColors = (imgUrl: string): Promise<string[]> => {
 		};
 	});
 };
+
+// the helper function to get the user country
+// Define the default country
+export const DEFAULT_COUNTRY: Country = {
+	name: 'Bangladesh',
+	code: 'BD',
+	city: '',
+	region: '',
+};
+
+interface IPInfoResponse {
+	country: string;
+	city: string;
+	region: string;
+}
+export async function getUserCountry(req: Request): Promise<Country> {
+	let userCountry: Country = DEFAULT_COUNTRY;
+
+	// If geo data is available (in production on Vercel as an edge function)
+	const geo = (req as any).geo; // For edge functions in Vercel
+	if (geo) {
+		userCountry = {
+			name: geo.country || DEFAULT_COUNTRY.name,
+			code: geo.country || DEFAULT_COUNTRY.code,
+			city: geo.city || DEFAULT_COUNTRY.city,
+			region: geo.region || DEFAULT_COUNTRY.region,
+		};
+	} else {
+		// Fallback to IPInfo API on localhost or non-edge environments
+		try {
+			const response = await fetch(
+				`https://ipinfo.io/?token=${process.env.NEXT_PUBLIC_IP_INFO_TOKEN}`,
+			);
+			if (response.ok) {
+				const data = (await response.json()) as IPInfoResponse;
+				userCountry = {
+					name:
+						countries.find((c) => c.code === data.country)?.name ||
+						data.country ||
+						DEFAULT_COUNTRY.name,
+					code: data.country || DEFAULT_COUNTRY.code,
+					city: data.city || DEFAULT_COUNTRY.city,
+					region: data.region || DEFAULT_COUNTRY.region,
+				};
+			}
+		} catch (error) {
+			console.error('Error fetching user country:', error);
+		}
+	}
+
+	return userCountry;
+}
