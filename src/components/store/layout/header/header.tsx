@@ -7,19 +7,14 @@ import { Country } from '@/lib/types';
 
 import CountryLanguageCurrencySelector from './country-lang-curr-selector';
 import Cart from './cart';
+import { DEFAULT_COUNTRY } from '@/lib/utils';
 
 export default async function Header() {
 	// Get cookies from the store
 	const cookieStore = cookies();
 	const userCountryCookie = (await cookieStore).get('userCountry');
 
-	// Set default country if cookie is missing
-	let userCountry: Country = {
-		name: 'Bangladesh',
-		city: '',
-		code: 'BD',
-		region: '',
-	};
+	let userCountry = DEFAULT_COUNTRY;
 
 	// If cookie exists, update the user country
 	if (userCountryCookie) {

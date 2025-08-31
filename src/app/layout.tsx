@@ -4,17 +4,11 @@ import { Geist, Geist_Mono, Barlow } from 'next/font/google';
 
 
 // Clerk Provider
-import {
-	ClerkProvider,
-	SignInButton,
-	SignUpButton,
-	SignedIn,
-	SignedOut,
-	UserButton,
-} from '@clerk/nextjs';
+import { ClerkProvider } from '@clerk/nextjs';
 
 // Global css
 import './globals.css';
+import 'flag-icons/css/flag-icons.min.css';
 
 // Theme Provider
 import { ThemeProvider } from 'next-themes';

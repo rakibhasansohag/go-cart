@@ -138,7 +138,6 @@ export default function CountrySelector({
 												id='listbox-option-0'
 												role='option'
 												tabIndex={index}
-												area-selected={value.name === selectedValue.name}
 												onClick={() => {
 													onChange(value.name);
 													setQuery('');
