@@ -215,7 +215,7 @@
   --sidebar-border: oklch(0.929 0.013 255.508);
   --sidebar-ring: oklch(0.704 0.04 256.788);
 
-  --main-primary: #e6e6e6;          
+  --main-primary: #191919;          
   --main-secondary: #757575;        
 
   --orange-background: #e23246;     
@@ -265,10 +265,8 @@
   --sidebar-ring: oklch(0.551 0.027 264.364);
 
   
-  --main-primary: #191919;      
- 
+  --main-primary: #e6e6e6;      
   --main-secondary: #bdbdbd;
-
   
   --orange-background: #ff7b84; 
   --orange-hover:      #ff8a50; 
@@ -286,29 +284,15 @@
    @see https://tailwindcss.com/docs/adding-base-styles
 */
 
-:root,
-.dark {
-  
-  /* map core tokens */
+:root, .dark {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
-  --color-popover: var(--popover);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-primary: var(--primary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-secondary: var(--secondary);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-accent: var(--accent);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-destructive: var(--destructive);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
-  --blue-primary: var(--blue-primary);
+  --color-primary: var(--blue-primary);
 }
 
 /* -------------------------
@@ -349,6 +333,7 @@
   .border-border { border-color: var(--color-border) !important; }
   .bg-input { background-color: var(--color-input) !important; }
   .text-muted-foreground { color: var(--color-muted-foreground) !important; }
+  .border-orange-border { border-color: var(--orange-border) !important; }
 
   /* primary / secondary / accent / destructive / muted */
   .bg-primary { background-color: var(--color-primary) !important; }
