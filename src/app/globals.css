@@ -394,9 +394,6 @@
 }
 
 
-
-
-
 /* Ensure Cloudinary widget appears above all modals */
 .cloudinary-widget-overlay,
 .cloudinary_upload_widget,
@@ -634,4 +631,8 @@ iframe[src*="cloudinary"] {
   border-color: var(--border) !important;
 }
 
-
+.dark .react-clock__minute-hand {
+  background-color: var(--color-white) !important;
+  color: var(--color-white) !important;
+  border-color: var(--border) !important;
+}
