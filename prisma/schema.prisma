@@ -30,6 +30,7 @@ model User {
 
   stores Store[] @relation("UserStores")
   shippingAddresses ShippingAddress[] @relation("UserShippingAddresses")
+  wishlist          Wishlist[]        @relation("WishlistToUser")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -135,6 +136,7 @@ model Product {
 
   storeId String
   store   Store  @relation("StoreToProduct", fields: [storeId], references: [id])
+  wishlist  Wishlist[]       @relation("WishlistToProduct")
 
   variants  ProductVariant[] @relation("ProductToProductVariant")
   specs     Spec[]           @relation("ProductSpec")
@@ -175,6 +177,7 @@ model ProductVariant {
   images ProductVariantImage[] @relation("ProductVariantToVariantImage")
   colors Color[]               @relation("ProductVariantColors")
   specs  Spec[]                @relation("ProductVariantSpec")
+  wishlist Wishlist[]            @relation("WishlistToProductVariant")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
@@ -191,6 +194,7 @@ model Size {
 
   productVariantId String
   productVariant   ProductVariant @relation("ProductVariantSizes", fields: [productVariantId], references: [id])
+  wishlist Wishlist[] @relation("WishlistToSize")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
@@ -362,4 +366,27 @@ model ShippingAddress {
   @@index([countryId])
   @@index([userId])
 }
- 
+
+model Wishlist {
+  id String @id @default(uuid())
+
+  userId String
+  user   User   @relation("WishlistToUser", fields: [userId], references: [id], onDelete: Cascade)
+
+  productId String
+  product   Product @relation("WishlistToProduct", fields: [productId], references: [id], onDelete: Cascade)
+
+  variantId String
+  variant   ProductVariant @relation("WishlistToProductVariant", fields: [variantId], references: [id], onDelete: Cascade)
+
+  sizeId String?
+  size   Size?   @relation("WishlistToSize", fields: [sizeId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([productId])
+  @@index([variantId])
+  @@index([sizeId])
+}
