@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use server';
 
 import { currentUser } from '@clerk/nextjs/server';
@@ -6,8 +7,14 @@ import { currentUser } from '@clerk/nextjs/server';
 import slugify from 'slugify';
 import { generateUniqueSlug } from '@/lib/utils';
 // Types
-import { ProductWithVariantType } from '@/lib/types';
+import {
+	ProductWithVariantType,
+	SortOrder,
+	VariantImageType,
+	VariantSimplified,
+} from '@/lib/types';
 import { db } from '../lib/db';
+import { ProductVariant, Size } from '@prisma/client';
 
 // Function: upsertProduct
 // Description: Upserts a product and its variant into the database, ensuring proper association with the store.
@@ -247,58 +254,58 @@ const handleCreateVariant = async (product: ProductWithVariantType) => {
 //   - variantId: The id of the variant to be retrieved.
 // Returns: Details of the requested product variant.
 export const getProductVariant = async (
-  productId: string,
-  variantId: string
+	productId: string,
+	variantId: string,
 ) => {
-  // Retrieve product variant details from the database
-  const product = await db.product.findUnique({
-    where: {
-      id: productId,
-    },
-    include: {
-      category: true,
-      subCategory: true,
-      variants: {
-        where: {
-          id: variantId,
-        },
-        include: {
-          images: true,
-          colors: {
-            select: {
-              name: true,
-            },
-          },
-          sizes: {
-            select: {
-              size: true,
-              quantity: true,
-              price: true,
-              discount: true,
-            },
-          },
-        },
-      },
-    },
-  });
-  if (!product) return;
-  return {
-    productId: product?.id,
-    variantId: product?.variants[0].id,
-    name: product.name,
-    description: product?.description,
-    variantName: product.variants[0].variantName,
-    variantDescription: product.variants[0].variantDescription,
-    images: product.variants[0].images,
-    categoryId: product.categoryId,
-    subCategoryId: product.subCategoryId,
-    isSale: product.variants[0].isSale,
-    brand: product.brand,
-    sku: product.variants[0].sku,
-    colors: product.variants[0].colors,
-    sizes: product.variants[0].sizes,
-    keywords: product.variants[0].keywords.split(","),
-  };
+	// Retrieve product variant details from the database
+	const product = await db.product.findUnique({
+		where: {
+			id: productId,
+		},
+		include: {
+			category: true,
+			subCategory: true,
+			variants: {
+				where: {
+					id: variantId,
+				},
+				include: {
+					images: true,
+					colors: {
+						select: {
+							name: true,
+						},
+					},
+					sizes: {
+						select: {
+							size: true,
+							quantity: true,
+							price: true,
+							discount: true,
+						},
+					},
+				},
+			},
+		},
+	});
+	if (!product) return;
+	return {
+		productId: product?.id,
+		variantId: product?.variants[0].id,
+		name: product.name,
+		description: product?.description,
+		variantName: product.variants[0].variantName,
+		variantDescription: product.variants[0].variantDescription,
+		images: product.variants[0].images,
+		categoryId: product.categoryId,
+		subCategoryId: product.subCategoryId,
+		isSale: product.variants[0].isSale,
+		brand: product.brand,
+		sku: product.variants[0].sku,
+		colors: product.variants[0].colors,
+		sizes: product.variants[0].sizes,
+		keywords: product.variants[0].keywords.split(','),
+	};
 };
 
 // Point: Function: getProductMainInfo
@@ -308,38 +315,38 @@ export const getProductVariant = async (
 //   - productId: The ID of the product to be retrieved.
 // Returns: An object containing the main information of the product or null if the product is not found.
 export const getProductMainInfo = async (productId: string) => {
-  // Retrieve the product from the database
-  const product = await db.product.findUnique({
-    where: {
-      id: productId,
-    },
-    include: {
-      questions: true,
-      specs: true,
-    },
-  });
-  if (!product) return null;
- 
-  // Return the main information of the product
-  return {
-    productId: product.id,
-    name: product.name,
-    description: product.description,
-    brand: product.brand,
-    categoryId: product.categoryId,
-    subCategoryId: product.subCategoryId,
-    offerTagId: product.offerTagId || undefined,
-    storeId: product.storeId,
-    shippingFeeMethod: product.shippingFeeMethod,
-    questions: product.questions.map((q) => ({
-      question: q.question,
-      answer: q.answer,
-    })),
-    product_specs: product.specs.map((spec) => ({
-      name: spec.name,
-      value: spec.value,
-    })),
-  };
+	// Retrieve the product from the database
+	const product = await db.product.findUnique({
+		where: {
+			id: productId,
+		},
+		include: {
+			questions: true,
+			specs: true,
+		},
+	});
+	if (!product) return null;
+
+	// Return the main information of the product
+	return {
+		productId: product.id,
+		name: product.name,
+		description: product.description,
+		brand: product.brand,
+		categoryId: product.categoryId,
+		subCategoryId: product.subCategoryId,
+		offerTagId: product.offerTagId || undefined,
+		storeId: product.storeId,
+		shippingFeeMethod: product.shippingFeeMethod,
+		questions: product.questions.map((q) => ({
+			question: q.question,
+			answer: q.answer,
+		})),
+		product_specs: product.specs.map((spec) => ({
+			name: spec.name,
+			value: spec.value,
+		})),
+	};
 };
 
 // Point:  Function: getAllStoreProducts
@@ -349,62 +356,345 @@ export const getProductMainInfo = async (productId: string) => {
 //   - storeUrl: The URL of the store whose products are to be retrieved.
 // Returns: Array of products from the specified store, including category, subcategory, and variant details.
 export const getAllStoreProducts = async (storeUrl: string) => {
-  // Retrieve store details from the database using the store URL
-  const store = await db.store.findUnique({ where: { url: storeUrl } });
-  if (!store) throw new Error("Please provide a valid store URL.");
+	// Retrieve store details from the database using the store URL
+	const store = await db.store.findUnique({ where: { url: storeUrl } });
+	if (!store) throw new Error('Please provide a valid store URL.');
 
-  // Retrieve all products associated with the store
-  const products = await db.product.findMany({
-    where: {
-      storeId: store.id,
-    },
-    include: {
-      category: true,
-      subCategory: true,
-      offerTag: true,
-      variants: {
-        include: {
-          images: { orderBy: { order: "asc" } },
-          colors: true,
-          sizes: true,
-        },
-      },
-      store: {
-        select: {
-          id: true,
-          url: true,
-        },
-      },
-    },
-  });
+	// Retrieve all products associated with the store
+	const products = await db.product.findMany({
+		where: {
+			storeId: store.id,
+		},
+		include: {
+			category: true,
+			subCategory: true,
+			offerTag: true,
+			variants: {
+				include: {
+					images: { orderBy: { order: 'asc' } },
+					colors: true,
+					sizes: true,
+				},
+			},
+			store: {
+				select: {
+					id: true,
+					url: true,
+				},
+			},
+		},
+	});
 
-  return products;
+	return products;
 };
 
-// Point:  Function: deleteProduct
+// Point: Function: deleteProduct
 // Description: Deletes a product from the database.
 // Permission Level: Seller only
 // Parameters:
 //   - productId: The ID of the product to be deleted.
 // Returns: Response indicating success or failure of the deletion operation.
 export const deleteProduct = async (productId: string) => {
-  // Get current user
-  const user = await currentUser();
+	// Get current user
+	const user = await currentUser();
 
-  // Check if user is authenticated
-  if (!user) throw new Error("Unauthenticated.");
+	// Check if user is authenticated
+	if (!user) throw new Error('Unauthenticated.');
 
-  // Ensure user has seller privileges
-  if (user.privateMetadata.role !== "SELLER")
-    throw new Error(
-      "Unauthorized Access: Seller Privileges Required for Entry."
-    );
+	// Ensure user has seller privileges
+	if (user.privateMetadata.role !== 'SELLER')
+		throw new Error(
+			'Unauthorized Access: Seller Privileges Required for Entry.',
+		);
 
-  // Ensure product data is provided
-  if (!productId) throw new Error("Please provide product id.");
+	// Ensure product data is provided
+	if (!productId) throw new Error('Please provide product id.');
 
-  // Delete product from the database
-  const response = await db.product.delete({ where: { id: productId } });
-  return response;
+	// Delete product from the database
+	const response = await db.product.delete({ where: { id: productId } });
+	return response;
 };
 
+// Point: Function: getProducts
+// Description: Retrieves products based on various filters and returns only variants that match the filters. Supports pagination.
+// Access Level: Public
+// Parameters:
+//   - filters: An object containing filter options (category, subCategory, offerTag, size, onSale, onDiscount, brand, color).
+//   - sortBy: Sort the filtered results (Most popular, New Arivals, Top Rated...).
+//   - page: The current page number for pagination (default = 1).
+//   - pageSize: The number of products per page (default = 10).
+// Returns: An object containing paginated products, filtered variants, and pagination metadata (totalPages, currentPage, pageSize, totalCount).
+export const getProducts = async (
+	filters: any = {},
+	sortBy = '',
+	page: number = 1,
+	pageSize: number = 10,
+) => {
+	// Default values for page and pageSize
+	const currentPage = page;
+	const limit = pageSize;
+	const skip = (currentPage - 1) * limit;
+
+	// Construct the base query
+	const wherClause: any = {
+		AND: [],
+	};
+
+	// Apply store filter (using store URL)
+	if (filters.store) {
+		const store = await db.store.findUnique({
+			where: {
+				url: filters.store,
+			},
+			select: { id: true },
+		});
+		if (store) {
+			wherClause.AND.push({ storeId: store.id });
+		}
+	}
+
+	// Exclude product if sent
+	if (filters.productId) {
+		wherClause.AND.push({
+			id: {
+				not: filters.productId,
+			},
+		});
+	}
+
+	// Apply category filter (using category URL)
+	if (filters.category) {
+		const category = await db.category.findUnique({
+			where: {
+				url: filters.category,
+			},
+			select: { id: true },
+		});
+		if (category) {
+			wherClause.AND.push({ categoryId: category.id });
+		}
+	}
+
+	// Apply subCategory filter (using subCategory URL)
+	if (filters.subCategory) {
+		const subCategory = await db.subCategory.findUnique({
+			where: {
+				url: filters.subCategory,
+			},
+			select: { id: true },
+		});
+		if (subCategory) {
+			wherClause.AND.push({ subCategoryId: subCategory.id });
+		}
+	}
+
+	// Apply size filter (using array of sizes)
+	if (filters.size && Array.isArray(filters.size)) {
+		wherClause.AND.push({
+			variants: {
+				some: {
+					sizes: {
+						some: {
+							size: {
+								in: filters.size,
+							},
+						},
+					},
+				},
+			},
+		});
+	}
+
+	// Apply Offer filter (using offer URL)
+	if (filters.offer) {
+		const offer = await db.offerTag.findUnique({
+			where: {
+				url: filters.offer,
+			},
+			select: { id: true },
+		});
+		if (offer) {
+			wherClause.AND.push({ offerTagId: offer.id });
+		}
+	}
+
+	// Apply search filter (search term in product name or description)
+	if (filters.search) {
+		wherClause.AND.push({
+			OR: [
+				{
+					name: { contains: filters.search },
+				},
+				{
+					description: { contains: filters.search },
+				},
+				{
+					variants: {
+						some: {
+							variantName: { contains: filters.search },
+							variantDescription: { contains: filters.search },
+						},
+					},
+				},
+			],
+		});
+	}
+
+	// Apply price filters (min and max price)
+	if (filters.minPrice || filters.maxPrice) {
+		wherClause.AND.push({
+			variants: {
+				some: {
+					sizes: {
+						some: {
+							price: {
+								gte: filters.minPrice || 0, // Default to 0 if no min price is set
+								lte: filters.maxPrice || Infinity, // Default to Infinity if no max price is set
+							},
+						},
+					},
+				},
+			},
+		});
+	}
+
+	if (filters.color && filters.color.length > 0) {
+		wherClause.AND.push({
+			variants: {
+				some: {
+					colors: {
+						some: {
+							name: { in: filters.color },
+						},
+					},
+				},
+			},
+		});
+	}
+
+	// Define the sort order
+	let orderBy: Record<string, SortOrder> = {};
+	switch (sortBy) {
+		case 'most-popular':
+			orderBy = { views: 'desc' };
+			break;
+		case 'new-arrivals':
+			orderBy = { createdAt: 'desc' };
+			break;
+		case 'top-rated':
+			orderBy = { rating: 'desc' };
+			break;
+		default:
+			orderBy = { views: 'desc' };
+	}
+
+	// Get all filtered, sorted products
+	const products = await db.product.findMany({
+		where: wherClause,
+		orderBy,
+		take: limit, // Limit to page size
+		skip: skip, // Skip the products of previous pages
+		include: {
+			variants: {
+				include: {
+					sizes: true,
+					images: {
+						orderBy: {
+							order: 'asc',
+						},
+					},
+					colors: true,
+				},
+			},
+		},
+	});
+
+	type VariantWithSizes = ProductVariant & { sizes: Size[] };
+
+	// Product price sorting
+	products.sort((a, b) => {
+		// Helper function to get the minimum price from a product's variants
+		const getMinPrice = (product: any) =>
+			Math.min(
+				...product.variants.flatMap((variant: VariantWithSizes) =>
+					variant.sizes.map((size) => {
+						const discount = size.discount;
+						const discountedPrice = size.price * (1 - discount / 100);
+						return discountedPrice;
+					}),
+				),
+				Infinity, // Default to Infinity if no sizes exist
+			);
+
+		// Get minimum prices for both products
+		const minPriceA = getMinPrice(a);
+		const minPriceB = getMinPrice(b);
+
+		// Explicitly check for price sorting conditions
+		if (sortBy === 'price-low-to-high') {
+			return minPriceA - minPriceB; // Ascending order
+		} else if (sortBy === 'price-high-to-low') {
+			return minPriceB - minPriceA; // Descending order
+		}
+
+		// If no price sort option is provided, return 0 (no sorting by price)
+		return 0;
+	});
+
+	// Transform the products with filtered variants into ProductCardType structure
+	const productsWithFilteredVariants = products.map((product) => {
+		// Filter the variants based on the filters
+		const filteredVariants = product.variants;
+
+		// Transform the filtered variants into the VariantSimplified structure
+		const variants: VariantSimplified[] = filteredVariants.map((variant) => ({
+			variantId: variant.id,
+			variantSlug: variant.slug,
+			variantName: variant.variantName,
+			images: variant.images,
+			sizes: variant.sizes,
+		}));
+
+		// Extract variant images for the product
+		const variantImages: VariantImageType[] = filteredVariants.map(
+			(variant) => ({
+				url: `/product/${product.slug}/${variant.slug}`,
+				image: variant.variantImage
+					? variant.variantImage
+					: variant.images[0].url,
+			}),
+		);
+
+		// Return the product in the ProductCardType structure
+		return {
+			id: product.id,
+			slug: product.slug,
+			name: product.name,
+			rating: product.rating,
+			sales: product.sales,
+			numReviews: product.numReviews,
+			variants,
+			variantImages,
+		};
+	});
+
+	/*
+  const totalCount = await db.product.count({
+    where: wherClause,
+  });
+  */
+
+	const totalCount = products.length;
+
+	// Calculate total pages
+	const totalPages = Math.ceil(totalCount / pageSize);
+
+	// Return the paginated data along with metadata
+	return {
+		products: productsWithFilteredVariants,
+		totalPages,
+		currentPage,
+		pageSize,
+		totalCount,
+	};
+};

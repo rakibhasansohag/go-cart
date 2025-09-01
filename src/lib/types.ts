@@ -1,4 +1,10 @@
-import { Prisma, ShippingFeeMethod, ShippingRate } from '@prisma/client';
+import {
+	Prisma,
+	ProductVariantImage,
+	ShippingFeeMethod,
+	ShippingRate,
+	Size,
+} from '@prisma/client';
 import { getAllSubCategories } from '../queries/subCategory';
 import { getAllStoreProducts } from '../queries/product';
 import { getStoreDefaultShippingDetails } from '../queries/store';
@@ -105,4 +111,20 @@ export type CartProductType = {
 	deliveryTimeMin: number;
 	deliveryTimeMax: number;
 	isFreeShipping: boolean;
+};
+
+// Define a local SortOrder type
+export type SortOrder = 'asc' | 'desc';
+
+export type VariantSimplified = {
+	variantId: string;
+	variantSlug: string;
+	variantName: string;
+	images: ProductVariantImage[];
+	sizes: Size[];
+};
+
+export type VariantImageType = {
+	url: string;
+	image: string;
 };
