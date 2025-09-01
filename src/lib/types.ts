@@ -6,7 +6,7 @@ import {
 	Size,
 } from '@prisma/client';
 import { getAllSubCategories } from '../queries/subCategory';
-import { getAllStoreProducts } from '../queries/product';
+import { getAllStoreProducts, getProducts } from '../queries/product';
 import { getStoreDefaultShippingDetails } from '../queries/store';
 import countries from '@/data/countries.json';
 
@@ -128,3 +128,8 @@ export type VariantImageType = {
 	url: string;
 	image: string;
 };
+
+export type ProductType = Prisma.PromiseReturnType<
+	typeof getProducts
+>['products'][0];
+
