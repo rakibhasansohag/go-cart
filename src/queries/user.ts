@@ -83,16 +83,15 @@ export const followStore = async (storeId: string): Promise<boolean> => {
 		});
 		if (!userData) throw new Error('User not found.');
 
-		// TODO: when we added user following store remove the console .log
 		// Check if the user is already following the store
 		const userFollowingStore = await db.user.findFirst({
 			where: {
 				id: user.id,
-				// following: {
-				//   some: {
-				//     id: storeId,
-				//   },
-				// },
+				following: {
+					some: {
+						id: storeId,
+					},
+				},
 			},
 		});
 
@@ -103,9 +102,9 @@ export const followStore = async (storeId: string): Promise<boolean> => {
 					id: storeId,
 				},
 				data: {
-					//   followers: {
-					//     disconnect: { id: userData.id },
-					//   },
+					followers: {
+						disconnect: { id: userData.id },
+					},
 				},
 			});
 			return false;
@@ -116,11 +115,11 @@ export const followStore = async (storeId: string): Promise<boolean> => {
 					id: storeId,
 				},
 				data: {
-					// followers: {
-					// 	connect: {
-					// 		id: userData.id,
-					// 	},
-					// },
+					followers: {
+						connect: {
+							id: userData.id,
+						},
+					},
 				},
 			});
 			return true;

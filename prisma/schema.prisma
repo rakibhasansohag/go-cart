@@ -31,7 +31,8 @@ model User {
   stores Store[] @relation("UserStores")
   shippingAddresses ShippingAddress[] @relation("UserShippingAddresses")
   wishlist          Wishlist[]        @relation("WishlistToUser")
-
+  reviews           Review[]          @relation("ReviewToUser")
+  following         Store[]           @relation("UserFollowingStore")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -96,12 +97,12 @@ model Store {
   defaultShippingFeeFixed             Float       @default(0)
   defaultDeliveryTimeMin              Int         @default(7)
   defaultDeliveryTimeMax              Int         @default(31)
-
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
   userId String
   user   User   @relation("UserStores", fields: [userId], references: [id])
+  followers     User[]         @relation("UserFollowingStore")
 
   products Product[] @relation("StoreToProduct")
   shippingRates ShippingRate[] @relation("StoreShippingRates")
@@ -129,7 +130,7 @@ model Product {
   views                       Int               @default(0)
   freeShippingForAllCountries Boolean           @default(false)
   freeShipping FreeShipping? @relation("ProductFreeShipping")
-
+  reviews   Review[]         @relation("ReviewToProduct")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
@@ -389,4 +390,44 @@ model Wishlist {
   @@index([productId])
   @@index([variantId])
   @@index([sizeId])
+}
+
+model Review {
+  id       String @id @default(uuid())
+  variant  String
+  variantImage String
+  review   String
+  rating   Float
+  color    String
+  size     String
+  quantity String
+  likes    Int    @default(0)
+
+  images ReviewImage[] @relation("ReviewToReviewImage")
+
+  userId String
+  user   User   @relation("ReviewToUser", fields: [userId], references: [id])
+
+  productId String
+  product   Product @relation("ReviewToProduct", fields: [productId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@index([userId])
+  @@index([productId])
+}
+
+model ReviewImage {
+  id  String @id @default(uuid())
+  url String
+  alt String @default("")
+
+  reviewId String
+  review   Review @relation("ReviewToReviewImage", fields: [reviewId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([reviewId])
 }
