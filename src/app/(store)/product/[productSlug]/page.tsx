@@ -17,34 +17,35 @@ export default async function ProductPage({
 	params,
 	searchParams,
 }: {
-	params: { productSlug: string };
-	searchParams: { variant: string };
+	params: { productSlug: string } | Promise<{ productSlug: string }>;
+	searchParams?:
+		| Record<string, string>
+		| Promise<Record<string, string> | undefined>;
 }) {
-	const data = await retrieveProductDetailsOptimized(params.productSlug);
-	const variant = data.variants.find(
-		(v: { slug: string }) => v.slug === searchParams.variant,
-	);
-	const specs = {
-		product: data.specs,
-		variant: variant?.specs,
-	};
+	// await the proxies immediately
+	const awaitedParams = await params;
+	const awaitedSearchParams = await (searchParams ?? {});
 
-	// Get cookies from the store
+	// destructure resolved values
+	const productSlug = awaitedParams.productSlug;
+	const variantSlug = awaitedSearchParams?.variant;
+
+	// now safe to call DB / queries
+	const data = await retrieveProductDetailsOptimized(productSlug);
+
+	// find variant safely
+	const variant = data.variants.find(
+		(v: { slug: string }) => v.slug === variantSlug,
+	);
+
+	const specs = { product: data.specs, variant: variant?.specs };
+
 	const cookieStore = await cookies();
 	const userCountryCookie = cookieStore.get('userCountry');
 
-	// Set default country if cookie is missing
-	let userCountry: Country = {
-		name: 'Bangladesh',
-		city: '',
-		code: 'BD',
-		region: '',
-	};
-
-	// If cookie exists, update the user country
-	if (userCountryCookie) {
+	let userCountry = { name: 'Bangladesh', city: '', code: 'BD', region: '' };
+	if (userCountryCookie)
 		userCountry = JSON.parse(userCountryCookie.value) as Country;
-	}
 
 	const storeData = {
 		id: data.store.id,
@@ -62,7 +63,7 @@ export default async function ProductPage({
 			<div className='p-4 2xl:px-28 overflow-x-hidden mx-auto'>
 				<ProductPageContainer
 					productData={data}
-					variantSlug={searchParams.variant}
+					variantSlug={awaitedSearchParams?.variant ?? ''}
 					userCountry={userCountry}
 				>
 					<>
