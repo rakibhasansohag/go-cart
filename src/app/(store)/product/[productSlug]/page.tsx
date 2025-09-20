@@ -35,9 +35,9 @@ export default async function ProductPage({
 
 	// Set default country if cookie is missing
 	let userCountry: Country = {
-		name: 'United States',
+		name: 'Bangladesh',
 		city: '',
-		code: 'US',
+		code: 'BD',
 		region: '',
 	};
 

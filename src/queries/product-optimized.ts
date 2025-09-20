@@ -92,24 +92,24 @@ export const retrieveProductDetailsOptimized = async (productSlug: string) => {
 
 export const getStoreFollowingInfo = async (storeId: string) => {
 	const user = await currentUser();
-	let isUserFollowingStore = false;
+	// let isUserFollowingStore = false;
 	if (user) {
 		const storeFollowersInfo = await db.store.findUnique({
 			where: {
 				id: storeId,
 			},
 			select: {
-				followers: {
-					where: {
-						id: user.id, // Check if this user is following the store
-					},
-					select: { id: true }, // Select the user id if following
-				},
+				// followers: {
+				// 	where: {
+				// 		id: user.id, // Check if this user is following the store
+				// 	},
+				// 	select: { id: true }, // Select the user id if following
+				// },
 			},
 		});
-		if (storeFollowersInfo && storeFollowersInfo.followers.length > 0) {
-			isUserFollowingStore = true;
-		}
+		// if (storeFollowersInfo && storeFollowersInfo.followers.length > 0) {
+		// 	isUserFollowingStore = true;
+		// }
 	}
 
 	const storeFollowersInfo = await db.store.findUnique({
@@ -119,17 +119,17 @@ export const getStoreFollowingInfo = async (storeId: string) => {
 		select: {
 			_count: {
 				select: {
-					followers: true,
+					// followers: true,
 				},
 			},
 		},
 	});
 
 	return {
-		isUserFollowingStore,
-		followersCount: storeFollowersInfo
-			? storeFollowersInfo._count.followers
-			: 0,
+		// isUserFollowingStore,
+		// followersCount: storeFollowersInfo
+		// 	? storeFollowersInfo._count.followers
+		// : 0,
 	};
 };
 

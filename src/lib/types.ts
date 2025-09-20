@@ -9,8 +9,13 @@ import {
 	Spec,
 } from '@prisma/client';
 import { getAllSubCategories } from '../queries/subCategory';
-import { getAllStoreProducts, getProducts } from '../queries/product';
-import { getStoreDefaultShippingDetails } from '../queries/store';
+import {
+	getAllStoreProducts,
+	getProducts,
+	getShippingDetails,
+	retrieveProductDetails,
+} from '../queries/product';
+import { getStoreDefaultShippingDetails } from '@/queries/store';
 import { retrieveProductDetailsOptimized } from '@/queries/product-optimized';
 
 import countries from '@/data/countries.json';
@@ -177,3 +182,12 @@ export type ShippingDetailsType = {
 export type FreeShippingWithCountriesType = FreeShipping & {
 	eligibaleCountries: FreeShippingCountry[];
 };
+
+export type ProductPageType = Prisma.PromiseReturnType<
+	typeof retrieveProductDetails
+>;
+
+export type ProductShippingDetailsType = Prisma.PromiseReturnType<
+	typeof getShippingDetails
+>;
+
