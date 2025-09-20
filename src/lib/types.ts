@@ -1,13 +1,18 @@
 import {
+	FreeShipping,
+	FreeShippingCountry,
 	Prisma,
 	ProductVariantImage,
 	ShippingFeeMethod,
 	ShippingRate,
 	Size,
+	Spec,
 } from '@prisma/client';
 import { getAllSubCategories } from '../queries/subCategory';
 import { getAllStoreProducts, getProducts } from '../queries/product';
 import { getStoreDefaultShippingDetails } from '../queries/store';
+import { retrieveProductDetailsOptimized } from '@/queries/product-optimized';
+
 import countries from '@/data/countries.json';
 
 export interface DashboardSidebarMenuInterface {
@@ -133,3 +138,42 @@ export type ProductType = Prisma.PromiseReturnType<
 	typeof getProducts
 >['products'][0];
 
+export type ProductDataType = Prisma.PromiseReturnType<
+	typeof retrieveProductDetailsOptimized
+>;
+export type ProductVariantDataType = {
+	id: string;
+	variantName: string;
+	slug: string;
+	sku: string;
+	variantImage: string;
+	weight: number;
+	isSale: boolean;
+	saleEndDate: string | null;
+	variantDescription: string | null;
+	images: {
+		url: string;
+	}[];
+	sizes: Size[];
+	specs: Spec[];
+	colors: { name: string }[];
+	keywords: string;
+};
+
+export type ShippingDetailsType = {
+	countryCode: string;
+	countryName: string;
+	city: string;
+	shippingFeeMethod: string;
+	shippingFee: number;
+	extraShippingFee: number;
+	deliveryTimeMin: number;
+	deliveryTimeMax: number;
+	isFreeShipping: boolean;
+	shippingService: string;
+	returnPolicy: string;
+};
+
+export type FreeShippingWithCountriesType = FreeShipping & {
+	eligibaleCountries: FreeShippingCountry[];
+};
