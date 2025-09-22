@@ -21,8 +21,6 @@ export default function ProductSwiper({
 	// If no images are provided, exit early and don't render anything
 	if (!images) return;
 
-	// Queries
-
 	return (
 		<div className='relative xl:w-[25vw] swiper1700width'>
 			<div className='relative w-full flex flex-col-reverse 2xl:flex-row gap-2'>

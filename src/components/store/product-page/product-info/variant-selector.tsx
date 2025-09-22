@@ -1,73 +1,82 @@
-import { Color } from '@prisma/client';
+'use client';
+import { CartProductType, ProductVariantDataType } from '@/lib/types';
+import { cn } from '@/lib/utils';
+import Image from 'next/image';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { Dispatch, FC, SetStateAction } from 'react';
 
-type ColorWheelProps = {
-	colors: Partial<Color>[];
-	size: number; // Size of the circle in pixels
-};
+interface Props {
+	variants: ProductVariantDataType[];
+	slug: string;
+	setActiveImage: Dispatch<SetStateAction<{ url: string } | null>>;
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	handleChange: (property: keyof CartProductType, value: any) => void;
+	setSizeId: Dispatch<SetStateAction<string>>;
+	setVariant: Dispatch<SetStateAction<ProductVariantDataType>>;
+}
 
-const ColorWheel: React.FC<ColorWheelProps> = ({ colors, size }) => {
-	const numColors = colors.length;
-	const radius = size / 2; // Calculate the radius based on the size
-	const sliceAngle = 360 / numColors; // Calculate the angle for each slice of the wheel
+const ProductVariantSelector: FC<Props> = ({
+	variants,
+	slug,
+	setActiveImage,
+	handleChange,
+	setSizeId,
+	setVariant,
+}) => {
+	const pathname = usePathname();
+	const { replace } = useRouter();
+	const searchParams = useSearchParams();
+	const params = new URLSearchParams(searchParams);
 
+	const handleSelectVariant = (variant: ProductVariantDataType) => {
+		if (variants.length === 1) return;
+		setVariant(variant);
+		setActiveImage(variant.images[0]);
+		if (variant.sizes.length === 1) {
+			setSizeId(variant.sizes[0].id);
+		} else {
+			setSizeId('');
+		}
+		params.set('variant', variant.slug);
+		replace(`${pathname}?${params.toString()}`, {
+			scroll: false,
+		});
+	};
 	return (
-		<svg
-			width={size}
-			height={size}
-			viewBox={`0 0 ${size} ${size}`}
-			className='shadow-md rounded-full'
-		>
-			{colors.map((color, index) => {
-				if (numColors === 1) {
-					// Special case: Only one color, render a full circle
-					return (
-						<circle
-							key={index}
-							cx={radius}
-							cy={radius}
-							r={radius}
-							fill={color.name || 'transparent'}
-							stroke='white'
-							strokeWidth='1'
+		<div className='flex items-center flex-wrap gap-2'>
+			{variants.map((variant, i) => (
+				<div
+					onClick={() => handleSelectVariant(variant)}
+					key={i}
+					onMouseEnter={() => {
+						//  setVariantImages(variant.images);
+						// setActiveImage(variant.images[0]);
+					}}
+					onMouseLeave={() => {
+						//   setVariantImages(activeVariant?.images || []);
+						// setActiveImage(activeVariant?.images[0] || null);
+					}}
+				>
+					<div
+						className={cn(
+							'w-12 h-12 max-h-12 rounded-full grid place-items-center overflow-hidden outline-[1px] outline-transparent outline-dashed outline-offset-2 cursor-pointer transition-all duration-75 ease-in',
+							{
+								'outline-main-primary': slug ? slug === variant.slug : i == 0,
+							},
+						)}
+					>
+						<Image
+							src={variant.variantImage}
+							alt={`product variant `}
+							width={60}
+							height={60}
+							className='w-12 h-12 rounded-full object-cover object-center'
 						/>
-					);
-				}
-
-				const startAngle = index * sliceAngle;
-				const endAngle = startAngle + sliceAngle;
-
-				// Convert angles to radians for calculations
-				const startRadians = (startAngle * Math.PI) / 180;
-				const endRadians = (endAngle * Math.PI) / 180;
-
-				// Calculate start and end points for each slice
-				const x1 = radius + radius * Math.cos(startRadians);
-				const y1 = radius + radius * Math.sin(startRadians);
-				const x2 = radius + radius * Math.cos(endRadians);
-				const y2 = radius + radius * Math.sin(endRadians);
-
-				// Create the arc path for the slice
-				const largeArcFlag = sliceAngle > 180 ? 1 : 0;
-
-				const pathData = `
-          M ${radius},${radius}
-          L ${x1},${y1}
-          A ${radius},${radius} 0 ${largeArcFlag} 1 ${x2},${y2}
-          Z
-        `;
-
-				return (
-					<path
-						key={index}
-						d={pathData}
-						fill={color.name || 'transparent'}
-						stroke='white'
-						strokeWidth='1'
-					/>
-				);
-			})}
-		</svg>
+					</div>
+				</div>
+			))}
+		</div>
 	);
 };
 
-export default ColorWheel;
+export default ProductVariantSelector;

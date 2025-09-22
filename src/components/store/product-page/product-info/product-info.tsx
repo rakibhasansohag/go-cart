@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 import {
 	CartProductType,
@@ -27,6 +26,7 @@ interface Props {
 	quantity: number;
 	sizeId: string | undefined;
 	setSizeId: Dispatch<SetStateAction<string>>;
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	handleChange: (property: keyof CartProductType, value: any) => void;
 	setActiveImage: Dispatch<SetStateAction<{ url: string } | null>>;
 	variantSlug: string;
@@ -143,7 +143,7 @@ const ProductInfo: FC<Props> = ({
 					</span>
 				</div>
 				<div className='mt-4'>
-					{variants?.length > 0 && (
+					{variants.length > 0 && (
 						<ProductVariantSelector
 							variants={variants}
 							slug={variant.slug}
