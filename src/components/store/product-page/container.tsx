@@ -4,7 +4,6 @@ import {
 	Country,
 	ProductDataType,
 	ProductVariantDataType,
-	ShippingDetailsType,
 } from '@/lib/types';
 import { FC, ReactNode, useEffect, useMemo, useState } from 'react';
 import ProductSwiper from './product-swiper';

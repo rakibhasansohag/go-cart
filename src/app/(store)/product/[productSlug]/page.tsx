@@ -6,7 +6,8 @@ import ProductPageContainer from '@/components/store/product-page/container';
 import ProductDescription from '@/components/store/product-page/product-description';
 import ProductQuestions from '@/components/store/product-page/product-questions';
 import ProductSpecs from '@/components/store/product-page/product-specs';
-
+import RelatedProducts from '@/components/store/product-page/related-product';
+import ProductReviews from '@/components/store/product-page/reviews/product-reviews';
 import StoreProducts from '@/components/store/product-page/store-products';
 import { Separator } from '@/components/ui/separator';
 import { Country } from '@/lib/types';
@@ -17,35 +18,32 @@ export default async function ProductPage({
 	params,
 	searchParams,
 }: {
-	params: { productSlug: string } | Promise<{ productSlug: string }>;
-	searchParams?:
-		| Record<string, string>
-		| Promise<Record<string, string> | undefined>;
+	params: { productSlug: string };
+	searchParams: { variant: string };
 }) {
-	// await the proxies immediately
-	const awaitedParams = await params;
-	const awaitedSearchParams = await (searchParams ?? {});
+	const data = await retrieveProductDetailsOptimized(params.productSlug);
+	const variant = data.variants.find((v) => v.slug === searchParams.variant);
+	const specs = {
+		product: data.specs,
+		variant: variant?.specs,
+	};
 
-	// destructure resolved values
-	const productSlug = awaitedParams.productSlug;
-	const variantSlug = awaitedSearchParams?.variant;
-
-	// now safe to call DB / queries
-	const data = await retrieveProductDetailsOptimized(productSlug);
-
-	// find variant safely
-	const variant = data.variants.find(
-		(v: { slug: string }) => v.slug === variantSlug,
-	);
-
-	const specs = { product: data.specs, variant: variant?.specs };
-
+	// Get cookies from the store
 	const cookieStore = await cookies();
-	const userCountryCookie = cookieStore.get('userCountry');
+	const userCountryCookie = await cookieStore.get('userCountry');
 
-	let userCountry = { name: 'Bangladesh', city: '', code: 'BD', region: '' };
-	if (userCountryCookie)
+	// Set default country if cookie is missing
+	let userCountry: Country = {
+		name: 'United States',
+		city: '',
+		code: 'US',
+		region: '',
+	};
+
+	// If cookie exists, update the user country
+	if (userCountryCookie) {
 		userCountry = JSON.parse(userCountryCookie.value) as Country;
+	}
 
 	const storeData = {
 		id: data.store.id,
@@ -63,17 +61,26 @@ export default async function ProductPage({
 			<div className='p-4 2xl:px-28 overflow-x-hidden mx-auto'>
 				<ProductPageContainer
 					productData={data}
-					variantSlug={awaitedSearchParams?.variant ?? ''}
+					variantSlug={searchParams.variant}
 					userCountry={userCountry}
 				>
 					<>
 						<Separator />
 						{/* Related products */}
-						<div className='h-6'></div>
+						<RelatedProducts
+							productId={data.id}
+							categoryId={data.categoryId}
+							subCategoryId={data.subCategoryId}
+						/>
 					</>
 					{/* Product reviews */}
 					<Separator className='mt-6' />
-
+					<ProductReviews
+						productId={data.id}
+						rating={data.rating}
+						variantsInfo={data.variants}
+						numReviews={data._count.reviews}
+					/>
 					<>
 						<Separator className='mt-6' />
 						{/* Product description */}

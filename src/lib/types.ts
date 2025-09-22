@@ -3,10 +3,13 @@ import {
 	FreeShippingCountry,
 	Prisma,
 	ProductVariantImage,
+	Review,
+	ReviewImage,
 	ShippingFeeMethod,
 	ShippingRate,
 	Size,
 	Spec,
+	User,
 } from '@prisma/client';
 import { getAllSubCategories } from '../queries/subCategory';
 import {
@@ -195,3 +198,33 @@ export type ProductShippingDetailsType = Prisma.PromiseReturnType<
 export type RatingStatisticsType = Prisma.PromiseReturnType<
 	typeof getRatingStatistics
 >;
+
+export type ReviewWithImageType = Review & {
+	images: ReviewImage[];
+	user: User;
+};
+
+export type ReviewsFiltersType = {
+	rating?: number;
+	hasImages?: boolean;
+};
+
+export type ReviewsOrderType = {
+	orderBy: 'latest' | 'oldest' | 'highest';
+};
+
+export type StatisticsCardType = Prisma.PromiseReturnType<
+	typeof getRatingStatistics
+>['ratingStatistics'];
+
+export type ReviewDetailsType = {
+	id: string;
+	review: string;
+	rating: number;
+	images: { url: string }[];
+	size: string;
+	quantity: string;
+	variant: string;
+	variantImage: string;
+	color: string;
+};
