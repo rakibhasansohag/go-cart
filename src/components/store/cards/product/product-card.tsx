@@ -1,10 +1,8 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
-
 import { ProductType, VariantSimplified } from '@/lib/types';
 import Link from 'next/link';
 import { useState } from 'react';
-
+import ReactStars from 'react-rating-stars-component';
 import ProductCardImageSwiper from './swiper';
 import VariantSwitcher from './variant-switcher';
 import { cn } from '@/lib/utils';
@@ -13,7 +11,6 @@ import { Heart } from 'lucide-react';
 import ProductPrice from '../../product-page/product-info/product-price';
 import { addToWishlist } from '@/queries/user';
 import { toast } from 'sonner';
-import SimpleStars from '../../ui/SimpleStars';
 
 export default function ProductCard({ product }: { product: ProductType }) {
 	const { name, slug, rating, sales, variantImages, variants, id } = product;
@@ -24,6 +21,7 @@ export default function ProductCard({ product }: { product: ProductType }) {
 		try {
 			const res = await addToWishlist(id, variant.variantId);
 			if (res) toast.success('Product successfully added to wishlist.');
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		} catch (error: any) {
 			toast.error(error.toString());
 		}
@@ -33,7 +31,7 @@ export default function ProductCard({ product }: { product: ProductType }) {
 		<div>
 			<div
 				className={cn(
-					'group w-[190px] min-[480px]:w-[225px] relative transition-all duration-75 bg-accent ease-in-out p-4 rounded-t-3xl border border-transparent hover:shadow-xl hover:border-border',
+					'group w-[190px] min-[480px]:w-[225px] relative transition-all duration-75 bg-secondary ease-in-out p-4 rounded-t-3xl border border-transparent hover:shadow-xl hover:border-border',
 					{
 						'': true,
 					},
@@ -52,11 +50,15 @@ export default function ProductCard({ product }: { product: ProductType }) {
 						</div>
 						{/* Rating - Sales */}
 						{product.rating > 0 && product.sales > 0 && (
-							<div className='flex items-center gap-x-1 '>
-								<SimpleStars
-									value={Number(product.rating) || 0}
-									size={14}
-									className='text-yellow-500'
+							<div className='flex items-center gap-x-1 h-5'>
+								<ReactStars
+									count={5}
+									size={24}
+									color='#F5F5F5'
+									activeColor='#FFD804'
+									value={rating}
+									isHalf
+									edit={false}
 								/>
 								<div className='text-xs text-main-secondary'>{sales} sold</div>
 							</div>
@@ -65,7 +67,7 @@ export default function ProductCard({ product }: { product: ProductType }) {
 						<ProductPrice sizes={sizes} isCard handleChange={() => {}} />
 					</Link>
 				</div>
-				<div className='hidden group-hover:block absolute -left-[1px] bg-accent  border border-t-0  w-[calc(100%+2px)] px-4 pb-4 rounded-b-3xl shadow-xl z-30 space-y-2'>
+				<div className='hidden group-hover:block absolute -left-[1px] bg-secondary border border-t-0  w-[calc(100%+2px)] px-4 pb-4 rounded-b-3xl shadow-xl z-30 space-y-2'>
 					{/* Variant switcher */}
 					<VariantSwitcher
 						images={variantImages}
@@ -75,19 +77,20 @@ export default function ProductCard({ product }: { product: ProductType }) {
 					/>
 					{/* Action buttons */}
 					<div className='flex flex-items gap-x-1'>
-						<Link href={`/product/${slug}/${variantSlug}`} className='w-full'>
-							<Button className='w-full flex-1 border-4 !border-border  text-main-primary dark:hover:bg-border shadow-md'>
+						<Button>
+							<Link
+								className='text-main-primary'
+								href={`/product/${slug}/${variantSlug}`}
+							>
 								Add to cart
-							</Button>
-						</Link>
-
+							</Link>
+						</Button>
 						<Button
 							variant='black'
 							size='icon'
 							onClick={() => handleaddToWishlist()}
-							className=''
 						>
-							<Heart className='w-5' />
+							<Heart className='w-5 text-pink-300' />
 						</Button>
 					</div>
 				</div>

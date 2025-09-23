@@ -178,15 +178,16 @@
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
   --blue-primary: #0D6EFD;
+  
 }
 
 /* Core token values for Tailwind */
 :root {
   --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.129 0.042 264.695);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.129 0.042 264.695);
+  --background: #ffffff;
+  --foreground: #111827;
+  --card: #ffffff;
+  --card-foreground: #111827;
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.129 0.042 264.695);
   --primary: oklch(0.208 0.042 265.755);
@@ -198,9 +199,9 @@
   --accent: oklch(0.968 0.007 247.896);
   --accent-foreground: oklch(0.208 0.042 265.755);
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.929 0.013 255.508);
-  --input: oklch(0.929 0.013 255.508);
-  --ring: oklch(0.704 0.04 256.788);
+  --input: #f3f4f6;
+  --border: #e5e7eb;
+  --ring: rgba(59,130,246,0.6);
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
@@ -232,10 +233,12 @@
 
 /* dark mode variable overrides */
 .dark {
-  --background: oklch(0.129 0.042 264.695);
-  --foreground: oklch(0.984 0.003 247.858);
-  --card: oklch(0.208 0.042 265.755);
-  --card-foreground: oklch(0.984 0.003 247.858);
+  --background: #0b1220;
+  --foreground: #e6e6e6;
+
+   --card: #111827;
+  --card-foreground: #e6e6e6;
+
   --popover: oklch(0.208 0.042 265.755);
   --popover-foreground: oklch(0.984 0.003 247.858);
   --primary: oklch(0.929 0.013 255.508);
@@ -247,9 +250,9 @@
   --accent: oklch(0.279 0.041 260.031);
   --accent-foreground: oklch(0.984 0.003 247.858);
   --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.551 0.027 264.364);
+  --input: #111827;
+  --border: rgba(255,255,255,0.08);
+  --ring: rgba(105,169,255,0.35);
   --chart-1: oklch(0.488 0.243 264.376);
   --chart-2: oklch(0.696 0.17 162.48);
   --chart-3: oklch(0.769 0.188 70.08);
@@ -284,15 +287,21 @@
    @see https://tailwindcss.com/docs/adding-base-styles
 */
 
-:root, .dark {
+:root,
+.dark {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
-  --color-border: var(--border);
   --color-input: var(--input);
+  --color-border: var(--border);
   --color-ring: var(--ring);
-  --color-primary: var(--blue-primary);
+  --color-main-primary: var(--main-primary);
+  --color-main-secondary: var(--main-secondary);
+  --color-orange: var(--orange-background);
+  --color-orange-hover: var(--orange-hover);
+  --color-orange-border: var(--orange-border);
+  --color-blue-primary: var(--blue-primary);
 }
 
 /* -------------------------
@@ -312,12 +321,12 @@
     color: var(--color-foreground);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    font-feature-settings: "ss01" 1;
   }
 
-  
   input, textarea, select, button {
     color: inherit;
-    background-color: transparent;
+    background: transparent;
   }
 }
 
@@ -328,38 +337,38 @@
 ------------------------- */
 @layer utilities {
   /* basic tokens */
-  .bg-background { background-color: var(--color-background) !important; }
-  .text-foreground { color: var(--color-foreground) !important; }
-  .border-border { border-color: var(--color-border) !important; }
-  .bg-input { background-color: var(--color-input) !important; }
-  .text-muted-foreground { color: var(--color-muted-foreground) !important; }
-  .border-orange-border { border-color: var(--orange-border) !important; }
+  .bg-background { background-color: var(--color-background)  }
+  .text-foreground { color: var(--color-foreground)  }
+  .border-border { border-color: var(--color-border)  }
+  .bg-input { background-color: var(--color-input)  }
+  .text-muted-foreground { color: var(--color-muted-foreground)  }
+  .border-orange-border { border-color: var(--orange-border)  }
 
   /* primary / secondary / accent / destructive / muted */
-  .bg-primary { background-color: var(--color-primary) !important; }
-  .text-primary-foreground { color: var(--color-primary-foreground) !important; }
+  .bg-primary { background-color: var(--color-primary)  }
+  .text-primary-foreground { color: var(--color-primary-foreground)  }
 
-  .bg-secondary { background-color: var(--color-secondary) !important; }
-  .text-secondary-foreground { color: var(--color-secondary-foreground) !important; }
+  .bg-secondary { background-color: var(--color-secondary)  }
+  .text-secondary-foreground { color: var(--color-secondary-foreground)  }
 
-  .bg-accent { background-color: var(--color-accent) !important; }
-  .text-accent-foreground { color: var(--color-accent-foreground) !important; }
+  .bg-accent { background-color: var(--color-accent)  }
+  .text-accent-foreground { color: var(--color-accent-foreground)  }
 
-  .bg-destructive { background-color: var(--color-destructive) !important; }
-  .text-destructive-foreground { color: var(--color-destructive-foreground, #fff) !important; }
+  .bg-destructive { background-color: var(--color-destructive)  }
+  .text-destructive-foreground { color: var(--color-destructive-foreground, #fff)  }
 
-  .bg-card { background-color: var(--color-card) !important; }
-  .text-card-foreground { color: var(--color-card-foreground) !important; }
+  .bg-card { background-color: var(--color-card)  }
+  .text-card-foreground { color: var(--color-card-foreground)  }
 
-  .bg-popover { background-color: var(--color-popover) !important; }
-  .text-popover-foreground { color: var(--color-popover-foreground) !important; }
+  .bg-popover { background-color: var(--color-popover)  }
+  .text-popover-foreground { color: var(--color-popover-foreground)  }
 
   /* helper for ring (works with existing tailwind ring utilities) */
   .ring-ring { --tw-ring-color: var(--color-ring); }
 
   /* shortcut for the blue primary */
-  .bg-blue-primary { background-color: var(--blue-primary) !important; }
-  .text-blue-primary { color: var(--blue-primary) !important; }
+  .bg-blue-primary { background-color: var(--blue-primary)  }
+  .text-blue-primary { color: var(--blue-primary)  }
 
   /* small radius helpers using existing radius tokens */
   .rounded-radius-lg { border-radius: var(--radius); }
@@ -368,21 +377,21 @@
 
   /* custom text colors */
   .text-main-primary {
-    color: var(--main-primary) !important;
+    color: var(--main-primary) 
   }
   .text-main-secondary {
-    color: var(--main-secondary) !important;
+    color: var(--main-secondary) 
   }
 
   /* orange family (text variants) */
-  .text-orange-background { color: var(--orange-background) !important; }
-  .text-orange-hover      { color: var(--orange-hover) !important; }
-  .text-orange-primary    { color: var(--orange-primary) !important; }
-  .text-orange-secondary { color: var(--orange-secondary) !important; }
-  .text-orange-border     { color: var(--orange-border) !important; }
+  .text-orange-background { color: var(--orange-background)  }
+  .text-orange-hover      { color: var(--orange-hover)  }
+  .text-orange-primary    { color: var(--orange-primary)  }
+  .text-orange-secondary { color: var(--orange-secondary)  }
+  .text-orange-border     { color: var(--orange-border)  }
 
   /* blue */
-  .text-blue-primary { color: var(--blue-primary) !important; }
+  .text-blue-primary { color: var(--blue-primary)  }
 
   /* a convenient "card" helper */
   .card-surface {

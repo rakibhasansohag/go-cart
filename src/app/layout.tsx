@@ -68,7 +68,7 @@ export const metadata: Metadata = {
 		],
 		type: 'website',
 	},
-	// themeColor: '#10b981',
+	themeColor: '#10b981',
 };
 
 export default function RootLayout({
@@ -87,7 +87,7 @@ export default function RootLayout({
 				>
 					<ThemeProvider
 						attribute='class'
-						defaultTheme='dark'
+						defaultTheme='system'
 						enableSystem
 						disableTransitionOnChange
 					>
