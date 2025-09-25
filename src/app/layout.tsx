@@ -15,7 +15,6 @@ import { ThemeProvider } from 'next-themes';
 import { Toaster } from '@/components/ui/sonner';
 import ModalProvider from '../providers/modal-provider';
 import UploadPreloader from '../providers/UploadProvider';
-import ThemeProviderClient from '../components/shared/ThemeProvider';
 
 // Fonts
 const geistSans = Geist({
@@ -86,12 +85,17 @@ export default function RootLayout({
 				<body
 					className={`${geistSans.variable} ${geistMono.variable} antialiased ${barlowFont.variable} scroll-smooth antialiased`}
 				>
-					<ThemeProviderClient>
+					<ThemeProvider
+						attribute='class'
+						defaultTheme='system'
+						enableSystem
+						disableTransitionOnChange
+					>
 						<main>
 							<ModalProvider>{children}</ModalProvider>
 						</main>
 						<Toaster position='top-right' />
-					</ThemeProviderClient>
+					</ThemeProvider>
 				</body>
 			</html>
 		</ClerkProvider>

@@ -3,9 +3,10 @@ import Header from '@/components/store/layout/header/header';
 import CategoriesHeader from '@/components/store/layout/categories-header/categories-header';
 import Footer from '@/components/store/layout/footer/footer';
 import { getProducts } from '@/queries/product';
-import ProductList from '@/components/store/shared/product-list';
+
 import ThemeToggle from '@/components/shared/theme-toggle';
 import ProductCard from '@/components/store/cards/product/product-card';
+import ThemeTest from '../../components/shared/ThemeTest';
 
 async function HomePage() {
 	const productsData = await getProducts();
@@ -16,11 +17,9 @@ async function HomePage() {
 	return (
 		<>
 			<Header />
-			<ThemeToggle />
 			<CategoriesHeader />
-			<div>
-				<ProductList products={products} title='New Arrivals' arrow />
-			</div>
+			<ThemeToggle />
+			<ThemeTest />
 
 			<div>
 				{/* Header */}
@@ -29,7 +28,7 @@ async function HomePage() {
 					<span>More to love</span>
 					<div className='h-[1px] flex-1 border-t-[2px] border-t-[hsla(0,0%,59.2%,.3)] my-4 mx-[14px]' />
 				</div>
-				<div className='mt-7 bg-white justify-center flex flex-wrap min-[1530px]:grid min-[1530px]:grid-cols-7 p-4 pb-16 rounded-md'>
+				<div className='mt-7 bg-background justify-center flex flex-wrap min-[1530px]:grid min-[1530px]:grid-cols-7 p-4 pb-16 rounded-md'>
 					{products.map((product, i) => (
 						<ProductCard key={i} product={product} />
 					))}

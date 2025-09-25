@@ -1,15 +1,39 @@
 /* Tailwind v4 directives */
 @import "tailwindcss";
 
-/* Core token values for light and dark mode */
+/* Enable dark mode variant */
+@variant dark (.dark &);
+
+/* Define theme tokens */
 @theme {
-  /* Base radius and fonts */
+  /* Standard Tailwind colors for dark: prefix usage */
+  --color-white: #ffffff;
+  --color-black: #000000;
+  --color-transparent: transparent;
+  --color-gray-50: #f9fafb;
+  --color-gray-100: #f3f4f6;
+  --color-gray-200: #e5e7eb;
+  --color-gray-300: #d1d5db;
+  --color-gray-400: #9ca3af;
+  --color-gray-500: #6b7280;
+  --color-gray-600: #4b5563;
+  --color-gray-700: #374151;
+  --color-gray-800: #1f2937;
+  --color-gray-900: #111827;
+  --color-red-500: #ef4444;
+  --color-green-500: #10b981;
+  --color-blue-500: #3b82f6;
+  
+  /* Base tokens */
   --radius: 0.625rem;
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
   --font-barlow: var(--font-barlow);
+}
 
-  /* Light mode colors (default) */
+/* Light mode variables (root default) */
+:root {
+  /* Semantic colors - Light mode */
   --color-background: #ffffff;
   --color-foreground: #111827;
   --color-card: #ffffff;
@@ -30,7 +54,7 @@
   --color-border: #e5e7eb;
   --color-ring: rgba(59,130,246,0.6);
 
-  /* Custom colors for light mode */
+  /* Custom colors - Light mode */
   --color-main-primary: #191919;
   --color-main-secondary: #757575;
   --color-orange-background: #FD384F;
@@ -40,14 +64,14 @@
   --color-orange-border: #ffe6e7;
   --color-blue-primary: #0D6EFD;
 
-  /* Chart colors */
+  /* Chart colors - Light mode */
   --color-chart-1: oklch(0.646 0.222 41.116);
   --color-chart-2: oklch(0.6 0.118 184.704);
   --color-chart-3: oklch(0.398 0.07 227.392);
   --color-chart-4: oklch(0.828 0.189 84.429);
   --color-chart-5: oklch(0.769 0.188 70.08);
 
-  /* Sidebar colors */
+  /* Sidebar colors - Light mode */
   --color-sidebar: oklch(0.984 0.003 247.858);
   --color-sidebar-foreground: oklch(0.129 0.042 264.695);
   --color-sidebar-primary: oklch(0.208 0.042 265.755);
@@ -56,16 +80,11 @@
   --color-sidebar-accent-foreground: oklch(0.208 0.042 265.755);
   --color-sidebar-border: oklch(0.929 0.013 255.508);
   --color-sidebar-ring: oklch(0.704 0.04 256.788);
-
-  /* Radius tokens */
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
 }
 
 /* Dark mode overrides */
-@theme dark {
+:root.dark {
+  /* Semantic colors - Dark mode */
   --color-background: #0b1220;
   --color-foreground: #e6e6e6;
   --color-card: #111827;
@@ -86,7 +105,7 @@
   --color-border: rgba(255,255,255,0.08);
   --color-ring: rgba(105,169,255,0.35);
 
-  /* Custom colors for dark mode */
+  /* Custom colors - Dark mode */
   --color-main-primary: #e6e6e6;
   --color-main-secondary: #bdbdbd;
   --color-orange-background: #ff7b84;
@@ -96,14 +115,14 @@
   --color-orange-border: #eeeeee;
   --color-blue-primary: #69a9ff;
 
-  /* Chart colors for dark mode */
+  /* Chart colors - Dark mode */
   --color-chart-1: oklch(0.488 0.243 264.376);
   --color-chart-2: oklch(0.696 0.17 162.48);
   --color-chart-3: oklch(0.769 0.188 70.08);
   --color-chart-4: oklch(0.627 0.265 303.9);
   --color-chart-5: oklch(0.645 0.246 16.439);
 
-  /* Sidebar colors for dark mode */
+  /* Sidebar colors - Dark mode */
   --color-sidebar: oklch(0.208 0.042 265.755);
   --color-sidebar-foreground: oklch(0.984 0.003 247.858);
   --color-sidebar-primary: oklch(0.488 0.243 264.376);
@@ -124,6 +143,18 @@
     height: 100%;
   }
 
+  html {
+    /* Force light mode colors as default */
+    background-color: #ffffff;
+    color: #111827;
+  }
+
+  html.dark {
+    /* Dark mode override */
+    background-color: #0b1220;
+    color: #e6e6e6;
+  }
+
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
@@ -140,9 +171,36 @@
 
 /* Utilities: custom classes */
 @layer utilities {
-  /* Basic semantic colors */
-  .bg-background { background-color: var(--color-background); }
-  .text-foreground { color: var(--color-foreground); }
+  /* Standard Tailwind color utilities */
+  .text-white { color: var(--color-white); }
+  .text-black { color: var(--color-black); }
+  .bg-white { background-color: var(--color-white); }
+  .bg-black { background-color: var(--color-black); }
+  .text-gray-50 { color: var(--color-gray-50); }
+  .text-gray-100 { color: var(--color-gray-100); }
+  .text-gray-200 { color: var(--color-gray-200); }
+  .text-gray-300 { color: var(--color-gray-300); }
+  .text-gray-400 { color: var(--color-gray-400); }
+  .text-gray-500 { color: var(--color-gray-500); }
+  .text-gray-600 { color: var(--color-gray-600); }
+  .text-gray-700 { color: var(--color-gray-700); }
+  .text-gray-800 { color: var(--color-gray-800); }
+  .text-gray-900 { color: var(--color-gray-900); }
+  .bg-gray-50 { background-color: var(--color-gray-50); }
+  .bg-gray-100 { background-color: var(--color-gray-100); }
+  .bg-gray-200 { background-color: var(--color-gray-200); }
+  .bg-gray-800 { background-color: var(--color-gray-800); }
+  .bg-gray-900 { background-color: var(--color-gray-900); }
+  .text-red-500 { color: var(--color-red-500); }
+  .text-green-500 { color: var(--color-green-500); }
+  .text-blue-500 { color: var(--color-blue-500); }
+  .bg-red-500 { background-color: var(--color-red-500); }
+  .bg-green-500 { background-color: var(--color-green-500); }
+  .bg-blue-500 { background-color: var(--color-blue-500); }
+
+  /* Basic semantic colors with !important for specificity */
+  .bg-background { background-color: var(--color-background) !important; }
+  .text-foreground { color: var(--color-foreground) !important; }
   .border-border { border-color: var(--color-border); }
   .bg-input { background-color: var(--color-input); }
   .text-muted-foreground { color: var(--color-muted-foreground); }
@@ -235,138 +293,6 @@
   }
 }
 
-/* ERROR IF the application breaks for ui we will use this  */
-/* ***
-***
-***
-** V1 code that doesn't work some colors
-@import "tailwindcss";
-@import "tw-animate-css";
-
-@custom-variant dark (&:is(.dark *));
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-  --font-barlowFont: var(--font-barlow);
-  --color-sidebar-ring: var(--sidebar-ring);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar: var(--sidebar);
-  --color-chart-5: var(--chart-5);
-  --color-chart-4: var(--chart-4);
-  --color-chart-3: var(--chart-3);
-  --color-chart-2: var(--chart-2);
-  --color-chart-1: var(--chart-1);
-  --color-ring: var(--ring);
-  --color-input: var(--input);
-  --color-border: var(--border);
-  --color-destructive: var(--destructive);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-accent: var(--accent);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-muted: var(--muted);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-secondary: var(--secondary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-primary: var(--primary);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-popover: var(--popover);
-  --color-card-foreground: var(--card-foreground);
-  --color-card: var(--card);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-  --blue-primary: "#0D6EFD";
-}
-
-:root {
-  --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.129 0.042 264.695);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.129 0.042 264.695);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.129 0.042 264.695);
-  --primary: oklch(0.208 0.042 265.755);
-  --primary-foreground: oklch(0.984 0.003 247.858);
-  --secondary: oklch(0.968 0.007 247.896);
-  --secondary-foreground: oklch(0.208 0.042 265.755);
-  --muted: oklch(0.968 0.007 247.896);
-  --muted-foreground: oklch(0.554 0.046 257.417);
-  --accent: oklch(0.968 0.007 247.896);
-  --accent-foreground: oklch(0.208 0.042 265.755);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.929 0.013 255.508);
-  --input: oklch(0.929 0.013 255.508);
-  --ring: oklch(0.704 0.04 256.788);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.984 0.003 247.858);
-  --sidebar-foreground: oklch(0.129 0.042 264.695);
-  --sidebar-primary: oklch(0.208 0.042 265.755);
-  --sidebar-primary-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-accent: oklch(0.968 0.007 247.896);
-  --sidebar-accent-foreground: oklch(0.208 0.042 265.755);
-  --sidebar-border: oklch(0.929 0.013 255.508);
-  --sidebar-ring: oklch(0.704 0.04 256.788);
-  --blue-primary: '#0D6EFD';
-}
-
-.dark {
-  --background: oklch(0.129 0.042 264.695);
-  --foreground: oklch(0.984 0.003 247.858);
-  --card: oklch(0.208 0.042 265.755);
-  --card-foreground: oklch(0.984 0.003 247.858);
-  --popover: oklch(0.208 0.042 265.755);
-  --popover-foreground: oklch(0.984 0.003 247.858);
-  --primary: oklch(0.929 0.013 255.508);
-  --primary-foreground: oklch(0.208 0.042 265.755);
-  --secondary: oklch(0.279 0.041 260.031);
-  --secondary-foreground: oklch(0.984 0.003 247.858);
-  --muted: oklch(0.279 0.041 260.031);
-  --muted-foreground: oklch(0.704 0.04 256.788);
-  --accent: oklch(0.279 0.041 260.031);
-  --accent-foreground: oklch(0.984 0.003 247.858);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.551 0.027 264.364);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.208 0.042 265.755);
-  --sidebar-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-accent: oklch(0.279 0.041 260.031);
-  --sidebar-accent-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.551 0.027 264.364);
-  
-}
-
-@layer base {
-  * {
-    @apply border-border outline-ring/50;
-  }
-  body {
-    @apply bg-background text-foreground;
-  }
-} 
-*/
 
 
 
