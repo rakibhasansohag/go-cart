@@ -158,7 +158,7 @@ const ProductInfo: FC<Props> = ({
 			{/* Size selector */}
 			<div className='space-y-2 pb-2 mt-4'>
 				<div>
-					<h1 className='text-main-primary font-bold'>Size </h1>
+					<h1 className='text-black dark:text-white font-bold'>Size </h1>
 				</div>
 				<SizeSelector
 					sizes={variant.sizes}
