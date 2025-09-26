@@ -125,7 +125,7 @@ const ShippingDetails: FC<Props> = ({
 				)}
 				<div
 					onClick={() => setToggle((prev) => !prev)}
-					className='max-w-[calc(100%-2rem)] ml-4 flex items-center bg-gray-100 hover:bg-gray-200 h-5 cursor-pointer'
+					className='max-w-[calc(100%-2rem)] ml-4 flex items-center bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 h-5 cursor-pointer'
 				>
 					<div className='w-full flex items-center justify-between gap-x-1 px-2'>
 						<span className='text-xs'>

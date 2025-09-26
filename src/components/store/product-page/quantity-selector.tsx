@@ -64,10 +64,12 @@ const QuantitySelector: FC<QuantitySelectorProps> = ({
 	};
 
 	return (
-		<div className='w-full py-2 px-3 bg-white border border-gray-200 rounded-lg'>
+		<div className='w-full py-2 px-3 bg-accent border border-gray-200 rounded-lg'>
 			<div className='w-full flex justify-between items-center gap-x-5'>
 				<div className='grow'>
-					<span className='block text-xs text-gray-500'>Select quantity</span>
+					<span className='block text-xs text-gray-500 dark:text-white'>
+						Select quantity
+					</span>
 					<span className='block text-xs text-gray-500'>
 						{maxQty !== stock &&
 							`(You already have ${
@@ -76,7 +78,7 @@ const QuantitySelector: FC<QuantitySelectorProps> = ({
 					</span>
 					<input
 						type='number'
-						className='w-full p-0 bg-transparent border-0 focus:outline-0 text-gray-800'
+						className='w-full p-0 bg-transparent border-0 focus:outline-0 text-gray-800 dark:text-white'
 						min={1}
 						value={maxQty <= 0 ? 0 : quantity}
 						max={maxQty}
@@ -85,14 +87,15 @@ const QuantitySelector: FC<QuantitySelectorProps> = ({
 				</div>
 				<div className='flex justify-end items-center gap-x-1.5'>
 					<button
-						className='size-6 inline-flex justify-center items-center gap-x-2 text-sm font-medium rounded-full border border-gray-200 bg-white shadow-sm focus:outline-none focus:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none'
+						className='size-6 inline-flex justify-center items-center gap-x-2 text-sm font-medium rounded-full border border-gray-200 bg-white text-gray-800 shadow-sm focus:outline-none focus:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700 dark:focus:bg-gray-700  disabled:opacity-50 disabled:pointer-events-none disabled:cursor-not-allowed'
 						onClick={handleDecrease}
 						disabled={quantity === 1}
 					>
 						<Minus className='w-3' />
 					</button>
+
 					<button
-						className='size-6 inline-flex justify-center items-center gap-x-2 text-sm font-medium rounded-full border border-gray-200 bg-white shadow-sm focus:outline-none focus:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none'
+						className='size-6 inline-flex justify-center items-center gap-x-2 text-sm font-medium rounded-full border border-gray-200 bg-white text-gray-800 shadow-sm focus:outline-none focus:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700 dark:focus:bg-gray-700 disabled:opacity-50 disabled:pointer-events-none disabled:cursor-not-allowed'
 						onClick={handleIncrease}
 						disabled={quantity === stock}
 					>

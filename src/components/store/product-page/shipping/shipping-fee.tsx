@@ -46,10 +46,10 @@ const ProductShippingFee: FC<Props> = ({
 									className='grid gap-x-1 text-xs px-4'
 									style={{ gridTemplateColumns: '4fr 1fr' }}
 								>
-									<td className='w-full bg-gray-50 px-2 py-0.5 rounded-sm'>
+									<td className='w-full bg-gray-50 dark:bg-gray-700 px-2 py-0.5 rounded-sm'>
 										Fee per item
 									</td>
-									<td className='w-full bg-gray-50 px-2 py-0.5 rounded-sm'>
+									<td className='w-full bg-gray-50 dark:bg-gray-700 px-2 py-0.5 rounded-sm'>
 										${fee}
 									</td>
 								</tr>
@@ -59,10 +59,10 @@ const ProductShippingFee: FC<Props> = ({
 										className='grid gap-x-1 text-xs px-4'
 										style={{ gridTemplateColumns: '4fr 1fr' }}
 									>
-										<td className='w-full bg-gray-50 px-2 py-0.5 rounded-sm'>
+										<td className='w-full bg-gray-50 dark:bg-gray-700 px-2 py-0.5 rounded-sm'>
 											Fee for First Item
 										</td>
-										<td className='w-full bg-gray-50 px-2 py-0.5 rounded-sm'>
+										<td className='w-full bg-gray-50 dark:bg-gray-700 px-2 py-0.5 rounded-sm'>
 											${fee}
 										</td>
 									</tr>
@@ -71,10 +71,10 @@ const ProductShippingFee: FC<Props> = ({
 										className='grid gap-x-1 text-xs px-4'
 										style={{ gridTemplateColumns: '4fr 1fr' }}
 									>
-										<td className='w-full bg-gray-50 px-2 py-0.5 rounded-sm'>
+										<td className='w-full bg-gray-50 dark:bg-gray-700 px-2 py-0.5 rounded-sm'>
 											Fee for Each Additional Item
 										</td>
-										<td className='w-full bg-gray-50 px-2 py-0.5 rounded-sm '>
+										<td className='w-full bg-gray-50 dark:bg-gray-700 px-2 py-0.5 rounded-sm '>
 											${extraFee}
 										</td>
 									</tr>
@@ -86,11 +86,15 @@ const ProductShippingFee: FC<Props> = ({
 								className='grid gap-x-1 text-xs px-4 mt-1'
 								style={{ gridTemplateColumns: '4fr 1fr' }}
 							>
-								<td className='w-full bg-gray-50 px-2 py-0.5 '>Quantity</td>
-								<td className='w-full bg-gray-50 px-2 py-0.5 '>x{quantity}</td>
+								<td className='w-full bg-gray-50 dark:bg-gray-700 px-2 py-0.5 '>
+									Quantity
+								</td>
+								<td className='w-full bg-gray-50 dark:bg-gray-700 px-2 py-0.5 '>
+									x{quantity}
+								</td>
 							</tr>
 							<tr className='flex gap-x-1 text-xs px-4 mt-1 text-center font-semibold'>
-								<td className='w-full bg-black text-white px-1 py-1'>
+								<td className='w-full bg-black dark:bg-slate-700 text-white px-1 py-1'>
 									{quantity === 1 || fee === extraFee ? (
 										<span>
 											${fee} (fee) x {quantity} (items) = ${fee * quantity}
@@ -126,10 +130,10 @@ const ProductShippingFee: FC<Props> = ({
 								className='grid gap-x-1 text-xs px-4'
 								style={{ gridTemplateColumns: '4fr 1fr' }}
 							>
-								<td className='w-full bg-gray-50 px-2 py-0.5 rounded-sm'>
+								<td className='w-full bg-gray-50 dark:bg-gray-700 px-2 py-0.5 rounded-sm'>
 									Fee per kg (1kg = 2,205lbs)
 								</td>
-								<td className='w-full bg-gray-50 px-2 py-0.5 rounded-sm'>
+								<td className='w-full bg-gray-50 dark:bg-gray-700 px-2 py-0.5 rounded-sm'>
 									${fee}
 								</td>
 							</tr>
@@ -139,18 +143,18 @@ const ProductShippingFee: FC<Props> = ({
 								className='grid gap-x-1 text-xs px-4 mt-1'
 								style={{ gridTemplateColumns: '4fr 1fr' }}
 							>
-								<td className='w-full bg-gray-50 px-2 py-0.5 '>Quantity</td>
-								<td className='w-full bg-gray-50 px-2 py-0.5 '>x{quantity}</td>
+								<td className='w-full bg-gray-50 dark:bg-gray-700 px-2 py-0.5 '>Quantity</td>
+								<td className='w-full bg-gray-50 dark:bg-gray-700 px-2 py-0.5 '>x{quantity}</td>
 							</tr>
 							<tr
 								className='grid gap-x-1 text-xs px-4 mt-1'
 								style={{ gridTemplateColumns: '4fr 1fr' }}
 							>
-								<td className='w-full bg-gray-50 px-2 py-0.5 '>Weight</td>
-								<td className='w-full bg-gray-50 px-2 py-0.5 '>{weight}kg</td>
+								<td className='w-full bg-gray-50 dark:bg-gray-700 px-2 py-0.5 '>Weight</td>
+								<td className='w-full bg-gray-50 dark:bg-gray-700 px-2 py-0.5 '>{weight}kg</td>
 							</tr>
 							<tr className='flex gap-x-1 text-xs px-4 mt-1 text-center font-semibold'>
-								<td className='w-full bg-black text-white px-1 py-1'>
+								<td className='w-full bg-black dark:bg-slate-700 text-white px-1 py-1'>
 									<span>
 										${fee} (fee) x {weight}kg (weight) x {quantity} (items) = $
 										{(fee * weight * quantity).toFixed(2)}
@@ -180,10 +184,10 @@ const ProductShippingFee: FC<Props> = ({
 								className='grid gap-x-1 text-xs px-4'
 								style={{ gridTemplateColumns: '4fr 1fr' }}
 							>
-								<td className='w-full bg-gray-50 px-2 py-0.5 rounded-sm'>
+								<td className='w-full bg-gray-50 dark:bg-gray-700 px-2 py-0.5 rounded-sm'>
 									Fee
 								</td>
-								<td className='w-full bg-gray-50 px-2 py-0.5 rounded-sm'>
+								<td className='w-full bg-gray-50 dark:bg-gray-700 px-2 py-0.5 rounded-sm'>
 									${fee}
 								</td>
 							</tr>
@@ -193,11 +197,11 @@ const ProductShippingFee: FC<Props> = ({
 								className='grid gap-x-1 text-xs px-4 mt-1'
 								style={{ gridTemplateColumns: '4fr 1fr' }}
 							>
-								<td className='w-full bg-gray-50 px-2 py-0.5 '>Quantity</td>
-								<td className='w-full bg-gray-50 px-2 py-0.5 '>x{quantity}</td>
+								<td className='w-full bg-gray-50 dark:bg-gray-700 px-2 py-0.5 '>Quantity</td>
+								<td className='w-full bg-gray-50 dark:bg-gray-700 px-2 py-0.5 '>x{quantity}</td>
 							</tr>
 							<tr className='flex gap-x-1 text-xs px-4 mt-1 text-center font-semibold'>
-								<td className='w-full bg-black text-white px-1 py-1'>
+								<td className='w-full bg-black dark:bg-slate-700 text-white px-1 py-1'>
 									<span>
 										${fee} (quantity doesn&apos;t affect shipping fee.)
 									</span>

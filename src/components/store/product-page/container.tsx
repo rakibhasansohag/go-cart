@@ -249,7 +249,7 @@ const ProductPageContainer: FC<Props> = ({
 					/>
 					{/* Shipping details - buy actions buttons */}
 					<div
-						className={`w-full lg:w-[390px] ${
+						className={`w-full dark:bg-background lg:w-[390px] ${
 							isFixed
 								? `lg:fixed lg:top-2 transition-all duration-300 transform` // Removed hardcoded `left` value
 								: 'relative'

@@ -129,6 +129,7 @@ const ProductInfo: FC<Props> = ({
 					</div>
 				)}
 			</div>
+
 			{/* Product live watchers count */}
 			<div>
 				<ProductWatch productId={productData.id} />
@@ -172,7 +173,7 @@ const ProductInfo: FC<Props> = ({
 			<ProductAssurancePolicy />
 			<Separator className='mt-2' />
 			<div className='mt-2 flex flex-wrap gap-2'>
-				{variant.keywords.split(',').map((k) => (
+				{Array.from(new Set(variant.keywords.split(','))).map((k) => (
 					<span
 						key={k}
 						className='bg-gray-50 rounded-full px-3 py-1 text-sm text-main-secondary'

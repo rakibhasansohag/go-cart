@@ -87,7 +87,7 @@ export default function ProductPageActions({
 		push('/cart');
 	};
 	return (
-		<div className='bg-white border rounded-md overflow-hidden overflow-y-auto p-4 pb-0'>
+		<div className='bg-background border rounded-md overflow-hidden overflow-y-auto p-4 pb-0'>
 			<>
 				<ShipTo
 					countryCode={userCountry.code}
@@ -108,7 +108,7 @@ export default function ProductPageActions({
 					loading={loading}
 				/>
 			</>
-			<div className='mt-5 bg-white bottom-0 pb-4 space-y-3 sticky'>
+			<div className='mt-5 bg-background bottom-0 pb-4 space-y-3 sticky'>
 				{sizeId && (
 					<div className='w-full flex justify-end mt-4'>
 						<QuantitySelector
