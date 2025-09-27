@@ -136,7 +136,7 @@ export default function ReviewDetails({
 
 	return (
 		<div>
-			<div className='p-4 bg-[#f5f5f5] rounded-xl'>
+			<div className='p-4 bg-f5 rounded-xl'>
 				<Form {...form}>
 					<form onSubmit={form.handleSubmit(handleSubmit)}>
 						<div className='flex flex-col space-y-4'>

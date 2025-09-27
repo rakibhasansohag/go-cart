@@ -41,7 +41,7 @@ export default function CategoriesMenu({
 					className={cn(
 						'w-12 xl:w-[256px] h-12 rounded-full -translate-y-1 xl:translate-y-0 xl:h-11 bg-[#535353] text-white text-[20px] relative flex items-center cursor-pointer transition-all duration-100 ease-in-out',
 						{
-							'w-[256px] bg-[#f5f5f5] text-black text-base rounded-t-[20px] rounded-b-none scale-100':
+							'w-[256px] bg-f5 text-black text-base rounded-t-[20px] rounded-b-none scale-100':
 								open,
 							'scale-75': !open,
 						},
@@ -72,7 +72,7 @@ export default function CategoriesMenu({
 				{/* Dropdown */}
 				<ul
 					className={cn(
-						'absolute top-10 left-0 w-[256px] bg-[#f5f5f5] shadow-lg transition-all duration-100 ease-in-out scrollbar overflow-y-auto',
+						'absolute top-10 left-0 w-[256px] bg-f5 shadow-lg transition-all duration-100 ease-in-out scrollbar overflow-y-auto',
 						{
 							'max-h-[523px] opacity-100': dropdownVisible, // Show dropdown
 							'max-h-0 opacity-0': !dropdownVisible, // Hide dropdown

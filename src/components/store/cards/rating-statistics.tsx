@@ -9,7 +9,7 @@ export default function RatingStatisticsCard({
 }) {
 	return (
 		<div className='w-full h-44 flex-1'>
-			<div className='py-5 px-7 bg-[#f5f5f5] flex flex-col gap-y-2 h-full justify-center overflow-hidden rounded-lg'>
+			<div className='py-5 px-7 bg-f5 flex flex-col gap-y-2 h-full justify-center overflow-hidden rounded-lg'>
 				{statistics
 					.slice()
 					.reverse()

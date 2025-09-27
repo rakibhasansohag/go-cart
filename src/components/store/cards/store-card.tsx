@@ -49,20 +49,20 @@ const StoreCard: FC<Props> = ({ store, checkForFollowing }) => {
 			setFollowing(res);
 			if (res) {
 				setStoreFollowersCount((prev) => prev + 1);
-				// toast.success(`You are now following ${name}`);
+				toast.success(`You are now following ${name}`);
 			}
 			if (!res) {
 				setStoreFollowersCount((prev) => prev - 1);
-				// toast.success(`You unfollowed ${name}`);
+				toast.success(`You unfollowed ${name}`);
 			}
 			// eslint-disable-next-line @typescript-eslint/no-unused-vars
 		} catch (error) {
-			toast.error('Something happend, Try again later !');
+			toast.error('Something happened, Try again later !');
 		}
 	};
 	return (
 		<div className='w-full'>
-			<div className='bg-[#f5f5f5] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-5 rounded-xl py-3 px-4'>
+			<div className='bg-f5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-5 rounded-xl py-3 px-4'>
 				<div className='flex'>
 					<Link href={`/store/${url}`}>
 						<Image

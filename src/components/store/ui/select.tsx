@@ -37,7 +37,7 @@ const Select: FC<Props> = ({
 	return (
 		<div className='relative min-w-48 w-full z-50'>
 			<div>
-				<div className='relative'>
+				<div className='relative border border-[#11BE86] rounded-xl'>
 					{activeVariant?.image && (
 						<Image
 							src={activeVariant.image}
@@ -65,7 +65,7 @@ const Select: FC<Props> = ({
 				</div>
 			</div>
 			{isOpen && (
-				<div className='absolute top-16 w-full left-0 rounded-xl border  p-4 bg-white shadow-lg'>
+				<div className='absolute top-16 w-full left-0 rounded-xl border border-[#11BE86] p-4 bg-background shadow-lg'>
 					<p className='font-semibold text-xs text-[#5D5D5F]'>
 						{subPlaceholder}
 					</p>

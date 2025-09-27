@@ -53,7 +53,7 @@ export default function ProductPageReviewsSkeletonLoader({
 						{ratingStatistics.map((r) => (
 							<div
 								key={r.index}
-								className='bg-[#f5f5f5] text-main-primary border border-transparent rounded-full cursor-pointer py-1.5 px-4'
+								className='bg-f5 text-main-primary border border-transparent rounded-full cursor-pointer py-1.5 px-4'
 							>
 								<ForkedContentLoader
 									height={25}
