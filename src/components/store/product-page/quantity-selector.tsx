@@ -3,7 +3,7 @@ import useFromStore from '@/hooks/useFromStore';
 import { CartProductType } from '@/lib/types';
 import { Size } from '@prisma/client';
 import { Minus, Plus } from 'lucide-react';
-import { FC, useEffect, useMemo } from 'react';
+import { FC, useEffect } from 'react';
 
 interface QuantitySelectorProps {
 	productId: string;

@@ -248,6 +248,7 @@
   .text-orange-secondary { color: var(--color-orange-secondary); }
   .border-orange-border { border-color: var(--color-orange-border); }
   .text-orange-border { color: var(--color-orange-border); }
+  .bg-orange-border { background-color: var(--color-orange-border); }
 
   /* Blue primary */
   .bg-blue-primary { background-color: var(--color-blue-primary); }
@@ -290,6 +291,9 @@
     color: var(--color-card-foreground);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-lg);
+  }
+  .ease-bezier-1 {
+    transition-timing-function: cubic-bezier(0.645, .045, .355, 1);
   }
 }
 

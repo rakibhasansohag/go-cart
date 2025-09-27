@@ -25,7 +25,7 @@ const SocialShare: FC<Props> = ({ url, quote, isCol }) => {
 				'flex-col': isCol,
 			})}
 		>
-			<FacebookShareButton url={url} quote={quote} hashtag='#GoShop'>
+			<FacebookShareButton url={url} quote={quote} hashtag='#GoCart'>
 				<FacebookIcon size={32} round />
 			</FacebookShareButton>
 			<TwitterShareButton url={url} title={quote}>
