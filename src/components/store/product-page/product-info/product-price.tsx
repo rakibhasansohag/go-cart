@@ -103,7 +103,7 @@ const ProductPrice: FC<Props> = ({
 					</span>
 				)}
 				{selectedSize.discount > 0 && (
-					<span className='inline-block text-orange-seconadry text-xl leading-6'>
+					<span className='inline-block text-orange-secondary text-xl leading-6'>
 						{selectedSize.discount}% off
 					</span>
 				)}

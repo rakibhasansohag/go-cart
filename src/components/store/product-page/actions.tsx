@@ -108,6 +108,7 @@ export default function ProductPageActions({
 					loading={loading}
 				/>
 			</>
+
 			<div className='mt-5 bg-background bottom-0 pb-4 space-y-3 sticky'>
 				{sizeId && (
 					<div className='w-full flex justify-end mt-4'>

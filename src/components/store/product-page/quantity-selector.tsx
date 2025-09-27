@@ -74,7 +74,7 @@ const QuantitySelector: FC<QuantitySelectorProps> = ({
 						{maxQty !== stock &&
 							`(You already have ${
 								stock - maxQty
-							} pieces of this product in cart)`}
+							} more of this product in cart)`}
 					</span>
 					<input
 						type='number'
@@ -87,7 +87,7 @@ const QuantitySelector: FC<QuantitySelectorProps> = ({
 				</div>
 				<div className='flex justify-end items-center gap-x-1.5'>
 					<button
-						className='size-6 inline-flex justify-center items-center gap-x-2 text-sm font-medium rounded-full border border-gray-200 bg-white text-gray-800 shadow-sm focus:outline-none focus:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700 dark:focus:bg-gray-700  disabled:opacity-50 disabled:pointer-events-none disabled:cursor-not-allowed'
+						className='size-6 inline-flex justify-center items-center gap-x-2 text-sm font-medium rounded-full border border-gray-200 bg-white text-gray-800 shadow-sm focus:outline-none focus:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700 dark:focus:bg-gray-700  disabled:opacity-50 disabled:pointer-events-none disabled:cursor-not-allowed cursor-pointer'
 						onClick={handleDecrease}
 						disabled={quantity === 1}
 					>
@@ -95,7 +95,7 @@ const QuantitySelector: FC<QuantitySelectorProps> = ({
 					</button>
 
 					<button
-						className='size-6 inline-flex justify-center items-center gap-x-2 text-sm font-medium rounded-full border border-gray-200 bg-white text-gray-800 shadow-sm focus:outline-none focus:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700 dark:focus:bg-gray-700 disabled:opacity-50 disabled:pointer-events-none disabled:cursor-not-allowed'
+						className='size-6 inline-flex justify-center items-center gap-x-2 text-sm font-medium rounded-full border border-gray-200 bg-white text-gray-800 shadow-sm focus:outline-none focus:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700 dark:focus:bg-gray-700 disabled:opacity-50 disabled:pointer-events-none disabled:cursor-not-allowed cursor-pointer'
 						onClick={handleIncrease}
 						disabled={quantity === stock}
 					>
