@@ -952,7 +952,7 @@ export const checkIfUserFollowingStore = async (
 
 	return isUserFollowingStore;
 };
-
+  
 export const getRatingStatistics = async (productId: string) => {
 	const ratingStats = await db.review.groupBy({
 		by: ['rating'],

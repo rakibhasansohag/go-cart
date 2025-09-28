@@ -1,6 +1,6 @@
 'use client';
 import { StatisticsCardType } from '@/lib/types';
-import ReactStars from 'react-rating-stars-component';
+import StarRating from '@/components/StarRating';
 
 export default function RatingStatisticsCard({
 	statistics,
@@ -15,11 +15,12 @@ export default function RatingStatisticsCard({
 					.reverse()
 					.map((rating) => (
 						<div key={rating.rating} className='flex items-center h-4'>
-							<ReactStars
+							<StarRating
 								count={5}
 								value={rating.rating}
 								size={15}
 								color='#e2dfdf'
+								activeColor='#FFD804'
 								isHalf
 								edit={false}
 							/>

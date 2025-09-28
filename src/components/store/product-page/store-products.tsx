@@ -35,8 +35,8 @@ const StoreProducts: FC<Props> = ({ storeUrl, count, storeName }) => {
 			{/* Title */}
 			<div className='h-12'>
 				<h2 className='text-main-primary text-2xl font-bold'>
-					Recommended from Global Goods Marketplace
-					<ChevronRight className='w-3 inline-block' />
+					Recommended from {storeName}
+					<ChevronRight className='w-5 inline-block' />
 				</h2>
 			</div>
 			{/* Products */}

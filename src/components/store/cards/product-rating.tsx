@@ -1,5 +1,5 @@
 'use client';
-import ReactStars from 'react-rating-stars-component';
+import StarRating from '@/components/StarRating';
 
 export default function RatingCard({ rating }: { rating: number }) {
 	const fixed_rating = Number(rating.toFixed(2));
@@ -8,11 +8,12 @@ export default function RatingCard({ rating }: { rating: number }) {
 			<div className='p-6 bg-f5 flex flex-col h-full justify-center overflow-hidden rounded-lg'>
 				<div className='text-6xl font-bold'>{rating}</div>
 				<div className='py-1.5'>
-					<ReactStars
+					<StarRating
 						count={5}
 						value={fixed_rating}
 						size={24}
 						color='#e2dfdf'
+						activeColor='#FFD804'
 						isHalf
 						edit={false}
 					/>
