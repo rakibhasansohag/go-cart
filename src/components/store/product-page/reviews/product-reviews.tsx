@@ -6,7 +6,7 @@ import {
 	ReviewsOrderType,
 	ReviewWithImageType,
 } from '@/lib/types';
-import { FC, useEffect, useState } from 'react';
+import { FC, useEffect, useRef, useState } from 'react';
 import RatingCard from '../../cards/product-rating';
 import RatingStatisticsCard from '../../cards/rating-statistics';
 import ReviewCard from '../../cards/review';
@@ -66,34 +66,64 @@ const ProductReviews: FC<Props> = ({
 	const [page, setPage] = useState<number>(1);
 	const [pageSize, setPageSize] = useState<number>(4);
 
-	useEffect(() => {
-		if (filters.rating || filters.hasImages || sort) {
-			setPage(1);
-			handleGetReviews();
-		}
-		if (page) {
-			handleGetReviews();
-		}
-	}, [filters, sort, page]);
+	// Guard to avoid double-fetch on initial mount
+	const isFirstLoad = useRef<boolean>(true);
 
-	const handleGetReviews = async () => {
+	// main fetch function
+	const fetchReviews = async (pageToFetch = 1) => {
 		try {
 			setFilterLoading(true);
+
 			const res = await getProductFilteredReviews(
 				productId,
 				filters,
 				sort,
-				page,
+				pageToFetch,
 				pageSize,
 			);
-			setData(res.reviews);
-			setStatistics(res.statistics);
+
+			// Expecting res = { reviews: ReviewWithImageType[], statistics: { totalReviews, ratingStatistics... } }
+			setData(res.reviews ?? []);
+			setStatistics(res.statistics ?? defaultData);
 			setLoading(false);
 			setFilterLoading(false);
 		} catch (error) {
+			console.error('fetchReviews error:', error);
 			setLoading(false);
+			setFilterLoading(false);
 		}
 	};
+
+	// When filters or sort change: reset to page 1 and fetch page 1
+	useEffect(() => {
+		setPage(1);
+		(async () => {
+			await fetchReviews(1);
+			// ensure next page-change triggers fetch
+			isFirstLoad.current = false;
+		})();
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [filters, sort, pageSize, productId]);
+
+	// When page changes (user clicked), fetch that page
+	useEffect(() => {
+		// Skip the initial page effect if we already fetched via the filters effect on mount
+		if (isFirstLoad.current) {
+			// initial page fetch already handled by the filters effect on mount
+			isFirstLoad.current = false;
+			return;
+		}
+		fetchReviews(page);
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [page, pageSize]);
+
+	// total pages calculation (prefer server-provided totalReviews)
+	const totalItems =
+		typeof statistics?.totalReviews === 'number'
+			? statistics.totalReviews
+			: data.length;
+
+	const totalPages = totalItems > 0 ? Math.ceil(totalItems / pageSize) : 0;
 
 	return (
 		<div className='pt-6' id='reviews'>
@@ -104,9 +134,10 @@ const ProductReviews: FC<Props> = ({
 					{/* Title */}
 					<div className='h-12'>
 						<h2 className='text-main-primary text-2xl font-bold'>
-							Custom Reviews ({statistics.totalReviews})
+							Custom Reviews ({statistics.totalReviews ?? data.length})
 						</h2>
 					</div>
+
 					{/* Statistics */}
 					<div className='w-full'>
 						<div className='flex flex-col md:flex-row items-center gap-4'>
@@ -114,6 +145,7 @@ const ProductReviews: FC<Props> = ({
 							<RatingStatisticsCard statistics={statistics.ratingStatistics} />
 						</div>
 					</div>
+
 					<>
 						<div className='space-y-6'>
 							<ReviewsFilters
@@ -124,6 +156,7 @@ const ProductReviews: FC<Props> = ({
 							/>
 							<ReviewsSort sort={sort} setSort={setSort} />
 						</div>
+
 						{/* Reviews */}
 						{!filterLoading ? (
 							<div className='mt-6  grid md:grid-cols-2 gap-4'>
@@ -149,20 +182,19 @@ const ProductReviews: FC<Props> = ({
 								<DotLoader color='#f5f5f5' />
 							</div>
 						)}
-						{data.length >= pageSize && (
+
+						{/* Pagination */}
+						{!filterLoading && totalPages > 1 && (
 							<Pagination
 								page={page}
-								totalPages={
-									filters.rating || filters.hasImages
-										? data.length / pageSize
-										: 1 / pageSize
-								}
+								totalPages={totalPages}
 								setPage={setPage}
 							/>
 						)}
 					</>
 				</div>
 			)}
+
 			<div className='mt-10'>
 				<ReviewDetails
 					productId={productId}

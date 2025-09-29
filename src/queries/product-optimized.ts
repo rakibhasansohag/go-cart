@@ -392,56 +392,110 @@ export const getRelatedProducts = async (
 //   - page: The page number for pagination (1-based index).
 //   - pageSize: The number of reviews to retrieve per page.
 // Returns: A paginated list of reviews that match the filter and sort criteria.
+// export const getProductFilteredReviews = async (
+// 	productId: string,
+// 	filters: { rating?: number; hasImages?: boolean },
+// 	sort: { orderBy: 'latest' | 'oldest' | 'highest' } | undefined,
+// 	page: number = 1,
+// 	pageSize: number = 4,
+// ) => {
+// 	const reviewFilter: any = {
+// 		productId,
+// 	};
+
+// 	// Apply rating filter if provided
+// 	if (filters.rating) {
+// 		const rating = filters.rating;
+// 		reviewFilter.rating = {
+// 			in: [rating, rating + 0.5],
+// 		};
+// 	}
+
+// 	// Apply image filter if provided
+// 	if (filters.hasImages) {
+// 		reviewFilter.images = {
+// 			some: {},
+// 		};
+// 	}
+
+// 	// Set sorting order using local SortOrder type
+// 	const sortOption: { createdAt?: SortOrder; rating?: SortOrder } =
+// 		sort && sort.orderBy === 'latest'
+// 			? { createdAt: 'desc' }
+// 			: sort && sort.orderBy === 'oldest'
+// 			? { createdAt: 'asc' }
+// 			: { rating: 'desc' };
+
+// 	// Calculate pagination parameters
+// 	const skip = (page - 1) * pageSize;
+// 	const take = pageSize;
+
+// 	const statistics = await getRatingStatistics(productId);
+// 	// Fetch reviews from the database
+// 	const reviews = await db.review.findMany({
+// 		where: reviewFilter,
+// 		include: {
+// 			images: true,
+// 			user: true,
+// 		},
+// 		orderBy: sortOption,
+// 		skip, // Skip records for pagination
+// 		take, // Take records for pagination
+// 	});
+
+// 	return { reviews, statistics };
+// };
+
 export const getProductFilteredReviews = async (
-	productId: string,
-	filters: { rating?: number; hasImages?: boolean },
-	sort: { orderBy: 'latest' | 'oldest' | 'highest' } | undefined,
-	page: number = 1,
-	pageSize: number = 4,
+  productId: string,
+  filters: { rating?: number; hasImages?: boolean },
+  sort: { orderBy: 'latest' | 'oldest' | 'highest' } | undefined,
+  page: number = 1,
+  pageSize: number = 4,
 ) => {
-	const reviewFilter: any = {
-		productId,
-	};
+  const reviewFilter: any = { productId };
 
-	// Apply rating filter if provided
-	if (filters.rating) {
-		const rating = filters.rating;
-		reviewFilter.rating = {
-			in: [rating, rating + 0.5],
-		};
-	}
+  if (filters.rating) {
+    const rating = filters.rating;
+    reviewFilter.rating = { in: [rating, rating + 0.5] };
+  }
 
-	// Apply image filter if provided
-	if (filters.hasImages) {
-		reviewFilter.images = {
-			some: {},
-		};
-	}
+  if (filters.hasImages) {
+    reviewFilter.images = { some: {} };
+  }
 
-	// Set sorting order using local SortOrder type
-	const sortOption: { createdAt?: SortOrder; rating?: SortOrder } =
+ 	const sortOption: { createdAt?: SortOrder; rating?: SortOrder } =
 		sort && sort.orderBy === 'latest'
 			? { createdAt: 'desc' }
 			: sort && sort.orderBy === 'oldest'
 			? { createdAt: 'asc' }
 			: { rating: 'desc' };
 
-	// Calculate pagination parameters
-	const skip = (page - 1) * pageSize;
-	const take = pageSize;
+  const skip = (page - 1) * pageSize;
+  const take = pageSize;
 
-	const statistics = await getRatingStatistics(productId);
-	// Fetch reviews from the database
-	const reviews = await db.review.findMany({
-		where: reviewFilter,
-		include: {
-			images: true,
-			user: true,
-		},
-		orderBy: sortOption,
-		skip, // Skip records for pagination
-		take, // Take records for pagination
-	});
+  // statistics for UI 
+  const stats = await getRatingStatistics(productId);
 
-	return { reviews, statistics };
+  // total count matching the filter 
+  const totalReviews = await db.review.count({
+    where: reviewFilter,
+  });
+
+  const reviews = await db.review.findMany({
+    where: reviewFilter,
+    include: { images: true, user: true },
+    orderBy: sortOption,
+    skip,
+    take,
+  });
+
+  // return reviews + statistics + filtered total count
+  return {
+    reviews,
+    statistics: {
+      ...stats,
+      totalReviews, // filtered total so client can compute pages correctly
+    },
+  };
 };

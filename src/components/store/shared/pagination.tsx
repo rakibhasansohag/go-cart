@@ -9,6 +9,10 @@ interface Props {
 }
 
 const Pagination: FC<Props> = ({ page, setPage, totalPages }) => {
+
+
+	if (!totalPages || totalPages <= 1) return null;
+
 	const handlePrevious = () => {
 		if (page > 1) {
 			setPage((prev) => prev - 1);
