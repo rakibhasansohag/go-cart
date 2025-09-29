@@ -79,7 +79,11 @@ const ImageUploadStore: FC<ImageUploadProps> = ({
 					</div>
 				))}
 			</div>
-			<CldUploadWidget onSuccess={onUpload} uploadPreset='ufb48euh'>
+			<CldUploadWidget
+				onSuccess={onUpload}
+				uploadPreset='go-cart-ecommerce'
+				// uploadPreset='ufb48euh'
+			>
 				{({ open }) => {
 					const onClick = () => {
 						open();

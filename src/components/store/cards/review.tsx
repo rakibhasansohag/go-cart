@@ -1,7 +1,10 @@
 import { ReviewWithImageType } from '@/lib/types';
 
 import Image from 'next/image';
-import ReactStars from 'react-rating-stars-component';
+
+import StarRating from '@/components/StarRating';
+import { color } from 'framer-motion';
+import ColorWheel from '../../shared/color-wheel';
 
 export default function ReviewCard({
 	review,
@@ -13,6 +16,12 @@ export default function ReviewCard({
 
 	const { name } = user;
 	const cesnoredName = `${name[0]}***${name[user.name.length - 1]}`;
+
+	const colors = review.color
+		.split(',')
+		.filter((color) => color.trim() !== '')
+		.map((color) => ({ name: color.trim() }));
+
 	return (
 		<div className='border border-[#d8d8d8] rounded-xl flex h-fit relative py-4 px-2.5'>
 			<div className='w-16 px- space-y-1'>
@@ -29,7 +38,7 @@ export default function ReviewCard({
 			</div>
 			<div className='flex flex-1 flex-col justify-between leading-5 overflow-hidden px-1.5'>
 				<div className='space-y-2'>
-					<ReactStars
+					<StarRating
 						count={5}
 						size={24}
 						color='#F5F5F5'
@@ -38,7 +47,10 @@ export default function ReviewCard({
 						isHalf
 						edit={false}
 					/>
+
 					<div className='flex items-center gap-x-2'>
+						<ColorWheel colors={colors} size={24} />
+						<span>.</span>
 						<Image
 							src={review.variantImage}
 							alt=''
@@ -63,7 +75,7 @@ export default function ReviewCard({
 									className='w-20 h-20 rounded-xl overflow-hidden cursor-pointer'
 								>
 									<Image
-										src={img.url}
+										src={img.url || ''}
 										alt={img.alt}
 										width={100}
 										height={100}

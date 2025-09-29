@@ -6,7 +6,7 @@ export default function RatingCard({ rating }: { rating: number }) {
 	return (
 		<div className='w-full h-44 flex-1'>
 			<div className='p-6 bg-f5 flex flex-col h-full justify-center overflow-hidden rounded-lg'>
-				<div className='text-6xl font-bold'>{rating}</div>
+				<div className='text-6xl font-bold'>{fixed_rating}</div>
 				<div className='py-1.5'>
 					<StarRating
 						count={5}

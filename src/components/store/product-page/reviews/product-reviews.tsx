@@ -12,7 +12,7 @@ import RatingStatisticsCard from '../../cards/rating-statistics';
 import ReviewCard from '../../cards/review';
 import ReviewsFilters from './filters';
 import ReviewsSort from './sort';
-import Paginaion from '../../shared/pagination';
+import Pagination from '../../shared/pagination';
 import ReviewDetails from '../../forms/review-details';
 import { getProductFilteredReviews } from '@/queries/product-optimized';
 import ProductPageReviewsSkeletonLoader from '../../skeletons/product-page/reviews';
@@ -150,7 +150,7 @@ const ProductReviews: FC<Props> = ({
 							</div>
 						)}
 						{data.length >= pageSize && (
-							<Paginaion
+							<Pagination
 								page={page}
 								totalPages={
 									filters.rating || filters.hasImages

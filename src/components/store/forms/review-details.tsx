@@ -12,17 +12,19 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Dispatch, SetStateAction, useEffect, useState } from 'react';
 import { useForm, type SubmitHandler, type Resolver } from 'react-hook-form';
 import { toast } from 'sonner';
-import ReactStars from 'react-rating-stars-component';
+
 import { z } from 'zod';
 import Select from '../ui/select';
 import Input from '../ui/input';
 import { Button } from '../ui/button';
 import { PulseLoader } from 'react-spinners';
-import ImageUploadStore from '../shared/upload-images';
+
 import { upsertReview } from '@/queries/review';
 import { v4 } from 'uuid';
 
 import type { AddReviewForm } from '@/lib/schemas';
+import StarRating from '../../StarRating';
+import ImageUploadStore from '../shared/upload-images';
 
 export default function ReviewDetails({
 	productId,
@@ -45,9 +47,6 @@ export default function ReviewDetails({
 	const [activeVariant, setActiveVariant] = useState<ProductVariantDataType>(
 		variantsInfo[0],
 	);
-
-	// Temporary state for images
-	const [images, setImages] = useState<{ url: string }[]>([]);
 
 	// State for sizes
 	const [sizes, setSizes] = useState<{ name: string; value: string }[]>([]);
@@ -73,6 +72,16 @@ export default function ReviewDetails({
 			color: data?.color,
 		},
 	});
+
+	// Temporary state for images
+	const [images, setImages] = useState<{ url: string }[]>(
+		form.getValues?.().images ?? data?.images ?? [],
+	);
+
+	useEffect(() => {
+		// use setValue to update the form state (Controller) asynchronously (from effect)
+		form.setValue('images', images);
+	}, [images, form]);
 
 	// Loading status based on form submission
 	const isLoading = form.formState.isSubmitting;
@@ -100,6 +109,11 @@ export default function ReviewDetails({
 				setStatistics(response.statistics);
 				setAverageRating(response.rating);
 				toast.success(response.message);
+				// Reset form after successful submission
+				form.reset();
+				setImages([]);
+			} else {
+				toast.error(response.message);
 			}
 		} catch (error: any) {
 			// Handling form submission errors
@@ -153,7 +167,7 @@ export default function ReviewDetails({
 										<FormItem>
 											<FormControl>
 												<div className='flex items-center gap-x-2'>
-													<ReactStars
+													<StarRating
 														count={5}
 														size={40}
 														color='#e2dfdf'
@@ -235,7 +249,7 @@ export default function ReviewDetails({
 										<FormItem>
 											<FormControl>
 												<textarea
-													className='min-h-32 p-4 w-full rounded-xl focus:outline-none ring-1 ring-[transparent] focus:ring-[#11BE86]'
+													className='min-h-32 p-4 w-full rounded-xl focus:outline-none ring-1 ring-[transparent] focus:ring-[#11BE86] border border-'
 													placeholder='Write your review...'
 													value={field.value}
 													onChange={field.onChange}
@@ -251,26 +265,21 @@ export default function ReviewDetails({
 										<FormItem className='w-full xl:border-r'>
 											<FormControl>
 												<ImageUploadStore
-													value={field.value.map((image) => image.url)}
+													// feed the uploader from local state instead of directly from field.value
+													value={images.map((image) => image.url)}
 													disabled={isLoading}
 													onChange={(url) => {
-														setImages((prevImages) => {
-															const updatedImages = [...prevImages, { url }];
-															if (updatedImages.length <= 3) {
-																field.onChange(updatedImages);
-																return updatedImages;
-															} else {
-																return prevImages;
-															}
+														// only update local state here — don't call field.onChange directly
+														setImages((prev) => {
+															const updated = [...prev, { url }];
+															return updated.length <= 3 ? updated : prev;
 														});
 													}}
-													onRemove={(url) =>
-														field.onChange([
-															...field.value.filter(
-																(current) => current.url !== url,
-															),
-														])
-													}
+													onRemove={(url) => {
+														setImages((prev) =>
+															prev.filter((img) => img.url !== url),
+														);
+													}}
 													maxImages={3}
 												/>
 											</FormControl>
