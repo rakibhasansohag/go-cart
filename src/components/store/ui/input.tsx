@@ -24,7 +24,7 @@ const Input: FC<Props> = ({
 		<div className='min-w-48 w-full relative'>
 			<input
 				type={type}
-				className='w-full border pr-6 pl-8 py-4 rounded-xl outline-none duration-200 ring-1 ring-transparent focus:ring-[#11BE86]'
+				className='w-full bg-background pr-6 pl-8 py-4 rounded-xl outline-none duration-200 ring-1 ring-transparent focus:ring-[#11BE86]'
 				name={name}
 				placeholder={placeholder}
 				value={inputValue}

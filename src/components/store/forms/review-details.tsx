@@ -249,7 +249,7 @@ export default function ReviewDetails({
 										<FormItem>
 											<FormControl>
 												<textarea
-													className='min-h-32 p-4 w-full rounded-xl focus:outline-none ring-1 ring-[transparent] focus:ring-[#11BE86] border border-'
+													className='min-h-32 p-4 w-full rounded-xl focus:outline-none ring-1 ring-[transparent] focus:ring-[#11BE86] bg-background'
 													placeholder='Write your review...'
 													value={field.value}
 													onChange={field.onChange}

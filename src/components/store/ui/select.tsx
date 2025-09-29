@@ -37,7 +37,7 @@ const Select: FC<Props> = ({
 	return (
 		<div className='relative min-w-48 w-full z-50'>
 			<div>
-				<div className='relative border rounded-xl'>
+				<div className='relative bg-background rounded-xl'>
 					{activeVariant?.image && (
 						<Image
 							src={activeVariant.image}
