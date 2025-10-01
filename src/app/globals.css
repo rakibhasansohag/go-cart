@@ -527,6 +527,36 @@ iframe[src*="cloudinary"] {
   color: #000;
 }
 
+.dark .react-datetime-picker__clock {
+  background-color: #333; 
+  border-color: #555;      
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5); 
+}
+
+.dark .react-clock {
+  background-color: transparent; 
+}
+
+.dark .react-clock__mark__body {
+  background-color: #ccc !important; 
+}
+
+.dark .react-clock__hand__body {
+  background-color: #fff !important; 
+}
+
+.dark .react-clock__hand__center {
+  background-color: #ccc;
+}
+
+.dark .react-clock__hour-label {
+  color: #fff; 
+}
+
+.dark .react-clock__time-display {
+  color: #bee3ff; 
+}
+
 /* Multi selct dark mode */
 .dark .rmsc .dropdown-container {
   background-color: #1a1b1f !important;
