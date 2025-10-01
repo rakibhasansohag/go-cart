@@ -551,3 +551,6 @@ iframe[src*="cloudinary"] {
   color: var(--color-white) !important;
   border-color: var(--border) !important;
 }
+
+/* Multiselect */
+

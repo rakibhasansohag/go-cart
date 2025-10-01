@@ -1057,7 +1057,8 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 											to for free
 										</p>
 									</div>
-									<div className=''>
+
+									<div>
 										{!form.getValues().freeShippingForAllCountries && (
 											<div>
 												<FormField
@@ -1066,48 +1067,69 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 													render={({ field }) => (
 														<FormItem>
 															<FormControl>
-																<MultiSelect
-																	className='!max-w-[800px]'
-																	options={countryOptions} // Array of options, each with `label` and `value`
-																	value={field.value} // Pass the array of objects directly
-																	onChange={(selected: CountryOption[]) => {
-																		field.onChange(selected);
-																	}}
-																	labelledBy='Select'
-																/>
+																{/* wrapper to scope our overrides */}
+																<div className='!max-w-[800px]'>
+																	<MultiSelect
+																		className={
+																			'w-full rounded-md px-2 py-1 text-sm'
+																		}
+																		options={countryOptions}
+																		value={field.value}
+																		onChange={(selected: CountryOption[]) => {
+																			field.onChange(selected);
+																		}}
+																		labelledBy='Select'
+																	/>
+																</div>
 															</FormControl>
 														</FormItem>
 													)}
 												/>
-												<p className='mt-4 text-sm text-main-secondary dark:text-gray-400 pb-3 flex'>
-													<Dot className='-me-1' />
+												<p className='mt-4 text-sm text-main-secondary dark:text-gray-400 pb-3 flex items-center'>
+													<Dot className='me-1' />
 													List of countries you offer free shipping for this
-													product :&nbsp;
-													{form.getValues().freeShippingCountriesIds &&
+													product:&nbsp;
+													{(!form.getValues().freeShippingCountriesIds ||
 														form.getValues().freeShippingCountriesIds.length ===
-															0 &&
+															0) &&
 														'None'}
 												</p>
-												{/* Free shipping counties */}
-												<div className='flex flex-wrap gap-1'>
-													{form
-														.getValues()
-														.freeShippingCountriesIds?.map((country, index) => (
-															<div
-																key={country.id}
-																className='text-xs inline-flex items-center px-3 py-1 bg-blue-200 text-blue-primary rounded-md gap-x-2'
-															>
-																<span>{country.label}</span>
-																<span
-																	className='cursor-pointer hover:text-red-500'
-																	onClick={() =>
-																		handleDeleteCountryFreeShipping(index)
-																	}
-																>
-																	x
-																</span>
-															</div>
-														))}
+
+												{/* Free shipping countries chips */}
+												<div className='flex flex-wrap gap-2 mt-2'>
+													{form.getValues().freeShippingCountriesIds?.length ? (
+														form
+															.getValues()
+															.freeShippingCountriesIds.map(
+																(country, index) => (
+																	<div
+																		key={`${
+																			country?.value ?? country?.id ?? index
+																		}`}
+																		className={
+																			'text-xs inline-flex items-center px-3 py-1 rounded-md gap-x-2 ' +
+																			'bg-blue-200 text-blue-primary dark:bg-slate-700 dark:text-blue-200'
+																		}
+																	>
+																		<span>{country.label}</span>
+																		<button
+																			type='button'
+																			aria-label={`Remove ${country.label}`}
+																			onClick={() =>
+																				handleDeleteCountryFreeShipping(index)
+																			}
+																			className='ml-2 text-sm hover:text-red-500'
+																		>
+																			×
+																		</button>
+																	</div>
+																),
+															)
+													) : (
+														<div className='text-sm text-main-secondary dark:text-gray-400'>
+															None
+														</div>
+													)}
 												</div>
 											</div>
 										)}

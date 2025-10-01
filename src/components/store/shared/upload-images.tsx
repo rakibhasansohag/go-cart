@@ -70,7 +70,7 @@ const ImageUploadStore: FC<ImageUploadProps> = ({
 							</div>
 						) : (
 							<div
-								className='w-20 h-20 bg-gray-200 grid place-items-center cursor-pointer rounded-md'
+								className='w-20 h-20 bg-background grid place-items-center cursor-pointer rounded-md'
 								onClick={() => btnRef?.current?.click()}
 							>
 								<Plus className='text-gray-300' />
