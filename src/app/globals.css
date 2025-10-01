@@ -482,75 +482,69 @@ iframe[src*="cloudinary"] {
   width: 5px;
 }
 
-/* Dark‐mode overrides for react-datetime-picker */
-.dark .react-datetime-picker,
-.dark .react-datetime-picker__wrapper,
-.dark .react-datetime-picker__inputGroup,
-.dark .react-datetime-picker__inputGroup input {
-  background-color: var(--secondary) !important;
-  color: var(--foreground) !important;
-  border-color: var(--border) !important;
+
+/* Jodit editor dark mode */
+.jodit_theme_dark.jodit-container {
+  background-color: #1a1b1f !important;
+  border-color: #eeeeee2e !important;
 }
 
-.dark .react-calendar,
-.dark .react-calendar * {
-  background-color: var(--secondary) !important;
-  color: var(--foreground) !important;
-  border-color: var(--border) !important;
+.jodit_theme_dark .jodit-toolbar__box:not(:empty) {
+  background-color: #1a1b1f !important;
 }
 
-.dark .react-clock,
-.dark .react-clock * {
-  background-color: var(--secondary) !important;
-  color: var(--foreground) !important;
-  border-color: var(--border) !important;
+.jodit_theme_dark .jodit-wysiwyg {
+  background-color: #1a1b1f !important;
 }
 
-/* 1) Calendar cell hover in dark mode */
-.dark .react-calendar__tile:enabled:hover,
-.dark .react-calendar__tile:enabled:focus {
-  background: var(--primary) !important;       
-  color: var(--card-foreground) !important;     
+.jodit_theme_dark .jodit-toolbar-button__button:hover svg {
+  stroke: #575757 !important;
+  fill: #575757 !important;
 }
 
-/* Optional: highlight today */
+/* Calendar dark mode  */
+.dark .react-calendar {
+  background: #1a1b1f !important;
+}
+.dark .react-calendar__tile:enabled:hover {
+  color: #000;
+}
 .dark .react-calendar__tile--now {
-  background: var(--accent) !important;
-  color: var(--card-foreground) !important;
+  color: #000;
 }
 
-/* 2) Time picker shows on click and matches dark theme */
-.dark .react-datetime-picker__clock {
-  z-index: 9999 !important;                    
-  background-color: var(--secondary) !important;
-  color: var(--foreground) !important;
+.dark .react-calendar__tile--now:enabled:hover {
+  color: #000;
 }
 
-
-/* Style the AM/PM dropdown if present */
-.dark .react-datetime-picker__inputGroup__amPm {
-  background-color: var(--secondary) !important;
-  color: var(--foreground) !important;
-  border-color: var(--border) !important;
+.dark .react-datetime-picker__inputGroup__amPm option {
+  color: #fff !important;
+  background-color: #1D293D !important;
 }
 
-.dark .react-datetime-picker__clock .react-datetime-picker__clock--open {
-  background-color: var(--secondary) !important;
-  color: var(--foreground) !important;
-  border-color: var(--border) !important;
+.dark .react-calendar__tile--active {
+  background: #1a1b1f !important;
+  color: #000;
 }
 
-.dark .react-clock__hand, .react-clock__hour-hand {
-  background-color: var(--color-white) !important;
-  color: var(--color-white) !important;
-  border-color: var(--border) !important;
+/* Multi selct dark mode */
+.dark .rmsc .dropdown-container {
+  background-color: #1a1b1f !important;
+  border-color: #eeeeee2e !important;
 }
 
-.dark .react-clock__minute-hand {
-  background-color: var(--color-white) !important;
-  color: var(--color-white) !important;
-  border-color: var(--border) !important;
+.panel-content {
+  background-color: #1a1b1f !important;
 }
 
-/* Multiselect */
+.panel-content input:focus {
+  background-color: #1a1b1f !important;
+}
+
+.select-item:hover {
+  background-color: #303236 !important;
+}
+.select-item.selected {
+  background-color: #303236 !important;
+}
 
