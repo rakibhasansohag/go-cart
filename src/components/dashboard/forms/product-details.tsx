@@ -195,7 +195,7 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 		resolver: zodResolver(ProductFormSchema as any), // Resolver for form validation
 		defaultValues: {
 			// Setting default form values from data (if available)
-			name: data?.name,
+			name: data?.name || '',
 			description: data?.description,
 			variantName: data?.variantName,
 			variantDescription: data?.variantDescription,
@@ -287,7 +287,7 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 					variantId: data?.variantId ? data.variantId : v4(),
 					name: values.name,
 					description: values.description,
-					variantName: values.variantName,
+					variantName: values.variantName || '',
 					variantDescription: values.variantDescription || '',
 					images: values.images,
 					variantImage: values.variantImage[0].url,
@@ -814,7 +814,7 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 										initialDetail={{
 											size: '',
 											quantity: 1,
-											price: 0.01,
+											price: 1,
 											discount: 0,
 										}}
 										containerClassName='flex-1'

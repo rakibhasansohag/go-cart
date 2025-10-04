@@ -176,18 +176,27 @@ const ClickToAddInputs = <T extends Detail>({
 								type={typeof detail[property] === 'number' ? 'number' : 'text'}
 								name={property}
 								placeholder={property}
-								value={detail[property] as string}
+								value={detail[property] === 0 ? '' : detail[property]}
 								min={typeof detail[property] === 'number' ? 0 : undefined}
 								step='0.01'
-								onChange={(e) =>
-									handleDetailsChange(
-										index,
-										property,
-										e.target.type === 'number'
-											? parseFloat(e.target.value)
-											: e.target.value,
-									)
-								}
+								onChange={(e) => {
+									if (e.target.type === 'number') {
+										const value = e.target.value;
+										// Allow empty string or valid numbers
+										if (value === '') {
+											handleDetailsChange(index, property, 0);
+										} else {
+											const numValue = parseFloat(value);
+											handleDetailsChange(
+												index,
+												property,
+												isNaN(numValue) ? 0 : numValue,
+											);
+										}
+									} else {
+										handleDetailsChange(index, property, e.target.value);
+									}
+								}}
 							/>
 						</div>
 					))}
