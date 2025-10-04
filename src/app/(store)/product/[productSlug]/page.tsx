@@ -14,18 +14,19 @@ import { retrieveProductDetailsOptimized } from '@/queries/product-optimized';
 import { cookies } from 'next/headers';
 import { notFound, redirect } from 'next/navigation';
 
-export default async function ProductPage({
-	params,
-	searchParams,
-}: {
-	params: { productSlug: string };
-	searchParams?: Record<string, string | string[] | undefined>;
-}) {
-	const awaitedParams = await params;
-	const awaitedSearchParams = await (searchParams ?? {});
 
-	const productSlug = awaitedParams.productSlug;
-	const variantSlug = (awaitedSearchParams?.variant as string) ?? '';
+type ProductParams = { productSlug: string };
+type SearchParams = Record<string, string | string[] | undefined> | undefined;
+
+export default async function ProductPage(props: {
+	params: Promise<{ productSlug: string }>;
+	searchParams?: Promise<Record<string, string | string[] | undefined>>;
+}) {
+	const params = await props.params;
+	const searchParams = await (props.searchParams ?? Promise.resolve({}));
+
+	const productSlug = params.productSlug;
+	const variantSlug = (searchParams?.variant as string) ?? '';
 
 	// Validate
 	if (!productSlug) {
