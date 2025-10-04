@@ -278,6 +278,11 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 	const handleSubmit = async () => {
 		console.log('click');
 		try {
+			console.log(
+				'handleSubmit started — formState.isSubmitting:',
+				form.formState.isSubmitting,
+			);
+			console.log('Current form errors:', form.formState.errors);
 			const values = form.getValues();
 			console.log(values);
 			// Upserting product data
@@ -333,7 +338,7 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 		} catch (error: any) {
 			// Handling form submission errors
 			toast.error(error.toString());
-			console.log(error);
+			console.error('[handleSubmit] error ->', error);
 		}
 	};
 
@@ -409,7 +414,25 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 				<CardContent>
 					<Form {...form}>
 						<form
-							onSubmit={form.handleSubmit(handleSubmit)}
+							// onSubmit={form.handleSubmit(handleSubmit)}
+							onSubmit={(e) => {
+								console.log('native submit event fired');
+								// call RHF submit with custom onError to log validation errors
+								const submitFn = form.handleSubmit(
+									async (values) => {
+										console.log('form validated → calling handleSubmit'); // should print
+										await handleSubmit(); // your existing submit handler (keeps try/catch)
+									},
+									(errors) => {
+										console.log('validation errors on submit:', errors);
+										// show a human hint so you don't miss it
+										toast.error(
+											'Fix validation errors. See console for details.',
+										);
+									},
+								);
+								submitFn(e);
+							}}
 							className='space-y-4'
 						>
 							{/* Images - colors */}
@@ -784,6 +807,8 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 														}}
 													/>
 												</FormControl>
+
+												<FormMessage />
 											</FormItem>
 										)}
 									/>
@@ -1159,7 +1184,38 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 									</div>
 								</InputFieldset>
 							)}
-							<Button type='submit' disabled={isLoading}>
+							{/* <Button type='submit' disabled={isLoading}>
+								{isLoading
+									? 'loading...'
+									: data?.productId && data.variantId
+									? 'Save product information'
+									: 'Create product'}
+							</Button> */}
+							<Button
+								type='button'
+								disabled={isLoading}
+								onClick={() => {
+									console.log('button clicked - manual submit');
+									const submitFn = form.handleSubmit(
+										async (values) => {
+											console.log(
+												'manual form validated → calling handleSubmit',
+											);
+											await handleSubmit();
+										},
+										(errors) => {
+											console.log(
+												'validation errors on manual submit:',
+												errors,
+											);
+											toast.error(
+												'Fix validation errors. See console for details.',
+											);
+										},
+									);
+									submitFn(); // call without event (programmatic)
+								}}
+							>
 								{isLoading
 									? 'loading...'
 									: data?.productId && data.variantId
