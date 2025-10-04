@@ -15,7 +15,7 @@ export const generateMetadata = async ({
 };
 
 interface Params {
-	params: { storeUrl: string };
+	params: Promise<{ storeUrl: string }>;
 }
 
 export default async function SellerNewProductPage({ params }: Params) {
