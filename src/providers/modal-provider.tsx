@@ -38,18 +38,34 @@ const ModalProvider: React.FC<ModalProviderProps> = ({ children }) => {
 		setIsMounted(true);
 	}, []);
 
+	/**
+	 *
+	 * @param modal
+	 * @param fetchData
+	 * @returns
+	 *
+	 * const setOpen = async ( modal: React.ReactNode, fetchData?: () => Promise<any>, ) => { if (modal) { if (fetchData) { setData({ ...data, ...(await fetchData()) } || {}); } setShowingModal(modal); setIsOpen(true); } }; const setClose = () => { setIsOpen(false); setData({}); };
+	 */
+
 	const setOpen = async (
 		modal: React.ReactNode,
-
 		fetchData?: () => Promise<any>,
 	) => {
-		if (modal) {
-			if (fetchData) {
-				setData({ ...data, ...(await fetchData()) } || {});
+		if (!modal) return;
+
+		if (fetchData) {
+			try {
+				const fetched = await fetchData();
+				// use functional update to avoid stale `data` closure
+				setData((prev) => ({ ...prev, ...(fetched ?? {}) }));
+			} catch (err) {
+				console.error('Modal fetchData failed:', err);
+				setData((prev) => ({ ...prev }));
 			}
-			setShowingModal(modal);
-			setIsOpen(true);
 		}
+
+		setShowingModal(modal);
+		setIsOpen(true);
 	};
 
 	const setClose = () => {
