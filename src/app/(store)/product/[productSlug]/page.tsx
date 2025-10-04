@@ -18,15 +18,18 @@ import { notFound, redirect } from 'next/navigation';
 type ProductParams = { productSlug: string };
 type SearchParams = Record<string, string | string[] | undefined> | undefined;
 
-export default async function ProductPage(props: {
-	params: Promise<{ productSlug: string }>;
-	searchParams?: Promise<Record<string, string | string[] | undefined>>;
+export default async function ProductPage({
+	params,
+	searchParams,
+}: {
+	params: Promise<ProductParams>;
+	searchParams?: Promise<SearchParams>;
 }) {
-	const params = await props.params;
-	const searchParams = await (props.searchParams ?? Promise.resolve({}));
+	const awaitedParams = await params;
+	const awaitedSearchParams = searchParams ? await searchParams : {};
 
-	const productSlug = params.productSlug;
-	const variantSlug = (searchParams?.variant as string) ?? '';
+	const productSlug: string = awaitedParams?.productSlug;
+	const variantSlug: string = (awaitedSearchParams?.variant as string) ?? '';
 
 	// Validate
 	if (!productSlug) {
