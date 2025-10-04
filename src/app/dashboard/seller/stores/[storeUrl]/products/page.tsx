@@ -1,4 +1,3 @@
-// Queries
 import { getAllStoreProducts } from '@/queries/product';
 import DataTable from '@/components/ui/data-table';
 import { columns } from './columns';
@@ -8,11 +7,16 @@ import { getAllCategories } from '@/queries/category';
 import { getAllOfferTags } from '@/queries/offer-tag';
 import { db } from '@/lib/db';
 
+// Type for awaited params
+type StoreParams = { storeUrl: string };
+
 export default async function SellerProductsPage({
 	params,
 }: {
-	params: { storeUrl: string };
+	// Next 15 app routes pass awaitable proxies type as Promise<...>
+	params: Promise<StoreParams>;
 }) {
+	// await the whole proxy first (Next 15 requirement)
 	const { storeUrl } = await params;
 
 	// Fetching products data from the database for the active store
