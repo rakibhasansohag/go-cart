@@ -4,9 +4,10 @@
 	"private": true,
 	"scripts": {
 		"dev": "next dev --turbopack",
-		"build": "next build",
+		"build": "bun prisma generate && next build",
 		"start": "next start",
-		"lint": "next lint"
+		"lint": "next lint",
+		"postinstall": "bun prisma generate"
 	},
 	"dependencies": {
 		"@clerk/nextjs": "^6.25.5",
