@@ -142,8 +142,32 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 		data?.colors || [{ color: '' }],
 	);
 
-	// Temporary state for images
-	const [images, setImages] = useState<{ url: string }[]>([]);
+	// keep local images state (array of { url })
+	const [images, setImages] = useState<{ url: string }[]>(data?.images ?? []);
+
+	// sync initial form values with local images on mount / when `data` changes
+	useEffect(() => {
+		const initial = form.getValues().images ?? [];
+		setImages(Array.isArray(initial) ? initial : []);
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [data]); // only when data changes
+
+	// helper handlers to add/remove images (no field.onChange here)
+	const handleAddImage = (url: string) => {
+		setImages((prev) => {
+			const next = [...prev, { url }];
+			console.log('[handleAddImage] new length', next.length, next);
+			return next;
+		});
+	};
+
+	const handleRemoveImage = (url: string) => {
+		setImages((prev) => {
+			const next = prev.filter((i) => i.url !== url);
+			console.log('[handleRemoveImage] new length', next.length, next);
+			return next;
+		});
+	};
 
 	// State for sizes
 	const [sizes, setSizes] = useState<
@@ -201,6 +225,16 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 			shippingFeeMethod: data?.shippingFeeMethod,
 		},
 	});
+
+	// WHEN images change, update the RHF form value (runs outside render)
+	useEffect(() => {
+		form.setValue('images', images, {
+			shouldTouch: true,
+			shouldValidate: true,
+		});
+
+		console.log('[images -> form] images length =', images.length, images);
+	}, [images, form]);
 
 	const saleEndDate = form.getValues().saleEndDate || new Date().toISOString();
 
@@ -389,13 +423,9 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 											<FormControl>
 												<div>
 													<ImagesPreviewGrid
-														images={form.getValues().images}
+														images={images}
 														onRemove={(url) => {
-															const updatedImages = images.filter(
-																(img) => img.url !== url,
-															);
-															setImages(updatedImages);
-															field.onChange(updatedImages);
+															handleRemoveImage(url);
 														}}
 														colors={colors}
 														setColors={setColors}
@@ -404,22 +434,15 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 													<ImageUpload
 														dontShowPreview
 														type='standard'
-														value={field.value.map((image) => image.url)}
+														value={images.map((img) => img.url)}
 														disabled={isLoading}
 														onChange={(url) => {
-															setImages((prevImages) => {
-																const updatedImages = [...prevImages, { url }];
-																field.onChange(updatedImages);
-																return updatedImages;
-															});
+															// ImageUpload will call this when an image upload succeeds
+															handleAddImage(url);
 														}}
-														onRemove={(url) =>
-															field.onChange([
-																...field.value.filter(
-																	(current) => current.url !== url,
-																),
-															])
-														}
+														onRemove={(url) => {
+															handleRemoveImage(url);
+														}}
 													/>
 												</div>
 											</FormControl>
