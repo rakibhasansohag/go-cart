@@ -3,10 +3,14 @@ import { db } from '@/lib/db';
 import { getAllCategories } from '@/queries/category';
 import { getAllOfferTags } from '@/queries/offer-tag';
 
+// types
+type StoreParams = { storeUrl: string };
+
+// Metadata
 export const generateMetadata = async ({
 	params,
 }: {
-	params: { storeUrl: string };
+	params: Promise<StoreParams>;
 }) => {
 	const { storeUrl } = await params;
 	return {
@@ -15,10 +19,11 @@ export const generateMetadata = async ({
 };
 
 interface Params {
-	params: Promise<{ storeUrl: string }>;
+	params: Promise<StoreParams>;
 }
 
 export default async function SellerNewProductPage({ params }: Params) {
+	
 	const { storeUrl } = await params;
 
 	const categories = await getAllCategories();
