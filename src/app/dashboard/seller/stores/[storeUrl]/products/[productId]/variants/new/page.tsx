@@ -10,7 +10,7 @@ import { getProductMainInfo } from '@/queries/product';
 export default async function SellerNewProductVariantPage({
 	params,
 }: {
-	params: { storeUrl: string; productId: string };
+	params: Promise<{ storeUrl: string; productId: string }>;
 }) {
 	const { storeUrl, productId } = await params;
 
