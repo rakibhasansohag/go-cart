@@ -18,18 +18,14 @@ export default async function ProductPage({
 	params,
 	searchParams,
 }: {
-	params: { productSlug: string } | Promise<{ productSlug: string }>;
-	searchParams?:
-		| Record<string, string>
-		| Promise<Record<string, string> | undefined>;
+	params: { productSlug: string };
+	searchParams?: Record<string, string | string[] | undefined>;
 }) {
-	// Immediately await the proxies
 	const awaitedParams = await params;
 	const awaitedSearchParams = await (searchParams ?? {});
 
-	// Get primitives
-	const productSlug = awaitedParams?.productSlug;
-	const variantSlug = awaitedSearchParams?.variant ?? '';
+	const productSlug = awaitedParams.productSlug;
+	const variantSlug = (awaitedSearchParams?.variant as string) ?? '';
 
 	// Validate
 	if (!productSlug) {
