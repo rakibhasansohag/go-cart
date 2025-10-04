@@ -7,11 +7,15 @@ import {
 import { redirect } from 'next/navigation';
 import { columns } from './columns';
 
+// typed alias for clarity
+type StoreParams = { storeUrl: string };
+
 export default async function SellerStoreShippingPage({
 	params,
 }: {
-	params: { storeUrl: string };
+	params: Promise<StoreParams>;
 }) {
+	// await the whole proxy first (Next 15 requirement)
 	const { storeUrl } = await params;
 
 	const shippingDetails = await getStoreDefaultShippingDetails(storeUrl);
