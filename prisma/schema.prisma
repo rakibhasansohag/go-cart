@@ -33,6 +33,7 @@ model User {
   wishlist          Wishlist[]        @relation("WishlistToUser")
   reviews           Review[]          @relation("ReviewToUser")
   following         Store[]           @relation("UserFollowingStore")
+  cart              Cart?             @relation("UserCart")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -103,6 +104,7 @@ model Store {
   userId String
   user   User   @relation("UserStores", fields: [userId], references: [id])
   followers     User[]         @relation("UserFollowingStore")
+  cartItems     CartItem[]     @relation("CartItemToStore")
 
   products Product[] @relation("StoreToProduct")
   shippingRates ShippingRate[] @relation("StoreShippingRates")
@@ -430,4 +432,53 @@ model ReviewImage {
   updatedAt DateTime @updatedAt
 
   @@index([reviewId])
+}
+
+model Cart {
+  id     String @id @default(uuid())
+  userId String @unique
+  user   User   @relation("UserCart", fields: [userId], references: [id], onDelete: Cascade)
+
+
+  couponId String?
+  // TODO: Will add coupon later
+
+  cartItems    CartItem[] @relation("CartToCartItem")
+  shippingFees Float      @default(0)
+  subTotal     Float
+  total        Float
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([couponId])
+}
+
+model CartItem {
+  id          String @id @default(uuid())
+  productId   String
+  variantId   String
+  sizeId      String
+  productSlug String
+  variantSlug String
+  sku         String
+  name        String
+  image       String
+  size        String
+  price       Float
+  quantity    Int    @default(1)
+  shippingFee Float  @default(0)
+  totalPrice  Float
+
+  cartId String
+  cart   Cart   @relation("CartToCartItem", fields: [cartId], references: [id], onDelete: Cascade)
+
+  storeId String
+  store   Store  @relation("CartItemToStore", fields: [storeId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([cartId])
+  @@index([storeId])
 }
