@@ -176,14 +176,14 @@ const CartProduct: FC<Props> = ({
 	};
 
 	// TODO : Handle remove product from wishlist
-
-	// TODO: Update the black and light mode features
-
 	return (
 		<div
-			className={cn('bg-white px-6 border-t bordet-t-[#ebebeb] select-none', {
-				'bg-red-100': stock === 0,
-			})}
+			className={cn(
+				'bg-background px-6 border-t border-t-[#ebebeb] select-none',
+				{
+					'bg-red-100': stock === 0,
+				},
+			)}
 		>
 			<div className='py-4'>
 				<div className='relative flex self-start'>
@@ -197,7 +197,7 @@ const CartProduct: FC<Props> = ({
 								<span className='leading-8 inline-flex p-0.5 cursor-pointer '>
 									<span
 										className={cn(
-											'leading-8 w-5 h-5 rounded-full bg-white border border-gray-300 flex items-center justify-center hover:border-orange-background',
+											'leading-8 w-5 h-5 rounded-full bg-background border border-gray-300 flex items-center justify-center hover:border-orange-background',
 											{
 												'border-orange-background': selected,
 											},
@@ -245,19 +245,19 @@ const CartProduct: FC<Props> = ({
 									className='mr-2.5 cursor-pointer inline-block'
 									onClick={() => handleaddToWishlist()}
 								>
-									<Heart className='w-4 hover:stroke-orange-seconadry' />
+									<Heart className='w-4 hover:stroke-amber-700' />
 								</span>
 								<span
 									className='cursor-pointer inline-block'
 									onClick={() => removeFromCart(product)}
 								>
-									<Trash className='w-4 hover:stroke-orange-seconadry' />
+									<Trash className='w-4 hover:stroke-amber-700' />
 								</span>
 							</div>
 						</div>
 						{/* Style - size */}
 						<div className='my-1'>
-							<button className='text-main-primary relative h-[24px] bg-gray-100 whitespace-normal px-2.5 py-0 max-w-full text-xs leading-4 rounded-xl font-bold cursor-pointer  outline-0'>
+							<button className='text-main-primary relative h-[24px] bg-gray-100 dark:bg-gray-700 whitespace-normal px-2.5 py-0 max-w-full text-xs leading-4 rounded-xl font-bold cursor-pointer  outline-0'>
 								<span className='flex items-center justify-between flex-wrap'>
 									<div className='text-left inline-block overflow-hidden text-ellipsis whitespace-nowrap max-w-[95%]'>
 										{size}
@@ -285,25 +285,31 @@ const CartProduct: FC<Props> = ({
 							)}
 							{/* Quantity changer */}
 							<div className='text-xs'>
-								<div className='text-gray-900 text-sm leading-6 list-none inline-flex items-center'>
+								<div className='text-sm leading-6 list-none inline-flex items-center text-gray-900 dark:text-gray-100'>
+									{/* Minus Button */}
 									<div
-										className='w-6 h-6 text-xs bg-gray-100 hover:bg-gray-200 leading-6 grid place-items-center rounded-full cursor-pointer'
+										className='w-6 h-6 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 grid place-items-center rounded-full cursor-pointer transition-colors'
 										onClick={() => updateProductQuantityHandler('remove')}
 									>
-										<Minus className='w-3 stroke-[#555]' />
+										<Minus className='w-3 stroke-gray-700 dark:stroke-gray-200' />
 									</div>
+
+									{/* Quantity Input */}
 									<input
 										type='text'
 										value={quantity}
 										min={1}
 										max={stock}
-										className='m-1 h-6 w-[32px] bg-transparent border-none leading-6 tracking-normal text-center outline-none text-gray-900 font-bold'
+										readOnly
+										className='m-1 h-6 w-[32px] bg-transparent border-none text-center font-bold outline-none text-gray-900 dark:text-gray-100'
 									/>
+
+									{/* Plus Button */}
 									<div
-										className='w-6 h-6 text-xs bg-gray-100 hover:bg-gray-200 leading-6 grid place-items-center rounded-full cursor-pointer'
+										className='w-6 h-6 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 grid place-items-center rounded-full cursor-pointer transition-colors'
 										onClick={() => updateProductQuantityHandler('add')}
 									>
-										<Plus className='w-3 stroke-[#555]' />
+										<Plus className='w-3 stroke-gray-700 dark:stroke-gray-200' />
 									</div>
 								</div>
 							</div>
@@ -321,8 +327,8 @@ const CartProduct: FC<Props> = ({
 														${shippingInfo.initialFee} (first item)
 														{quantity > 1
 															? `+ 
-                              ${quantity - 1} item(s) x $${extraShippingFee} 
-                              (additional items)`
+														${quantity - 1} item(s) x $${extraShippingFee} 
+														(additional items)`
 															: ' x 1'}
 														= ${shippingInfo.totalFee.toFixed(2)}
 													</>
