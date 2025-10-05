@@ -52,23 +52,23 @@ const CartHeader: FC<Props> = ({
 	};
 
 	return (
-		<div className='bg-white py-4'>
+		<div className='bg-background py-4'>
 			<div>
-				<div className='px-6 g-white'>
-					<div className='flex items-center text-[#222] font-bold text-2xl'>
+				<div className='px-6 bg-background'>
+					<div className='flex items-center text-[#222] dark:text-[#fff] font-bold text-2xl'>
 						<h1>Cart ({cartLength})</h1>
 					</div>
 				</div>
-				<div className='flex justify-between bg-white pt-4 px-6'>
+				<div className='flex justify-between bg-background pt-4 px-6'>
 					<div className='flex items-center justify-start w-full'>
 						<label
-							className='p-0 text-gray-900 text-sm leading-6 list-none inline-flex items-center m-0 mr-2 cursor-pointer align-middle'
+							className='p-0 text-gray-900 dark:text-gray-50 text-sm leading-6 list-none inline-flex items-center m-0 mr-2 cursor-pointer align-middle'
 							onClick={() => handleSelectAll()}
 						>
 							<span className='leading-8 inline-flex p-0.5 cursor-pointer'>
 								<span
 									className={cn(
-										'leading-8 w-5 h-5 rounded-full bg-white border border-gray-300 flex items-center justify-center hover:border-orange-background',
+										'leading-8 w-5 h-5 rounded-full bg-background border border-gray-300 flex items-center justify-center hover:border-orange-background',
 										{
 											'border-orange-background':
 												cartLength > 0 && selectedLength === cartLength,
