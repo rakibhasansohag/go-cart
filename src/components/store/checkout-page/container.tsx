@@ -58,6 +58,7 @@ const CheckoutContainer: FC<Props> = ({
 				<CountryNote
 					country={activeCountry ? activeCountry.name : userCountry.name}
 				/>
+
 				{cartData.cartItems.map((product) => (
 					<CheckoutProductCard
 						key={product.variantId}
@@ -66,6 +67,7 @@ const CheckoutContainer: FC<Props> = ({
 					/>
 				))}
 			</div>
+
 			{/* TODO:  Will add place order or order like cards */}
 		</div>
 	);

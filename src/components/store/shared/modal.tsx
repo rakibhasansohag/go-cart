@@ -19,7 +19,7 @@ const Modal: FC<ModalProps> = ({ children, title, show, setShow }) => {
 	if (!show) return null;
 
 	return (
-		<div className='w-full h-full fixed top-0 left-0 right-0 bottom-0 bg-gray-50/65 z-50'>
+		<div className='w-full h-full fixed top-0 left-0 right-0 bottom-0 bg-gray-50/65 z-50 '>
 			<div
 				ref={ref}
 				className='fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-background px-4 md:px-10 w-[calc(100%-1rem)]  max-w-[900px] py-5 shadow-md rounded-lg'

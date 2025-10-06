@@ -28,13 +28,15 @@ model User {
   picture String @db.Text
   role    Role   @default(USER)
 
-  stores Store[] @relation("UserStores")
+  stores            Store[]           @relation("UserStores")
   shippingAddresses ShippingAddress[] @relation("UserShippingAddresses")
   wishlist          Wishlist[]        @relation("WishlistToUser")
   reviews           Review[]          @relation("ReviewToUser")
   following         Store[]           @relation("UserFollowingStore")
   cart              Cart?             @relation("UserCart")
-  coupons Coupon[]  @relation("CouponToUser")
+  coupons           Coupon[]          @relation("CouponToUser")
+  orders            Order[]           @relation("UserOrders")
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -99,17 +101,18 @@ model Store {
   defaultShippingFeeFixed             Float       @default(0)
   defaultDeliveryTimeMin              Int         @default(7)
   defaultDeliveryTimeMax              Int         @default(31)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
+  createdAt                           DateTime    @default(now())
+  updatedAt                           DateTime    @default(now()) @updatedAt
 
-  userId String
-  user   User   @relation("UserStores", fields: [userId], references: [id])
-  followers     User[]         @relation("UserFollowingStore")
-  cartItems     CartItem[]     @relation("CartItemToStore")
+  userId    String
+  user      User       @relation("UserStores", fields: [userId], references: [id])
+  followers User[]     @relation("UserFollowingStore")
+  cartItems CartItem[] @relation("CartItemToStore")
 
-  products Product[] @relation("StoreToProduct")
+  products      Product[]      @relation("StoreToProduct")
   shippingRates ShippingRate[] @relation("StoreShippingRates")
-  coupons Coupon[] @relation("CouponToStore")
+  coupons       Coupon[]       @relation("CouponToStore")
+  orderGroups   OrderGroup[]   @relation("OrderGroupToStore")
 
   @@index([userId])
 }
@@ -133,15 +136,15 @@ model Product {
   shippingFeeMethod           ShippingFeeMethod @default(ITEM)
   views                       Int               @default(0)
   freeShippingForAllCountries Boolean           @default(false)
-  freeShipping FreeShipping? @relation("ProductFreeShipping")
-  reviews   Review[]         @relation("ReviewToProduct")
+  freeShipping                FreeShipping?     @relation("ProductFreeShipping")
+  reviews                     Review[]          @relation("ReviewToProduct")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
-  storeId String
-  store   Store  @relation("StoreToProduct", fields: [storeId], references: [id])
-  wishlist  Wishlist[]       @relation("WishlistToProduct")
+  storeId  String
+  store    Store      @relation("StoreToProduct", fields: [storeId], references: [id])
+  wishlist Wishlist[] @relation("WishlistToProduct")
 
   variants  ProductVariant[] @relation("ProductToProductVariant")
   specs     Spec[]           @relation("ProductSpec")
@@ -178,10 +181,10 @@ model ProductVariant {
   productId String
   product   Product @relation("ProductToProductVariant", fields: [productId], references: [id])
 
-  sizes  Size[]                @relation("ProductVariantSizes")
-  images ProductVariantImage[] @relation("ProductVariantToVariantImage")
-  colors Color[]               @relation("ProductVariantColors")
-  specs  Spec[]                @relation("ProductVariantSpec")
+  sizes    Size[]                @relation("ProductVariantSizes")
+  images   ProductVariantImage[] @relation("ProductVariantToVariantImage")
+  colors   Color[]               @relation("ProductVariantColors")
+  specs    Spec[]                @relation("ProductVariantSpec")
   wishlist Wishlist[]            @relation("WishlistToProductVariant")
 
   createdAt DateTime @default(now())
@@ -199,7 +202,7 @@ model Size {
 
   productVariantId String
   productVariant   ProductVariant @relation("ProductVariantSizes", fields: [productVariantId], references: [id])
-  wishlist Wishlist[] @relation("WishlistToSize")
+  wishlist         Wishlist[]     @relation("WishlistToSize")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
@@ -357,7 +360,7 @@ model ShippingAddress {
   zip_code  String
   default   Boolean @default(false)
 
- 
+  orders Order[] @relation("ShippingAddressToOrder")
 
   userId String
   user   User   @relation("UserShippingAddresses", fields: [userId], references: [id])
@@ -397,15 +400,15 @@ model Wishlist {
 }
 
 model Review {
-  id       String @id @default(uuid())
-  variant  String
+  id           String @id @default(uuid())
+  variant      String
   variantImage String
-  review   String
-  rating   Float
-  color    String
-  size     String
-  quantity String
-  likes    Int    @default(0)
+  review       String
+  rating       Float
+  color        String
+  size         String
+  quantity     String
+  likes        Int    @default(0)
 
   images ReviewImage[] @relation("ReviewToReviewImage")
 
@@ -441,9 +444,8 @@ model Cart {
   userId String @unique
   user   User   @relation("UserCart", fields: [userId], references: [id], onDelete: Cascade)
 
-
   couponId String?
-  coupon Coupon? @relation("CouponToCart",fields: [couponId],references: [id])
+  coupon   Coupon? @relation("CouponToCart", fields: [couponId], references: [id])
 
   cartItems    CartItem[] @relation("CartToCartItem")
   shippingFees Float      @default(0)
@@ -486,26 +488,164 @@ model CartItem {
 }
 
 model Coupon {
-  id String @id @default(uuid())
-  code String @unique
+  id        String @id @default(uuid())
+  code      String @unique
   startDate String
-  endDate String
-  discount Int
-
+  endDate   String
+  discount  Int
 
   storeId String
-  store Store @relation("CouponToStore",fields: [storeId],references: [id],onDelete: Cascade) 
+  store   Store  @relation("CouponToStore", fields: [storeId], references: [id], onDelete: Cascade)
 
-  users User[]  @relation("CouponToUser")
-
+  users  User[]       @relation("CouponToUser")
+  orders OrderGroup[] @relation("CouponToOrderGroup")
 
   carts Cart[] @relation("CouponToCart")
-
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-
   @@index([storeId])
+}
 
+enum OrderStatus {
+  Pending
+  Confirmed
+  Processing
+  Shipped
+  OutforDelivery
+  Delivered
+  Cancelled
+  Failed
+  Refunded
+  Returned
+  PartiallyShipped
+  OnHold
+}
+
+model Order {
+  id           String @id @default(uuid())
+  shippingFees Float
+  subTotal     Float
+  total        Float
+
+  groups OrderGroup[] @relation("OrderGroupToOrder")
+
+  orderStatus OrderStatus @default(Pending)
+
+  shippingAddressId String
+  shippingAddress   ShippingAddress @relation("ShippingAddressToOrder", fields: [shippingAddressId], references: [id])
+
+  userId String
+  user   User   @relation("UserOrders", fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([shippingAddressId])
+  @@index([userId])
+}
+
+model OrderGroup {
+  id     String      @id @default(uuid())
+  status OrderStatus @default(Pending)
+
+  items OrderItem[] @relation("OrderItemToGroup")
+
+  shippingService     String
+  shippingDeliveryMin Int
+  shippingDeliveryMax Int
+
+  shippingFees Float
+  subTotal     Float
+  total        Float
+
+  orderId String
+  order   Order  @relation("OrderGroupToOrder", fields: [orderId], references: [id])
+
+  storeId String
+  store   Store  @relation("OrderGroupToStore", fields: [storeId], references: [id])
+
+  couponId String?
+  coupon   Coupon? @relation("CouponToOrderGroup", fields: [couponId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([orderId])
+  @@index([storeId])
+  @@index([couponId])
+}
+
+enum ProductStatus {
+  /// Product has been added to the order but no action taken yet
+  Pending
+
+  /// Product is being prepared (picked, packed, or manufactured)
+  Processing
+
+  /// Product is packed and ready for shipment
+  ReadyForShipment
+
+  /// Product has been shipped
+  Shipped
+
+  /// Product has been delivered to the customer
+  Delivered
+
+  /// Product order has been canceled
+  Canceled
+
+  /// Product has been returned by the customer
+  Returned
+
+  /// Product cost has been refunded
+  Refunded
+
+  /// Delivery attempt failed, product may return to warehouse
+  FailedDelivery
+
+  /// Product is on hold (e.g., stock issues, verification required)
+  OnHold
+
+  /// Product is delayed due to stock unavailability
+  Backordered
+
+  /// Some units of the product were shipped, but the order is not yet complete
+  PartiallyShipped
+
+  /// Customer requested an exchange for the product
+  ExchangeRequested
+
+  /// Product is awaiting customer pickup (for pickup orders)
+  AwaitingPickup
+}
+
+model OrderItem {
+  id String @id @default(uuid())
+
+  productId String
+  variantId String
+  sizeId    String
+
+  productSlug String
+  variantSlug String
+  sku         String
+  name        String
+  image       String
+  size        String
+  quantity    Int    @default(1)
+  shippingFee Float  @default(0)
+  price       Float
+  totalPrice  Float
+
+  orderGroupId String
+  orderGroup   OrderGroup @relation("OrderItemToGroup", fields: [orderGroupId], references: [id], onDelete: Cascade)
+
+  status ProductStatus @default(Pending)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([orderGroupId])
 }

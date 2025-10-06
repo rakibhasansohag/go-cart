@@ -82,18 +82,18 @@ const ShippingAddressCard: FC<Props> = ({
 			<div className='w-full border-t pt-2'>
 				{/* Full name - Phone number */}
 				<div className='flex max-w-[328px] overflow-hidden text-ellipsis whitespace-nowrap'>
-					<span className='mr-4 text-sm text-black font-semibold capitalize'>
+					<span className='mr-4 text-sm text-main-primary font-semibold capitalize'>
 						{address.firstName} {address.lastName}
 					</span>
 					<span>{address.phone}</span>
 				</div>
 				{/* Address 1 - Address 2 */}
-				<div className='text-sm max-w-[90%] text-gray-600 leading-4 overflow-hidden text-ellipsis whitespace-nowrap'>
+				<div className='text-sm max-w-[90%] text-main-secondary leading-4 overflow-hidden text-ellipsis whitespace-nowrap'>
 					{address.address1}
 					{address.address2 && `, ${address.address2}`}
 				</div>
 				{/* State - City - Country - Zipcode */}
-				<div className='text-sm max-w-[90%] text-gray-600 leading-4 overflow-hidden text-ellipsis whitespace-nowrap'>
+				<div className='text-sm max-w-[90%] text-main-secondary leading-4 overflow-hidden text-ellipsis whitespace-nowrap'>
 					{address.state}, {address.city}, {address.country.name},&nbsp;
 					{address.zip_code}
 				</div>
