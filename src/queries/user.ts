@@ -973,7 +973,7 @@ export const placeOrder = async (
 			userId: userId,
 			shippingAddressId: shippingAddress.id,
 			orderStatus: 'Pending',
-			// paymentStatus: 'Pending', // TODO: Will add after the payment related thing added
+			paymentStatus: 'Pending',
 			subTotal: 0, // Will calculate below
 			shippingFees: 0, // Will calculate below
 			total: 0, // Will calculate below

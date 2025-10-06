@@ -523,6 +523,22 @@ enum OrderStatus {
   OnHold
 }
 
+enum PaymentStatus {
+  Pending
+  Paid
+  Failed
+  Declined
+  Cancelled
+  Refunded
+  PartiallyRefunded
+  Chargeback
+}
+
+enum PaymentMethod {
+  Paypal
+  Stripe
+}
+
 model Order {
   id           String @id @default(uuid())
   shippingFees Float
@@ -532,6 +548,7 @@ model Order {
   groups OrderGroup[] @relation("OrderGroupToOrder")
 
   orderStatus OrderStatus @default(Pending)
+  paymentStatus PaymentStatus @default(Pending)
 
   shippingAddressId String
   shippingAddress   ShippingAddress @relation("ShippingAddressToOrder", fields: [shippingAddressId], references: [id])
