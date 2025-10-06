@@ -478,3 +478,11 @@ export const AddReviewSchema = z.object({
 
 export type AddReviewForm = z.infer<typeof AddReviewSchema>;
 
+
+export const ApplyCouponFormSchema = z.object({
+	coupon: z
+		.string()
+		.nonempty('Coupon code is required.')
+		.trim()
+		.min(1, { message: 'Coupon code is required.' }),
+});

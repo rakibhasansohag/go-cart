@@ -36,7 +36,7 @@ export default function CheckoutProductCard({
 						{/* Title - Actions */}
 						<div className='w-[calc(100%-48px)] flex items-start overflow-hidden whitespace-nowrap'>
 							<Link
-								href={`/product/${productSlug}/${variantSlug}?size=${sizeId}`}
+								href={`/product/${productSlug}/?variant=${variantSlug}?size=${sizeId}`}
 								className='inline-block overflow-hidden text-sm whitespace-nowrap overflow-ellipsis'
 							>
 								{product.name}

@@ -8,6 +8,7 @@ import CheckoutProductCard from '../cards/checkout-product';
 import { Country as CountryType } from '@/lib/types';
 import { updateCheckoutProductstWithLatest } from '@/queries/user';
 import CountryNote from '../shared/country-note';
+import PlaceOrderCard from '../cards/place-order';
 
 interface Props {
 	cart: CartWithCartItemsType;
@@ -68,7 +69,11 @@ const CheckoutContainer: FC<Props> = ({
 				))}
 			</div>
 
-			{/* TODO:  Will add place order or order like cards */}
+			<PlaceOrderCard
+				cartData={cartData}
+				setCartData={setCartData}
+				shippingAddress={selectedAddress}
+			/>
 		</div>
 	);
 };

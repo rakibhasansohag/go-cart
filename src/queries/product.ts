@@ -1262,3 +1262,48 @@ export const getProductShippingFee = async (
 	// Return 0 if the country is not found
 	return 0;
 };
+
+export const getDeliveryDetailsForStoreByCountry = async (
+	storeId: string,
+	countryId: string,
+) => {
+	// Get shipping rate
+	const shippingRate = await db.shippingRate.findFirst({
+		where: {
+			countryId,
+			storeId,
+		},
+	});
+
+	let storeDetails;
+	if (!shippingRate) {
+		storeDetails = await db.store.findUnique({
+			where: {
+				id: storeId,
+			},
+			select: {
+				defaultShippingService: true,
+				defaultDeliveryTimeMin: true,
+				defaultDeliveryTimeMax: true,
+			},
+		});
+	}
+
+	const shippingService = shippingRate
+		? shippingRate.shippingService
+		: storeDetails?.defaultShippingService;
+
+	const deliveryTimeMin = shippingRate
+		? shippingRate.deliveryTimeMin
+		: storeDetails?.defaultDeliveryTimeMin;
+
+	const deliveryTimeMax = shippingRate
+		? shippingRate.deliveryTimeMax
+		: storeDetails?.defaultDeliveryTimeMax;
+
+	return {
+		shippingService,
+		deliveryTimeMin,
+		deliveryTimeMax,
+	};
+};

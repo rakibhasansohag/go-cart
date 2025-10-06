@@ -9,7 +9,11 @@ import {
 } from '@/lib/types';
 import { getCookie } from 'cookies-next';
 import { cookies } from 'next/headers';
-import { getProductShippingFee, getShippingDetails } from './product';
+import {
+	getDeliveryDetailsForStoreByCountry,
+	getProductShippingFee,
+	getShippingDetails,
+} from './product';
 import {
 	CartItem,
 	Country as CountryDB,
@@ -798,5 +802,302 @@ export const upsertShippingAddress = async (
  * 
  */
 
+/**
+ * Function placeOrder
+ * @param shippingAddress
+ * @param cartId
+ * @returns
+ */
 
+export const placeOrder = async (
+	shippingAddress: ShippingAddress,
+	cartId: string,
+): Promise<{ orderId: string }> => {
+	// Ensure the user is authenticated
+	const user = await currentUser();
+	if (!user) throw new Error('Unauthenticated.');
 
+	const userId = user.id;
+
+	// Fetch user's cart with all items
+	const cart = await db.cart.findUnique({
+		where: {
+			id: cartId,
+		},
+		include: {
+			cartItems: true,
+			coupon: true,
+		},
+	});
+
+	if (!cart) throw new Error('Cart not found.');
+
+	const cartItems = cart.cartItems;
+	const cartCoupon = cart.coupon; // The coupon, if it exists
+
+	// Fetch product, variant, and size data from the database for validation
+	const validatedCartItems = await Promise.all(
+		cartItems.map(async (cartProduct) => {
+			const { productId, variantId, sizeId, quantity } = cartProduct;
+
+			// Fetch the product, variant, and size from the database
+			const product = await db.product.findUnique({
+				where: {
+					id: productId,
+				},
+				include: {
+					store: true,
+					freeShipping: {
+						include: {
+							eligibaleCountries: true,
+						},
+					},
+					variants: {
+						where: {
+							id: variantId,
+						},
+						include: {
+							sizes: {
+								where: {
+									id: sizeId,
+								},
+							},
+							images: true,
+						},
+					},
+				},
+			});
+
+			if (
+				!product ||
+				product.variants.length === 0 ||
+				product.variants[0].sizes.length === 0
+			) {
+				throw new Error(
+					`Invalid product, variant, or size combination for productId ${productId}, variantId ${variantId}, sizeId ${sizeId}`,
+				);
+			}
+
+			const variant = product.variants[0];
+			const size = variant.sizes[0];
+
+			// Validate stock and price
+			const validQuantity = Math.min(quantity, size.quantity);
+
+			const price = size.discount
+				? size.price - size.price * (size.discount / 100)
+				: size.price;
+
+			// Calculate Shipping details
+			const countryId = shippingAddress.countryId;
+
+			const temp_country = await db.country.findUnique({
+				where: {
+					id: countryId,
+				},
+			});
+
+			if (!temp_country)
+				throw new Error('Failed to get Shipping details for order.');
+
+			const country = {
+				name: temp_country.name,
+				code: temp_country.code,
+				city: '',
+				region: '',
+			};
+
+			let details = {
+				shippingFee: 0,
+				extraShippingFee: 0,
+				isFreeShipping: false,
+			};
+
+			if (country) {
+				const temp_details = await getShippingDetails(
+					product.shippingFeeMethod,
+					country,
+					product.store,
+					product.freeShipping,
+				);
+				if (typeof temp_details !== 'boolean') {
+					details = temp_details;
+				}
+			}
+			let shippingFee = 0;
+			const { shippingFeeMethod } = product;
+			if (shippingFeeMethod === 'ITEM') {
+				shippingFee =
+					quantity === 1
+						? details.shippingFee
+						: details.shippingFee + details.extraShippingFee * (quantity - 1);
+			} else if (shippingFeeMethod === 'WEIGHT') {
+				shippingFee = details.shippingFee * variant.weight * quantity;
+			} else if (shippingFeeMethod === 'FIXED') {
+				shippingFee = details.shippingFee;
+			}
+
+			const totalPrice = price * validQuantity + shippingFee;
+			return {
+				productId,
+				variantId,
+				productSlug: product.slug,
+				variantSlug: variant.slug,
+				sizeId,
+				storeId: product.storeId,
+				sku: variant.sku,
+				name: `${product.name} · ${variant.variantName}`,
+				image: variant.images[0].url,
+				size: size.size,
+				quantity: validQuantity,
+				price,
+				shippingFee,
+				totalPrice,
+			};
+		}),
+	);
+
+	// Define the type for grouped items by store
+	type GroupedItems = { [storeId: string]: typeof validatedCartItems };
+
+	// Group validated items by store
+	const groupedItems = validatedCartItems.reduce<GroupedItems>((acc, item) => {
+		if (!acc[item.storeId]) acc[item.storeId] = [];
+		acc[item.storeId].push(item);
+		return acc;
+	}, {} as GroupedItems);
+
+	// Create the order
+	const order = await db.order.create({
+		data: {
+			userId: userId,
+			shippingAddressId: shippingAddress.id,
+			orderStatus: 'Pending',
+			// paymentStatus: 'Pending', // TODO: Will add after the payment related thing added
+			subTotal: 0, // Will calculate below
+			shippingFees: 0, // Will calculate below
+			total: 0, // Will calculate below
+		},
+	});
+
+	// Iterate over each store's items and create OrderGroup and OrderItems
+	let orderTotalPrice = 0;
+	let orderShippingFee = 0;
+
+	for (const [storeId, items] of Object.entries(groupedItems)) {
+		// Calculate store-specific totals
+		const groupedTotalPrice = items.reduce(
+			(acc, item) => acc + item.totalPrice,
+			0,
+		);
+
+		const groupShippingFees = items.reduce(
+			(acc, item) => acc + item.shippingFee,
+			0,
+		);
+
+		const { shippingService, deliveryTimeMin, deliveryTimeMax } =
+			await getDeliveryDetailsForStoreByCountry(
+				storeId,
+				shippingAddress.countryId,
+			);
+
+		// Check coupon store
+		const check = storeId === cartCoupon?.storeId;
+
+		// Calculate discount based on coupon
+		let discountedAmount = 0;
+		if (check && cartCoupon) {
+			discountedAmount = (groupedTotalPrice * cartCoupon.discount) / 100;
+		}
+
+		// Calculate the total after applying the discount
+		const totalAfterDiscount = groupedTotalPrice - discountedAmount;
+		// Create an OrderGroup for this store
+		const orderGroup = await db.orderGroup.create({
+			data: {
+				orderId: order.id,
+				storeId: storeId,
+				status: 'Pending',
+				subTotal: groupedTotalPrice - groupShippingFees,
+				shippingFees: groupShippingFees,
+				total: totalAfterDiscount,
+				shippingService: shippingService || 'International Delivery',
+				shippingDeliveryMin: deliveryTimeMin || 7,
+				shippingDeliveryMax: deliveryTimeMax || 30,
+				couponId: check && cartCoupon ? cartCoupon?.id : null,
+			},
+		});
+
+		// Create OrderItems for this OrderGroup
+		for (const item of items) {
+			await db.orderItem.create({
+				data: {
+					orderGroupId: orderGroup.id,
+					productId: item.productId,
+					variantId: item.variantId,
+					sizeId: item.sizeId,
+					productSlug: item.productSlug,
+					variantSlug: item.variantSlug,
+					sku: item.sku,
+					name: item.name,
+					image: item.image,
+					size: item.size,
+					quantity: item.quantity,
+					price: item.price,
+					shippingFee: item.shippingFee,
+					totalPrice: item.totalPrice,
+				},
+			});
+		}
+
+		// Update order totals
+		orderTotalPrice += totalAfterDiscount;
+		orderShippingFee += groupShippingFees;
+	}
+
+	// Update the main order with the final totals
+	await db.order.update({
+		where: {
+			id: order.id,
+		},
+		data: {
+			subTotal: orderTotalPrice - orderShippingFee,
+			shippingFees: orderShippingFee,
+			total: orderTotalPrice,
+		},
+	});
+
+	// Delete cart
+	/*
+  await db.cart.delete({
+    where: {
+      id: cartId,
+    },
+  });
+  */
+
+	return {
+		orderId: order.id,
+	};
+};
+
+// Empty the user's cart
+export const emptyUserCart = async () => {
+	try {
+		// Ensure the user is authenticated
+		const user = await currentUser();
+		if (!user) throw new Error('Unauthenticated.');
+
+		const userId = user.id;
+
+		const res = await db.cart.delete({
+			where: {
+				userId,
+			},
+		});
+		if (res) return true;
+	} catch (error) {
+		throw error;
+	}
+};
