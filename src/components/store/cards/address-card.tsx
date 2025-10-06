@@ -1,4 +1,5 @@
-import { UserShippingAddressType } from '@/lib/types';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { ShippingAddressPayload, UserShippingAddressType } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { Country } from '@prisma/client';
 import { Check } from 'lucide-react';
@@ -26,11 +27,25 @@ const ShippingAddressCard: FC<Props> = ({
 	const [show, setShow] = useState(false);
 	const handleMakeDefault = async () => {
 		try {
-			const { country, ...newAddress } = address;
-			const response = await upsertShippingAddress({
-				...newAddress,
+			const payload: ShippingAddressPayload = {
+				id: address.id,
+				firstName: address.firstName,
+				lastName: address.lastName,
+				phone: address.phone,
+				address1: address.address1,
+
+				address2: address.address2 ?? undefined,
+				state: address.state,
+				city: address.city,
+				zip_code: address.zip_code,
+
+				countryId:
+					(address as any).countryId ?? (address as any).country?.id ?? '',
 				default: true,
-			});
+			};
+
+			const response = await upsertShippingAddress(payload);
+
 			if (response) {
 				toast.success('New Default Address saved.');
 				router.refresh();
