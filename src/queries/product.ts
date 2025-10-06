@@ -18,7 +18,7 @@ import {
 	VariantSimplified,
 } from '@/lib/types';
 import { db } from '../lib/db';
-import { ProductVariant, Size, Store } from '@prisma/client';
+import { Country, ProductVariant, Size, Store } from '@prisma/client';
 import { getCookie } from 'cookies-next';
 import { cookies } from 'next/headers';
 
@@ -952,7 +952,7 @@ export const checkIfUserFollowingStore = async (
 
 	return isUserFollowingStore;
 };
-  
+
 export const getRatingStatistics = async (productId: string) => {
 	const ratingStats = await db.review.groupBy({
 		by: ['rating'],
@@ -1120,8 +1120,6 @@ const incrementProductViews = async (productId: string) => {
 	}
 };
 
-
-
 // Function: getProductFilteredReviews
 // Description: Retrieves filtered and sorted reviews for a product from the database, based on rating, presence of images, and sorting options.
 // Access Level: Public
@@ -1133,55 +1131,134 @@ const incrementProductViews = async (productId: string) => {
 //   - pageSize: The number of reviews to retrieve per page.
 // Returns: A paginated list of reviews that match the filter and sort criteria.
 export const getProductFilteredReviews = async (
-  productId: string,
-  filters: { rating?: number; hasImages?: boolean },
-  sort: { orderBy: "latest" | "oldest" | "highest" } | undefined,
-  page: number = 1,
-  pageSize: number = 4
+	productId: string,
+	filters: { rating?: number; hasImages?: boolean },
+	sort: { orderBy: 'latest' | 'oldest' | 'highest' } | undefined,
+	page: number = 1,
+	pageSize: number = 4,
 ) => {
-  const reviewFilter: any = {
-    productId,
-  };
+	const reviewFilter: any = {
+		productId,
+	};
 
-  // Apply rating filter if provided
-  if (filters.rating) {
-    const rating = filters.rating;
-    reviewFilter.rating = {
-      in: [rating, rating + 0.5],
-    };
-  }
+	// Apply rating filter if provided
+	if (filters.rating) {
+		const rating = filters.rating;
+		reviewFilter.rating = {
+			in: [rating, rating + 0.5],
+		};
+	}
 
-  // Apply image filter if provided
-  if (filters.hasImages) {
-    reviewFilter.images = {
-      some: {},
-    };
-  }
+	// Apply image filter if provided
+	if (filters.hasImages) {
+		reviewFilter.images = {
+			some: {},
+		};
+	}
 
-  // Set sorting order using local SortOrder type
-  const sortOption: { createdAt?: SortOrder; rating?: SortOrder } =
-    sort && sort.orderBy === "latest"
-      ? { createdAt: "desc" }
-      : sort && sort.orderBy === "oldest"
-      ? { createdAt: "asc" }
-      : { rating: "desc" };
+	// Set sorting order using local SortOrder type
+	const sortOption: { createdAt?: SortOrder; rating?: SortOrder } =
+		sort && sort.orderBy === 'latest'
+			? { createdAt: 'desc' }
+			: sort && sort.orderBy === 'oldest'
+			? { createdAt: 'asc' }
+			: { rating: 'desc' };
 
-  // Calculate pagination parameters
-  const skip = (page - 1) * pageSize;
-  const take = pageSize;
+	// Calculate pagination parameters
+	const skip = (page - 1) * pageSize;
+	const take = pageSize;
 
-  // Fetch reviews from the database
-  const reviews = await db.review.findMany({
-    where: reviewFilter,
-    include: {
-      images: true,
-      user: true,
-    },
-    orderBy: sortOption,
-    skip, // Skip records for pagination
-    take, // Take records for pagination
-  });
+	// Fetch reviews from the database
+	const reviews = await db.review.findMany({
+		where: reviewFilter,
+		include: {
+			images: true,
+			user: true,
+		},
+		orderBy: sortOption,
+		skip, // Skip records for pagination
+		take, // Take records for pagination
+	});
 
-  return reviews;
+	return reviews;
 };
 
+// Function: getProductShippingFee
+// Description: Retrieves and calculates shipping fee based on user country and product.
+// Access Level: Public
+// Parameters:
+//   - shippingFeeMethod: The shipping fee method of the product.
+//   - userCountry: The parsed user country object from cookies.
+//   - store :  store details.
+//   - freeShipping.
+//   - weight.
+//   - quantity.
+// Returns: Calculated total shipping fee for product.
+export const getProductShippingFee = async (
+	shippingFeeMethod: string,
+	userCountry: Country,
+	store: Store,
+	freeShipping: FreeShippingWithCountriesType | null,
+	weight: number,
+	quantity: number,
+) => {
+	// Fetch country information based on userCountry.name and userCountry.code
+	const country = await db.country.findUnique({
+		where: {
+			name: userCountry.name,
+			code: userCountry.code,
+		},
+	});
+
+	if (country) {
+		// Check if the user qualifies for free shipping
+		if (freeShipping) {
+			const free_shipping_countries = freeShipping.eligibaleCountries;
+			const isEligableForFreeShipping = free_shipping_countries.some(
+				(c) => c.countryId === country.name,
+			);
+			if (isEligableForFreeShipping) {
+				return 0; // Free shipping
+			}
+		}
+
+		// Fetch shipping rate from the database for the given store and country
+		const shippingRate = await db.shippingRate.findFirst({
+			where: {
+				countryId: country.id,
+				storeId: store.id,
+			},
+		});
+
+		// Destructure the shippingRate with defaults
+		const {
+			shippingFeePerItem = store.defaultShippingFeePerItem,
+			shippingFeeForAdditionalItem = store.defaultShippingFeeForAdditionalItem,
+			shippingFeePerKg = store.defaultShippingFeePerKg,
+			shippingFeeFixed = store.defaultShippingFeeFixed,
+		} = shippingRate || {};
+
+		// Calculate the additional quantity (excluding the first item)
+		const additionalItemsQty = quantity - 1;
+
+		// Define fee calculation methods in a map (using functions)
+		const feeCalculators: Record<string, () => number> = {
+			ITEM: () =>
+				shippingFeePerItem + shippingFeeForAdditionalItem * additionalItemsQty,
+			WEIGHT: () => shippingFeePerKg * weight * quantity,
+			FIXED: () => shippingFeeFixed,
+		};
+
+		// Check if the fee calculation method exists and calculate the fee
+		const calculateFee = feeCalculators[shippingFeeMethod];
+		if (calculateFee) {
+			return calculateFee(); // Execute the corresponding calculation
+		}
+
+		// If no valid shipping method is found, return 0
+		return 0;
+	}
+
+	// Return 0 if the country is not found
+	return 0;
+};

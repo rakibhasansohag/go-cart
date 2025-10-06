@@ -56,7 +56,7 @@ export default async function CheckoutPage() {
 	return (
 		<>
 			<Header />
-			<div className='bg-[#f4f4f4] min-h-[calc(100vh-65px)]'>
+			<div className='bg-f5 min-h-[calc(100vh-65px)]'>
 				<div className='max-w-container mx-auto py-4 px-2 '>
 					<CheckoutContainer
 						cart={cart}

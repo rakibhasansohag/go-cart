@@ -1,15 +1,21 @@
 import {
+	Cart,
+	CartItem,
+	Coupon,
 	FreeShipping,
 	FreeShippingCountry,
 	Prisma,
 	ProductVariantImage,
 	Review,
 	ReviewImage,
+	ShippingAddress,
 	ShippingFeeMethod,
 	ShippingRate,
 	Size,
 	Spec,
+	Store,
 	User,
+	Country as CountryPrisma,
 } from '@prisma/client';
 import { getAllSubCategories } from '../queries/subCategory';
 import {
@@ -227,4 +233,14 @@ export type ReviewDetailsType = {
 	variant: string;
 	variantImage: string;
 	color: string;
+};
+
+export type CartWithCartItemsType = Cart & {
+	cartItems: CartItem[];
+	coupon: (Coupon & { store: Store }) | null;
+};
+
+export type UserShippingAddressType = ShippingAddress & {
+	country: CountryPrisma;
+	user: User;
 };
