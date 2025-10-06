@@ -436,3 +436,35 @@ export const updateCartWithLatest = async (
 	);
 	return validatedCartItems;
 };
+
+
+// Function: getUserShippingAddresses
+// Description: Retrieves all shipping addresses for a specific user.
+// Permission Level: User who owns the addresses
+// Parameters: None
+// Returns: List of shipping addresses for the user.
+export const getUserShippingAddresses = async () => {
+  try {
+    // Get current user
+    const user = await currentUser();
+
+    // Ensure user is authenticated
+    if (!user) throw new Error("Unauthenticated.");
+
+    // Retrieve all shipping addresses for the specified user
+    const shippingAddresses = await db.shippingAddress.findMany({
+      where: {
+        userId: user.id,
+      },
+      include: {
+        country: true,
+        user: true,
+      },
+    });
+
+    return shippingAddresses;
+  } catch (error) {
+    // Log and re-throw any errors
+    throw error;
+  }
+};
