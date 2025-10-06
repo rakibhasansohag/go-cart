@@ -5,7 +5,11 @@ import { DEFAULT_COUNTRY } from './lib/utils';
 import countries from '@/data/countries.json';
 
 // match all routes
-const protectedRoutes = createRouteMatcher(['/dashboard', '/dashboard/(.*)']);
+const protectedRoutes = createRouteMatcher([
+	'/dashboard',
+	'/dashboard/(.*)',
+	'/checkout',
+]);
 
 export default clerkMiddleware(async (auth, req, next) => {
 	const { userId, redirectToSignIn } = await auth();

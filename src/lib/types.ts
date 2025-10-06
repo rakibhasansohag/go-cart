@@ -29,6 +29,8 @@ import { getStoreDefaultShippingDetails } from '@/queries/store';
 import { retrieveProductDetailsOptimized } from '@/queries/product-optimized';
 
 import countries from '@/data/countries.json';
+import { ShippingAddressSchema } from './schemas';
+import z from 'zod';
 
 export interface DashboardSidebarMenuInterface {
 	label: string;
@@ -244,3 +246,7 @@ export type UserShippingAddressType = ShippingAddress & {
 	country: CountryPrisma;
 	user: User;
 };
+
+export type ShippingAddressInput = z.infer<typeof ShippingAddressSchema>;
+
+export type ShippingAddressPayload = ShippingAddressInput & { id: string };

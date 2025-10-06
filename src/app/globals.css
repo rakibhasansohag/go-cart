@@ -304,10 +304,12 @@
   .ease-bezier-1 {
     transition-timing-function: cubic-bezier(0.645, .045, .355, 1);
   }
+  
+  .max-w-container {
+    @apply container;
+  }
+
 }
-
-
-
 
 /* Ensure Cloudinary widget appears above all modals */
 .cloudinary-widget-overlay,

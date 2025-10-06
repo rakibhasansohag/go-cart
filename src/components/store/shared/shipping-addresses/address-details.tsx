@@ -13,7 +13,11 @@ import { zodResolver } from '@hookform/resolvers/zod';
 
 // Types, Schema
 import { ShippingAddressSchema } from '@/lib/schemas';
-import { SelectMenuOption, UserShippingAddressType } from '@/lib/types';
+import {
+	SelectMenuOption,
+	ShippingAddressPayload,
+	UserShippingAddressType,
+} from '@/lib/types';
 
 // UI Components
 import CountrySelector from '@/components/shared/country-selector';
@@ -60,17 +64,17 @@ const AddressDetails: FC<AddressDetailsProps> = ({
 		mode: 'onChange', // Form validation mode
 		resolver: zodResolver(ShippingAddressSchema), // Resolver for form validation
 		defaultValues: {
-			// Setting default form values from data (if available)
-			firstName: data?.firstName,
-			lastName: data?.lastName,
-			address1: data?.address1,
-			address2: data?.address2 || '',
-			city: data?.city,
-			countryId: data?.countryId,
-			phone: data?.phone,
-			state: data?.state,
-			zip_code: data?.zip_code,
-			default: data?.default,
+			// Set default form values
+			firstName: data?.firstName ?? '',
+			lastName: data?.lastName ?? '',
+			address1: data?.address1 ?? '',
+			address2: data?.address2 ?? '',
+			city: data?.city ?? '',
+			countryId: data?.countryId ?? countries?.[0]?.id ?? '',
+			phone: data?.phone ?? '',
+			state: data?.state ?? '',
+			zip_code: data?.zip_code ?? '',
+			default: data?.default ?? false,
 		},
 	});
 
@@ -89,12 +93,13 @@ const AddressDetails: FC<AddressDetailsProps> = ({
 	}, [data, form]);
 
 	// Submit handler for form submission
-	const handleSubmit = async (
-		values: z.infer<typeof ShippingAddressSchema>,
-	) => {
+	const handleSubmit = async () => {
+		// Accessing form values
+		const values = form.getValues();
+		console.log('Submitting address values (from form.getValues()):', values);
+
 		try {
-			// Upserting category data
-			const response = await upsertShippingAddress({
+			const payload: ShippingAddressPayload = {
 				id: data?.id ? data.id : v4(),
 				firstName: values.firstName,
 				lastName: values.lastName,
@@ -106,10 +111,11 @@ const AddressDetails: FC<AddressDetailsProps> = ({
 				state: values.state,
 				default: values.default || false,
 				zip_code: values.zip_code,
-				userId: '',
-				createdAt: new Date(),
-				updatedAt: new Date(),
-			});
+			};
+
+			const response = await upsertShippingAddress(payload);
+
+			console.log('Response[ShippingAddress]', response);
 
 			// Displaying success message
 			toast.success(

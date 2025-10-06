@@ -27,7 +27,7 @@ const Modal: FC<ModalProps> = ({ children, title, show, setShow }) => {
 				<div className='flex items-center justify-between border-b pb-2'>
 					<h1 className='text-xl font-bold'>{title}</h1>
 					<X
-						className='w-4 h-4 cursor-pointer'
+						className='w-4 h-4 cursor-pointer hover:text-pink-600'
 						onClick={() => setShow(false)}
 					/>
 				</div>

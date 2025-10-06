@@ -2,7 +2,11 @@
 
 import { currentUser } from '@clerk/nextjs/server';
 import { db } from '@/lib/db';
-import { CartProductType, CartWithCartItemsType } from '@/lib/types';
+import {
+	CartProductType,
+	CartWithCartItemsType,
+	ShippingAddressPayload,
+} from '@/lib/types';
 import { getCookie } from 'cookies-next';
 import { cookies } from 'next/headers';
 import { getProductShippingFee, getShippingDetails } from './product';
@@ -669,7 +673,9 @@ export const updateCheckoutProductstWithLatest = async (
 	return cart;
 };
 
-export const upsertShippingAddress = async (address: ShippingAddress) => {
+export const upsertShippingAddress = async (
+	address: ShippingAddressPayload,
+) => {
 	try {
 		// Get current user
 		const user = await currentUser();
@@ -679,6 +685,12 @@ export const upsertShippingAddress = async (address: ShippingAddress) => {
 
 		// Ensure address data is provided
 		if (!address) throw new Error('Please provide address data.');
+
+		// DIAGNOSTIC: ensure the server got the fields
+		console.log('Server upsertShippingAddress received:', address);
+
+		if (!address.firstName) throw new Error('firstName missing in payload');
+		if (!address.countryId) throw new Error('countryId missing in payload');
 
 		// Handle making the rest of addresses default false when we are adding a new default
 		if (address.default) {
@@ -720,6 +732,71 @@ export const upsertShippingAddress = async (address: ShippingAddress) => {
 		return upsertedAddress;
 	} catch (error) {
 		// Log and re-throw any errors
+		console.error('upsertShippingAddress error:', error);
 		throw error;
 	}
 };
+
+//------------- OPTIMIZED UPSERT SHIPPING ADDRESS WILL USE LATER IF ANY BUG OCCURED IN BUILD TIME -------------
+
+/**
+ * 
+ * 
+ * 
+ * export const upsertShippingAddress = async (address: ShippingAddressPayload) => {
+  try {
+    const user = await currentUser();
+    if (!user) throw new Error('Unauthenticated.');
+    if (!address) throw new Error('Please provide address data.');
+
+    console.log('Server upsertShippingAddress received:', address);
+
+    if (!address.firstName) throw new Error('firstName missing in payload');
+    if (!address.countryId) throw new Error('countryId missing in payload');
+
+    // If new default: reset other defaults
+    if (address.default) {
+      // only clear existing defaults for this user
+      await db.shippingAddress.updateMany({
+        where: { userId: user.id, default: true },
+        data: { default: false },
+      });
+    }
+
+    // Normalize optional address2 -> null (if your Prisma field is String?)
+    const address2ForDb = address.address2 ?? null;
+
+    // Build the data object for Prisma (no createdAt/updatedAt)
+    const dataForDb = {
+      firstName: address.firstName,
+      lastName: address.lastName,
+      phone: address.phone,
+      address1: address.address1,
+      address2: address2ForDb,
+      state: address.state,
+      city: address.city,
+      zip_code: address.zip_code,
+      default: !!address.default,
+      userId: user.id, // set server-side
+      countryId: address.countryId,
+    };
+
+    // Upsert
+    const upsertedAddress = await db.shippingAddress.upsert({
+      where: { id: address.id },
+      update: dataForDb,
+      create: { id: address.id, ...dataForDb },
+    });
+
+    return upsertedAddress;
+  } catch (error) {
+    console.error('upsertShippingAddress error:', error);
+    throw error;
+  }
+};
+ * 
+ * 
+ */
+
+
+
