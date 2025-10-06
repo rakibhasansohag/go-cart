@@ -58,8 +58,8 @@ const PlaceOrderCard: FC<Props> = ({
 
 	return (
 		<div className='sticky top-4 lg:ml-5 lg:w-[380px] max-h-max'>
-			<div className='relative py-4 px-6 bg-white'>
-				<h1 className='text-gray-900 text-2xl font-bold mb-4'>Summary</h1>
+			<div className='relative py-4 px-6 bg-background'>
+				<h1 className='text-main-primary text-2xl font-bold mb-4'>Summary</h1>
 				<Info title='Subtotal' text={`${subTotal.toFixed(2)}`} />
 				<Info title='Shipping Fees' text={`+${shippingFees.toFixed(2)}`} />
 				<Info title='Taxes' text='+0.00' />
@@ -73,7 +73,7 @@ const PlaceOrderCard: FC<Props> = ({
 			</div>
 			<div className='mt-2'>
 				{coupon ? (
-					<div className='flex bg-white'>
+					<div className='flex bg-background'>
 						<svg width={16} height={96} xmlns='http://www.w3.org/2000/svg'>
 							<path
 								d='M 8 0 
@@ -109,12 +109,12 @@ const PlaceOrderCard: FC<Props> = ({
 						</div>
 					</div>
 				) : (
-					<div className='p-4 bg-white'>
+					<div className='p-4 bg-background'>
 						<ApplyCouponForm cartId={id} setCartData={setCartData} />
 					</div>
 				)}
 			</div>
-			<div className='mt-2 p-4 bg-white'>
+			<div className='mt-2 p-4 bg-background'>
 				<Button onClick={() => handlePlaceOrder()}>
 					{loading ? (
 						<PulseLoader size={5} color='#fff' />
@@ -123,10 +123,10 @@ const PlaceOrderCard: FC<Props> = ({
 					)}
 				</Button>
 			</div>
-			<div className='mt-2 p-4 bg-white px-6'>
+			<div className='mt-2 p-4 bg-background px-6'>
 				<FastDelivery />
 			</div>
-			<div className='mt-2 p-4 bg-white px-6'>
+			<div className='mt-2 p-4 bg-background px-6'>
 				<SecurityPrivacyCard />
 			</div>
 		</div>
@@ -149,7 +149,7 @@ const Info = ({
 	return (
 		<div
 			className={cn(
-				'mt-2 font-medium flex items-center text-[#222] text-sm pb-1 border-b',
+				'mt-2 font-medium flex items-center text-main-secondary text-sm pb-1 border-b',
 				{
 					'font-bold': isBold,
 					'border-b-0': noBorder,
@@ -160,8 +160,8 @@ const Info = ({
 				{title}
 			</h2>
 			<h3 className='flex-1 w-0 min-w-0 text-right'>
-				<div className='px-0.5 text-black'>
-					<span className='text-black text-lg inline-block break-all'>
+				<div className='px-0.5 text-main-primary'>
+					<span className='text-main-primary text-lg inline-block break-all'>
 						{text}
 					</span>
 				</div>

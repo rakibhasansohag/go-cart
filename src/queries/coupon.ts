@@ -1,3 +1,5 @@
+'use server';
+
 import { CartWithCartItemsType } from '@/lib/types';
 import { db } from '@/lib/db';
 

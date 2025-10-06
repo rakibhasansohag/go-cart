@@ -55,7 +55,7 @@ export default function ApplyCouponForm({
 			<Form {...form}>
 				<form onSubmit={form.handleSubmit(handleSubmit)}>
 					{/* Form items */}
-					<div className='relative bg-gray-100 rounded-2xl shadow-sm p-1.5 hover:shadow-md'>
+					<div className='relative bg-gray-100 dark:bg-gray-700 rounded-2xl shadow-sm p-1.5 hover:shadow-md'>
 						<FormField
 							control={form.control}
 							name='coupon'
@@ -74,7 +74,7 @@ export default function ApplyCouponForm({
 						/>
 						<Button
 							variant='outline'
-							className='absolute right-2 top-1/2 -translate-y-1/2 px-6 w-20 rounded-2xl'
+							className='absolute right-2 top-1/2 -translate-y-1/2 px-6 w-20 rounded-2xl hover:bg-pink-600 hover:text-white'
 						>
 							{isSubmitting ? 'Applying...' : 'Apply'}
 						</Button>
