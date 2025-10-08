@@ -36,6 +36,7 @@ model User {
   cart              Cart?             @relation("UserCart")
   coupons           Coupon[]          @relation("CouponToUser")
   orders            Order[]           @relation("UserOrders")
+  payments PaymentDetails[]  @relation("PaymentDetailsToUser")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -550,6 +551,9 @@ model Order {
   orderStatus OrderStatus @default(Pending)
   paymentStatus PaymentStatus @default(Pending)
 
+  paymentMethod  PaymentMethod?
+  paymentDetails PaymentDetails? @relation("PaymentDetailsToOrder")
+
   shippingAddressId String
   shippingAddress   ShippingAddress @relation("ShippingAddressToOrder", fields: [shippingAddressId], references: [id])
 
@@ -665,4 +669,29 @@ model OrderItem {
   updatedAt DateTime @updatedAt
 
   @@index([orderGroupId])
+}
+
+model PaymentDetails {
+  
+  id String @id @default(uuid())
+
+  paymentInetntId String
+  paymentMethod String
+  status String
+  amount Float
+  currency String
+
+
+  orderId String @unique
+  order Order @relation("PaymentDetailsToOrder",fields: [orderId],references: [id],onDelete: Cascade) 
+
+  userId String
+  user User @relation("PaymentDetailsToUser",fields: [userId],references: [id],onDelete: Cascade)
+
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([orderId])
+  @@index([userId])
 }

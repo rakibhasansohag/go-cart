@@ -126,7 +126,7 @@ const CellActions: React.FC<CellActionsProps> = ({ coupon }) => {
 				<DropdownMenuContent align='end'>
 					<DropdownMenuLabel>Actions</DropdownMenuLabel>
 					<DropdownMenuItem
-						className='flex gap-2'
+						className='flex gap-2 cursor-pointer'
 						onClick={() => {
 							setOpen(
 								// Custom modal component
@@ -150,7 +150,10 @@ const CellActions: React.FC<CellActionsProps> = ({ coupon }) => {
 					</DropdownMenuItem>
 					<DropdownMenuSeparator />
 					<AlertDialogTrigger asChild>
-						<DropdownMenuItem className='flex gap-2' onClick={() => {}}>
+						<DropdownMenuItem
+							className='flex gap-2 !cursor-pointer'
+							onClick={() => {}}
+						>
 							<Trash size={15} /> Delete coupon
 						</DropdownMenuItem>
 					</AlertDialogTrigger>
