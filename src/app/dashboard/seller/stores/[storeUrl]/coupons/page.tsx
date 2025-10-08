@@ -5,13 +5,21 @@ import { Plus } from 'lucide-react';
 import { getStoreCoupons } from '@/queries/coupon';
 import CouponDetails from '@/components/dashboard/forms/coupon-details';
 
+
+// Type for awaited params
+type StoreParams = { storeUrl: string };
+
 export default async function SellerCouponsPage({
 	params,
 }: {
-	params: { storeUrl: string };
+	// Next 15 app routes pass awaitable proxies type as Promise<...>
+	params: Promise<StoreParams>;
 }) {
+	// await the whole proxy first (Next 15 requirement)
+	const { storeUrl } = await params;
+
 	// Get all store coupons
-	const coupons = await getStoreCoupons(params.storeUrl);
+	const coupons = await getStoreCoupons(storeUrl);
 	return (
 		<div>
 			<DataTable
@@ -21,8 +29,8 @@ export default async function SellerCouponsPage({
 						Create coupon
 					</>
 				}
-				modalChildren={<CouponDetails storeUrl={params.storeUrl} />}
-				newTabLink={`/dashboard/seller/stores/${params.storeUrl}/coupons/new`}
+				modalChildren={<CouponDetails storeUrl={storeUrl} />}
+				newTabLink={`/dashboard/seller/stores/${storeUrl}/coupons/new`}
 				filterValue='code'
 				data={coupons}
 				columns={columns}
