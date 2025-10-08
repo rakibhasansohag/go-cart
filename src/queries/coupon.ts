@@ -238,3 +238,82 @@ export const getStoreCoupons = async (storeUrl: string) => {
 		throw error;
 	}
 };
+
+// Function: getCoupon
+// Description: Retrieves a specific coupon from the database.
+// Access Level: Public
+// Parameters:
+//   - couponId: The ID of the coupon to be retrieved.
+// Returns: Details of the requested coupon.
+export const getCoupon = async (couponId: string) => {
+  try {
+    // Ensure coupon ID is provided
+    if (!couponId) throw new Error("Please provide coupon ID.");
+
+    // Retrieve coupon
+    const coupon = await db.coupon.findUnique({
+      where: {
+        id: couponId,
+      },
+    });
+
+    return coupon;
+  } catch (error) {
+    throw error;
+  }
+};
+
+// Function: deleteCoupon
+// Description: Deletes a coupon from the database.
+// Permission Level: Seller only (must be the store owner)
+// Parameters:
+//   - couponId: The ID of the coupon to be deleted.
+//   - storeUrl: The URL of the store associated with the coupon.
+// Returns: Response indicating success or failure of the deletion operation.
+
+export const deleteCoupon = async (couponId: string, storeUrl: string) => {
+  try {
+    // Get current user
+    const user = await currentUser();
+
+    // Check if user is authenticated
+    if (!user) throw new Error("Unauthenticated.");
+
+    // Verify seller permission
+    if (user.privateMetadata.role !== "SELLER")
+      throw new Error("Unauthorized Access: Seller Privileges Required.");
+
+    // Ensure coupon ID and store URL are provided
+    if (!couponId || !storeUrl)
+      throw new Error("Please provide coupon ID and store URL.");
+
+    // Get the store associated with the provided store URL
+    const store = await db.store.findUnique({
+      where: {
+        url: storeUrl,
+      },
+    });
+
+    // Verify store exists
+    if (!store) throw new Error("Store not found.");
+
+    // Verify that the logged-in user is the owner of the store
+    if (store.userId !== user.id) {
+      throw new Error(
+        "You are not the owner of this store. Only the store owner can delete coupons."
+      );
+    }
+
+    // Delete the coupon from the database
+    const response = await db.coupon.delete({
+      where: {
+        id: couponId,
+        storeId: store.id,
+      },
+    });
+
+    return response;
+  } catch (error) {
+    throw error;
+  }
+};
