@@ -64,7 +64,7 @@ export const upsertCoupon = async (coupon: Coupon, storeUrl: string) => {
 				id: coupon.id,
 			},
 			update: { ...coupon, storeId: store.id },
-			create: { ...coupon, storeId: store.id },
+			create: { ...coupon, id: coupon.id, storeId: store.id },
 		});
 
 		return couponDetails;

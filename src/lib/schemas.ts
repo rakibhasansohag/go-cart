@@ -486,3 +486,41 @@ export const ApplyCouponFormSchema = z.object({
 		.trim()
 		.min(1, { message: 'Coupon code is required.' }),
 });
+
+export const CouponFormSchema = z
+	.object({
+		code: z
+			.string()
+			.min(2, 'Coupon code must be at least 2 characters long.')
+			.max(50, 'Coupon code cannot exceed 50 characters.')
+			.regex(
+				/^[a-zA-Z0-9_-]+$/,
+				'Only letters, numbers, underscores, and hyphens are allowed.',
+			),
+
+		startDate: z
+			.string()
+			.refine(
+				(val) => !isNaN(Date.parse(val)),
+				'Start date must be a valid date.',
+			),
+
+		endDate: z
+			.string()
+			.refine(
+				(val) => !isNaN(Date.parse(val)),
+				'End date must be a valid date.',
+			),
+
+		discount: z
+			.number()
+			.min(1, 'Discount must be at least 1%.')
+			.max(99, 'Discount cannot exceed 99%.'),
+
+		storeId: z.string().optional(),
+	})
+	.refine((data) => new Date(data.endDate) > new Date(data.startDate), {
+		message: 'End date must be after the start date.',
+		path: ['endDate'],
+	});
+

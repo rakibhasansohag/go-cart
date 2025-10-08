@@ -6,6 +6,7 @@ import { db } from './db';
 import ColorThief from 'colorthief';
 import { CartProductType, Country } from './types';
 import countries from '@/data/countries.json';
+import { differenceInDays, differenceInHours } from 'date-fns';
 
 export function cn(...inputs: ClassValue[]) {
 	return twMerge(clsx(inputs));
@@ -242,4 +243,21 @@ export const getShippingDatesRange = (
 		minDate: minDate.toDateString(),
 		maxDate: maxDate.toDateString(),
 	};
+};
+
+export const getTimeUntil = (
+	targetDate: string,
+): { days: number; hours: number } => {
+	// Convert the date string to a Date object
+	const target = new Date(targetDate);
+	const now = new Date();
+
+	// Ensure the target date is in the future
+	if (target <= now) return { days: 0, hours: 0 };
+
+	// Calculate days and hours left
+	const totalDays = differenceInDays(target, now);
+	const totalHours = differenceInHours(target, now) % 24;
+
+	return { days: totalDays, hours: totalHours };
 };
