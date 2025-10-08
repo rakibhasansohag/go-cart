@@ -33,6 +33,7 @@ import {
 } from '@/components/ui/form';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { useModal } from '@/providers/modal-provider';
 
 // Queries
 import { upsertCoupon } from '@/queries/coupon';
@@ -59,6 +60,7 @@ const CouponDetails: FC<CouponDetailsProps> = ({ data, storeUrl }) => {
 	// Initializing necessary hooks
 
 	const router = useRouter(); // Hook for routing
+	const { setClose } = useModal();
 
 	// Form hook for managing form state and validation
 	const form = useForm<z.infer<typeof CouponFormSchema>>({
@@ -109,6 +111,8 @@ const CouponDetails: FC<CouponDetailsProps> = ({ data, storeUrl }) => {
 					? 'Coupon has been updated.'
 					: `Congratulations! '${response?.code}' is now created.`,
 			);
+
+			setClose();
 
 			// Redirect or Refresh data
 			if (data?.id) {
