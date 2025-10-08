@@ -2,6 +2,76 @@
 
 import { CartWithCartItemsType } from '@/lib/types';
 import { db } from '@/lib/db';
+import { currentUser } from '@clerk/nextjs/server';
+import { Coupon } from '@prisma/client';
+
+// Function: upsertCoupon
+// Description: Upserts a coupon into the database, updating it if it exists or creating a new one if not.
+// Permission Level: Seller only
+// Parameters:
+//   - coupon: Coupon object containing details of the coupon to be upserted.
+//   - storeUrl: String representing the store's unique URL, used to retrieve the store ID.
+// Returns: Updated or newly created coupon details.
+export const upsertCoupon = async (coupon: Coupon, storeUrl: string) => {
+	try {
+		// Get current user
+		const user = await currentUser();
+
+		// Ensure user is authenticated
+		if (!user) throw new Error('Unauthenticated.');
+
+		// Verify seller permission
+		if (user.privateMetadata.role !== 'SELLER')
+			throw new Error(
+				'Unauthorized Access: Seller Privileges Required for Entry.',
+			);
+
+		// Ensure coupon data and storeUrl are provided
+		if (!coupon) throw new Error('Please provide coupon data.');
+		if (!storeUrl) throw new Error('Store URL is required.');
+
+		// Retrieve store ID using storeUrl
+		const store = await db.store.findUnique({
+			where: { url: storeUrl },
+		});
+
+		if (!store) throw new Error('Store not found.');
+
+		// Throw error if a coupon with the same code and storeId already exists
+		const existingCoupon = await db.coupon.findFirst({
+			where: {
+				AND: [
+					{ code: coupon.code },
+					{ storeId: store.id },
+					{
+						NOT: {
+							id: coupon.id,
+						},
+					},
+				],
+			},
+		});
+
+		if (existingCoupon) {
+			throw new Error(
+				'A coupon with the same code already exists for this store.',
+			);
+		}
+
+		// Upsert coupon into the database
+		const couponDetails = await db.coupon.upsert({
+			where: {
+				id: coupon.id,
+			},
+			update: { ...coupon, storeId: store.id },
+			create: { ...coupon, storeId: store.id },
+		});
+
+		return couponDetails;
+	} catch (error) {
+		throw error;
+	}
+};
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /**
@@ -116,6 +186,55 @@ export const applyCoupon = async (
 			cart: updatedCart,
 		};
 	} catch (error: any) {
+		throw error;
+	}
+};
+
+// Function: getStoreCoupons
+// Description: Retrieves all coupons for a specific store based on the provided store URL.
+// Permission Level: Seller only
+// Parameters:
+//   - storeUrl: String representing the store's unique URL, used to retrieve the store ID.
+// Returns: Array of coupon details for the specified store.
+export const getStoreCoupons = async (storeUrl: string) => {
+	try {
+		// Get current user
+		const user = await currentUser();
+
+		// Ensure user is authenticated
+		if (!user) throw new Error('Unauthenticated.');
+
+		// Verify seller permission
+		if (user.privateMetadata.role !== 'SELLER')
+			throw new Error(
+				'Unauthorized Access: Seller Privileges Required for Entry.',
+			);
+
+		// Ensure storeUrl is provided
+		if (!storeUrl) throw new Error('Store URL is required.');
+
+		// Retrieve store ID using storeUrl and ensure it belongs to the current user
+		const store = await db.store.findUnique({
+			where: {
+				url: storeUrl,
+			},
+		});
+
+		if (!store) throw new Error('Store not found.');
+
+		if (store.userId !== user.id)
+			throw new Error('Unauthorized Access: You do not own this store.');
+
+		// Retrieve and return all coupons for the specified store
+		const coupons = await db.coupon.findMany({
+			where: {
+				storeId: store.id,
+			},
+		});
+
+		return coupons;
+	} catch (error) {
+		// Log and re-throw any errors
 		throw error;
 	}
 };
