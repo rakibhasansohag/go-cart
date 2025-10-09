@@ -81,6 +81,8 @@ export default async function OrderPage({
 						/>
 					</div>
 					{/* Col 3 -> Payment Gateways*/}
+
+					{/* // ERROR: IF THE HEIGHT IS HTE PROBELM WHEN BROWSER HEIHGT IS LESS THAN 137px if the subtotal and shopping fees doesn't show than we will remove the min-[1024px]:h-[calc(100vh-137px)] class */}
 					{(order.paymentStatus === 'Pending' ||
 						order.paymentStatus === 'Failed') && (
 						<div className='order-area-payment min-[1024px]:h-[calc(100vh-137px)] min-[1024px]:border-l overflow-y-auto scrollbar px-2 py-4 space-y-5 flex flex-col justify-center'>

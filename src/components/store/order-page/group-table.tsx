@@ -61,15 +61,19 @@ export default function OrderGroupTable({
 			</div>
 			<div className='w-full px-3 min-[400px]:px-6 '>
 				<div>
-					{group.items.map((product, index) => (
-						<>
-							{isBigScreen ? (
-								<ProductRowGrid key={index} product={product} />
-							) : (
-								<ProductRow key={index} product={product} />
-							)}
-						</>
-					))}
+					{group.items.map((product, index) =>
+						isBigScreen ? (
+							<ProductRowGrid
+								key={product.id ?? `${group.id}-item-${index}`}
+								product={product}
+							/>
+						) : (
+							<ProductRow
+								key={product.id ?? `${group.id}-item-${index}`}
+								product={product}
+							/>
+						),
+					)}
 				</div>
 				<div className='flex items-center max-lg:mt-3 text-center'>
 					<div className='flex flex-col p-2 pb-4'>

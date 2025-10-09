@@ -484,6 +484,12 @@ iframe[src*="cloudinary"] {
   width: 5px;
 }
 
+/* Define the thumb style */
+.scrollbar::-webkit-scrollbar-thumb {
+  background: #e0e0e0;
+  border-radius: 5px;
+}
+
 
 /* Jodit editor dark mode */
 .jodit_theme_dark.jodit-container {

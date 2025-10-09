@@ -28,7 +28,21 @@ export default function OrderGroupsContainer({
 				<div className='w-full space-y-4'>
 					{groups.map((group, index) => {
 						const deliveryInfo = deliveryDetails[index];
-						console.log('group[groupe-container]', group);
+						{
+							group.items.map((item, i) => {
+								console.log('mapping group.item', {
+									groupId: group.id,
+									itemId: item.id,
+									i,
+								});
+								return (
+									<div key={item.id ?? `item-${group.id}-${i}`}>
+										{item.name}
+									</div>
+								);
+							});
+						}
+
 						return (
 							<OrderGroupTable
 								key={`${group.id || 'group'}-${index}`}

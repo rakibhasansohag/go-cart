@@ -41,14 +41,14 @@ export default function ProductRow({ product }: { product: OrderItem }) {
 										${product.price.toFixed(2)}
 									</span>
 								</p>
-								<p className='font-medium text-base leading-7 text-black '>
+								<div className='font-medium text-base leading-7 text-black '>
 									Status:&nbsp;
 									<div className='inline-block'>
 										<ProductStatusTag
 											status={product.status as ProductStatus}
 										/>
 									</div>
-								</p>
+								</div>
 							</div>
 						</div>
 					</div>
