@@ -261,3 +261,22 @@ export const getTimeUntil = (
 
 	return { days: totalDays, hours: totalHours };
 };
+
+export const downloadBlobAsFile = (blob: Blob, filename: string) => {
+	const link = document.createElement('a');
+	link.href = URL.createObjectURL(blob);
+	link.download = filename;
+	link.click();
+	URL.revokeObjectURL(link.href);
+};
+
+export const printPDF = (blob: Blob) => {
+	const pdfUrl = URL.createObjectURL(blob);
+	const printWindow = window.open(pdfUrl, '_blank');
+	if (printWindow) {
+		printWindow.addEventListener('load', () => {
+			printWindow.focus();
+			printWindow.print();
+		});
+	}
+};
