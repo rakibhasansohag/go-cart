@@ -54,9 +54,9 @@ const ProductShippingFee: FC<Props> = ({
 									</td>
 								</tr>
 							) : (
-								<div className='space-y-1'>
+								<>
 									<tr
-										className='grid gap-x-1 text-xs px-4'
+										className='grid gap-x-1 text-xs px-4 py-2'
 										style={{ gridTemplateColumns: '4fr 1fr' }}
 									>
 										<td className='w-full bg-gray-50 dark:bg-gray-700 px-2 py-0.5 rounded-sm'>
@@ -78,7 +78,7 @@ const ProductShippingFee: FC<Props> = ({
 											${extraFee}
 										</td>
 									</tr>
-								</div>
+								</>
 							)}
 						</thead>
 						<tbody>
