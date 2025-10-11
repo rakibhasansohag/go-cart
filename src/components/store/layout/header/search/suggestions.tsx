@@ -31,13 +31,13 @@ const SearchSuggestions: FC<Props> = ({ suggestions, query }) => {
 		router.push(link);
 	};
 	return (
-		<div className='absolute top-11 w-full rounded-3xl bg-white text-main-primary shadow-2xl !z-[99] overflow-hidden'>
+		<div className='absolute top-11 w-full rounded-3xl bg-secondary text-main-primary shadow-2xl !z-[99] overflow-hidden'>
 			<div className='py-2'>
 				<ul>
 					{suggestions.map((sugg) => (
 						<li
 							key={sugg.name}
-							className='w-full h-20 px-6 cursor-pointer hover:bg-[#f5f5f5] flex items-center gap-x-2'
+							className='w-full h-20 px-6 cursor-pointer hover:bg-[#f5f5f5] dark:hover:bg-[#222] flex items-center gap-x-2'
 							onClick={() => handlePush(sugg.link)}
 						>
 							<Image

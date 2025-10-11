@@ -55,12 +55,12 @@ export default function Search() {
 		<div className='relative lg:w-full flex-1'>
 			<form
 				onSubmit={handleSubmit}
-				className='h-10 rounded-3xl bg-white relative border-none flex'
+				className='h-10 rounded-3xl bg-background relative border-none flex'
 			>
 				<input
 					type='text'
 					placeholder='Search...'
-					className='bg-white text-black flex-1 border-none pl-2.5 m-2.5 outline-none'
+					className='bg-background text-main-primary flex-1 border-none pl-2.5 m-2.5 outline-none'
 					value={searchQuery}
 					onChange={handleInputChange}
 				/>
