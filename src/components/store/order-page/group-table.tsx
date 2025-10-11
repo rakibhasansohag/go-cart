@@ -59,7 +59,7 @@ export default function OrderGroupTable({
 					<OrderStatusTag status={group.status as OrderStatus} />
 				</div>
 			</div>
-			<div className='w-full px-3 min-[400px]:px-6 '>
+			<div className='w-full px-3 min-[400px]:px-6'>
 				<div>
 					{group.items.map((product, index) =>
 						isBigScreen ? (
@@ -104,13 +104,13 @@ export default function OrderGroupTable({
 					)}
 				>
 					<CancelOrderButton onClick={() => {}} />
-					<p className='font-medium text-lg text-main-primary px-6 py-3 max-lg:text-center'>
+					<p className='font-medium text-lg text-main-primary px-6 py-3 max-lg:text-center border-r-2 border-gray-400'>
 						Subtotal:
 						<span className='text-main-secondary ms-1'>
 							${group.subTotal.toFixed(2)}
 						</span>
 					</p>
-					<p className='font-medium text-lg text-main-primary px-6 py-3 max-lg:text-center'>
+					<p className='font-medium text-lg text-main-primary px-6 py-3 max-lg:text-center border-r-2 border-gray-400'>
 						Shipping Fees:
 						<span className='text-main-secondary ms-1'>
 							${group.shippingFees.toFixed(2)}

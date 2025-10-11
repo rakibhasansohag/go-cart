@@ -17,6 +17,11 @@ export const createStripePaymentIntent = async (orderId: string) => {
 		// Get current user
 		const user = await currentUser();
 
+		console.log(
+			'createStripePaymentIntent called. currentUser():',
+			await currentUser(),
+		);
+
 		// Ensure user is authenticated
 		if (!user) throw new Error('Unauthenticated.');
 
@@ -28,6 +33,8 @@ export const createStripePaymentIntent = async (orderId: string) => {
 		});
 
 		if (!order) throw new Error('Order not found.');
+
+		console.log('order[stripe]:=>', order);
 
 		const paymentIntent = await stripe.paymentIntents.create({
 			amount: Math.round(order.total * 100),
@@ -38,6 +45,7 @@ export const createStripePaymentIntent = async (orderId: string) => {
 		return {
 			paymentIntentId: paymentIntent.id,
 			clientSecret: paymentIntent.client_secret,
+			userId: user.id,
 		};
 	} catch (error) {
 		throw error;
@@ -47,13 +55,11 @@ export const createStripePaymentIntent = async (orderId: string) => {
 export const createStripePayment = async (
 	orderId: string,
 	paymentIntent: PaymentIntent,
+	userId: string,
 ) => {
 	try {
-		// Get current user
-		const user = await currentUser();
-
 		// Ensure user is authenticated
-		if (!user) throw new Error('Unauthenticated.');
+		if (!userId) throw new Error('Unauthenticated.');
 
 		// Fetch the order to get total price
 		const order = await db.order.findUnique({
@@ -64,6 +70,9 @@ export const createStripePayment = async (
 
 		if (!order) throw new Error('Order not found.');
 
+		const intentAmount = Number(paymentIntent.amount ?? 0);
+		const amountDollars = intentAmount / 100;
+
 		const updatedPaymentDetails = await db.paymentDetails.upsert({
 			where: {
 				orderId,
@@ -71,25 +80,27 @@ export const createStripePayment = async (
 			update: {
 				paymentInetntId: paymentIntent.id,
 				paymentMethod: 'Stripe',
-				amount: paymentIntent.amount,
+				// amount: paymentIntent.amount,
+				amount: amountDollars,
 				currency: paymentIntent.currency,
 				status:
 					paymentIntent.status === 'succeeded'
 						? 'Completed'
 						: paymentIntent.status,
-				userId: user.id,
+				userId: userId,
 			},
 			create: {
 				paymentInetntId: paymentIntent.id,
 				paymentMethod: 'Stripe',
-				amount: paymentIntent.amount,
+				// amount: paymentIntent.amount,
+				amount: amountDollars,
 				currency: paymentIntent.currency,
 				status:
 					paymentIntent.status === 'succeeded'
 						? 'Completed'
 						: paymentIntent.status,
 				orderId: orderId,
-				userId: user.id,
+				userId: userId,
 			},
 		});
 

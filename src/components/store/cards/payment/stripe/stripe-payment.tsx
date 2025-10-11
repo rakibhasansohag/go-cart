@@ -1,4 +1,5 @@
 'use client';
+
 import { useRouter } from 'next/navigation';
 import {
 	useStripe,
@@ -17,6 +18,7 @@ export default function StripePayment({ orderId }: { orderId: string }) {
 	const [errorMessage, setErrorMessage] = useState<string>();
 	const [clientSecret, setClientSecret] = useState<string | null>(null);
 	const [loading, setLoading] = useState<boolean>(false);
+	const [userId, setUserId] = useState<string | null>(null);
 
 	useEffect(() => {
 		getClientSecret();
@@ -25,13 +27,16 @@ export default function StripePayment({ orderId }: { orderId: string }) {
 	const getClientSecret = async () => {
 		const res = await createStripePaymentIntent(orderId);
 		if (res.clientSecret) setClientSecret(res.clientSecret);
+		if (res.userId) setUserId(res.userId);
 	};
 
 	const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
 		event.preventDefault();
 		setLoading(true);
 
-		if (!stripe || !elements) {
+		if (!stripe || !elements || !userId) {
+			setErrorMessage('Payment not initialized. User session missing.');
+			setLoading(false);
 			return;
 		}
 
@@ -54,7 +59,7 @@ export default function StripePayment({ orderId }: { orderId: string }) {
 
 			if (!error && paymentIntent) {
 				try {
-					const res = await createStripePayment(orderId, paymentIntent);
+					const res = await createStripePayment(orderId, paymentIntent, userId);
 					if (!res.paymentDetails?.paymentInetntId) throw new Error('Failed');
 					router.refresh();
 					// eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -81,7 +86,7 @@ export default function StripePayment({ orderId }: { orderId: string }) {
 		<form onSubmit={handleSubmit} className='bg-white p-2 rounded-md'>
 			{clientSecret && <PaymentElement />}
 			{errorMessage && (
-				<div className='tetx-sm text-red-500'>{errorMessage}</div>
+				<div className='text-sm text-red-500'>{errorMessage}</div>
 			)}
 			<button
 				disabled={!stripe || loading}
