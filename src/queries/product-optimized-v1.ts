@@ -1,15 +1,18 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use server';
 
 import { db } from '@/lib/db';
+
 import {
 	FreeShippingWithCountriesType,
 	SortOrder,
 	VariantImageType,
 	VariantSimplified,
 } from '@/lib/types';
-import { getRatingStatistics } from './product';
-import { Store } from '@prisma/client';
+
 import { currentUser } from '@clerk/nextjs/server';
+import { Store } from '@prisma/client';
+import { getRatingStatistics } from './product';
 
 /**
  * Retrieves optimized product details by product slug.
@@ -36,7 +39,7 @@ export const retrieveProductDetailsOptimized = async (productSlug: string) => {
 			freeShippingForAllCountries: true,
 			_count: {
 				select: {
-					reviews: true,
+					reviews: true, // Include the count of reviews wen we added the reviews collection to the product
 				},
 			},
 			freeShipping: {
@@ -89,69 +92,47 @@ export const retrieveProductDetailsOptimized = async (productSlug: string) => {
 	return product;
 };
 
-// Function: getProductFilteredReviews
-// Description: Retrieves filtered and sorted reviews for a product from the database, based on rating, presence of images, and sorting options.
-// Access Level: Public
-// Parameters:
-//   - productId: The ID of the product for which reviews are being fetched.
-//   - filters: An object containing the filter options such as rating and whether reviews include images.
-//   - sort: An object defining the sort order, such as latest, oldest, or highest rating.
-//   - page: The page number for pagination (1-based index).
-//   - pageSize: The number of reviews to retrieve per page.
-// Returns: A paginated list of reviews that match the filter and sort criteria.
-export const getProductFilteredReviews = async (
-	productId: string,
-	filters: { rating?: number; hasImages?: boolean },
-	sort: { orderBy: 'latest' | 'oldest' | 'highest' } | undefined,
-	page: number = 1,
-	pageSize: number = 4,
-) => {
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const reviewFilter: any = {
-		productId,
-	};
-
-	// Apply rating filter if provided
-	if (filters.rating) {
-		const rating = filters.rating;
-		reviewFilter.rating = {
-			in: [rating, rating + 0.5],
-		};
+export const getStoreFollowingInfo = async (storeId: string) => {
+	const user = await currentUser();
+	let isUserFollowingStore = false;
+	if (user) {
+		const storeFollowersInfo = await db.store.findUnique({
+			where: {
+				id: storeId,
+			},
+			select: {
+				followers: {
+					where: {
+						id: user.id, // Check if this user is following the store
+					},
+					select: { id: true }, // Select the user id if following
+				},
+			},
+		});
+		if (storeFollowersInfo && storeFollowersInfo.followers.length > 0) {
+			isUserFollowingStore = true;
+		}
 	}
 
-	// Apply image filter if provided
-	if (filters.hasImages) {
-		reviewFilter.images = {
-			some: {},
-		};
-	}
-
-	// Set sorting order using local SortOrder type
-	const sortOption: { createdAt?: SortOrder; rating?: SortOrder } =
-		sort && sort.orderBy === 'latest'
-			? { createdAt: 'desc' }
-			: sort && sort.orderBy === 'oldest'
-			? { createdAt: 'asc' }
-			: { rating: 'desc' };
-
-	// Calculate pagination parameters
-	const skip = (page - 1) * pageSize;
-	const take = pageSize;
-
-	const statistics = await getRatingStatistics(productId);
-	// Fetch reviews from the database
-	const reviews = await db.review.findMany({
-		where: reviewFilter,
-		include: {
-			images: true,
-			user: true,
+	const storeFollowersInfo = await db.store.findUnique({
+		where: {
+			id: storeId,
 		},
-		orderBy: sortOption,
-		skip, // Skip records for pagination
-		take, // Take records for pagination
+		select: {
+			_count: {
+				select: {
+					followers: true,
+				},
+			},
+		},
 	});
 
-	return { reviews, statistics };
+	return {
+		isUserFollowingStore,
+		followersCount: storeFollowersInfo
+			? storeFollowersInfo._count.followers
+			: 0,
+	};
 };
 
 // Function: getShippingDetails
@@ -286,6 +267,14 @@ export const getShippingDetails = async (
 	};
 };
 
+/**
+ *
+ * @param productId
+ * @param categoryId
+ * @param subCategoryId
+ * @returns
+ */
+
 export const getRelatedProducts = async (
 	productId: string,
 	categoryId: string,
@@ -393,45 +382,120 @@ export const getRelatedProducts = async (
 	return productsWithFilteredVariants.slice(0, 6);
 };
 
-export const getStoreFollowingInfo = async (storeId: string) => {
-	const user = await currentUser();
-	let isUserFollowingStore = false;
-	if (user) {
-		const storeFollowersInfo = await db.store.findUnique({
-			where: {
-				id: storeId,
-			},
-			select: {
-				followers: {
-					where: {
-						id: user.id, // Check if this user is following the store
-					},
-					select: { id: true }, // Select the user id if following
-				},
-			},
-		});
-		if (storeFollowersInfo && storeFollowersInfo.followers.length > 0) {
-			isUserFollowingStore = true;
-		}
-	}
+// Function: getProductFilteredReviews
+// Description: Retrieves filtered and sorted reviews for a product from the database, based on rating, presence of images, and sorting options.
+// Access Level: Public
+// Parameters:
+//   - productId: The ID of the product for which reviews are being fetched.
+//   - filters: An object containing the filter options such as rating and whether reviews include images.
+//   - sort: An object defining the sort order, such as latest, oldest, or highest rating.
+//   - page: The page number for pagination (1-based index).
+//   - pageSize: The number of reviews to retrieve per page.
+// Returns: A paginated list of reviews that match the filter and sort criteria.
+// export const getProductFilteredReviews = async (
+// 	productId: string,
+// 	filters: { rating?: number; hasImages?: boolean },
+// 	sort: { orderBy: 'latest' | 'oldest' | 'highest' } | undefined,
+// 	page: number = 1,
+// 	pageSize: number = 4,
+// ) => {
+// 	const reviewFilter: any = {
+// 		productId,
+// 	};
 
-	const storeFollowersInfo = await db.store.findUnique({
-		where: {
-			id: storeId,
-		},
-		select: {
-			_count: {
-				select: {
-					followers: true,
-				},
-			},
-		},
-	});
+// 	// Apply rating filter if provided
+// 	if (filters.rating) {
+// 		const rating = filters.rating;
+// 		reviewFilter.rating = {
+// 			in: [rating, rating + 0.5],
+// 		};
+// 	}
 
-	return {
-		isUserFollowingStore,
-		followersCount: storeFollowersInfo
-			? storeFollowersInfo._count.followers
-			: 0,
-	};
+// 	// Apply image filter if provided
+// 	if (filters.hasImages) {
+// 		reviewFilter.images = {
+// 			some: {},
+// 		};
+// 	}
+
+// 	// Set sorting order using local SortOrder type
+// 	const sortOption: { createdAt?: SortOrder; rating?: SortOrder } =
+// 		sort && sort.orderBy === 'latest'
+// 			? { createdAt: 'desc' }
+// 			: sort && sort.orderBy === 'oldest'
+// 			? { createdAt: 'asc' }
+// 			: { rating: 'desc' };
+
+// 	// Calculate pagination parameters
+// 	const skip = (page - 1) * pageSize;
+// 	const take = pageSize;
+
+// 	const statistics = await getRatingStatistics(productId);
+// 	// Fetch reviews from the database
+// 	const reviews = await db.review.findMany({
+// 		where: reviewFilter,
+// 		include: {
+// 			images: true,
+// 			user: true,
+// 		},
+// 		orderBy: sortOption,
+// 		skip, // Skip records for pagination
+// 		take, // Take records for pagination
+// 	});
+
+// 	return { reviews, statistics };
+// };
+
+export const getProductFilteredReviews = async (
+  productId: string,
+  filters: { rating?: number; hasImages?: boolean },
+  sort: { orderBy: 'latest' | 'oldest' | 'highest' } | undefined,
+  page: number = 1,
+  pageSize: number = 4,
+) => {
+  const reviewFilter: any = { productId };
+
+  if (filters.rating) {
+    const rating = filters.rating;
+    reviewFilter.rating = { in: [rating, rating + 0.5] };
+  }
+
+  if (filters.hasImages) {
+    reviewFilter.images = { some: {} };
+  }
+
+ 	const sortOption: { createdAt?: SortOrder; rating?: SortOrder } =
+		sort && sort.orderBy === 'latest'
+			? { createdAt: 'desc' }
+			: sort && sort.orderBy === 'oldest'
+			? { createdAt: 'asc' }
+			: { rating: 'desc' };
+
+  const skip = (page - 1) * pageSize;
+  const take = pageSize;
+
+  // statistics for UI 
+  const stats = await getRatingStatistics(productId);
+
+  // total count matching the filter 
+  const totalReviews = await db.review.count({
+    where: reviewFilter,
+  });
+
+  const reviews = await db.review.findMany({
+    where: reviewFilter,
+    include: { images: true, user: true },
+    orderBy: sortOption,
+    skip,
+    take,
+  });
+
+  // return reviews + statistics + filtered total count
+  return {
+    reviews,
+    statistics: {
+      ...stats,
+      totalReviews, // filtered total so client can compute pages correctly
+    },
+  };
 };

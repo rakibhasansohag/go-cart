@@ -9,13 +9,12 @@ import { db } from '@/lib/db';
 // Prisma model
 import { Category } from '@prisma/client';
 
-// Point:  Function: upsertCategory
-// Description: This function is responsible for inserting or updating a category in the database.
-// It checks if a category already exists using its name or URL. If it exists, the function updates it;
-// otherwise, it creates a new category. Note: Only users with Admin privileges can perform this action.
+// Function: upsertCategory
+// Description: Upserts a category into the database, updating if it exists or creating a new one if not.
+// Permission Level: Admin only
 // Parameters:
-//   - category: An object containing the category details (name, URL, image, etc.) to be upserted.
-// Returns: The details of the category that was updated or newly created.
+//   - category: Category object containing details of the category to be upserted.
+// Returns: Updated or newly created category details.
 export const upsertCategory = async (category: Category) => {
 	try {
 		// Get current user
@@ -61,112 +60,125 @@ export const upsertCategory = async (category: Category) => {
 		}
 
 		// Upsert category into the database
-		const payload = {
-			id: category.id,
-			name: category.name,
-			url: category.url,
-			image: category.image,
-			featured: category.featured,
-			createdAt: category.createdAt,
-			updatedAt: category.updatedAt,
-		};
-
 		const categoryDetails = await db.category.upsert({
 			where: {
 				id: category.id,
 			},
-			update: payload,
-			create: payload,
+			update: category,
+			create: category,
 		});
 		return categoryDetails;
 	} catch (error) {
 		// Log and re-throw any errors
-		// will remove the  console.log
-		console.dir(error);
 		throw error;
 	}
 };
 
-
-// Point:  Function: getAllCategories
+// Function: getAllCategories
 // Description: Retrieves all categories from the database.
 // Permission Level: Public
 // Returns: Array of categories sorted by updatedAt date in descending order.
 export const getAllCategories = async (storeUrl?: string) => {
-//  Retreive all categories from the database
-const categories = await db.category.findMany({
-	orderBy: {
-		updatedAt: "desc"
+	let storeId: string | undefined;
+
+	if (storeUrl) {
+		// Retrieve the storeId based on the storeUrl
+		const store = await db.store.findUnique({
+			where: { url: storeUrl },
+		});
+
+		// If no store is found, return an empty array or handle as needed
+		if (!store) {
+			return [];
+		}
+
+		storeId = store.id;
 	}
-})
-return categories
+
+	// Retrieve all categories from the database
+	const categories = await db.category.findMany({
+		where: storeId
+			? {
+					products: {
+						some: {
+							storeId: storeId,
+						},
+					},
+			  }
+			: {},
+		include: {
+			subCategories: true,
+		},
+		orderBy: {
+			updatedAt: 'desc',
+		},
+	});
+	return categories;
 };
 
-// Point:  Function: getAllCategoriesForCategory
+// Function: getAllCategoriesForCategory
 // Description: Retrieves all SubCategories fro a category from the database.
 // Permission Level: Public
 // Returns: Array of subCategories of category sorted by updatedAt date in descending order.
 export const getAllCategoriesForCategory = async (categoryId: string) => {
-  // Retrieve all subcategories of category from the database
-  const subCategories = await db.subCategory.findMany({
-    where: {
-      categoryId,
-    },
-    orderBy: {
-      updatedAt: "desc",
-    },
-  });
-  return subCategories;
+	// Retrieve all subcategories of category from the database
+	const subCategories = await db.subCategory.findMany({
+		where: {
+			categoryId,
+		},
+		orderBy: {
+			updatedAt: 'desc',
+		},
+	});
+	return subCategories;
 };
 
-// Point:  Function: getCategory
+// Function: getCategory
 // Description: Retrieves a specific category from the database.
 // Access Level: Public
 // Parameters:
 //   - categoryId: The ID of the category to be retrieved.
 // Returns: Details of the requested category.
 export const getCategory = async (categoryId: string) => {
-  // Ensure category ID is provided
-  if (!categoryId) throw new Error("Please provide category ID.");
+	// Ensure category ID is provided
+	if (!categoryId) throw new Error('Please provide category ID.');
 
-  // Retrieve category
-  const category = await db.category.findUnique({
-    where: {
-      id: categoryId,
-    },
-  });
-  return category;
+	// Retrieve category
+	const category = await db.category.findUnique({
+		where: {
+			id: categoryId,
+		},
+	});
+	return category;
 };
 
-
-// Point:  Function: deleteCategory
+// Function: deleteCategory
 // Description: Deletes a category from the database.
 // Permission Level: Admin only
 // Parameters:
 //   - categoryId: The ID of the category to be deleted.
 // Returns: Response indicating success or failure of the deletion operation.
 export const deleteCategory = async (categoryId: string) => {
-  // Get current user
-  const user = await currentUser();
+	// Get current user
+	const user = await currentUser();
 
-  // Check if user is authenticated
-  if (!user) throw new Error("Unauthenticated.");
+	// Check if user is authenticated
+	if (!user) throw new Error('Unauthenticated.');
 
-  // Verify admin permission
-  if (user.privateMetadata.role !== "ADMIN")
-    throw new Error(
-      "Unauthorized Access: Admin Privileges Required for Entry."
-    );
+	// Verify admin permission
+	if (user.privateMetadata.role !== 'ADMIN')
+		throw new Error(
+			'Unauthorized Access: Admin Privileges Required for Entry.',
+		);
 
-  // Ensure category ID is provided
-  if (!categoryId) throw new Error("Please provide category ID.");
+	// Ensure category ID is provided
+	if (!categoryId) throw new Error('Please provide category ID.');
 
-  // Delete category from the database
-  const response = await db.category.delete({
-    where: {
-      id: categoryId,
-    },
-  });
-  return response;
+	// Delete category from the database
+	const response = await db.category.delete({
+		where: {
+			id: categoryId,
+		},
+	});
+	return response;
 };
-

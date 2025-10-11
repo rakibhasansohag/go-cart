@@ -1,35 +1,26 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use server';
 
-// DB
-import { db } from '@/lib/db';
+import { currentUser } from '@clerk/nextjs/server';
 
+// Slugify
+import slugify from 'slugify';
+import { generateUniqueSlug } from '@/lib/utils';
 // Types
 import {
-	Country,
 	FreeShippingWithCountriesType,
 	ProductPageType,
 	ProductShippingDetailsType,
-	
 	ProductWithVariantType,
 	RatingStatisticsType,
 	SortOrder,
 	VariantImageType,
 	VariantSimplified,
 } from '@/lib/types';
-import { FreeShipping, ProductVariant, Size, Store } from '@prisma/client';
-
-// Clerk
-import { currentUser } from '@clerk/nextjs/server';
-
-// Slugify
-import slugify from 'slugify';
-import { generateUniqueSlug } from '@/lib/utils';
-
-// Cookies
+import { db } from '../lib/db';
+import { Country, ProductVariant, Size, Store } from '@prisma/client';
 import { getCookie } from 'cookies-next';
 import { cookies } from 'next/headers';
-import { setMaxListeners } from 'events';
 
 // Function: upsertProduct
 // Description: Upserts a product and its variant into the database, ensuring proper association with the store.
@@ -121,7 +112,13 @@ const handleProductCreate = async (
 		store: { connect: { id: storeId } },
 		category: { connect: { id: product.categoryId } },
 		subCategory: { connect: { id: product.subCategoryId } },
-		offerTag: { connect: { id: product.offerTagId } },
+
+		...(product.offerTagId && {
+			offerTag: {
+				connect: { id: product.offerTagId },
+			},
+		}),
+
 		brand: product.brand,
 		specs: {
 			create: product.product_specs.map((spec) => ({
@@ -255,7 +252,7 @@ const handleCreateVariant = async (product: ProductWithVariantType) => {
 	return new_variant;
 };
 
-// Function: getProductVariant
+// Point:  Function: getProductVariant
 // Description: Retrieves details of a specific product variant from the database.
 // Access Level: Public
 // Parameters:
@@ -317,7 +314,7 @@ export const getProductVariant = async (
 	};
 };
 
-// Function: getProductMainInfo
+// Point: Function: getProductMainInfo
 // Description: Retrieves the main information of a specific product from the database.
 // Access Level: Public
 // Parameters:
@@ -358,7 +355,7 @@ export const getProductMainInfo = async (productId: string) => {
 	};
 };
 
-// Function: getAllStoreProducts
+// Point:  Function: getAllStoreProducts
 // Description: Retrieves all products from a specific store based on the store URL.
 // Access Level: Public
 // Parameters:
@@ -397,7 +394,7 @@ export const getAllStoreProducts = async (storeUrl: string) => {
 	return products;
 };
 
-// Function: deleteProduct
+// Point: Function: deleteProduct
 // Description: Deletes a product from the database.
 // Permission Level: Seller only
 // Parameters:
@@ -424,7 +421,7 @@ export const deleteProduct = async (productId: string) => {
 	return response;
 };
 
-// Function: getProducts
+// Point: Function: getProducts
 // Description: Retrieves products based on various filters and returns only variants that match the filters. Supports pagination.
 // Access Level: Public
 // Parameters:
@@ -837,12 +834,12 @@ export const retrieveProductDetails = async (
 	};
 };
 
-const getUserCountry =  async () => {
-	const userCountryCookie = await getCookie('userCountry', { cookies }) || '';
+const getUserCountry = async () => {
+	const userCountryCookie = (await getCookie('userCountry', { cookies })) || '';
 	const defaultCountry = { name: 'United States', code: 'US' };
 
 	try {
-		const parsedCountry =  JSON.parse(userCountryCookie);
+		const parsedCountry = JSON.parse(userCountryCookie);
 		if (
 			parsedCountry &&
 			typeof parsedCountry === 'object' &&
@@ -864,8 +861,10 @@ const formatProductResponse = (
 ) => {
 	if (!product) return;
 	const variant = product.variants[0];
+
 	const { store, category, subCategory, offerTag, questions, reviews } =
 		product;
+
 	const { images, colors, sizes } = variant;
 
 	return {
@@ -1102,6 +1101,25 @@ export const getShippingDetails = async (
 	return false;
 };
 
+const incrementProductViews = async (productId: string) => {
+	const isProductAlreadyViewed = getCookie(`viewedProduct_${productId}`, {
+		cookies,
+	});
+
+	if (!isProductAlreadyViewed) {
+		await db.product.update({
+			where: {
+				id: productId,
+			},
+			data: {
+				views: {
+					increment: 1,
+				},
+			},
+		});
+	}
+};
+
 // Function: getProductFilteredReviews
 // Description: Retrieves filtered and sorted reviews for a product from the database, based on rating, presence of images, and sorting options.
 // Access Level: Public
@@ -1163,51 +1181,6 @@ export const getProductFilteredReviews = async (
 	});
 
 	return reviews;
-};
-
-export const getDeliveryDetailsForStoreByCountry = async (
-	storeId: string,
-	countryId: string,
-) => {
-	// Get shipping rate
-	const shippingRate = await db.shippingRate.findFirst({
-		where: {
-			countryId,
-			storeId,
-		},
-	});
-
-	let storeDetails;
-	if (!shippingRate) {
-		storeDetails = await db.store.findUnique({
-			where: {
-				id: storeId,
-			},
-			select: {
-				defaultShippingService: true,
-				defaultDeliveryTimeMin: true,
-				defaultDeliveryTimeMax: true,
-			},
-		});
-	}
-
-	const shippingService = shippingRate
-		? shippingRate.shippingService
-		: storeDetails?.defaultShippingService;
-
-	const deliveryTimeMin = shippingRate
-		? shippingRate.deliveryTimeMin
-		: storeDetails?.defaultDeliveryTimeMin;
-
-	const deliveryTimeMax = shippingRate
-		? shippingRate.deliveryTimeMax
-		: storeDetails?.defaultDeliveryTimeMax;
-
-	return {
-		shippingService,
-		deliveryTimeMin,
-		deliveryTimeMax,
-	};
 };
 
 // Function: getProductShippingFee
@@ -1290,120 +1263,47 @@ export const getProductShippingFee = async (
 	return 0;
 };
 
-/**
- * Retrieves product details based on an array of product ids.
- *
- * @param ids - An array of product ids to fetch details for.
- * @returns A promise that resolves to an array of product objects.
- *          If a id doesn't exist in the database, it will be skipped.
- * @throws An error if the database query fails.
- */
-export const getProductsByIds = async (
-	ids: string[],
-	page: number = 1,
-	pageSize: number = 10,
-): Promise<{ products: any; totalPages: number }> => {
-	// Check if ids array is empty
-	if (!ids || ids.length === 0) {
-		throw new Error('Ids are undefined');
-	}
-
-	// Default values for page and pageSize
-	const currentPage = page;
-	const limit = pageSize;
-	const skip = (currentPage - 1) * limit;
-
-	try {
-		// Query the database for products with the specified ids
-		const variants = await db.productVariant.findMany({
-			where: {
-				id: {
-					in: ids, // Filter products whose idds are in the provided array
-				},
-			},
-			select: {
-				id: true,
-				variantName: true,
-				slug: true,
-				images: {
-					select: {
-						url: true,
-					},
-				},
-				sizes: true,
-				product: {
-					select: {
-						id: true,
-						name: true,
-						slug: true,
-						rating: true,
-						sales: true,
-					},
-				},
-			},
-			take: limit,
-			skip: skip,
-		});
-
-		const new_products = variants.map((variant) => ({
-			id: variant.product.id,
-			slug: variant.product.slug,
-			name: variant.product.name,
-			rating: variant.product.rating,
-			sales: variant.product.sales,
-			variants: [
-				{
-					variantId: variant.id,
-					variantName: variant.variantName,
-					variantSlug: variant.slug,
-					images: variant.images,
-					sizes: variant.sizes,
-				},
-			],
-			variantImages: [],
-		}));
-
-		// Return products sorted in the order of ids provided
-		const ordered_products = ids
-			.map((id) =>
-				new_products.find((product) => product.variants[0].variantId === id),
-			)
-			.filter(Boolean); // Filter out undefined values
-
-		const allProducts = await db.productVariant.count({
-			where: {
-				id: {
-					in: ids,
-				},
-			},
-		});
-
-		const totalPages = Math.ceil(allProducts / pageSize);
-
-		return {
-			products: ordered_products,
-			totalPages,
-		};
-	} catch (error) {
-		throw new Error('Failed to fetch products. Please try again.');
-	}
-};
-
-const incrementProductViews = async (productId: string) => {
-	const isProductAlreadyViewed = getCookie(`viewedProduct_${productId}`, {
-		cookies,
+export const getDeliveryDetailsForStoreByCountry = async (
+	storeId: string,
+	countryId: string,
+) => {
+	// Get shipping rate
+	const shippingRate = await db.shippingRate.findFirst({
+		where: {
+			countryId,
+			storeId,
+		},
 	});
 
-	if (!isProductAlreadyViewed) {
-		await db.product.update({
+	let storeDetails;
+	if (!shippingRate) {
+		storeDetails = await db.store.findUnique({
 			where: {
-				id: productId,
+				id: storeId,
 			},
-			data: {
-				views: {
-					increment: 1,
-				},
+			select: {
+				defaultShippingService: true,
+				defaultDeliveryTimeMin: true,
+				defaultDeliveryTimeMax: true,
 			},
 		});
 	}
+
+	const shippingService = shippingRate
+		? shippingRate.shippingService
+		: storeDetails?.defaultShippingService;
+
+	const deliveryTimeMin = shippingRate
+		? shippingRate.deliveryTimeMin
+		: storeDetails?.defaultDeliveryTimeMin;
+
+	const deliveryTimeMax = shippingRate
+		? shippingRate.deliveryTimeMax
+		: storeDetails?.defaultDeliveryTimeMax;
+
+	return {
+		shippingService,
+		deliveryTimeMin,
+		deliveryTimeMax,
+	};
 };

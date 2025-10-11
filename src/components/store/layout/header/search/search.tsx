@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 import { SearchResult } from '@/lib/types';
 import { Search as SearchIcon } from 'lucide-react';
@@ -18,6 +17,7 @@ export default function Search() {
 	);
 	const [suggestions, setSuggestions] = useState<SearchResult[]>([]);
 
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	const handleSubmit = (e: any) => {
 		e.preventDefault();
 		if (pathname !== '/browse') {

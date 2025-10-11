@@ -80,7 +80,7 @@ export default function ProductCard({ product }: { product: ProductType }) {
 						<Button>
 							<Link
 								className='text-main-primary'
-								href={`/product/${slug}/${variantSlug}`}
+								href={`/product/${slug}?variant=${variantSlug}`}
 							>
 								Add to cart
 							</Link>

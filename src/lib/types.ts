@@ -18,6 +18,8 @@ import {
 	Country as CountryPrisma,
 	OrderGroup,
 	OrderItem,
+	Category,
+	SubCategory,
 } from '@prisma/client';
 import { getAllSubCategories } from '@/queries/subCategory';
 import { getOrder } from '@/queries/order';
@@ -307,3 +309,20 @@ export enum ProductStatus {
 	ExchangeRequested = 'ExchangeRequested',
 	AwaitingPickup = 'AwaitingPickup',
 }
+
+export type FiltersQueryType = {
+	search: string;
+	category: string;
+	subCategory: string;
+	offer: string;
+	size: string;
+	sort: string;
+	minPrice: string;
+	maxPrice: string;
+	color: string;
+};
+
+export type CatgegoryWithSubsType = Category & {
+	subCategories: SubCategory[];
+};
+
