@@ -1,39 +1,50 @@
-export default function OrderTotalDetailsCard({
+import { UserShippingAddressType } from '@/lib/types';
+import Image from 'next/image';
+
+export default function OrderUserDetailsCard({
 	details,
 }: {
-	details: {
-		subTotal: number;
-		shippingFees: number;
-		total: number;
-	};
+	details: UserShippingAddressType;
 }) {
-	const { subTotal, shippingFees, total } = details;
+	const {
+		user,
+		firstName,
+		lastName,
+		address1,
+		address2,
+		city,
+		country,
+		phone,
+		state,
+		zip_code,
+	} = details;
+
+	const { picture, email } = user;
 	return (
 		<div>
-			<div className='p-4 shadow-sm w-full'>
-				<div className='flex justify-between'>
-					<div className='space-y-4'>
-						<p className='text-lg font-semibold text-main-secondary'>
-							Subtotal
-						</p>
-						<p className='text-main-secondary text-sm'>Shipping Fees</p>
-						<p className='text-main-secondary text-sm'>Taxes</p>
-						<p className='text-lg font-semibold text-main-secondary'>Total</p>
-					</div>
-					<div className='text-right space-y-4'>
-						<p className='text-lg font-semibold text-main-primary'>
-							${subTotal.toFixed(2)}
-						</p>
-						<p className='mt-0.5 text-sm text-neutral-500'>
-							+${shippingFees.toFixed(2)}
-						</p>
-						<p className='mt-0.5 text-sm text-neutral-500'>+$0.00</p>
-						<p className='text-white px-3 text-sm py-1.5 bg-blue-primary rounded-lg font-semibold'>
-							${total.toFixed(2)}
-						</p>
-					</div>
+			<section className='p-2 shadow-sm w-full'>
+				<div className='w-fit mx-auto'>
+					<Image
+						src={picture || ''}
+						alt='profile pic'
+						width={100}
+						height={100}
+						className='rounded-full w-28 h-28 object-cover bg-amber-50'
+					/>
 				</div>
-			</div>
+				<div className='text-main-primary mt-2 space-y-2'>
+					<h2 className='text-center font-bold text-2xl tracking-wide capitalize'>
+						{firstName} {lastName}
+					</h2>
+					<h6 className='text-center py-2 border-t border-neutral-400 border-dashed'>
+						{email}
+					</h6>
+					<h6 className='text-center'>{phone}</h6>
+					<p className='text-sm  py-2 border-t border-neutral-400 border-dashed'>
+						{address1}, {address2} ,{city} , {state}, {zip_code}, {country.name}
+					</p>
+				</div>
+			</section>
 		</div>
 	);
 }

@@ -7,9 +7,14 @@ import { ChevronLeft, ChevronRight, Download, Printer } from 'lucide-react';
 import React from 'react';
 import { generateOrderPDFBlob } from './pdf-invoice';
 import { downloadBlobAsFile, printPDF } from '@/lib/utils';
+import { useRouter } from 'next/navigation';
 
 export default function OrderHeader({ order }: { order: OrderFulltType }) {
+	const router = useRouter();
+
 	if (!order) return;
+
+	const handleGoBack = () => router.back();
 
 	const handleDownload = async () => {
 		try {
@@ -31,7 +36,10 @@ export default function OrderHeader({ order }: { order: OrderFulltType }) {
 				{/* Order id */}
 				<div className='min-[1100px]:w-[920px] xl:w-[990px] flex items-center gap-x-3 '>
 					<div className='border-r pr-4'>
-						<button className='w-10 h-10 border rounded-full grid place-items-center'>
+						<button
+							className='w-10 h-10 border rounded-full grid place-items-center cursor-pointer'
+							onClick={handleGoBack}
+						>
 							<ChevronLeft className='stroke-main-secondary' />
 						</button>
 					</div>

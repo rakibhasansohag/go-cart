@@ -19,7 +19,7 @@ export default function OrderInfoCard({
 						<p className='text-main-secondary text-sm'>Delivered</p>
 						<p className='text-main-secondary text-sm'>Payment Status</p>
 						<p className='text-main-secondary text-sm'>Payment Method</p>
-						<p className='text-main-secondary text-sm'>Payment Refrence</p>
+						<p className='text-main-secondary text-sm'>Payment Reference</p>
 						<p className='text-main-secondary text-sm'>Paid at</p>
 					</div>
 					<div className='text-right space-y-4'>

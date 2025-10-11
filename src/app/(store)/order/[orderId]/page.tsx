@@ -47,13 +47,7 @@ export default async function OrderPage({
 				>
 					{/* Col 1 -> User, Oder details */}
 					<div className='order-area-cards min-[1024px]:h-[calc(100vh-137px)] min-[1024px]:border-r overflow-y-auto flex flex-col gap-y-5 scrollbar '>
-						<OrderUserDetailsCard
-							details={{
-								subTotal: order.subTotal,
-								shippingFees: order.shippingFees,
-								total: order.total,
-							}}
-						/>
+						<OrderUserDetailsCard details={order.shippingAddress} />
 						<OrderInfoCard
 							totalItemsCount={totalItemsCount}
 							deliveredItemsCount={deliveredItemsCount}
