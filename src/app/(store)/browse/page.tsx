@@ -8,8 +8,10 @@ import { getProducts } from '@/queries/product';
 export default async function BrowsePage({
 	searchParams,
 }: {
-	searchParams: FiltersQueryType;
+	searchParams: Promise<FiltersQueryType>;
 }) {
+	const resolvedParams = await searchParams;
+
 	const {
 		category,
 		offer,
@@ -20,7 +22,8 @@ export default async function BrowsePage({
 		maxPrice,
 		minPrice,
 		color,
-	} = searchParams;
+	} = resolvedParams;
+
 	const products_data = await getProducts(
 		{
 			search,
@@ -29,16 +32,8 @@ export default async function BrowsePage({
 			category,
 			subCategory,
 			offer,
-			size: Array.isArray(size)
-				? size
-				: size
-				? [size] // Convert single size string to array
-				: undefined, // If no size, keep it undefined
-			color: Array.isArray(color)
-				? color
-				: color
-				? [color] // Convert single color string to array
-				: undefined, // If no color, keep it undefined
+			size: Array.isArray(size) ? size : size ? [size] : undefined,
+			color: Array.isArray(color) ? color : color ? [color] : undefined,
 		},
 		sort,
 	);
@@ -53,8 +48,9 @@ export default async function BrowsePage({
 
 			{/* Filters Sidebar */}
 			<div className='fixed top-[124px] lg:top-16 left-2 md:left-4 pt-4 h-[calc(100vh-64px)] overflow-auto scrollbar'>
-				<ProductFilters queries={searchParams} />
+				<ProductFilters queries={resolvedParams} />{' '}
 			</div>
+
 			{/* Main Content */}
 			<div className='ml-[190px] md:ml-[220px] pt-[140px] lg:pt-20'>
 				{/* Sort Section */}
@@ -63,8 +59,8 @@ export default async function BrowsePage({
 				</div>
 
 				{/* Product List */}
-				<div className='mt-4 px-4 w-full overflow-y-auto max-h-[calc(100vh-155px)] pb-28 scrollbar flex flex-wrap'>
-					{products.map((product, i) => (
+				<div className='mt-4 px-4 w-full overflow-y-auto max-h-[calc(100vh-155px)] pb-28 scrollbar flex flex-wrap gap-4'>
+					{products.map((product) => (
 						<ProductCard key={product.id + product.slug} product={product} />
 					))}
 				</div>
