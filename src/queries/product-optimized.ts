@@ -10,6 +10,7 @@ import {
 import { getRatingStatistics } from './product';
 import { Store } from '@prisma/client';
 import { currentUser } from '@clerk/nextjs/server';
+import { cookies } from 'next/headers';
 
 /**
  * Retrieves optimized product details by product slug.
@@ -17,7 +18,7 @@ import { currentUser } from '@clerk/nextjs/server';
  * @returns An object containing product name, slug, rating, and variants.
  */
 export const retrieveProductDetailsOptimized = async (productSlug: string) => {
-	console.log('productSlug', productSlug);
+	console.log('productSlug from optimized', productSlug);
 	// Fetch the product details from the database
 	const product = await db.product.findUnique({
 		where: { slug: productSlug },
@@ -84,6 +85,9 @@ export const retrieveProductDetailsOptimized = async (productSlug: string) => {
 	if (!product) {
 		throw new Error('Product not found');
 	}
+
+	// Handle product views
+	await incrementProductViews(product.id);
 
 	// Return the structured product details
 	return product;
@@ -434,4 +438,23 @@ export const getStoreFollowingInfo = async (storeId: string) => {
 			? storeFollowersInfo._count.followers
 			: 0,
 	};
+};
+
+const incrementProductViews = async (productId: string) => {
+	const cookieStore = await cookies();
+	const isProductAlreadyViewed = cookieStore.get(`viewedProduct_${productId}`);
+
+	if (!isProductAlreadyViewed) {
+		// 1. Increment the view count in the database
+		await db.product.update({
+			where: {
+				id: productId,
+			},
+			data: {
+				views: {
+					increment: 1,
+				},
+			},
+		});
+	}
 };

@@ -1394,6 +1394,8 @@ const incrementProductViews = async (productId: string) => {
 		cookies,
 	});
 
+	console.log('IS PRODUCT ALREADY VIEWED', isProductAlreadyViewed);
+
 	if (!isProductAlreadyViewed) {
 		await db.product.update({
 			where: {

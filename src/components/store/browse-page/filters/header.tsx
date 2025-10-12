@@ -87,27 +87,28 @@ export default function FiltersHeader({
           const queryValues = isArrayQuery ? queryValue : [queryValue];
 
           return (
-            <div key={queryKey} className="flex flex-wrap gap-2">
-              {queryValues.map((value, index) => (
-                <div
-                  key={index}
-                  className="border cursor-pointer py-0.5 px-1.5 rounded-sm text-sm w-fit text-center"
-                >
-                  <span className="text-main-secondary overflow-hidden text-ellipsis whitespace-nowrap mr-2">
-                    {value}
-                  </span>
-                  <X
-                    className="w-3 text-main-secondary hover:text-black cursor-pointer inline-block"
-                    onClick={() => {
-                      isArrayQuery
-                        ? handleRemoveQuery(queryKey, queryValues, value) // Remove specific value from array query
-                        : handleRemoveQuery(queryKey); // Remove entire query
-                    }}
-                  />
-                </div>
-              ))}
-            </div>
-          );
+						<div key={queryKey} className='flex flex-wrap gap-2'>
+							{queryValues.map((value, index) => (
+								<div
+									key={index}
+									className='border cursor-pointer py-0.5 px-1.5 rounded-sm text-sm w-fit text-center'
+								>
+									<span className='text-main-secondary overflow-hidden text-ellipsis whitespace-nowrap mr-2'>
+										{value}
+									</span>
+									<X
+										className='w-3 text-main-secondary hover:text-black cursor-pointer inline-block'
+										onClick={() => {
+											// eslint-disable-next-line @typescript-eslint/no-unused-expressions
+											isArrayQuery
+												? handleRemoveQuery(queryKey, queryValues, value) // Remove specific value from array query
+												: handleRemoveQuery(queryKey); // Remove entire query
+										}}
+									/>
+								</div>
+							))}
+						</div>
+					);
         })}
       </div>
     </div>
