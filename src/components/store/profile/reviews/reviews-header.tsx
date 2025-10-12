@@ -92,10 +92,11 @@ const ReviewsHeader: FC<Props> = ({
 					{/* Select */}
 					<div className='relative mb-4 w-fit'>
 						<select className='h-8 px-4 w-24 appearance-none outline-none cursor-pointer hover:border-[1px] hover:border-black border rounded-l-md'>
-							<option value=''>
-								<div className='flex h-8 text-left text-sm overflow-hidden'>
-									<span className='flex-1 whitespace-nowrap'>Order</span>
-								</div>
+							<option
+								value=''
+								className='flex h-8 text-left text-sm overflow-hidden'
+							>
+								Reviews
 							</option>
 						</select>
 						<span className='absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none'>
@@ -121,8 +122,8 @@ const ReviewsHeader: FC<Props> = ({
 					/>
 					{/* Search icon */}
 					<span className='-ml-[1px] rounded-r-md relative bg-background text-center'>
-						<button className='rounded-r-md min-w-[52px] h-8 text-white bg-[linear-gradient(90deg,_#ff640e,_#ff3000)] grid place-items-center'>
-							<span className='text-2xl inline-block '>
+						<button className='rounded-r-md min-w-[52px] h-8 text-main-primary bg-[linear-gradient(90deg,_#ff640e,_#ff3000)] grid place-items-center'>
+							<span className='text-2xl inline-block cursor-pointer'>
 								<SearchIcon />
 							</span>
 						</button>
@@ -133,7 +134,7 @@ const ReviewsHeader: FC<Props> = ({
 					{/* Select */}
 					<div className='relative mb-4 w-fit'>
 						<select
-							className='h-8 px-4 w-40 appearance-none outline-none cursor-pointer hover:border-[1px] hover:border-black border rounded-md'
+							className='h-8 px-4 w-40 appearance-none outline-none cursor-pointer hover:border-[1px] hover:border-[#ff640e] border rounded-md'
 							value={period}
 							onChange={(e) =>
 								setPeriod(e.target.value as PaymentTableDateFilter)
@@ -143,11 +144,9 @@ const ReviewsHeader: FC<Props> = ({
 								<option
 									key={filter.value}
 									value={filter.value}
-									className='flex h-8 text-left text-sm overflow-hidden'
+									className='flex h-8 text-left text-sm overflow-hidden dark:text-white bg-background'
 								>
-									<span className='flex-1 whitespace-nowrap'>
-										{filter.title}
-									</span>
+									{filter.title}
 								</option>
 							))}
 						</select>
