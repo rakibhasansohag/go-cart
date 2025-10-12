@@ -294,6 +294,10 @@
   .border-sidebar-border { border-color: var(--color-sidebar-border); }
   .ring-sidebar-ring { --tw-ring-color: var(--color-sidebar-ring); }
 
+  .bg-border{
+    background-color: var(--color-border);
+  }
+
   /* Card helper */
   .card-surface {
     background-color: var(--color-card);

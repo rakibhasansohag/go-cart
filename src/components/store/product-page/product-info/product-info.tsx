@@ -134,7 +134,9 @@ const ProductInfo: FC<Props> = ({
 			<div>
 				<ProductWatch productId={productData.id} />
 			</div>
+
 			<Separator className='mt-2' />
+
 			{/* Color wheel - variant switcher */}
 			<div className='mt-4 space-y-2'>
 				<div className='relative flex items-center justify-between text-main-primary font-bold'>
