@@ -9,6 +9,8 @@ import {
 	PaymentStatus,
 	PaymentTableDateFilter,
 	PaymentTableFilter,
+	ReviewDateFilter,
+	ReviewFilter,
 } from '@/lib/types';
 import { currentUser } from '@clerk/nextjs/server';
 
@@ -239,6 +241,103 @@ export const getUserPayments = async (
 	// Return paginated data with metadata
 	return {
 		payments,
+		totalPages,
+		currentPage: page,
+		pageSize,
+		totalCount,
+	};
+};
+
+/**
+ * @name getUserReviews
+ * @description - Retrieves paginated reviews for the authenticated user, with optional filters for rating and search functionality.
+ * @access User
+ * @param filter - A string to filter reviews by rating (e.g., "5", "4", "3", "2", "1").
+ * * @param period - A string to filter reviews by creation date:
+ *   - "" (no filter)
+ *   - "last-6-months"
+ *   - "last-1-year"
+ *   - "last-2-years".
+ * @param search - A string to search within the review text.
+ * @param page - The page number for pagination (default: 1).
+ * @param pageSize - The number of records to return per page (default: 10).
+ * @returns A Promise resolving to an object containing:
+ *   - `reviews`: An array of review details.
+ *   - `totalPages`: The total number of pages available.
+ *   - `currentPage`: The current page number.
+ *   - `pageSize`: The number of records per page.
+ *   - `totalCount`: The total number of review records matching the query.
+ */
+export const getUserReviews = async (
+	filter: ReviewFilter = '',
+	period: ReviewDateFilter = '',
+	search = '' /* Search by Payment intent id */,
+	page: number = 1,
+	pageSize: number = 10,
+) => {
+	// Retrieve current user
+	const user = await currentUser();
+
+	// Check if user is authenticated
+	if (!user) throw new Error('Unauthenticated.');
+
+	// Calculate pagination values
+	const skip = (page - 1) * pageSize;
+
+	// Construct the base query
+	const whereClause: any = {
+		AND: [
+			{
+				userId: user.id,
+			},
+		],
+	};
+
+	// Apply filters
+	if (filter) whereClause.AND.push({ rating: parseFloat(filter) });
+
+	// Apply period filter
+	const now = new Date();
+	if (period === 'last-6-months') {
+		whereClause.AND.push({
+			createdAt: { gte: subMonths(now, 6) },
+		});
+	}
+	if (period === 'last-1-year')
+		whereClause.AND.push({ createdAt: { gte: subYears(now, 1) } });
+	if (period === 'last-2-years')
+		whereClause.AND.push({ createdAt: { gte: subYears(now, 2) } });
+
+	// Apply search filter
+	if (search.trim()) {
+		whereClause.AND.push({
+			review: { contains: search }, // Search by review text
+		});
+	}
+
+	// Fetch reviews for the current page
+	const reviews = await db.review.findMany({
+		where: whereClause,
+		include: {
+			images: true,
+			user: true,
+		},
+		take: pageSize, // Limit to page size
+		skip, // Skip the orders of previous pages
+		orderBy: {
+			updatedAt: 'desc', // Sort by most updated recently
+		},
+	});
+
+	// Fetch total count of orders for the query
+	const totalCount = await db.review.count({ where: whereClause });
+
+	// Calculate total pages
+	const totalPages = Math.ceil(totalCount / pageSize);
+
+	// Return paginated data with metadata
+	return {
+		reviews,
 		totalPages,
 		currentPage: page,
 		pageSize,
