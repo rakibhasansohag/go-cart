@@ -5,6 +5,7 @@ import Link from 'next/link';
 
 export default async function ProfileOverview() {
 	const user = await currentUser();
+	
 
 	if (!user) return;
 	return (
@@ -18,8 +19,9 @@ export default async function ProfileOverview() {
 						height={200}
 						className='w-14 h-14 rounded-full object-cover'
 					/>
-					<div className='flex-1 ml-4 text-main-primary text-xl font-bold capitalize '>
-						{user.fullName?.toLowerCase()}
+					<div className='flex-1 ml-4 text-main-primary text-xl font-bold capitalize'>
+						{user.fullName?.toLowerCase() ||
+							user.emailAddresses[0]?.emailAddress.split('@')[0]}
 					</div>
 				</div>
 				<div className='mt-4 grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-4 p-4'>
