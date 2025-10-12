@@ -12,7 +12,7 @@ export default async function UserMenu() {
 	// Get the current user
 	const user = await currentUser();
 	return (
-		<div className='relative group px-2'>
+		<div className='relative group px-2 '>
 			{/* Trigger */}
 			<div>
 				{user ? (
@@ -42,70 +42,86 @@ export default async function UserMenu() {
 					</div>
 				)}
 			</div>
+
 			{/* Content */}
 			<div
-				// ERROR: If the content doesn't have a width, the triangle will be hidden and also if the user link is overflowing than give the left of 214px will fine in large device and more
 				className={cn(
-					'hidden absolute top-0 -left-20 group-hover:block cursor-pointer',
+					' absolute top-0 -left-20 group-hover:block cursor-pointer overflow-clip',
 					{
 						'-left-[200px] lg:-left-[138px]': user,
 					},
 				)}
 			>
-				<div className='relative left-2 mt-10 right-auto bottom-auto pt-2.5 text-[#222] p-0 text-sm z-40'>
+				<div className='relative left-2 mt-10 pt-2.5 text-sm z-40 '>
 					{/* Triangle */}
-					<div className='w-0 h-0 absolute left-[149px] top-1 right-24 !border-l-[10px] !border-l-transparent !border-r-[10px] !border-r-transparent !border-b-[10px] border-b-white'></div>
+					<div className='w-0 h-0 absolute left-[149px] top-1 border-l-[10px] border-l-transparent border-r-[10px] border-r-transparent border-b-[10px] border-b-white dark:border-b-slate-800'></div>
+
 					{/* Menu */}
-					<div className='rounded-3xl bg-white text-sm text-[#222] shadow-lg'>
+					<div className='rounded-2xl backdrop-blur-md bg-white/80 dark:bg-slate-900/70 shadow-2xl border border-slate-200/60 dark:border-slate-700/40 transition-all duration-300'>
 						<div className='w-[305px]'>
 							<div className='pt-5 px-6 pb-0'>
 								{user ? (
-									<div className='user-avatar flex flex-col items-center justify-center'>
+									<div className='flex flex-col items-center justify-center gap-2'>
 										<UserButton />
 									</div>
 								) : (
 									<div className='space-y-1'>
 										<Link href='/sign-in'>
-											<Button className='text-main-primary'>Sign in</Button>
+											<Button className='w-full bg-main-primary text-white hover:opacity-90'>
+												Sign in
+											</Button>
 										</Link>
 										<Link
 											href='/sign-up'
-											className='h-10 text-sm hover:underline text-main-primary flex items-center justify-center cursor-pointer'
+											className='h-10 text-sm text-main-primary flex items-center justify-center hover:underline'
 										>
 											Register
 										</Link>
 									</div>
 								)}
+
 								{user && (
 									<Button
-										className='w-full h-10 my-4 text-sm text-main-primary bg-main-primary hover:bg-main-primary/90 focus-visible:ring-2 focus-visible:ring-main-primary/50 focus-visible:ring-offset-2 focus-visible:ring-offset-white'
+										className='w-full h-10 my-4 text-sm bg-gradient-to-r from-red-500/90 to-pink-500/80 text-white hover:opacity-90 rounded-xl shadow-md'
 										asChild
 									>
 										<SignOutButton />
 									</Button>
 								)}
-								<Separator className='mt-4' />
+								<Separator className='mt-3 dark:bg-slate-700/60' />
 							</div>
+
 							{/* Links */}
-							<div className='max-w-[calc(100vh-180px)] text-main-secondary overflow-y-auto overflow-x-hidden pt-0 px-2 pb-4'>
-								<ul className='grid grid-cols-3 gap-2 py-2.5 ^px-4 w-full'>
+							<div className='max-h-[calc(100vh-200px)] overflow-y-auto pt-3 px-3 pb-4'>
+								<ul className='grid grid-cols-3 gap-3 py-2'>
 									{links.map((item) => (
 										<li key={item.title} className='grid place-items-center'>
-											<Link href={item.link} className='space-y-2'>
-												<div className='w-14 h-14 rounded-full p-2 grid place-items-center bg-gray-100 hover:bg-gray-200'>
-													<span className='text-gray-500'>{item.icon}</span>
+											<Link href={item.link} className='group space-y-2'>
+												<div
+													className='w-14 h-14 rounded-2xl p-2 grid place-items-center transition-all duration-300 
+										bg-gray-100 hover:bg-gray-200 dark:bg-slate-800/60 dark:hover:bg-slate-700/60 
+										border border-transparent hover:border-slate-300/50 dark:hover:border-slate-600/50 
+										shadow-sm hover:shadow-md'
+												>
+													<span className='text-slate-600 dark:text-slate-200 transition-transform duration-300 group-hover:scale-110'>
+														{item.icon}
+													</span>
 												</div>
-												<span className='block text-xs'>{item.title}</span>
+												<span className='block text-xs text-slate-600 dark:text-slate-300'>
+													{item.title}
+												</span>
 											</Link>
 										</li>
 									))}
 								</ul>
-								<Separator className='!max-w-[257px] mx-auto' />
-								<ul className='pt-2.5 pr-4 pb-1 pl-4 w-[288px]'>
+
+								<Separator className='!max-w-[257px] mx-auto dark:bg-slate-700/60' />
+
+								<ul className='pt-3 pr-4 pb-2 pl-4 w-[288px] space-y-1.5'>
 									{extraLinks.map((item, i) => (
 										<li key={i}>
 											<Link href={item.link}>
-												<span className='block text-sm text-main-primary py-1.5 hover:underline'>
+												<span className='block text-sm text-main-primary hover:underline hover:text-main-primary/80'>
 													{item.title}
 												</span>
 											</Link>
