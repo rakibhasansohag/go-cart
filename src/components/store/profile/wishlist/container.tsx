@@ -24,7 +24,7 @@ export default function WishlistContainer({
 	}, [currentPage, page]);
 	return (
 		<div>
-			<div className='flex flex-wrap pb-16'>
+			<div className='flex flex-wrap pb-16 '>
 				<ProductList products={products} />
 			</div>
 			<Pagination page={page} setPage={setPage} totalPages={totalPages} />

@@ -773,3 +773,58 @@ iframe[src*="cloudinary"] {
 .order-area-payment {
   grid-area: payment;
 }
+
+/* User order filter before */
+.user-orders-table-tr::after {
+  content: "";
+  height: 3px;
+  width: 24px;
+  border-radius: 1.5px;
+  background-color: #fd384f;
+  position: absolute;
+  left: 50%;
+  transform: translate(-50%);
+  bottom: -12px;
+  animation: expandWith 0.3s;
+}
+
+/* User account before */
+.user-menu-item::before {
+  content: "";
+  position: absolute;
+  height: 100%;
+  width: 4px;
+  background-color: #fd384f;
+  left: 0;
+}
+
+
+/* Home main swiper */
+.awssld__wrapper {
+  border-radius: 6px !important;
+}
+
+.awssld__container {
+  padding-bottom: 36% !important;
+}
+
+.awssld__prev {
+  transform: scale(50%) !important;
+  left: -1rem !important;
+}
+
+.awssld__next {
+  transform: scale(50%) !important;
+  right: -1rem !important;
+}
+
+.swiper {
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow: hidden !important;
+}
+
+.swiper-slide {
+  width: auto !important;
+}
+

@@ -13,8 +13,8 @@ export default async function ProfileReviewsPage() {
 	const reviews_data = await getUserReviews();
 	const { reviews, totalPages } = reviews_data;
 	return (
-		<div className='bg-background py-4 px-6'>
-			<h1 className='text-lg mb-3 font-bold'>Your reviews</h1>
+		<div className='bg-background py-4 px-6 rounded-xl'>
+			<h1 className='text-lg mb-1 font-bold'>Your reviews</h1>
 			<ReviewsContainer reviews={reviews} totalPages={totalPages} />
 		</div>
 	);

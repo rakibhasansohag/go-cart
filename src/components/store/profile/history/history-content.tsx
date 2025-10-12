@@ -58,7 +58,7 @@ const HistoryContent: FC<HistoryContentProps> = ({ initialPage }) => {
 	}, [currentPage]); // Re-fetch data when currentPage state changes
 
 	return (
-		<div className='bg-background py-4 px-6'>
+		<div className='bg-background py-4 px-6 rounded-xl'>
 			<h1 className='text-lg mb-5 font-bold'>Your product view history</h1>
 			{loading ? (
 				<div className='flex items-center justify-center h-48'>

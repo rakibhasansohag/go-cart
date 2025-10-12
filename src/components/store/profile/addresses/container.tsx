@@ -13,7 +13,7 @@ const AddressContainer: FC<Props> = ({ addresses, countries }) => {
 	const [selectedAddress, setSelectedAddress] =
 		useState<ShippingAddress | null>(null);
 	return (
-		<div className='w-full'>
+		<div className='w-full rounded-xl'>
 			<UserShippingAddresses
 				addresses={addresses}
 				countries={countries}

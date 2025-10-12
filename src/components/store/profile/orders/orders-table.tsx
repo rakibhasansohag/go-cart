@@ -67,8 +67,8 @@ export default function OrdersTable({
 					setSearch={setSearch}
 				/>
 				{/* Table */}
-				<div className='overflow-hidden'>
-					<div className='bg-background px-6 pt-1 pb-6 rounded-xl'>
+				<div className='overflow-hidden mt-5'>
+					<div className='bg-background px-6 pt-5 pb-6 rounded-xl'>
 						{/* Scrollable Table Container */}
 						<div className='max-h-[700px] overflow-x-auto overflow-y-auto scrollbar border rounded-md '>
 							<table className='w-full min-w-max table-auto text-left'>

@@ -39,7 +39,7 @@ const PaymentTableHeader: FC<Props> = ({
 	}, [debouncedSearch, setSearch]);
 
 	return (
-		<div className='pt-4 px-6 bg-background'>
+		<div className='pt-4 px-6 bg-background rounded-xl'>
 			<div className='flex items-center justify-between'>
 				<div className='-ml-3 text-main-primary text-sm'>
 					<div className='relative overflow-x-hidden'>
