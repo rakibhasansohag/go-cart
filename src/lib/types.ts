@@ -36,6 +36,7 @@ import { retrieveProductDetailsOptimized } from '@/queries/product-optimized';
 import countries from '@/data/countries.json';
 import { ShippingAddressSchema } from './schemas';
 import z from 'zod';
+import { getUserPayments } from '@/queries/profile';
 
 export interface DashboardSidebarMenuInterface {
 	label: string;
@@ -326,3 +327,35 @@ export type CatgegoryWithSubsType = Category & {
 	subCategories: SubCategory[];
 };
 
+export type OrderTableFilter =
+	| ''
+	| 'unpaid'
+	| 'toShip'
+	| 'shipped'
+	| 'delivered';
+
+export type OrderTableDateFilter =
+	| ''
+	| 'last-6-months'
+	| 'last-1-year'
+	| 'last-2-years';
+
+export type ReviewFilter = '5' | '4' | '3' | '2' | '1' | '';
+
+export type ReviewDateFilter =
+	| ''
+	| 'last-6-months'
+	| 'last-1-year'
+	| 'last-2-years';
+
+export type PaymentTableFilter = '' | 'paypal' | 'credit-card';
+
+export type PaymentTableDateFilter =
+	| ''
+	| 'last-6-months'
+	| 'last-1-year'
+	| 'last-2-years';
+
+export type UserPaymentType = Prisma.PromiseReturnType<
+	typeof getUserPayments
+>['payments'][0];

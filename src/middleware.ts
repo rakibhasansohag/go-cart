@@ -12,6 +12,19 @@ const protectedRoutes = createRouteMatcher([
 ]);
 
 export default clerkMiddleware(async (auth, req, next) => {
+
+
+	const pathname = req.nextUrl.pathname;
+
+	// skip middleware for auth pages / static assets / api callbacks
+	if (
+		pathname.startsWith('/sign-in') ||
+		pathname.startsWith('/api') ||
+		pathname.startsWith('/_next')
+	) {
+		return NextResponse.next();
+	}
+
 	const { userId, redirectToSignIn } = await auth();
 
 	if (!userId && protectedRoutes(req)) {
