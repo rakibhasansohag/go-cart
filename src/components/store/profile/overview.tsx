@@ -10,7 +10,7 @@ export default async function ProfileOverview() {
 	if (!user) return;
 	return (
 		<div className='w-full'>
-			<div className='bg-background p-4 border shadow-sm'>
+			<div className='bg-background p-4 border shadow-sm rounded-lg'>
 				<div className='flex items-center'>
 					<Image
 						src={user.imageUrl}
