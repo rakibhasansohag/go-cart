@@ -359,3 +359,7 @@ export type PaymentTableDateFilter =
 export type UserPaymentType = Prisma.PromiseReturnType<
 	typeof getUserPayments
 >['payments'][0];
+
+export type UserOrderType = Prisma.PromiseReturnType<
+	typeof getUserOrders
+>['orders'][0];
