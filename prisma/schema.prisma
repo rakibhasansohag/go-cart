@@ -1,12 +1,5 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
-  // output   = "../src/generated/prisma"
 }
 
 datasource db {
@@ -23,20 +16,20 @@ enum Role {
 
 model User {
   id      String @id @default(uuid())
-  email   String @unique
   name    String
+  email   String @unique
   picture String @db.Text
   role    Role   @default(USER)
 
   stores            Store[]           @relation("UserStores")
-  shippingAddresses ShippingAddress[] @relation("UserShippingAddresses")
-  wishlist          Wishlist[]        @relation("WishlistToUser")
-  reviews           Review[]          @relation("ReviewToUser")
   following         Store[]           @relation("UserFollowingStore")
+  reviews           Review[]          @relation("ReviewToUser")
   cart              Cart?             @relation("UserCart")
-  coupons           Coupon[]          @relation("CouponToUser")
+  shippingAddresses ShippingAddress[] @relation("UserShippingAddresses")
   orders            Order[]           @relation("UserOrders")
-  payments PaymentDetails[]  @relation("PaymentDetailsToUser")
+  wishlist          Wishlist[]        @relation("WishlistToUser")
+  payments          PaymentDetails[]  @relation("PaymentDetailsToUser")
+  coupons           Coupon[]          @relation("CouponToUser")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -50,7 +43,8 @@ model Category {
   featured Boolean @default(false)
 
   subCategories SubCategory[] @relation("CategoryToSubcategory")
-  products      Product[]     @relation("CategoryToProduct")
+
+  products Product[] @relation("CategoryToProduct")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -64,8 +58,9 @@ model SubCategory {
   featured Boolean @default(false)
 
   categoryId String
-  category   Category  @relation("CategoryToSubcategory", fields: [categoryId], references: [id])
-  products   Product[] @relation("SubCategoryToProduct")
+  category   Category @relation("CategoryToSubcategory", fields: [categoryId], references: [id])
+
+  products Product[] @relation("SubCategoryToProduct")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -73,7 +68,6 @@ model SubCategory {
   @@index([categoryId])
 }
 
-// STORE
 enum StoreStatus {
   PENDING
   ACTIVE
@@ -102,18 +96,19 @@ model Store {
   defaultShippingFeeFixed             Float       @default(0)
   defaultDeliveryTimeMin              Int         @default(7)
   defaultDeliveryTimeMax              Int         @default(31)
-  createdAt                           DateTime    @default(now())
-  updatedAt                           DateTime    @default(now()) @updatedAt
 
-  userId    String
-  user      User       @relation("UserStores", fields: [userId], references: [id])
-  followers User[]     @relation("UserFollowingStore")
-  cartItems CartItem[] @relation("CartItemToStore")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  userId String
+  user   User   @relation("UserStores", fields: [userId], references: [id])
 
   products      Product[]      @relation("StoreToProduct")
   shippingRates ShippingRate[] @relation("StoreShippingRates")
-  coupons       Coupon[]       @relation("CouponToStore")
+  followers     User[]         @relation("UserFollowingStore")
+  cartItems     CartItem[]     @relation("CartItemToStore")
   orderGroups   OrderGroup[]   @relation("OrderGroupToStore")
+  coupons       Coupon[]       @relation("CouponToStore")
 
   @@index([userId])
 }
@@ -124,10 +119,9 @@ enum ShippingFeeMethod {
   FIXED
 }
 
-// Product Related Models
 model Product {
   id                          String            @id @default(uuid())
-  name                        String            @db.VarChar(250)
+  name                        String
   description                 String            @db.LongText
   slug                        String            @unique
   brand                       String
@@ -136,20 +130,20 @@ model Product {
   numReviews                  Int               @default(0)
   shippingFeeMethod           ShippingFeeMethod @default(ITEM)
   views                       Int               @default(0)
-  freeShippingForAllCountries Boolean           @default(false)
   freeShipping                FreeShipping?     @relation("ProductFreeShipping")
-  reviews                     Review[]          @relation("ReviewToProduct")
+  freeShippingForAllCountries Boolean           @default(false)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
-  storeId  String
-  store    Store      @relation("StoreToProduct", fields: [storeId], references: [id])
-  wishlist Wishlist[] @relation("WishlistToProduct")
+  storeId String
+  store   Store  @relation("StoreToProduct", fields: [storeId], references: [id])
 
   variants  ProductVariant[] @relation("ProductToProductVariant")
   specs     Spec[]           @relation("ProductSpec")
   questions Question[]       @relation("ProductQuestion")
+  reviews   Review[]         @relation("ReviewToProduct")
+  wishlist  Wishlist[]       @relation("WishlistToProduct")
 
   categoryId String
   category   Category @relation("CategoryToProduct", fields: [categoryId], references: [id])
@@ -201,9 +195,10 @@ model Size {
   price    Float
   discount Float  @default(0)
 
+  wishlist Wishlist[] @relation("WishlistToSize")
+
   productVariantId String
   productVariant   ProductVariant @relation("ProductVariantSizes", fields: [productVariantId], references: [id])
-  wishlist         Wishlist[]     @relation("WishlistToSize")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
@@ -349,57 +344,6 @@ model FreeShippingCountry {
   @@index([countryId])
 }
 
-model ShippingAddress {
-  id        String  @id @default(uuid())
-  firstName String
-  lastName  String
-  phone     String
-  address1  String
-  address2  String?
-  state     String
-  city      String
-  zip_code  String
-  default   Boolean @default(false)
-
-  orders Order[] @relation("ShippingAddressToOrder")
-
-  userId String
-  user   User   @relation("UserShippingAddresses", fields: [userId], references: [id])
-
-  countryId String
-  country   Country @relation("CountryToShippingAddress", fields: [countryId], references: [id])
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([countryId])
-  @@index([userId])
-}
-
-model Wishlist {
-  id String @id @default(uuid())
-
-  userId String
-  user   User   @relation("WishlistToUser", fields: [userId], references: [id], onDelete: Cascade)
-
-  productId String
-  product   Product @relation("WishlistToProduct", fields: [productId], references: [id], onDelete: Cascade)
-
-  variantId String
-  variant   ProductVariant @relation("WishlistToProductVariant", fields: [variantId], references: [id], onDelete: Cascade)
-
-  sizeId String?
-  size   Size?   @relation("WishlistToSize", fields: [sizeId], references: [id])
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([userId])
-  @@index([productId])
-  @@index([variantId])
-  @@index([sizeId])
-}
-
 model Review {
   id           String @id @default(uuid())
   variant      String
@@ -488,25 +432,31 @@ model CartItem {
   @@index([storeId])
 }
 
-model Coupon {
-  id        String @id @default(uuid())
-  code      String @unique
-  startDate String
-  endDate   String
-  discount  Int
+model ShippingAddress {
+  id        String  @id @default(uuid())
+  firstName String
+  lastName  String
+  phone     String
+  address1  String
+  address2  String?
+  state     String
+  city      String
+  zip_code  String
+  default   Boolean @default(false)
 
-  storeId String
-  store   Store  @relation("CouponToStore", fields: [storeId], references: [id], onDelete: Cascade)
+  orders Order[] @relation("ShippingAddressToOrder")
 
-  users  User[]       @relation("CouponToUser")
-  orders OrderGroup[] @relation("CouponToOrderGroup")
+  userId String
+  user   User   @relation("UserShippingAddresses", fields: [userId], references: [id])
 
-  carts Cart[] @relation("CouponToCart")
+  countryId String
+  country   Country @relation("CountryToShippingAddress", fields: [countryId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([storeId])
+  @@index([countryId])
+  @@index([userId])
 }
 
 enum OrderStatus {
@@ -548,7 +498,7 @@ model Order {
 
   groups OrderGroup[] @relation("OrderGroupToOrder")
 
-  orderStatus OrderStatus @default(Pending)
+  orderStatus   OrderStatus   @default(Pending)
   paymentStatus PaymentStatus @default(Pending)
 
   paymentMethod  PaymentMethod?
@@ -671,23 +621,65 @@ model OrderItem {
   @@index([orderGroupId])
 }
 
+model Wishlist {
+  id String @id @default(uuid())
+
+  userId String
+  user   User   @relation("WishlistToUser", fields: [userId], references: [id], onDelete: Cascade)
+
+  productId String
+  product   Product @relation("WishlistToProduct", fields: [productId], references: [id], onDelete: Cascade)
+
+  variantId String
+  variant   ProductVariant @relation("WishlistToProductVariant", fields: [variantId], references: [id], onDelete: Cascade)
+
+  sizeId String?
+  size   Size?   @relation("WishlistToSize", fields: [sizeId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([productId])
+  @@index([variantId])
+  @@index([sizeId])
+}
+
+model Coupon {
+  id        String @id @default(uuid())
+  code      String @unique
+  startDate String
+  endDate   String
+  discount  Int
+
+  storeId String
+  store   Store  @relation("CouponToStore", fields: [storeId], references: [id], onDelete: Cascade)
+
+  orders OrderGroup[] @relation("CouponToOrderGroup")
+  users  User[]       @relation("CouponToUser")
+
+  carts Cart[] @relation("CouponToCart")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([storeId])
+}
+
 model PaymentDetails {
-  
   id String @id @default(uuid())
 
   paymentInetntId String
-  paymentMethod String
-  status String
-  amount Float
-  currency String
-
+  paymentMethod   String
+  status          String
+  amount          Float
+  currency        String
 
   orderId String @unique
-  order Order @relation("PaymentDetailsToOrder",fields: [orderId],references: [id],onDelete: Cascade) 
+  order   Order  @relation("PaymentDetailsToOrder", fields: [orderId], references: [id], onDelete: Cascade)
 
   userId String
-  user User @relation("PaymentDetailsToUser",fields: [userId],references: [id],onDelete: Cascade)
-
+  user   User   @relation("PaymentDetailsToUser", fields: [userId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
