@@ -38,9 +38,9 @@ export default function ProfileSidebar() {
 						<Link key={item.link} href={item.link}>
 							<div
 								className={cn(
-									'relative flex h-9 items-center text-sm px-4 cursor-pointer hover:bg-[#f5f5f5] dark:hover:bg-[#1D293D]',
+									'relative flex h-9 items-center text-sm px-4 cursor-pointer hover:bg-[#f5f5f5] dark:hover:bg-[#1D293D] ',
 									{
-										'bg-f5 user-menu-item':
+										'bg-f5  user-menu-item':
 											item.link &&
 											(pathname === item.link ||
 												(pathname.startsWith(item.link) &&

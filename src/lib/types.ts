@@ -36,7 +36,11 @@ import { retrieveProductDetailsOptimized } from '@/queries/product-optimized';
 import countries from '@/data/countries.json';
 import { ShippingAddressSchema } from './schemas';
 import z from 'zod';
-import { getUserOrders, getUserPayments } from '@/queries/profile';
+import {
+	getUserOrders,
+	getUserPayments,
+	getUserWishlist,
+} from '@/queries/profile';
 
 export interface DashboardSidebarMenuInterface {
 	label: string;

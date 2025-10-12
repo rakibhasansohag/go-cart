@@ -8,7 +8,7 @@ import Image from 'next/image';
 
 export default function OrdersOverview() {
 	return (
-		<div className='mt-4 bg-background p-4 border shadow-sm rounded-lg'>
+		<div className='mt-4 bg-background p-4 border shadow-sm rounded-xl'>
 			<div className='flex items-center border-b'>
 				<div className='inline-block flex-1 py-3 text-xl font-bold'>
 					My Orders
