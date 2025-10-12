@@ -36,7 +36,7 @@ import { retrieveProductDetailsOptimized } from '@/queries/product-optimized';
 import countries from '@/data/countries.json';
 import { ShippingAddressSchema } from './schemas';
 import z from 'zod';
-import { getUserPayments } from '@/queries/profile';
+import { getUserOrders, getUserPayments } from '@/queries/profile';
 
 export interface DashboardSidebarMenuInterface {
 	label: string;
@@ -363,3 +363,7 @@ export type UserPaymentType = Prisma.PromiseReturnType<
 export type UserOrderType = Prisma.PromiseReturnType<
 	typeof getUserOrders
 >['orders'][0];
+
+export type ProductWishlistType = Prisma.PromiseReturnType<
+	typeof getUserWishlist
+>['wishlist'][0];
