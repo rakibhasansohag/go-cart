@@ -46,7 +46,7 @@ export default async function UserMenu() {
 			{/* Content */}
 			<div
 				className={cn(
-					' absolute top-0 -left-20 group-hover:block cursor-pointer overflow-clip',
+					'hidden absolute top-0 -left-20 group-hover:block cursor-pointer overflow-clip',
 					{
 						'-left-[200px] lg:-left-[138px]': user,
 					},
