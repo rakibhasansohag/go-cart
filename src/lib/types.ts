@@ -30,7 +30,10 @@ import {
 	getShippingDetails,
 	retrieveProductDetails,
 } from '@/queries/product';
-import { getStoreDefaultShippingDetails } from '@/queries/store';
+import {
+	getStoreDefaultShippingDetails,
+	getStoreOrders,
+} from '@/queries/store';
 import { retrieveProductDetailsOptimized } from '@/queries/product-optimized';
 
 import countries from '@/data/countries.json';
@@ -371,3 +374,5 @@ export type UserOrderType = Prisma.PromiseReturnType<
 export type ProductWishlistType = Prisma.PromiseReturnType<
 	typeof getUserWishlist
 >['wishlist'][0];
+
+export type StoreOrderType = Prisma.PromiseReturnType<typeof getStoreOrders>[0];
