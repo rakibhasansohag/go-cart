@@ -19,7 +19,7 @@ async function HomePage() {
 			<Header />
 			<CategoriesHeader />
 			<ThemeToggle />
-			<ThemeTest />
+			{/* <ThemeTest /> */}
 
 			<div>
 				{/* Header */}
