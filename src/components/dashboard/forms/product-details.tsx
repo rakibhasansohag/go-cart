@@ -197,7 +197,7 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 			// Setting default form values from data (if available)
 			name: data?.name || '',
 			description: data?.description,
-			variantName: data?.variantName,
+			variantName: data?.variantName || '',
 			variantDescription: data?.variantDescription,
 			images: data?.images || [],
 			variantImage: data?.variantImage ? [{ url: data.variantImage }] : [],
@@ -206,9 +206,9 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 
 			offerTagId: data?.offerTagId ?? '',
 
-			brand: data?.brand,
-			sku: data?.sku,
-			weight: data?.weight,
+			brand: data?.brand || '',
+			sku: data?.sku || '',
+			weight: data?.weight || 0.1,
 			colors: data?.colors || [{ color: '' }],
 			sizes: data?.sizes || [
 				{ size: '', price: 0.01, quantity: 1, discount: 0 },
