@@ -61,13 +61,13 @@ const StoreDetails: FC<StoreDetailsProps> = ({ data }) => {
 		resolver: zodResolver(StoreFormSchema), // Resolver for form validation
 		defaultValues: {
 			// Setting default form values from data (if available)
-			name: data?.name,
+			name: data?.name || '',
 			description: data?.description,
-			email: data?.email,
-			phone: data?.phone,
+			email: data?.email || '',
+			phone: data?.phone || '',
 			logo: data?.logo ? [{ url: data?.logo }] : [],
 			cover: data?.cover ? [{ url: data?.cover }] : [],
-			url: data?.url,
+			url: data?.url || '',
 			featured: data?.featured,
 			status: data?.status.toString(),
 		},
@@ -119,7 +119,7 @@ const StoreDetails: FC<StoreDetailsProps> = ({ data }) => {
 			toast.success(
 				data?.id
 					? 'Store has been updated.'
-					: `Congratulations!  Store is now created.`,
+					: `Congratulations! ${response?.name} Store is now created.`,
 			);
 
 			// Redirect or Refresh data

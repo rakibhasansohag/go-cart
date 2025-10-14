@@ -17,7 +17,7 @@ import {
 	VariantImageType,
 	VariantSimplified,
 } from '@/lib/types';
-import { FreeShipping, ProductVariant, Size, Store } from '@prisma/client';
+import { ProductVariant, Size, Store } from '@prisma/client';
 
 // Clerk
 import { currentUser } from '@clerk/nextjs/server';
@@ -29,7 +29,6 @@ import { generateUniqueSlug } from '@/lib/utils';
 // Cookies
 import { getCookie } from 'cookies-next';
 import { cookies } from 'next/headers';
-import { setMaxListeners } from 'events';
 
 // Function: upsertProduct
 // Description: Upserts a product and its variant into the database, ensuring proper association with the store.
@@ -254,6 +253,7 @@ const handleCreateVariant = async (product: ProductWithVariantType) => {
 	const new_variant = await db.productVariant.create({ data: variantData });
 	return new_variant;
 };
+
 
 // Function: getProductVariant
 // Description: Retrieves details of a specific product variant from the database.
