@@ -99,7 +99,17 @@ const ViewOrderButton: React.FC<ViewOrderButtonProps> = ({ group }) => {
 
 	return (
 		<button
-			className='font-sans flex justify-center gap-2 items-center mx-auto text-lg text-gray-50 bg-[#0A0D2D] backdrop-blur-md lg:font-semibold isolation-auto before:absolute before:w-full before:transition-all before:duration-700 before:hover:w-full before:-left-full before:hover:left-0 before:rounded-full before:bg-blue-primary hover:text-gray-50 before:-z-10 before:aspect-square before:hover:scale-150 before:hover:duration-700 relative z-10 px-4 py-2 overflow-hidden border-2 rounded-full group cursor-pointer'
+			className='
+        relative z-10 px-4 py-2 rounded-full border-2
+        bg-[#0A0D2D] text-gray-50 font-sans lg:font-semibold
+        flex items-center justify-center gap-2 mx-auto text-lg
+        overflow-hidden transition-transform duration-300 ease-out
+        transform
+        /* hover / focus */
+        hover:scale-105 hover:shadow-2xl hover:-translate-y-0.5
+        focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-main-primary/60
+        group cursor-pointer
+      '
 			onClick={() => {
 				setOpen(
 					<CustomModal maxWidth='!max-w-3xl'>
@@ -108,10 +118,12 @@ const ViewOrderButton: React.FC<ViewOrderButtonProps> = ({ group }) => {
 				);
 			}}
 		>
+			{/* unchanged content */}
 			View
-			<span className='w-7 h-7 rounded-full bg-background grid place-items-center'>
+			<span className='w-7 h-7 rounded-full bg-background grid place-items-center transition-transform duration-300 transform group-hover:rotate-12 group-hover:translate-x-1'>
 				<Expand className='w-5 stroke-black dark:stroke-white' />
 			</span>
 		</button>
 	);
 };
+
