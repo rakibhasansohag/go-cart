@@ -320,6 +320,7 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 				},
 				storeUrl,
 			);
+
 			console.log(response);
 
 			// Displaying success message

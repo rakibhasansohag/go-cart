@@ -121,7 +121,7 @@ export const ProductFormSchema = z.object({
 		.min(30, {
 			message: 'Product description must be at least 30 characters long.',
 		})
-		.max(1000, {
+		.max(10000, {
 			message: 'Product description cannot exceed 1000 characters.',
 		}),
 	variantName: z
@@ -144,7 +144,7 @@ export const ProductFormSchema = z.object({
 			message:
 				'Product variant description must be at least 30 characters long.',
 		})
-		.max(1000, {
+		.max(10000, {
 			message: 'Product variant description cannot exceed 1000 characters.',
 		})
 		.optional(),

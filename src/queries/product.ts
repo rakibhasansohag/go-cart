@@ -45,6 +45,8 @@ export const upsertProduct = async (
 		// Retrieve current user
 		const user = await currentUser();
 
+		// console.log('user[product]', user);
+
 		// Check if user is authenticated
 		if (!user) throw new Error('Unauthenticated.');
 
