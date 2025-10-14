@@ -3,18 +3,12 @@ import type { Metadata } from 'next';
 import { Geist, Geist_Mono, Barlow } from 'next/font/google';
 
 
-// Clerk Provider
-import { ClerkProvider } from '@clerk/nextjs';
-
 // Global css
 import './globals.css';
 import 'flag-icons/css/flag-icons.min.css';
 
 // Theme Provider
-import { ThemeProvider } from 'next-themes';
-import { Toaster } from '@/components/ui/sonner';
-import ModalProvider from '../providers/modal-provider';
-import UploadPreloader from '../providers/UploadProvider';
+import ClientProviders from '@/components/ClientProviders';
 
 // Fonts
 const geistSans = Geist({
@@ -77,27 +71,15 @@ export default function RootLayout({
 	children: React.ReactNode;
 }>) {
 	return (
-		<ClerkProvider afterSignOutUrl={'/'}>
-			<html lang='en' suppressHydrationWarning>
-				<head>
-					<link rel='icon' type='image/svg+xml' href='/goCart.svg' />
-				</head>
-				<body
-					className={`${geistSans.variable} ${geistMono.variable} antialiased ${barlowFont.variable} scroll-smooth antialiased`}
-				>
-					<ThemeProvider
-						attribute='class'
-						defaultTheme='system'
-						enableSystem
-						disableTransitionOnChange
-					>
-						<main>
-							<ModalProvider>{children}</ModalProvider>
-						</main>
-						<Toaster position='top-right' />
-					</ThemeProvider>
-				</body>
-			</html>
-		</ClerkProvider>
+		<html lang='en' suppressHydrationWarning>
+			<head>
+				<link rel='icon' type='image/svg+xml' href='/goCart.svg' />
+			</head>
+			<body
+				className={`${geistSans.variable} ${geistMono.variable} ${barlowFont.variable} antialiased scroll-smooth`}
+			>
+				<ClientProviders>{children}</ClientProviders>
+			</body>
+		</html>
 	);
 }

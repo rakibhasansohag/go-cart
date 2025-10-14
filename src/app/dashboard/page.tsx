@@ -1,25 +1,41 @@
-// Next.js
 import { redirect } from 'next/navigation';
-
-// Clerk
 import { currentUser } from '@clerk/nextjs/server';
+import { notFound } from 'next/navigation';
 
 export default async function DashboardPage() {
-	// Retrieve the current user information
 	const user = await currentUser();
 
-	// If user role is not defined or is "USER", redirect to the home page
-	if (!user?.privateMetadata?.role || user?.privateMetadata.role === 'USER') {
-		redirect('/');
+	// debug
+	// console.log(
+	// 	'[dashboard] server user:',
+	// 	!!user,
+	// 	'id=',
+	// 	user?.id,
+	// 	'role=',
+	// 	user?.privateMetadata?.role,
+	// );
+
+	if (!user) {
+		// If no user on server, send them to sign-in
+		return redirect(
+			`/sign-in?redirect_url=${encodeURIComponent('/dashboard')}`,
+		);
 	}
 
-	// If user role is "ADMIN", redirect to the admin dashboard
-	if (user.privateMetadata.role === 'ADMIN') {
-		redirect('/dashboard/admin');
+	const role = (user?.privateMetadata?.role || '').toString().toUpperCase();
+
+	if (!role || role === 'USER') {
+		return redirect('/');
 	}
 
-	// If user role is "SELLER", redirect to the seller dashboard
-	if (user.privateMetadata.role === 'SELLER') {
-		redirect('/dashboard/seller');
+	if (role === 'ADMIN') {
+		return redirect('/dashboard/admin');
 	}
+
+	if (role === 'SELLER') {
+		return redirect('/dashboard/seller');
+	}
+
+	// fallback
+	return notFound();
 }

@@ -6,20 +6,30 @@ import { getProducts } from '@/queries/product';
 
 import ThemeToggle from '@/components/shared/theme-toggle';
 import ProductCard from '@/components/store/cards/product/product-card';
-import ThemeTest from '../../components/shared/ThemeTest';
+import { getHomeDataDynamic } from '@/queries/home';
 
 async function HomePage() {
-	const productsData = await getProducts();
+	const productsData = await getProducts({}, '', 1, 100);
 
 	const { products } = productsData;
 
-	console.log(products);
+	const {
+		products_super_deals,
+		products_best_deals,
+		products_user_card,
+		products_featured,
+	} = await getHomeDataDynamic([
+		{ property: 'offer', value: 'best-deals', type: 'simple' },
+		{ property: 'offer', value: 'super-deals', type: 'full' },
+		{ property: 'offer', value: 'user-card', type: 'simple' },
+		{ property: 'offer', value: 'featured', type: 'simple' },
+	]);
+
 	return (
 		<>
 			<Header />
 			<CategoriesHeader />
 			<ThemeToggle />
-			{/* <ThemeTest /> */}
 
 			<div>
 				{/* Header */}

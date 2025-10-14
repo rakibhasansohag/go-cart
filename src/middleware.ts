@@ -4,47 +4,65 @@ import { geolocation } from '@vercel/functions';
 import { DEFAULT_COUNTRY } from './lib/utils';
 import countries from '@/data/countries.json';
 
-// match all routes
 const protectedRoutes = createRouteMatcher([
-	'/dashboard',
-	'/dashboard/(.*)',
-	'/checkout',
-	'/profile',
-	'/profile/(.*)',
+	'/dashboard(.*)',
+	'/checkout(.*)',
+	'/profile(.*)',
 ]);
+const authRoutes = createRouteMatcher(['/sign-in(.*)', '/sign-up(.*)']);
 
-export default clerkMiddleware(async (auth, req, next) => {
-
-
+export default clerkMiddleware(async (auth, req) => {
 	const pathname = req.nextUrl.pathname;
 
-	// skip middleware for auth pages / static assets / api callbacks
-	if (
-		pathname.startsWith('/sign-in') ||
-		pathname.startsWith('/api') ||
-		pathname.startsWith('/_next')
-	) {
+	if (pathname.startsWith('/api') || pathname.startsWith('/_next')) {
 		return NextResponse.next();
 	}
 
-	const { userId, redirectToSignIn } = await auth();
+	const { userId } = await auth();
 
-	if (!userId && protectedRoutes(req)) {
-		return redirectToSignIn();
+	console.log('[middleware] path=', pathname, ' userId=', userId);
+
+	// If a signed-in user tries to open /sign-in, send them away
+	if (userId && authRoutes(req)) {
+		return NextResponse.redirect(new URL('/', req.url));
 	}
 
-	// Creating a basic response
-	let response = NextResponse.next();
+	// Protect routes: if not signed-in, do smarter redirect
+	if (!userId && protectedRoutes(req)) {
+		// look for session cookie — Clerk uses several cookie names depending on config.
+		// check common candidates
+		const cookieNames = [
+			'__session',
+			'__session_v1',
+			'intermediate_session',
+			'session',
+		];
 
-	/*---------Handle Country detection----------*/
-	// Step 1: Check if country is already set in cookies
+		const hasSessionCookie = cookieNames.some(
+			(name) => !!req.cookies.get(name),
+		);
+
+		// Build sign-in url with return target
+		const signInUrl = new URL('/sign-in', req.url);
+		signInUrl.searchParams.set('redirect_url', req.nextUrl.pathname);
+
+		if (hasSessionCookie) {
+			// If a cookie was present but userId is null, go to an intermediate page
+			// so client-side Clerk can try to recover session without redirect loops.
+			const authCheckUrl = new URL('/auth-check', req.url);
+			authCheckUrl.searchParams.set('redirect_url', req.nextUrl.pathname);
+			return NextResponse.redirect(authCheckUrl);
+		} else {
+			// No cookie — safe to redirect straight to sign-in
+			return NextResponse.redirect(signInUrl);
+		}
+	}
+
+	// Handle Country detection
+	const response = NextResponse.next();
 	const countryCookie = req.cookies.get('userCountry');
 
-	if (countryCookie) {
-		// If the user has already selected a country, use that for subsequent requests
-		response = NextResponse.next();
-	} else {
-		// Step 2: Get the user country using the helper function
+	if (!countryCookie) {
 		const geo = geolocation(req);
 		const userCountry = {
 			name:
@@ -66,10 +84,7 @@ export default clerkMiddleware(async (auth, req, next) => {
 
 export const config = {
 	matcher: [
-		// Skip Next.js internals and all static files, unless found in search params
 		'/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
-		// Always run for API routes
 		'/(api|trpc)(.*)',
 	],
 };
-

@@ -1,12 +1,24 @@
-import React from 'react';
-import { SignIn } from '@clerk/nextjs';
+'use client';
+import { useEffect } from 'react';
+import { SignedOut, useUser, SignIn } from '@clerk/nextjs';
+import { useRouter } from 'next/navigation';
 
-function SingInPage() {
+export default function SignInPage() {
+	const { isLoaded, isSignedIn } = useUser();
+	const router = useRouter();
+
+	useEffect(() => {
+		if (!isLoaded) return;
+		if (isSignedIn) {
+			router.replace(process.env.NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL || '/');
+		}
+	}, [isLoaded, isSignedIn, router]);
+
 	return (
-		<div className='h-screen w-full grid place-content-center'>
-			<SignIn />
+		<div className='h-screen grid place-content-center'>
+			<SignedOut>
+				<SignIn path='/sign-in' routing='path' signUpUrl='/sign-up' />
+			</SignedOut>
 		</div>
 	);
 }
-
-export default SingInPage;
