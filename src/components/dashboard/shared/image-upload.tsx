@@ -33,6 +33,8 @@ const ImageUpload = ({
 	error,
 	cloudinary_key = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_PRESET,
 }: ImageUploadProps) => {
+
+	console.log('cloudinary_key:', cloudinary_key);
 	const [isMounted, setIsMounted] = useState(false);
 	const [isBouncing, setIsBouncing] = useState(false); // Add state for bounce
 	const [isUploading, setIsUploading] = useState(false); // track upload start
@@ -53,6 +55,14 @@ const ImageUpload = ({
 	}, []);
 
 	if (!isMounted) {
+		return null;
+	}
+
+	if (!cloudinary_key) {
+		// This is the error! Return null or throw a helpful error if it's missing.
+		console.error(
+			'Cloudinary Upload Preset is missing! Check .env.local for NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET.',
+		);
 		return null;
 	}
 

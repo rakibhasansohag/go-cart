@@ -87,7 +87,17 @@ export const upsertProduct = async (
 			await handleProductCreate(product, store.id);
 		}
 	} catch (error) {
-		throw error;
+		if (error instanceof Error) {
+			// For known errors (like 'Store not found' or 'Unauthorized'), throw the specific message
+			throw new Error(error.message);
+		} else {
+			// For unknown or complex database errors, log the full error for server debugging
+			console.error(error);
+			// And throw a simplified, generic message for the client toast
+			throw new Error(
+				'An unexpected database error occurred during product creation.',
+			);
+		}
 	}
 };
 
@@ -114,6 +124,10 @@ const handleProductCreate = async (
 		'productVariant',
 	);
 
+	const offerTagConnection = product.offerTagId
+		? { offerTag: { connect: { id: product.offerTagId } } }
+		: {};
+
 	const productData = {
 		id: product.productId,
 		name: product.name,
@@ -122,7 +136,7 @@ const handleProductCreate = async (
 		store: { connect: { id: storeId } },
 		category: { connect: { id: product.categoryId } },
 		subCategory: { connect: { id: product.subCategoryId } },
-		offerTag: { connect: { id: product.offerTagId } },
+		...offerTagConnection,
 		brand: product.brand,
 		specs: {
 			create: product.product_specs.map((spec) => ({

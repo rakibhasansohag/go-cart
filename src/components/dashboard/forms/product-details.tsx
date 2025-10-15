@@ -88,6 +88,8 @@ import { toast } from 'sonner';
 
 // AI Product Assistant
 import AIProductAssistant from './ai-product-assistant';
+import AIToggle from '../../ai-toggle';
+import ImagePromptSection from '../../image-prompt-section';
 // import { getAllCategoriesForCategory } from '@/queries/category';
 
 const shippingFeeMethods = [
@@ -135,6 +137,11 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 	const [isAiGenerated, setIsAIGenerated] = useState(false);
 	const [aiCategoryId, setAiCategoryId] = useState('');
 	const [aiSubCategoryId, setAiSubCategoryId] = useState('');
+	const [imagePrompt, setImagePrompt] = useState('');
+	const [generatedImageUrls, setGeneratedImageUrls] = useState<string[]>([]);
+
+	// AI toggle state
+	const [aiPanelOpen, setAiPanelOpen] = useState(false);
 
 	// Jodit configuration
 	const { theme } = useTheme();
@@ -356,34 +363,74 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 	};
 
 	// Handle Ai Generated content
+	// const handleAIGenerate = async (generatedData: any) => {
+	// 	console.log(' AI Generated Data:', generatedData);
+
+	// 	// Mark as AI generated
+	// 	setIsAIGenerated(true);
+
+	// 	//  CATEGORY & SUBCATEGORY (from AI assistant selection)
+	// 	form.setValue('categoryId', generatedData.categoryId);
+	// 	form.setValue('subCategoryId', generatedData.subCategoryId);
+
+	// 	// Fetch and set subcategories for the selected category
+	// 	const subs = await getAllCategoriesForCategory(generatedData.categoryId);
+	// 	setSubCategories(subs);
+
+	// 	//  PRODUCT INFO
+	// 	form.setValue('name', generatedData.name);
+	// 	form.setValue('description', generatedData.description);
+	// 	form.setValue('brand', generatedData.brand);
+
+	// 	//  VARIANT INFO
+	// 	form.setValue('variantName', generatedData.variantName);
+	// 	form.setValue('variantDescription', generatedData.variantDescription || '');
+
+	// 	//  PRODUCT DETAILS
+	// 	form.setValue('sku', generatedData.sku);
+	// 	form.setValue('weight', generatedData.weight);
+
+	// 	//  COLORS, SIZES, SPECS, KEYWORDS, QUESTIONS
+	// 	setColors(generatedData.colors || []);
+	// 	setSizes(generatedData.sizes || []);
+	// 	setProductSpecs(generatedData.product_specs || []);
+	// 	setVariantSpecs(generatedData.variant_specs || []);
+	// 	setKeywords(generatedData.keywords || []);
+	// 	setQuestions(generatedData.questions || []);
+
+	// 	// Show success
+	// 	toast.success(' AI Generated Complete Product!', {
+	// 		description: `All fields populated. Review and upload images.`,
+	// 	});
+
+	// 	// Scroll to form for review
+	// 	setTimeout(() => {
+	// 		window.scrollTo({ top: 400, behavior: 'smooth' });
+	// 	}, 500);
+	// };
+
 	const handleAIGenerate = async (generatedData: any) => {
-		console.log(' AI Generated Data:', generatedData);
-
-		// Mark as AI generated
 		setIsAIGenerated(true);
+		// set categories
+		if (generatedData.categoryId) {
+			form.setValue('categoryId', generatedData.categoryId);
+			const subs = await getAllCategoriesForCategory(generatedData.categoryId);
+			setSubCategories(subs);
+		}
+		if (generatedData.subCategoryId) {
+			form.setValue('subCategoryId', generatedData.subCategoryId);
+		}
 
-		//  CATEGORY & SUBCATEGORY (from AI assistant selection)
-		form.setValue('categoryId', generatedData.categoryId);
-		form.setValue('subCategoryId', generatedData.subCategoryId);
-
-		// Fetch and set subcategories for the selected category
-		const subs = await getAllCategoriesForCategory(generatedData.categoryId);
-		setSubCategories(subs);
-
-		//  PRODUCT INFO
+		// product fields
 		form.setValue('name', generatedData.name);
 		form.setValue('description', generatedData.description);
 		form.setValue('brand', generatedData.brand);
-
-		//  VARIANT INFO
-		form.setValue('variantName', generatedData.variantName);
+		form.setValue('variantName', generatedData.variantName || '');
 		form.setValue('variantDescription', generatedData.variantDescription || '');
-
-		//  PRODUCT DETAILS
 		form.setValue('sku', generatedData.sku);
 		form.setValue('weight', generatedData.weight);
 
-		//  COLORS, SIZES, SPECS, KEYWORDS, QUESTIONS
+		// arrays
 		setColors(generatedData.colors || []);
 		setSizes(generatedData.sizes || []);
 		setProductSpecs(generatedData.product_specs || []);
@@ -391,15 +438,28 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 		setKeywords(generatedData.keywords || []);
 		setQuestions(generatedData.questions || []);
 
-		// Show success
-		toast.success(' AI Generated Complete Product!', {
-			description: `All fields populated. Review and upload images.`,
-		});
+		// build default image prompt
+		const promptParts = [
+			generatedData.name,
+			generatedData.variantName || '',
+			(generatedData.colors || []).map((c: any) => c.color).join(', '),
+			generatedData.brand,
+			'High resolution product photography, white background, 45° angle, studio lighting, realistic texture',
+		].filter(Boolean);
+		const builtPrompt = promptParts.join(' — ');
+		setImagePrompt(builtPrompt);
 
-		// Scroll to form for review
+		// Optionally close the AI panel
+		setAiPanelOpen(false);
+
+		// scroll to form for review
 		setTimeout(() => {
-			window.scrollTo({ top: 400, behavior: 'smooth' });
-		}, 500);
+			window.scrollTo({ top: 300, behavior: 'smooth' });
+		}, 300);
+
+		toast.success(
+			' AI Generated Complete Product! You can now generate images.',
+		);
 	};
 
 	// Handlers for category changes in AI assistant
@@ -410,6 +470,13 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 
 	const handleAISubCategoryChange = (subCategoryId: string) => {
 		setAiSubCategoryId(subCategoryId);
+	};
+
+	// Handler called when ImagePromptSection returns images to add to product
+	const handleAddImagesToProduct = (urls: string[]) => {
+		const mapped = urls.map((u) => ({ url: u }));
+		setImages((prev) => [...mapped, ...prev]);
+		setGeneratedImageUrls(urls);
 	};
 
 	// ERROR :  GOT SOME PROBLEM in here
@@ -483,7 +550,7 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 				</CardHeader>
 				<CardContent>
 					{/* AI Product Assistant - Only show when creating new product */}
-					{!data?.productId && !isNewVariantPage && (
+					{/* {!data?.productId && !isNewVariantPage && (
 						<AIProductAssistant
 							categories={categories}
 							onGenerate={handleAIGenerate}
@@ -491,6 +558,42 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 							selectedSubCategoryId={aiSubCategoryId}
 							onCategoryChange={handleAICategoryChange}
 							onSubCategoryChange={handleAISubCategoryChange}
+						/>
+					)} */}
+
+					{!data?.productId && !isNewVariantPage && (
+						<div className='mb-6 w-full'>
+							<AIToggle
+								open={aiPanelOpen}
+								onToggle={() => setAiPanelOpen((s) => !s)}
+								position='inline'
+							>
+								{/* You already have an AIProductAssistant component - we render it inside the toggle */}
+								<AIProductAssistant
+									categories={categories as any}
+									onGenerate={handleAIGenerate}
+									selectedCategoryId={aiCategoryId}
+									selectedSubCategoryId={aiSubCategoryId}
+									onCategoryChange={handleAICategoryChange}
+									onSubCategoryChange={handleAISubCategoryChange}
+								/>
+							</AIToggle>
+						</div>
+					)}
+
+					{/* If AI generated or after creation, show ImagePromptSection */}
+					{(isAiGenerated || generatedImageUrls.length > 0) && (
+						<ImagePromptSection
+							initialPrompt={imagePrompt}
+							productDetails={{
+								name: form.getValues().name,
+								description: form.getValues().description,
+								variantName: form.getValues().variantName,
+								variantDescription: form.getValues().variantDescription,
+								brand: form.getValues().brand,
+								colors: form.getValues().colors,
+							}}
+							onAddImages={handleAddImagesToProduct}
 						/>
 					)}
 
@@ -599,6 +702,8 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 												<FormControl>
 													<Input placeholder='Variant name' {...field} />
 												</FormControl>
+												{isAiGenerated && <AIBadge />}
+
 												<FormMessage />
 											</FormItem>
 										)}
@@ -679,13 +784,13 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 							{/* Category - SubCategory - offer*/}
 							{!isNewVariantPage && (
 								<InputFieldset label='Category'>
-									<div className='flex gap-4'>
+									<div className='grid grid-cols-1 md:grid-cols-2 lg:md:grid-cols-3 gap-4'>
 										<FormField
 											disabled={isLoading}
 											control={form.control}
 											name='categoryId'
 											render={({ field }) => (
-												<FormItem className='flex-1'>
+												<FormItem className='flex-1 w-full'>
 													<Select
 														disabled={isLoading || categories.length == 0}
 														onValueChange={field.onChange}
@@ -858,7 +963,6 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 												<FormLabel className='ml-14'>Variant Image</FormLabel>
 												<FormControl>
 													<ImageUpload
-														dontShowPreview
 														type='profile'
 														value={field.value.map((image) => image.url)}
 														disabled={isLoading}
