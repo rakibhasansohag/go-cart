@@ -81,7 +81,7 @@ import { format } from 'date-fns';
 import JoditEditor from 'jodit-react';
 import { NumberInput } from '@tremor/react';
 import InputFieldset from '../shared/input-fieldset';
-import { ArrowRight, Dot } from 'lucide-react';
+import { ArrowRight, Dot, Sparkles } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import ImagesPreviewGrid from '../shared/images-preview-grid';
 import { toast } from 'sonner';
@@ -357,7 +357,7 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 
 	// Handle Ai Generated content
 	const handleAIGenerate = async (generatedData: any) => {
-		console.log('🤖 AI Generated Data:', generatedData);
+		console.log(' AI Generated Data:', generatedData);
 
 		// Mark as AI generated
 		setIsAIGenerated(true);
@@ -563,6 +563,7 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 										header='Colors'
 										colorPicker
 									/>
+									{isAiGenerated && <AIBadge />}
 									{errors.colors && (
 										<span className='text-sm font-medium text-destructive'>
 											{errors.colors.message}
@@ -584,6 +585,7 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 														<Input placeholder='Product name' {...field} />
 													</FormControl>
 													<FormMessage />
+													{isAiGenerated && <AIBadge />}
 												</FormItem>
 											)}
 										/>
@@ -643,6 +645,7 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 															}}
 														/>
 													</FormControl>
+													{isAiGenerated && <AIBadge />}
 													<FormMessage />
 												</FormItem>
 											)}
@@ -665,6 +668,7 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 															}}
 														/>
 													</FormControl>
+													{isAiGenerated && <AIBadge />}
 													<FormMessage />
 												</FormItem>
 											)}
@@ -799,6 +803,7 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 													<FormControl>
 														<Input placeholder='Product brand' {...field} />
 													</FormControl>
+													{isAiGenerated && <AIBadge />}
 													<FormMessage />
 												</FormItem>
 											)}
@@ -813,6 +818,7 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 												<FormControl>
 													<Input placeholder='Product sku' {...field} />
 												</FormControl>
+												{isAiGenerated && <AIBadge />}
 												<FormMessage />
 											</FormItem>
 										)}
@@ -833,6 +839,7 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 														className='!shadow-none rounded-md !text-sm pl-2'
 													/>
 												</FormControl>
+												{isAiGenerated && <AIBadge />}
 												<FormMessage />
 											</FormItem>
 										)}
@@ -910,10 +917,11 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 											</div>
 										))}
 									</div>
+									{isAiGenerated && <AIBadge />}
 								</div>
 							</div>
 							{/* Sizes*/}
-							<InputFieldset label='Sizes, Quantities, Prices, Disocunts'>
+							<InputFieldset label='Sizes, Quantities, Prices, Discounts'>
 								<div className='w-full flex flex-col gap-y-3'>
 									<ClickToAddInputs
 										details={sizes}
@@ -924,9 +932,11 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 											price: 1,
 											discount: 0,
 										}}
+										isAiGenerated={isAiGenerated}
 										containerClassName='flex-1'
 										inputClassName='w-full'
 									/>
+									{/* {isAiGenerated && <AIBadge />} */}
 									{errors.sizes && (
 										<span className='text-sm font-medium text-destructive'>
 											{errors.sizes.message}
@@ -971,6 +981,7 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 												containerClassName='flex-1'
 												inputClassName='w-full'
 											/>
+											{isAiGenerated && <AIBadge />}
 											{errors.product_specs && (
 												<span className='text-sm font-medium text-destructive'>
 													{errors.product_specs.message}
@@ -990,6 +1001,7 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 												containerClassName='flex-1'
 												inputClassName='w-full'
 											/>
+											{isAiGenerated && <AIBadge />}
 											{errors.variant_specs && (
 												<span className='text-sm font-medium text-destructive'>
 													{errors.variant_specs.message}
@@ -1013,6 +1025,7 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 											containerClassName='flex-1'
 											inputClassName='w-full'
 										/>
+										{isAiGenerated && <AIBadge />}
 										{errors.questions && (
 											<span className='text-sm font-medium text-destructive'>
 												{errors.questions.message}
@@ -1295,7 +1308,7 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 											);
 										},
 									);
-									submitFn(); // call without event (programmatic)
+									submitFn();
 								}}
 							>
 								{isLoading
@@ -1311,5 +1324,13 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 		</AlertDialog>
 	);
 };
+
+export const AIBadge = () => (
+	<span className='inline-flex items-center gap-1 px-2 py-0.5 text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-full'>
+		<Sparkles className='w-3 h-3' />
+		AI Generated
+	</span>
+);
+
 
 export default ProductDetails;
