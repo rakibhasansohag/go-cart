@@ -107,26 +107,50 @@ const handleProductCreate = async (
 ) => {
 	// Generate unique slugs for product and variant
 	const productSlug = await generateUniqueSlug(
-		slugify(product.name, {
-			replacement: '-',
-			lower: true,
-			trim: true,
-		}),
+		slugify(product.name, { replacement: '-', lower: true, trim: true }),
 		'product',
 	);
 
 	const variantSlug = await generateUniqueSlug(
-		slugify(product.variantName, {
-			replacement: '-',
-			lower: true,
-			trim: true,
-		}),
+		slugify(product.variantName, { replacement: '-', lower: true, trim: true }),
 		'productVariant',
 	);
 
 	const offerTagConnection = product.offerTagId
 		? { offerTag: { connect: { id: product.offerTagId } } }
 		: {};
+
+	// helper: accept string URLs or objects (url, secure_url, path, src) and return valid url string
+	const extractUrlFromImg = (img: any): string | undefined => {
+		if (!img) return undefined;
+		if (typeof img === 'string' && /^data:image\/|^https?:\/\//.test(img))
+			return img;
+		if (typeof img.url === 'string' && img.url) return img.url;
+		if (typeof img.secure_url === 'string' && img.secure_url)
+			return img.secure_url;
+		if (typeof img.path === 'string' && img.path) return img.path;
+		if (typeof img.src === 'string' && img.src) return img.src;
+		// shallow fallback: return the first string value that looks like a url
+		const keys = Object.keys(img || {});
+		for (const k of keys) {
+			const v = img[k];
+			if (typeof v === 'string' && /^data:image\/|^https?:\/\//.test(v))
+				return v;
+		}
+		return undefined;
+	};
+
+	// build images array for Prisma: [{ url }] typed properly
+	const imageCreateArray = (product.images || [])
+		.map((img: any) => {
+			const url = extractUrlFromImg(img);
+			return url ? { url } : undefined;
+		})
+		// type guard: tell TS this filters out undefined
+		.filter((x): x is { url: string } => Boolean(x && (x as any).url));
+
+	// ensure variantImage is a plain string url
+	const variantImageUrl = extractUrlFromImg(product.variantImage) ?? '';
 
 	const productData = {
 		id: product.productId,
@@ -157,16 +181,15 @@ const handleProductCreate = async (
 					variantName: product.variantName,
 					variantDescription: product.variantDescription,
 					slug: variantSlug,
-					variantImage: product.variantImage,
+
+					variantImage: variantImageUrl,
 					sku: product.sku,
 					weight: product.weight,
 					keywords: product.keywords.join(','),
 					isSale: product.isSale,
 					saleEndDate: product.saleEndDate,
 					images: {
-						create: product.images.map((img) => ({
-							url: img.url,
-						})),
+						create: imageCreateArray,
 					},
 					colors: {
 						create: product.colors.map((color) => ({
@@ -218,13 +241,38 @@ const handleProductCreate = async (
 
 const handleCreateVariant = async (product: ProductWithVariantType) => {
 	const variantSlug = await generateUniqueSlug(
-		slugify(product.variantName, {
-			replacement: '-',
-			lower: true,
-			trim: true,
-		}),
+		slugify(product.variantName, { replacement: '-', lower: true, trim: true }),
 		'productVariant',
 	);
+
+	const extractUrlFromImg = (img: any): string | undefined => {
+		if (!img) return undefined;
+		if (typeof img === 'string' && /^data:image\/|^https?:\/\//.test(img))
+			return img;
+		if (typeof img.url === 'string' && img.url) return img.url;
+		if (typeof img.secure_url === 'string' && img.secure_url)
+			return img.secure_url;
+		if (typeof img.path === 'string' && img.path) return img.path;
+		if (typeof img.src === 'string' && img.src) return img.src;
+		const keys = Object.keys(img || {});
+		for (const k of keys) {
+			const v = img[k];
+			if (typeof v === 'string' && /^data:image\/|^https?:\/\//.test(v))
+				return v;
+		}
+		return undefined;
+	};
+
+	// typed images array for Prisma
+	const imageCreateArray = (product.images || [])
+		.map((img: any) => {
+			const url = extractUrlFromImg(img);
+			return url ? { url } : undefined;
+		})
+		.filter((x): x is { url: string } => Boolean(x && (x as any).url));
+
+	// ensure variantImage is a string url
+	const variantImageUrl = extractUrlFromImg(product.variantImage) ?? '';
 
 	const variantData = {
 		id: product.variantId,
@@ -237,11 +285,9 @@ const handleCreateVariant = async (product: ProductWithVariantType) => {
 		sku: product.sku,
 		keywords: product.keywords.join(','),
 		weight: product.weight,
-		variantImage: product.variantImage,
+		variantImage: variantImageUrl,
 		images: {
-			create: product.images.map((img) => ({
-				url: img.url,
-			})),
+			create: imageCreateArray,
 		},
 		colors: {
 			create: product.colors.map((color) => ({

@@ -304,7 +304,102 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 			console.log('Current form errors:', form.formState.errors);
 			const values = form.getValues();
 			console.log(values);
-			// Upserting product data
+
+			// helper: find first URL/data:image string anywhere inside an object (BFS)
+			const findUrlInObject = (obj: any): string | null => {
+				if (!obj) return null;
+				if (typeof obj === 'string') {
+					return /^data:image\/|^https?:\/\//.test(obj) ? obj : null;
+				}
+				if (obj instanceof File) return null; // File must be uploaded first
+
+				const queue = [obj];
+				const seen = new WeakSet();
+
+				while (queue.length) {
+					const cur = queue.shift();
+					if (!cur || typeof cur !== 'object' || seen.has(cur)) continue;
+					seen.add(cur);
+
+					for (const key of Object.keys(cur)) {
+						const val = cur[key];
+						if (
+							typeof val === 'string' &&
+							/^data:image\/|^https?:\/\//.test(val)
+						) {
+							return val;
+						}
+						// handle arrays too
+						if (Array.isArray(val)) {
+							for (const v of val) {
+								if (
+									typeof v === 'string' &&
+									/^data:image\/|^https?:\/\//.test(v)
+								)
+									return v;
+								if (typeof v === 'object' && v !== null) queue.push(v);
+							}
+						} else if (typeof val === 'object' && val !== null) {
+							queue.push(val);
+						}
+					}
+				}
+
+				return null;
+			};
+
+			const normalizeImages = (images: any[] | undefined): string[] => {
+				return (images || [])
+					.map((img) => findUrlInObject(img))
+					.filter(Boolean) as string[];
+			};
+
+			// debug / usage of findUrlInObject
+			const normalizedImages = normalizeImages(values.images);
+			console.log(
+				'images keys summary:',
+				(values.images || []).map((img: any, i: number) => ({
+					index: i,
+					keys: Object.keys(img || {}),
+					foundUrl: findUrlInObject(img) || null,
+				})),
+			);
+
+			// guard: use normalizedImages instead of raw values.images
+			if (normalizedImages.length === 0 && (values.images || []).length > 0) {
+				console.error(
+					'Invalid images found (no usable URL discovered):',
+					values.images,
+				);
+				toast.error(
+					'Images contain invalid data. Please use generated images from Puter or fallback only.',
+				);
+				return;
+			}
+
+			// normalized images (urls)
+			console.log('normalized images (urls):', normalizedImages);
+
+			const validImages = normalizedImages.filter((u) =>
+				/^data:image\/|^https?:\/\//.test(u),
+			);
+
+			// only fail if we have images but none are valid URLs/data:
+			if (validImages.length === 0 && (normalizedImages || []).length > 0) {
+				console.error('Invalid images found:', values.images);
+				toast.error(
+					'Images contain invalid data. Please use generated images from Puter or fallback only.',
+				);
+				return;
+			}
+
+			// ====== IMPORTANT: convert string[] -> { id?: string; url: string }[] ======
+			const imagesAsObjects: { id?: string; url: string }[] = validImages.map(
+				(u) => ({ url: u }),
+			);
+			// =======================================================================
+
+			// Upserting product data — pass imagesAsObjects instead
 			const response = await upsertProduct(
 				{
 					productId: data?.productId ? data.productId : v4(),
@@ -313,7 +408,7 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 					description: values.description,
 					variantName: values.variantName || '',
 					variantDescription: values.variantDescription || '',
-					images: values.images,
+					images: imagesAsObjects,
 					variantImage: values.variantImage[0].url,
 					categoryId: values.categoryId,
 					subCategoryId: values.subCategoryId,
@@ -363,51 +458,6 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 	};
 
 	// Handle Ai Generated content
-	// const handleAIGenerate = async (generatedData: any) => {
-	// 	console.log(' AI Generated Data:', generatedData);
-
-	// 	// Mark as AI generated
-	// 	setIsAIGenerated(true);
-
-	// 	//  CATEGORY & SUBCATEGORY (from AI assistant selection)
-	// 	form.setValue('categoryId', generatedData.categoryId);
-	// 	form.setValue('subCategoryId', generatedData.subCategoryId);
-
-	// 	// Fetch and set subcategories for the selected category
-	// 	const subs = await getAllCategoriesForCategory(generatedData.categoryId);
-	// 	setSubCategories(subs);
-
-	// 	//  PRODUCT INFO
-	// 	form.setValue('name', generatedData.name);
-	// 	form.setValue('description', generatedData.description);
-	// 	form.setValue('brand', generatedData.brand);
-
-	// 	//  VARIANT INFO
-	// 	form.setValue('variantName', generatedData.variantName);
-	// 	form.setValue('variantDescription', generatedData.variantDescription || '');
-
-	// 	//  PRODUCT DETAILS
-	// 	form.setValue('sku', generatedData.sku);
-	// 	form.setValue('weight', generatedData.weight);
-
-	// 	//  COLORS, SIZES, SPECS, KEYWORDS, QUESTIONS
-	// 	setColors(generatedData.colors || []);
-	// 	setSizes(generatedData.sizes || []);
-	// 	setProductSpecs(generatedData.product_specs || []);
-	// 	setVariantSpecs(generatedData.variant_specs || []);
-	// 	setKeywords(generatedData.keywords || []);
-	// 	setQuestions(generatedData.questions || []);
-
-	// 	// Show success
-	// 	toast.success(' AI Generated Complete Product!', {
-	// 		description: `All fields populated. Review and upload images.`,
-	// 	});
-
-	// 	// Scroll to form for review
-	// 	setTimeout(() => {
-	// 		window.scrollTo({ top: 400, behavior: 'smooth' });
-	// 	}, 500);
-	// };
 
 	const handleAIGenerate = async (generatedData: any) => {
 		setIsAIGenerated(true);
