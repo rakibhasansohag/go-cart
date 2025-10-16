@@ -25,6 +25,7 @@ interface ClickToAddInputsProps<T extends Detail> {
 	colorPicker?: boolean; // Is color picker needed
 	containerClassName?: string;
 	inputClassName?: string;
+	isAiGenerated?: boolean;
 }
 
 // ClickToAddInputs component definition
@@ -36,6 +37,7 @@ const ClickToAddInputs = <T extends Detail>({
 	colorPicker,
 	containerClassName,
 	inputClassName,
+	isAiGenerated,
 }: ClickToAddInputsProps<T>) => {
 	// State to manage toggling color picker
 	const [colorPickerIndex, setColorPickerIndex] = useState<number | null>(null);
@@ -127,6 +129,8 @@ const ClickToAddInputs = <T extends Detail>({
 			</button>
 		);
 	};
+
+	console.log('details', isAiGenerated);
 	return (
 		<div className='flex flex-col gap-y-4'>
 			{/* Header */}
@@ -172,7 +176,12 @@ const ClickToAddInputs = <T extends Detail>({
 
 							{/* Input field for each property */}
 							<Input
-								className={cn('w-28 placeholder:capitalize', inputClassName)}
+								className={cn(
+									'w-28 placeholder:capitalize',
+									inputClassName,
+									isAiGenerated &&
+										'bg-blue-50/50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800',
+								)}
 								type={typeof detail[property] === 'number' ? 'number' : 'text'}
 								name={property}
 								placeholder={property}

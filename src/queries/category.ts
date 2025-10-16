@@ -7,7 +7,7 @@ import { currentUser } from '@clerk/nextjs/server';
 import { db } from '@/lib/db';
 
 // Prisma model
-import { Category } from '@prisma/client';
+import { Category, SubCategory } from '@prisma/client';
 
 // Function: upsertCategory
 // Description: Upserts a category into the database, updating if it exists or creating a new one if not.
@@ -115,6 +115,48 @@ export const getAllCategories = async (storeUrl?: string) => {
 	});
 	return categories;
 };
+
+export type CategoryWithSubs = Category & {
+	subCategories: SubCategory[];
+};
+
+export const getAllCategoriesWithSubs = async (
+	storeUrl?: string,
+): Promise<CategoryWithSubs[]> => {
+	let storeId: string | undefined;
+
+	if (storeUrl) {
+		const store = await db.store.findUnique({
+			where: { url: storeUrl },
+		});
+
+		if (!store) {
+			return [];
+		}
+
+		storeId = store.id;
+	}
+
+	const categories = await db.category.findMany({
+		where: storeId
+			? {
+					products: {
+						some: {
+							storeId: storeId,
+						},
+					},
+			  }
+			: {},
+		include: {
+			subCategories: true,
+		},
+		orderBy: {
+			updatedAt: 'desc',
+		},
+	});
+	return categories;
+};
+
 
 // Function: getAllCategoriesForCategory
 // Description: Retrieves all SubCategories fro a category from the database.
