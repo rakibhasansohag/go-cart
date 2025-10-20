@@ -2,7 +2,7 @@ import { ProductType, VariantSimplified } from '@/lib/types';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useState } from 'react';
-import ReactStars from 'react-rating-stars-component';
+import StarRating from '@/components/StarRating';
 
 export default function ProductCardClean({
 	product,
@@ -55,7 +55,7 @@ export default function ProductCardClean({
 						</div>
 					</div>
 					<div className='rating h-4'>
-						<ReactStars
+						<StarRating
 							count={5}
 							size={18}
 							color='#e2dfdf'

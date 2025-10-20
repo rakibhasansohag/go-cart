@@ -10,7 +10,6 @@ import {
 	FreeShippingWithCountriesType,
 	ProductPageType,
 	ProductShippingDetailsType,
-	
 	ProductWithVariantType,
 	RatingStatisticsType,
 	SortOrder,

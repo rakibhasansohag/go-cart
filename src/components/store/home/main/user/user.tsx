@@ -65,7 +65,7 @@ export default async function HomeUserCard({
 						<span
 							className='relative block w-12 h-12 mx-auto bg-cover bg-no-repeat'
 							style={{
-								backgroundImage: 'url(/assets/images/user-card/wishlist.png)',
+								backgroundImage: 'url(/assets/images/user-card/wishlist.webp)',
 							}}
 						/>
 						<span className='w-full max-h-7 text-xs text-main-primary text-center'>
@@ -111,7 +111,7 @@ export default async function HomeUserCard({
 					<div
 						className='w-full h-full px-2.5 bg-f5 bg-cover rounded-md overflow-hidden'
 						style={{
-							backgroundImage: 'url(/assets/images/ads/user-card-ad.avif)',
+							backgroundImage: 'url(/assets/images/ads/user-card-ad.png)',
 						}}
 					>
 						<Link href=''>
