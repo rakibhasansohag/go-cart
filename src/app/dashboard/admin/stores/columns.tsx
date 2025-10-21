@@ -95,7 +95,7 @@ export const columns: ColumnDef<AdminStoreType>[] = [
 		header: 'Description',
 		cell: ({ row }) => {
 			return (
-				<div className='max-w-[8rem] '>
+				<div className='max-w-[8rem]'>
 					<DescriptionCell
 						title={row.original.name}
 						html={row.original.description}
