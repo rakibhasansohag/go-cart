@@ -118,7 +118,6 @@ const ViewOrderButton: React.FC<ViewOrderButtonProps> = ({ group }) => {
 				);
 			}}
 		>
-			{/* unchanged content */}
 			View
 			<span className='w-7 h-7 rounded-full bg-background grid place-items-center transition-transform duration-300 transform group-hover:rotate-12 group-hover:translate-x-1'>
 				<Expand className='w-5 stroke-black dark:stroke-white' />

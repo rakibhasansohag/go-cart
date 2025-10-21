@@ -3,7 +3,8 @@
 import { currentUser } from '@clerk/nextjs/server';
 import { ShippingRate, Store } from '@prisma/client';
 import { db } from '@/lib/db';
-import { StoreDefaultShippingType, StoreType } from '@/lib/types';
+import { StoreDefaultShippingType, StoreStatus, StoreType } from '@/lib/types';
+import { checkIfUserFollowingStore } from './product';
 
 // Point:   Function: upsertStore
 // Description: Upserts store details into the database, ensuring uniqueness of name,url, email, and phone number.
@@ -470,4 +471,163 @@ export const applySeller = async (store: StoreType) => {
 	} catch (error) {
 		throw error;
 	}
+};
+
+// Function: getAllStores
+// Description: Retrieves all stores from the database.
+// Permission Level: Admin only
+// Parameters: None
+// Returns: An array of store details.
+export const getAllStores = async () => {
+	try {
+		// Get current user
+		const user = await currentUser();
+
+		// Ensure user is authenticated
+		if (!user) throw new Error('Unauthenticated.');
+
+		// Verify admin permission
+		if (user.privateMetadata.role !== 'ADMIN') {
+			throw new Error(
+				'Unauthorized Access: Admin Privileges Required to View Stores.',
+			);
+		}
+
+		// Fetch all stores from the database
+		const stores = await db.store.findMany({
+			include: {
+				user: true,
+			},
+			orderBy: {
+				createdAt: 'desc',
+			},
+		});
+		return stores;
+	} catch (error) {
+		// Log and re-throw any errors
+		throw error;
+	}
+};
+
+export const updateStoreStatus = async (
+	storeId: string,
+	status: StoreStatus,
+) => {
+	// Retrieve current user
+	const user = await currentUser();
+
+	// Check if user is authenticated
+	if (!user) throw new Error('Unauthenticated.');
+
+	// Verify admin permission
+	if (user.privateMetadata.role !== 'ADMIN')
+		throw new Error(
+			'Unauthorized Access: Admin Privileges Required for Entry.',
+		);
+
+	const store = await db.store.findUnique({
+		where: {
+			id: storeId,
+		},
+	});
+
+	// Verify seller ownership
+	if (!store) {
+		throw new Error('Store not found !');
+	}
+
+	// Retrieve the order to be updated
+	const updatedStore = await db.store.update({
+		where: {
+			id: storeId,
+		},
+		data: {
+			status,
+		},
+	});
+
+	// Update the user role
+	if (store.status === 'PENDING' && updatedStore.status === 'ACTIVE') {
+		await db.user.update({
+			where: {
+				id: updatedStore.userId,
+			},
+			data: {
+				role: 'SELLER',
+			},
+		});
+	}
+
+	return updatedStore.status;
+};
+
+// Function: deleteStore
+// Description: Deletes a store from the database.
+// Permission Level: Admin only
+// Parameters:
+//   - storeId: The ID of the store to be deleted.
+// Returns: Response indicating success or failure of the deletion operation.
+export const deleteStore = async (storeId: string) => {
+	try {
+		// Get current user
+		const user = await currentUser();
+
+		// Check if user is authenticated
+		if (!user) throw new Error('Unauthenticated.');
+
+		// Verify admin permission
+		if (user.privateMetadata.role !== 'ADMIN')
+			throw new Error(
+				'Unauthorized Access: Admin Privileges Required for Entry.',
+			);
+
+		// Ensure store ID is provided
+		if (!storeId) throw new Error('Please provide store ID.');
+
+		// Delete store from the database
+		const response = await db.store.delete({
+			where: {
+				id: storeId,
+			},
+		});
+
+		return response;
+	} catch (error) {
+		throw error;
+	}
+};
+
+export const getStorePageDetails = async (storeUrl: string) => {
+	const user = await currentUser();
+
+	// Fetch the store details from the database
+	const store = await db.store.findUnique({
+		where: {
+			url: storeUrl,
+			status: 'ACTIVE',
+		},
+		select: {
+			id: true,
+			name: true,
+			description: true,
+			logo: true,
+			cover: true,
+			averageRating: true,
+			numReviews: true,
+			_count: {
+				select: {
+					followers: true,
+				},
+			},
+		},
+	});
+	let isUserFollowingStore = false;
+	if (user && store) {
+		isUserFollowingStore = await checkIfUserFollowingStore(store.id, user.id);
+	}
+	// Handle case where the store is not found
+	if (!store) {
+		throw new Error(`Store with URL "${storeUrl}" not found.`);
+	}
+	return { ...store, isUserFollowingStore };
 };

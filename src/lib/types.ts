@@ -31,8 +31,10 @@ import {
 	retrieveProductDetails,
 } from '@/queries/product';
 import {
+	getAllStores,
 	getStoreDefaultShippingDetails,
 	getStoreOrders,
+	getStorePageDetails,
 } from '@/queries/store';
 import { retrieveProductDetailsOptimized } from '@/queries/product-optimized';
 
@@ -441,3 +443,16 @@ export type StoreType = {
 	defaultShippingFeePerKg?: number;
 	returnPolicy?: string;
 };
+
+export type AdminStoreType = Prisma.PromiseReturnType<typeof getAllStores>[0];
+
+export enum StoreStatus {
+	PENDING = 'PENDING',
+	ACTIVE = 'ACTIVE',
+	BANNED = 'BANNED',
+	DISABLED = 'DISABLED',
+}
+
+export type StoreDetailsType = Prisma.PromiseReturnType<
+	typeof getStorePageDetails
+>;
