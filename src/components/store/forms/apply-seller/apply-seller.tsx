@@ -31,7 +31,7 @@ export default function ApplySellerMultiForm() {
 	});
 
 	return (
-		<div className='grid lg:grid-cols-[320px_1fr]'>
+		<div className='grid lg:grid-cols-[380px_1fr]'>
 			<Instructions />
 
 			<div className='relative p-5 w-full'>
