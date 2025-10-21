@@ -3,7 +3,7 @@
 import { currentUser } from '@clerk/nextjs/server';
 import { ShippingRate, Store } from '@prisma/client';
 import { db } from '@/lib/db';
-import { StoreDefaultShippingType } from '@/lib/types';
+import { StoreDefaultShippingType, StoreType } from '@/lib/types';
 
 // Point:   Function: upsertStore
 // Description: Upserts store details into the database, ensuring uniqueness of name,url, email, and phone number.
@@ -348,67 +348,126 @@ export const upsertShippingRate = async (
  * @returns {Array} - Array of order groups, including items.
  */
 export const getStoreOrders = async (storeUrl: string) => {
-  try {
-    // Retrieve current user
-    const user = await currentUser();
+	try {
+		// Retrieve current user
+		const user = await currentUser();
 
-    // Check if user is authenticated
-    if (!user) throw new Error("Unauthenticated.");
+		// Check if user is authenticated
+		if (!user) throw new Error('Unauthenticated.');
 
-    // Verify seller permission
-    if (user.privateMetadata.role !== "SELLER")
-      throw new Error(
-        "Unauthorized Access: Seller Privileges Required for Entry."
-      );
+		// Verify seller permission
+		if (user.privateMetadata.role !== 'SELLER')
+			throw new Error(
+				'Unauthorized Access: Seller Privileges Required for Entry.',
+			);
 
-    // Get store id using url
-    const store = await db.store.findUnique({
-      where: {
-        url: storeUrl,
-      },
-    });
+		// Get store id using url
+		const store = await db.store.findUnique({
+			where: {
+				url: storeUrl,
+			},
+		});
 
-    // Ensure store existence
-    if (!store) throw new Error("Store not found.");
+		// Ensure store existence
+		if (!store) throw new Error('Store not found.');
 
-    // Verify ownership
-    if (user.id !== store.userId) {
-      throw new Error("You don't have permission to access this store.");
-    }
+		// Verify ownership
+		if (user.id !== store.userId) {
+			throw new Error("You don't have permission to access this store.");
+		}
 
-    // Retrieve order groups for the specified store and user
-    const orders = await db.orderGroup.findMany({
-      where: {
-        storeId: store.id,
-      },
-      include: {
-        items: true,
-        coupon: true,
-        order: {
-          select: {
-            paymentStatus: true,
+		// Retrieve order groups for the specified store and user
+		const orders = await db.orderGroup.findMany({
+			where: {
+				storeId: store.id,
+			},
+			include: {
+				items: true,
+				coupon: true,
+				order: {
+					select: {
+						paymentStatus: true,
 
-            shippingAddress: {
-              include: {
-                country: true,
-                user: {
-                  select: {
-                    email: true,
-                  },
-                },
-              },
-            },
-            paymentDetails: true,
-          },
-        },
-      },
-      orderBy: {
-        updatedAt: "desc",
-      },
-    });
+						shippingAddress: {
+							include: {
+								country: true,
+								user: {
+									select: {
+										email: true,
+									},
+								},
+							},
+						},
+						paymentDetails: true,
+					},
+				},
+			},
+			orderBy: {
+				updatedAt: 'desc',
+			},
+		});
 
-    return orders;
-  } catch (error) {
-    throw error;
-  }
+		return orders;
+	} catch (error) {
+		throw error;
+	}
+};
+
+export const applySeller = async (store: StoreType) => {
+	try {
+		// Get current user
+		const user = await currentUser();
+
+		// Ensure user is authenticated
+		if (!user) throw new Error('Unauthenticated.');
+
+		// Ensure store data is provided
+		if (!store) throw new Error('Please provide store data.');
+
+		// Check if store with same name, email,url, or phone number already exists
+		const existingStore = await db.store.findFirst({
+			where: {
+				AND: [
+					{
+						OR: [
+							{ name: store.name },
+							{ email: store.email },
+							{ phone: store.phone },
+							{ url: store.url },
+						],
+					},
+				],
+			},
+		});
+
+		// If a store with same name, email, or phone number already exists, throw an error
+		if (existingStore) {
+			let errorMessage = '';
+			if (existingStore.name === store.name) {
+				errorMessage = 'A store with the same name already exists';
+			} else if (existingStore.email === store.email) {
+				errorMessage = 'A store with the same email already exists';
+			} else if (existingStore.phone === store.phone) {
+				errorMessage = 'A store with the same phone number already exists';
+			} else if (existingStore.url === store.url) {
+				errorMessage = 'A store with the same URL already exists';
+			}
+			throw new Error(errorMessage);
+		}
+
+		// Upsert store details into the database
+		const storeDetails = await db.store.create({
+			data: {
+				...store,
+				defaultShippingService:
+					store.defaultShippingService || 'International Delivery',
+				returnPolicy: store.returnPolicy || 'Return in 30 days.',
+				userId: user.id,
+			},
+		});
+
+		return storeDetails;
+	} catch (error) {
+		throw error;
+	}
 };
