@@ -1,12 +1,13 @@
 'use client';
-import { StoreType } from '@/lib/types';
+
 import { useState } from 'react';
 import Instructions from './instructions';
 import ProgressBar from './progress-bar';
 import Step1 from './steps/step-1/step-1';
-import Step2 from './steps/setp-2/step-2';
-import Step3 from './steps/setp-3/step-3';
+import Step2 from './steps/step-2/step-2';
+import Step3 from './steps/step-3/step-3';
 import Step4 from './steps/step-4/step-4';
+import { StoreType } from '@/lib/types';
 
 export default function ApplySellerMultiForm() {
 	const [step, setStep] = useState<number>(1);
@@ -28,11 +29,14 @@ export default function ApplySellerMultiForm() {
 		defaultDeliveryTimeMax: undefined,
 		returnPolicy: '',
 	});
+
 	return (
-		<div className='grid lg:grid-cols-[400px_1fr]'>
+		<div className='grid lg:grid-cols-[320px_1fr]'>
 			<Instructions />
+
 			<div className='relative p-5 w-full'>
 				<ProgressBar step={step} />
+
 				{/* Steps */}
 				{step === 1 ? (
 					<Step1 step={step} setStep={setStep} />
