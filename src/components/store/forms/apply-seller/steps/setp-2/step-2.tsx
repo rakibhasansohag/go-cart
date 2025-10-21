@@ -237,14 +237,14 @@ export default function Step2({
 				<button
 					type='button'
 					onClick={() => step > 1 && setStep((prev) => prev - 1)}
-					className='h-10 py-2 px-4 rounded-lg shadow-sm text-secondary bg-background hover:bg-gray-100 dark:hover:bg-gray-700 font-medium border'
+					className='h-10 py-2 px-4 rounded-lg shadow-sm text-gray-600 bg-white hover:bg-gray-100 font-medium border cursor-pointer'
 				>
 					Previous
 				</button>
 				<button
 					type='submit'
 					onClick={form.handleSubmit(handleSubmit)}
-					className='h-10 py-2 px-4 rounded-lg shadow-sm text-white bg-blue-500 hover:bg-blue-700 font-medium'
+					className='h-10 py-2 px-4 rounded-lg shadow-sm text-white bg-blue-500 hover:bg-blue-700 font-medium cursor-pointer'
 				>
 					Next
 				</button>
