@@ -5,9 +5,13 @@ import { getUserOrders } from '@/queries/profile';
 export default async function ProfileFilteredOrderPage({
 	params,
 }: {
-	params: { filter: string };
+	params: Promise<{ filter: string }>;
 }) {
-	const filter = params.filter ? (params.filter as OrderTableFilter) : '';
+	const awaitedParams = await params;
+
+	const filter = awaitedParams.filter
+		? (awaitedParams.filter as OrderTableFilter)
+		: '';
 	const orders_data = await getUserOrders(filter);
 	const { orders, totalPages } = orders_data;
 	return (
