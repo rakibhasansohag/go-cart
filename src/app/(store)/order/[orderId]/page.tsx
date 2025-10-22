@@ -11,7 +11,7 @@ import { getOrder } from '@/queries/order';
 import { redirect } from 'next/navigation';
 
 export default async function OrderPage({ params }: { params: { orderId: string } }) {
-	const { orderId } = await params;
+	const { orderId } = params;
 	const order = await getOrder(orderId);
 	if (!order) return redirect('/');
 
