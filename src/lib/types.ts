@@ -31,8 +31,10 @@ import {
 	retrieveProductDetails,
 } from '@/queries/product';
 import {
+	getAllStores,
 	getStoreDefaultShippingDetails,
 	getStoreOrders,
+	getStorePageDetails,
 } from '@/queries/store';
 import { retrieveProductDetailsOptimized } from '@/queries/product-optimized';
 
@@ -44,6 +46,7 @@ import {
 	getUserPayments,
 	getUserWishlist,
 } from '@/queries/profile';
+import { getHomeFeaturedCategories } from '../queries/home';
 
 export interface DashboardSidebarMenuInterface {
 	label: string;
@@ -377,7 +380,6 @@ export type ProductWishlistType = Prisma.PromiseReturnType<
 
 export type StoreOrderType = Prisma.PromiseReturnType<typeof getStoreOrders>[0];
 
-
 export type ProductSimpleVariantType = {
 	variantId: string;
 	variantSlug: string;
@@ -419,3 +421,38 @@ export type SimpleProduct = {
 	price: number;
 	image: string;
 };
+
+export type FeaturedCategoryType = Prisma.PromiseReturnType<
+	typeof getHomeFeaturedCategories
+>[0];
+
+export type StoreType = {
+	name: string;
+	description: string;
+	email: string;
+	phone: string;
+	logo: string;
+	cover: string;
+	url: string;
+	defaultShippingService: string;
+	defaultDeliveryTimeMax?: number;
+	defaultDeliveryTimeMin?: number;
+	defaultShippingFeeFixed?: number;
+	defaultShippingFeeForAdditionalItem?: number;
+	defaultShippingFeePerItem?: number;
+	defaultShippingFeePerKg?: number;
+	returnPolicy?: string;
+};
+
+export type AdminStoreType = Prisma.PromiseReturnType<typeof getAllStores>[0];
+
+export enum StoreStatus {
+	PENDING = 'PENDING',
+	ACTIVE = 'ACTIVE',
+	BANNED = 'BANNED',
+	DISABLED = 'DISABLED',
+}
+
+export type StoreDetailsType = Prisma.PromiseReturnType<
+	typeof getStorePageDetails
+>;

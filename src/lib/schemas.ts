@@ -524,3 +524,72 @@ export const CouponFormSchema = z
 		path: ['endDate'],
 	});
 
+
+export const StoreShippingSchema = z
+	.object({
+		returnPolicy: z.string().default('Return in 30 days.'),
+		defaultShippingService: z.string().default('International Delivery'),
+
+		defaultShippingFeePerItem: z.preprocess(
+			(val) =>
+				typeof val === 'string'
+					? val.trim() === ''
+						? undefined
+						: Number(val)
+					: val,
+			z.number().min(0).default(0),
+		),
+		defaultShippingFeeForAdditionalItem: z.preprocess(
+			(val) =>
+				typeof val === 'string'
+					? val.trim() === ''
+						? undefined
+						: Number(val)
+					: val,
+			z.number().min(0).default(0),
+		),
+		defaultShippingFeePerKg: z.preprocess(
+			(val) =>
+				typeof val === 'string'
+					? val.trim() === ''
+						? undefined
+						: Number(val)
+					: val,
+			z.number().min(0).default(0),
+		),
+		defaultShippingFeeFixed: z.preprocess(
+			(val) =>
+				typeof val === 'string'
+					? val.trim() === ''
+						? undefined
+						: Number(val)
+					: val,
+			z.number().min(0).default(0),
+		),
+
+		defaultDeliveryTimeMin: z.preprocess(
+			(val) =>
+				typeof val === 'string'
+					? val.trim() === ''
+						? undefined
+						: Number(val)
+					: val,
+			z.number().int().min(0).default(7),
+		),
+		defaultDeliveryTimeMax: z.preprocess(
+			(val) =>
+				typeof val === 'string'
+					? val.trim() === ''
+						? undefined
+						: Number(val)
+					: val,
+			z.number().int().min(0).default(31),
+		),
+	})
+	.refine((v) => v.defaultDeliveryTimeMax >= v.defaultDeliveryTimeMin, {
+		message:
+			'Maximum delivery time must be greater than or equal to minimum delivery time',
+		path: ['defaultDeliveryTimeMax'],
+	});
+
+export type StoreShipping = z.infer<typeof StoreShippingSchema>;
