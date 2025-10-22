@@ -11,6 +11,7 @@
 	},
 	"dependencies": {
 		"@clerk/nextjs": "^6.25.5",
+		"@elastic/elasticsearch": "^9.1.1",
 		"@google/genai": "^1.26.0",
 		"@google/generative-ai": "^0.24.1",
 		"@hookform/resolvers": "^5.1.1",
