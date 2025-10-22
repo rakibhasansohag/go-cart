@@ -10,8 +10,12 @@ import { cn } from '@/lib/utils';
 import { getOrder } from '@/queries/order';
 import { redirect } from 'next/navigation';
 
-export default async function OrderPage({ params }: { params: { orderId: string } }) {
-	const { orderId } = params;
+export default async function OrderPage({
+	params,
+}: {
+	params: Promise<{ orderId: string }>;
+}) {
+	const { orderId } = await params;
 	const order = await getOrder(orderId);
 	if (!order) return redirect('/');
 
