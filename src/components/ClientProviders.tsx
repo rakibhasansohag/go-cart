@@ -1,6 +1,6 @@
 'use client';
 
-import React, { ReactNode } from 'react';
+import React, { ReactNode, useEffect } from 'react';
 import { ClerkProvider } from '@clerk/nextjs';
 import { ThemeProvider } from 'next-themes';
 import { Toaster } from '@/components/ui/sonner';
@@ -12,6 +12,13 @@ interface Props {
 }
 
 export default function ClientProviders({ children }: Props) {
+	useEffect(() => {
+		const countryCookie = document.cookie.includes('userCountry');
+		if (!countryCookie) {
+			fetch('/api/geo/country').catch(console.error);
+		}
+	}, []);
+
 	return (
 		<ClerkProvider>
 			<ThemeProvider
