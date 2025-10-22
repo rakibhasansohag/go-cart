@@ -5,14 +5,12 @@ import { columns } from './columns';
 import { getStoreOrders } from '@/queries/store';
 import { notFound } from 'next/navigation';
 
-type Params = {
-	storeUrl: string;
-};
+
 
 export default async function SellerOrdersPage({
 	params,
 }: {
-	params: Params | Promise<Params>;
+	params: Promise<{ storeUrl: string }>;
 }) {
 	const { storeUrl } = await params;
 
