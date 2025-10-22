@@ -1,7 +1,7 @@
 'use client';
 import { X } from 'lucide-react';
 import { Dispatch, FC, ReactNode, SetStateAction, useRef } from 'react';
-import useOnClickOutside from 'use-onclickoutside';
+import useOnClickOutside from '@/hooks/useOnClickOutside';
 
 interface ModalProps {
 	title?: string;
