@@ -13,7 +13,7 @@ import { redirect } from 'next/navigation';
 export default async function OrderPage({
 	params,
 }: {
-	params: { orderId: string } | Promise<{ orderId: string }>;
+	params: Promise<{ orderId: string }>;
 }) {
 	const { orderId } = await params;
 	const order = await getOrder(orderId);

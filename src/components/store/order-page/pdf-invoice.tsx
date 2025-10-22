@@ -7,6 +7,7 @@ import {
 	Text,
 	View,
 } from '@react-pdf/renderer';
+
 export const generateOrderPDFBlob = async (
 	order: OrderFulltType,
 ): Promise<Blob> => {

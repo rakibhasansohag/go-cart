@@ -2,13 +2,15 @@ import { notFound } from 'next/navigation';
 import HistoryContent from '@/components/store/profile/history/history-content';
 
 interface ProfileHistoryPageProps {
-	params: { page: string };
+	params: Promise<{ page: string }>;
 }
 
 export default async function ProfileHistoryPage({
 	params,
 }: ProfileHistoryPageProps) {
-	const pageParam = params.page;
+	const awaitedParams = await params;
+
+	const pageParam = awaitedParams.page;
 
 	// Server-side validation
 	const initialPage = Number(pageParam);

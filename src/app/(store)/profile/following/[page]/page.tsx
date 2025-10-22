@@ -4,9 +4,11 @@ import { getUserFollowedStores } from '@/queries/profile';
 export default async function ProfileFollowingPage({
 	params,
 }: {
-	params: { page: string };
+	params: Promise<{ page: string }>;
 }) {
-	const page = params.page ? Number(params.page) : 1;
+	const awaitedParams = await params;
+
+	const page = awaitedParams.page ? Number(awaitedParams.page) : 1;
 	const res = await getUserFollowedStores(page);
 	return (
 		<div className='bg-background py-4 px-6 rounded-xl'>
