@@ -15,61 +15,80 @@ import { Category, SubCategory } from '@prisma/client';
 // Parameters:
 //   - category: Category object containing details of the category to be upserted.
 // Returns: Updated or newly created category details.
-export const upsertCategory = async (category: Category) => {
+export const upsertCategory = async (
+	category: Omit<Category, 'id'> & { id?: string },
+) => {
 	try {
-		// Get current user
 		const user = await currentUser();
 
-		// Ensure user is authenticated
 		if (!user) throw new Error('Unauthenticated.');
 
-		// Verify admin permission
 		if (user.privateMetadata.role !== 'ADMIN')
 			throw new Error(
 				'Unauthorized Access: Admin Privileges Required for Entry.',
 			);
 
-		// Ensure category data is provided
 		if (!category) throw new Error('Please provide category data.');
 
-		// Throw error if category with same name or URL already exists
-		const existingCategory = await db.category.findFirst({
-			where: {
-				AND: [
-					{
-						OR: [{ name: category.name }, { url: category.url }],
-					},
-					{
-						NOT: {
-							id: category.id,
-						},
-					},
-				],
-			},
-		});
-
-		// Throw error if category with same name or URL already exists
-		if (existingCategory) {
-			let errorMessage = '';
-			if (existingCategory.name === category.name) {
-				errorMessage = 'A category with the same name already exists';
-			} else if (existingCategory.url === category.url) {
-				errorMessage = 'A category with the same URL already exists';
+		// If updating (has an id), validate it's a valid ObjectId
+		if (category.id) {
+			// Verify the ID is valid before querying
+			if (
+				typeof category.id !== 'string' ||
+				!category.id.match(/^[0-9a-f]{24}$/i)
+			) {
+				throw new Error('Invalid category ID');
 			}
-			throw new Error(errorMessage);
 		}
 
-		// Upsert category into the database
-		const categoryDetails = await db.category.upsert({
-			where: {
-				id: category.id,
-			},
-			update: category,
-			create: category,
-		});
-		return categoryDetails;
+		// Only check for duplicates if updating an existing category
+		if (category.id) {
+			const existingCategory = await db.category.findFirst({
+				where: {
+					AND: [
+						{
+							OR: [{ name: category.name }, { url: category.url }],
+						},
+						{
+							NOT: {
+								id: category.id,
+							},
+						},
+					],
+				},
+			});
+
+			if (existingCategory) {
+				let errorMessage = '';
+				if (existingCategory.name === category.name) {
+					errorMessage = 'A category with the same name already exists';
+				} else if (existingCategory.url === category.url) {
+					errorMessage = 'A category with the same URL already exists';
+				}
+				throw new Error(errorMessage);
+			}
+
+			// Update existing
+			const categoryDetails = await db.category.update({
+				where: {
+					id: category.id,
+				},
+				data: category,
+			});
+			return categoryDetails;
+		} else {
+			// Create new (don't include id, let MongoDB generate it)
+			const categoryDetails = await db.category.create({
+				data: {
+					name: category.name,
+					url: category.url,
+					image: category.image,
+					featured: category.featured,
+				},
+			});
+			return categoryDetails;
+		}
 	} catch (error) {
-		// Log and re-throw any errors
 		throw error;
 	}
 };

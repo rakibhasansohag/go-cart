@@ -69,15 +69,17 @@ const SubCategoryDetails: FC<SubCategoryDetailsProps> = ({
 
 	const router = useRouter(); // Hook for routing
 
+	console.log(categories);
+
 	// Form hook for managing form state and validation
 	const form = useForm<z.infer<typeof SubCategoryFormSchema>>({
 		mode: 'onChange', // Form validation mode
 		resolver: zodResolver(SubCategoryFormSchema), // Resolver for form validation
 		defaultValues: {
 			// Setting default form values from data (if available)
-			name: data?.name,
+			name: data?.name || '',
 			image: data?.image ? [{ url: data?.image }] : [],
-			url: data?.url,
+			url: data?.url || '',
 			featured: data?.featured,
 			categoryId: data?.categoryId,
 		},
@@ -107,7 +109,7 @@ const SubCategoryDetails: FC<SubCategoryDetailsProps> = ({
 			const values = form.getValues();
 			// Upserting category data
 			const response = await upsertSubCategory({
-				id: data?.id ? data.id : v4(),
+				...(data?.id && { id: data.id }),
 				name: values.name,
 				image: values.image[0].url,
 				url: values.url,
@@ -244,7 +246,10 @@ const SubCategoryDetails: FC<SubCategoryDetailsProps> = ({
 												</FormControl>
 												<SelectContent>
 													{categories.map((category) => (
-														<SelectItem key={category.id} value={category.id}>
+														<SelectItem
+															key={category?.id}
+															value={String(category.id)}
+														>
 															{category.name}
 														</SelectItem>
 													))}

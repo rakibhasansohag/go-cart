@@ -84,7 +84,7 @@ const CategoryDetails = ({ data, cloudinary_key }: CategoryDetailsProps) => {
 
 			// Upserting Category data
 			const response = await upsertCategory({
-				id: data?.id ? data.id : v4(),
+				...(data?.id && { id: data.id }),
 				name: values?.name.trim(),
 				image: values?.image[0].url,
 				url: values?.url.trim(),

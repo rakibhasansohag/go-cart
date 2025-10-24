@@ -15,61 +15,100 @@ import { SubCategory } from '@prisma/client';
 // Parameters:
 //   - SubCategory: subCategory object containing details of the subCategory to be upserted.
 // Returns: Updated or newly created subCategory details.
-export const upsertSubCategory = async (subCategory: SubCategory) => {
+export const upsertSubCategory = async (
+	subCategory: Omit<SubCategory, 'id'> & { id?: string },
+) => {
 	try {
-		// Get current user
 		const user = await currentUser();
 
-		// Ensure user is authenticated
 		if (!user) throw new Error('Unauthenticated.');
 
-		// Verify admin permission
 		if (user.privateMetadata.role !== 'ADMIN')
 			throw new Error(
 				'Unauthorized Access: Admin Privileges Required for Entry.',
 			);
 
-		// Ensure SubCategory data is provided
 		if (!subCategory) throw new Error('Please provide subCategory data.');
 
-		// Throw error if category with same name or URL already exists
-		const existingSubCategory = await db.subCategory.findFirst({
-			where: {
-				AND: [
-					{
-						OR: [{ name: subCategory.name }, { url: subCategory.url }],
-					},
-					{
-						NOT: {
-							id: subCategory.id,
-						},
-					},
-				],
-			},
-		});
-
-		// Throw error if category with same name or URL already exists
-		if (existingSubCategory) {
-			let errorMessage = '';
-			if (existingSubCategory.name === subCategory.name) {
-				errorMessage = 'A SubCategory with the same name already exists';
-			} else if (existingSubCategory.url === subCategory.url) {
-				errorMessage = 'A SubCategory with the same URL already exists';
+		// If updating (has an id), validate it's a valid MongoDB ObjectId
+		if (subCategory.id) {
+			if (
+				typeof subCategory.id !== 'string' ||
+				!subCategory.id.match(/^[0-9a-f]{24}$/i)
+			) {
+				throw new Error('Invalid subCategory ID');
 			}
-			throw new Error(errorMessage);
-		}
 
-		// Upsert SubCategory into the database
-		const subCategoryDetails = await db.subCategory.upsert({
-			where: {
-				id: subCategory.id,
-			},
-			update: subCategory,
-			create: subCategory,
-		});
-		return subCategoryDetails;
+			// Check for duplicates when updating
+			const existingSubCategory = await db.subCategory.findFirst({
+				where: {
+					AND: [
+						{
+							OR: [{ name: subCategory.name }, { url: subCategory.url }],
+						},
+						{
+							NOT: {
+								id: subCategory.id,
+							},
+						},
+					],
+				},
+			});
+
+			if (existingSubCategory) {
+				let errorMessage = '';
+				if (existingSubCategory.name === subCategory.name) {
+					errorMessage = 'A SubCategory with the same name already exists';
+				} else if (existingSubCategory.url === subCategory.url) {
+					errorMessage = 'A SubCategory with the same URL already exists';
+				}
+				throw new Error(errorMessage);
+			}
+
+			// Update existing
+			return await db.subCategory.update({
+				where: {
+					id: subCategory.id,
+				},
+				data: {
+					name: subCategory.name,
+					url: subCategory.url,
+					image: subCategory.image,
+					featured: subCategory.featured,
+					categoryId: subCategory.categoryId,
+					updatedAt: new Date(),
+				},
+			});
+		} else {
+			// Check for duplicates when creating
+			const existingSubCategory = await db.subCategory.findFirst({
+				where: {
+					OR: [{ name: subCategory.name }, { url: subCategory.url }],
+				},
+			});
+
+			if (existingSubCategory) {
+				let errorMessage = '';
+				if (existingSubCategory.name === subCategory.name) {
+					errorMessage = 'A SubCategory with the same name already exists';
+				} else if (existingSubCategory.url === subCategory.url) {
+					errorMessage = 'A SubCategory with the same URL already exists';
+				}
+				throw new Error(errorMessage);
+			}
+
+			// Create new (let MongoDB generate id)
+			return await db.subCategory.create({
+				data: {
+					name: subCategory.name,
+					url: subCategory.url,
+					image: subCategory.image,
+					featured: subCategory.featured,
+					categoryId: subCategory.categoryId,
+				},
+			});
+		}
 	} catch (error) {
-		// Log and re-throw any errors
 		throw error;
 	}
 };
@@ -147,33 +186,62 @@ export const deleteSubCategory = async (subCategoryId: string) => {
 //   - limit: Number indicating the maximum number of subcategories to retrieve.
 //   - random: Boolean indicating whether to return random subcategories.
 // Returns: List of subcategories based on the provided options.
+// export const getSubcategories = async (
+// 	limit: number | null,
+// 	random: boolean = false,
+// ): Promise<SubCategory[]> => {
+// 	// Define SortOrder enum
+// 	enum SortOrder {
+// 		asc = 'asc',
+// 		desc = 'desc',
+// 	}
+// 	try {
+// 		// Define the query options
+// 		const queryOptions = {
+// 			take: limit || undefined, // Use the provided limit or undefined for no limit
+// 			orderBy: random ? { createdAt: SortOrder.desc } : undefined, // Use SortOrder for ordering
+// 		};
+
+// 		// If random selection is required, use a raw query to randomize
+// 		if (random) {
+// 			const subcategories = await db.$queryRaw<SubCategory[]>`
+//     SELECT * FROM SubCategory
+//     ORDER BY RAND()
+//     LIMIT ${limit || 10}
+//     `;
+// 			return subcategories;
+// 		} else {
+// 			// Otherwise, fetch subcategories based on the defined query options
+// 			const subcategories = await db.subCategory.findMany(queryOptions);
+// 			return subcategories;
+// 		}
+// 	} catch (error) {
+// 		// Log and re-throw any errors
+// 		throw error;
+// 	}
+// };
+
+// as  mongodb
 export const getSubcategories = async (
 	limit: number | null,
 	random: boolean = false,
 ): Promise<SubCategory[]> => {
-	// Define SortOrder enum
-	enum SortOrder {
-		asc = 'asc',
-		desc = 'desc',
-	}
 	try {
-		// Define the query options
-		const queryOptions = {
-			take: limit || undefined, // Use the provided limit or undefined for no limit
-			orderBy: random ? { createdAt: SortOrder.desc } : undefined, // Use SortOrder for ordering
-		};
-
-		// If random selection is required, use a raw query to randomize
 		if (random) {
-			const subcategories = await db.$queryRaw<SubCategory[]>`
-    SELECT * FROM SubCategory
-    ORDER BY RAND()
-    LIMIT ${limit || 10} 
-    `;
-			return subcategories;
+			const allSubcategories = await db.subCategory.findMany();
+
+			const shuffled = [...allSubcategories].sort(() => 0.5 - Math.random());
+
+			// Return limited results
+			return shuffled.slice(0, limit || 10);
 		} else {
-			// Otherwise, fetch subcategories based on the defined query options
-			const subcategories = await db.subCategory.findMany(queryOptions);
+			// Otherwise, fetch subcategories with limit
+			const subcategories = await db.subCategory.findMany({
+				take: limit || undefined,
+				orderBy: {
+					createdAt: 'desc',
+				},
+			});
 			return subcategories;
 		}
 	} catch (error) {

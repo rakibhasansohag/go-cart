@@ -3,9 +3,8 @@ generator client {
 }
 
 datasource db {
-  provider     = "mysql"
-  url          = env("DATABASE_URL")
-  relationMode = "prisma"
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
 }
 
 enum Role {
@@ -15,57 +14,54 @@ enum Role {
 }
 
 model User {
-  id      String @id @default(uuid())
+  id      String @id @default(auto()) @map("_id") @db.ObjectId
   name    String
   email   String @unique
-  picture String @db.Text
+  picture String
   role    Role   @default(USER)
 
   stores            Store[]           @relation("UserStores")
-  following         Store[]           @relation("UserFollowingStore")
+  followingStores   UserFollowingStore[] @relation("UserFollowing")
   reviews           Review[]          @relation("ReviewToUser")
   cart              Cart?             @relation("UserCart")
   shippingAddresses ShippingAddress[] @relation("UserShippingAddresses")
   orders            Order[]           @relation("UserOrders")
   wishlist          Wishlist[]        @relation("WishlistToUser")
   payments          PaymentDetails[]  @relation("PaymentDetailsToUser")
-  coupons           Coupon[]          @relation("CouponToUser")
+  userCoupons       UserCoupon[]      @relation("UserCoupons")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
 model Category {
-  id       String  @id @default(uuid())
+  id       String  @id @default(auto()) @map("_id") @db.ObjectId
   name     String
   image    String
   url      String  @unique
   featured Boolean @default(false)
 
   subCategories SubCategory[] @relation("CategoryToSubcategory")
-
-  products Product[] @relation("CategoryToProduct")
+  products      Product[]     @relation("CategoryToProduct")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
 model SubCategory {
-  id       String  @id @default(uuid())
+  id       String  @id @default(auto()) @map("_id") @db.ObjectId
   name     String
   image    String
   url      String  @unique
   featured Boolean @default(false)
 
-  categoryId String
-  category   Category @relation("CategoryToSubcategory", fields: [categoryId], references: [id])
+  categoryId String    @db.ObjectId
+  category   Category  @relation("CategoryToSubcategory", fields: [categoryId], references: [id])
 
   products Product[] @relation("SubCategoryToProduct")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  @@index([categoryId])
 }
 
 enum StoreStatus {
@@ -76,9 +72,9 @@ enum StoreStatus {
 }
 
 model Store {
-  id                                  String      @id @default(uuid())
+  id                                  String      @id @default(auto()) @map("_id") @db.ObjectId
   name                                String
-  description                         String      @db.Text
+  description                         String
   email                               String      @unique
   phone                               String
   url                                 String      @unique
@@ -100,17 +96,15 @@ model Store {
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
-  userId String
+  userId String @db.ObjectId
   user   User   @relation("UserStores", fields: [userId], references: [id])
 
   products      Product[]      @relation("StoreToProduct")
   shippingRates ShippingRate[] @relation("StoreShippingRates")
-  followers     User[]         @relation("UserFollowingStore")
+  followers     UserFollowingStore[] @relation("StoreFollowers")
   cartItems     CartItem[]     @relation("CartItemToStore")
   orderGroups   OrderGroup[]   @relation("OrderGroupToStore")
   coupons       Coupon[]       @relation("CouponToStore")
-
-  @@index([userId])
 }
 
 enum ShippingFeeMethod {
@@ -120,9 +114,9 @@ enum ShippingFeeMethod {
 }
 
 model Product {
-  id                          String            @id @default(uuid())
+  id                          String            @id @default(auto()) @map("_id") @db.ObjectId
   name                        String
-  description                 String            @db.LongText
+  description                 String
   slug                        String            @unique
   brand                       String
   rating                      Float             @default(0)
@@ -136,7 +130,7 @@ model Product {
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
-  storeId String
+  storeId String @db.ObjectId
   store   Store  @relation("StoreToProduct", fields: [storeId], references: [id])
 
   variants  ProductVariant[] @relation("ProductToProductVariant")
@@ -145,25 +139,20 @@ model Product {
   reviews   Review[]         @relation("ReviewToProduct")
   wishlist  Wishlist[]       @relation("WishlistToProduct")
 
-  categoryId String
-  category   Category @relation("CategoryToProduct", fields: [categoryId], references: [id])
+  categoryId String    @db.ObjectId
+  category   Category  @relation("CategoryToProduct", fields: [categoryId], references: [id])
 
-  subCategoryId String
+  subCategoryId String     @db.ObjectId
   subCategory   SubCategory @relation("SubCategoryToProduct", fields: [subCategoryId], references: [id])
 
-  offerTagId String?
+  offerTagId String?   @db.ObjectId
   offerTag   OfferTag? @relation("OfferTagToProduct", fields: [offerTagId], references: [id])
-
-  @@index([storeId])
-  @@index([categoryId])
-  @@index([subCategoryId])
-  @@index([offerTagId])
 }
 
 model ProductVariant {
-  id                 String  @id @default(uuid())
-  variantName        String  @db.LongText
-  variantDescription String? @db.LongText
+  id                 String  @id @default(auto()) @map("_id") @db.ObjectId
+  variantName        String
+  variantDescription String?
   variantImage       String
   slug               String  @unique
   isSale             Boolean @default(false)
@@ -173,7 +162,7 @@ model ProductVariant {
   sales              Int     @default(0)
   weight             Float
 
-  productId String
+  productId String  @db.ObjectId
   product   Product @relation("ProductToProductVariant", fields: [productId], references: [id])
 
   sizes    Size[]                @relation("ProductVariantSizes")
@@ -184,12 +173,10 @@ model ProductVariant {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
-
-  @@index([productId])
 }
 
 model Size {
-  id       String @id @default(uuid())
+  id       String @id @default(auto()) @map("_id") @db.ObjectId
   size     String
   quantity Int
   price    Float
@@ -197,46 +184,40 @@ model Size {
 
   wishlist Wishlist[] @relation("WishlistToSize")
 
-  productVariantId String
+  productVariantId String         @db.ObjectId
   productVariant   ProductVariant @relation("ProductVariantSizes", fields: [productVariantId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
-
-  @@index([productVariantId])
 }
 
 model ProductVariantImage {
-  id  String @id @default(uuid())
+  id  String @id @default(auto()) @map("_id") @db.ObjectId
   url String
   alt String @default("")
 
   order Int?
 
-  productVariantId String
+  productVariantId String         @db.ObjectId
   productVariant   ProductVariant @relation("ProductVariantToVariantImage", fields: [productVariantId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
-
-  @@index([productVariantId])
 }
 
 model Color {
-  id   String @id @default(uuid())
+  id   String @id @default(auto()) @map("_id") @db.ObjectId
   name String
 
-  productVariantId String
+  productVariantId String         @db.ObjectId
   productVariant   ProductVariant @relation("ProductVariantColors", fields: [productVariantId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
-
-  @@index([productVariantId])
 }
 
 model OfferTag {
-  id   String @id @default(uuid())
+  id   String @id @default(auto()) @map("_id") @db.ObjectId
   name String
   url  String @unique
 
@@ -247,40 +228,35 @@ model OfferTag {
 }
 
 model Spec {
-  id    String @id @default(uuid())
+  id    String @id @default(auto()) @map("_id") @db.ObjectId
   name  String
   value String
 
-  productId String?
-  product   Product? @relation("ProductSpec", fields: [productId], references: [id], onDelete: Cascade)
+  productId String?   @db.ObjectId
+  product   Product?  @relation("ProductSpec", fields: [productId], references: [id], onDelete: Cascade)
 
-  variantId String?
+  variantId String?        @db.ObjectId
   variant   ProductVariant? @relation("ProductVariantSpec", fields: [variantId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
-
-  @@index([productId])
-  @@index([variantId])
 }
 
 model Question {
-  id String @id @default(uuid())
+  id String @id @default(auto()) @map("_id") @db.ObjectId
 
-  question String @db.LongText
-  answer   String @db.LongText
+  question String
+  answer   String
 
-  productId String
+  productId String  @db.ObjectId
   product   Product @relation("ProductQuestion", fields: [productId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
-
-  @@index([productId])
 }
 
 model Country {
-  id   String @id @default(uuid())
+  id   String @id @default(auto()) @map("_id") @db.ObjectId
   name String @unique
   code String @unique
 
@@ -293,7 +269,7 @@ model Country {
 }
 
 model ShippingRate {
-  id String @id @default(uuid())
+  id String @id @default(auto()) @map("_id") @db.ObjectId
 
   shippingService              String
   shippingFeePerItem           Float
@@ -304,22 +280,19 @@ model ShippingRate {
   deliveryTimeMax              Int
   returnPolicy                 String
 
-  countryId String
+  countryId String  @db.ObjectId
   country   Country @relation("CountryShippingRates", fields: [countryId], references: [id])
 
-  storeId String
+  storeId String @db.ObjectId
   store   Store  @relation("StoreShippingRates", fields: [storeId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
-
-  @@index([countryId])
-  @@index([storeId])
 }
 
 model FreeShipping {
-  id        String  @id @default(uuid())
-  productId String  @unique
+  id        String  @id @default(auto()) @map("_id") @db.ObjectId
+  productId String  @unique @db.ObjectId
   product   Product @relation("ProductFreeShipping", fields: [productId], references: [id], onDelete: Cascade)
 
   eligibaleCountries FreeShippingCountry[] @relation("FreeShippingCountries")
@@ -329,23 +302,20 @@ model FreeShipping {
 }
 
 model FreeShippingCountry {
-  id String @id @default(uuid())
+  id String @id @default(auto()) @map("_id") @db.ObjectId
 
-  freeShippingId String
+  freeShippingId String       @db.ObjectId
   freeShipping   FreeShipping @relation("FreeShippingCountries", fields: [freeShippingId], references: [id], onDelete: Cascade)
 
-  countryId String
+  countryId String  @db.ObjectId
   country   Country @relation("FreeShippingToCountry", fields: [countryId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
-
-  @@index([freeShippingId])
-  @@index([countryId])
 }
 
 model Review {
-  id           String @id @default(uuid())
+  id           String @id @default(auto()) @map("_id") @db.ObjectId
   variant      String
   variantImage String
   review       String
@@ -357,40 +327,35 @@ model Review {
 
   images ReviewImage[] @relation("ReviewToReviewImage")
 
-  userId String
+  userId String @db.ObjectId
   user   User   @relation("ReviewToUser", fields: [userId], references: [id])
 
-  productId String
+  productId String  @db.ObjectId
   product   Product @relation("ReviewToProduct", fields: [productId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
-
-  @@index([userId])
-  @@index([productId])
 }
 
 model ReviewImage {
-  id  String @id @default(uuid())
+  id  String @id @default(auto()) @map("_id") @db.ObjectId
   url String
   alt String @default("")
 
-  reviewId String
+  reviewId String @db.ObjectId
   review   Review @relation("ReviewToReviewImage", fields: [reviewId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  @@index([reviewId])
 }
 
 model Cart {
-  id     String @id @default(uuid())
-  userId String @unique
+  id     String @id @default(auto()) @map("_id") @db.ObjectId
+  userId String @unique @db.ObjectId
   user   User   @relation("UserCart", fields: [userId], references: [id], onDelete: Cascade)
 
-  couponId String?
-  coupon   Coupon? @relation("CouponToCart", fields: [couponId], references: [id])
+  couponId String?  @db.ObjectId
+  coupon   Coupon?  @relation("CouponToCart", fields: [couponId], references: [id])
 
   cartItems    CartItem[] @relation("CartToCartItem")
   shippingFees Float      @default(0)
@@ -399,12 +364,10 @@ model Cart {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  @@index([couponId])
 }
 
 model CartItem {
-  id          String @id @default(uuid())
+  id          String @id @default(auto()) @map("_id") @db.ObjectId
   productId   String
   variantId   String
   sizeId      String
@@ -419,21 +382,18 @@ model CartItem {
   shippingFee Float  @default(0)
   totalPrice  Float
 
-  cartId String
+  cartId String @db.ObjectId
   cart   Cart   @relation("CartToCartItem", fields: [cartId], references: [id], onDelete: Cascade)
 
-  storeId String
+  storeId String @db.ObjectId
   store   Store  @relation("CartItemToStore", fields: [storeId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  @@index([cartId])
-  @@index([storeId])
 }
 
 model ShippingAddress {
-  id        String  @id @default(uuid())
+  id        String  @id @default(auto()) @map("_id") @db.ObjectId
   firstName String
   lastName  String
   phone     String
@@ -446,17 +406,14 @@ model ShippingAddress {
 
   orders Order[] @relation("ShippingAddressToOrder")
 
-  userId String
+  userId String @db.ObjectId
   user   User   @relation("UserShippingAddresses", fields: [userId], references: [id])
 
-  countryId String
+  countryId String  @db.ObjectId
   country   Country @relation("CountryToShippingAddress", fields: [countryId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  @@index([countryId])
-  @@index([userId])
 }
 
 enum OrderStatus {
@@ -491,7 +448,7 @@ enum PaymentMethod {
 }
 
 model Order {
-  id           String @id @default(uuid())
+  id           String @id @default(auto()) @map("_id") @db.ObjectId
   shippingFees Float
   subTotal     Float
   total        Float
@@ -504,21 +461,18 @@ model Order {
   paymentMethod  PaymentMethod?
   paymentDetails PaymentDetails? @relation("PaymentDetailsToOrder")
 
-  shippingAddressId String
+  shippingAddressId String          @db.ObjectId
   shippingAddress   ShippingAddress @relation("ShippingAddressToOrder", fields: [shippingAddressId], references: [id])
 
-  userId String
+  userId String @db.ObjectId
   user   User   @relation("UserOrders", fields: [userId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  @@index([shippingAddressId])
-  @@index([userId])
 }
 
 model OrderGroup {
-  id     String      @id @default(uuid())
+  id     String      @id @default(auto()) @map("_id") @db.ObjectId
   status OrderStatus @default(Pending)
 
   items OrderItem[] @relation("OrderItemToGroup")
@@ -531,69 +485,38 @@ model OrderGroup {
   subTotal     Float
   total        Float
 
-  orderId String
+  orderId String @db.ObjectId
   order   Order  @relation("OrderGroupToOrder", fields: [orderId], references: [id])
 
-  storeId String
+  storeId String @db.ObjectId
   store   Store  @relation("OrderGroupToStore", fields: [storeId], references: [id])
 
-  couponId String?
-  coupon   Coupon? @relation("CouponToOrderGroup", fields: [couponId], references: [id])
+  couponId String?  @db.ObjectId
+  coupon   Coupon?  @relation("CouponToOrderGroup", fields: [couponId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  @@index([orderId])
-  @@index([storeId])
-  @@index([couponId])
 }
 
 enum ProductStatus {
-  /// Product has been added to the order but no action taken yet
   Pending
-
-  /// Product is being prepared (picked, packed, or manufactured)
   Processing
-
-  /// Product is packed and ready for shipment
   ReadyForShipment
-
-  /// Product has been shipped
   Shipped
-
-  /// Product has been delivered to the customer
   Delivered
-
-  /// Product order has been canceled
   Canceled
-
-  /// Product has been returned by the customer
   Returned
-
-  /// Product cost has been refunded
   Refunded
-
-  /// Delivery attempt failed, product may return to warehouse
   FailedDelivery
-
-  /// Product is on hold (e.g., stock issues, verification required)
   OnHold
-
-  /// Product is delayed due to stock unavailability
   Backordered
-
-  /// Some units of the product were shipped, but the order is not yet complete
   PartiallyShipped
-
-  /// Customer requested an exchange for the product
   ExchangeRequested
-
-  /// Product is awaiting customer pickup (for pickup orders)
   AwaitingPickup
 }
 
 model OrderItem {
-  id String @id @default(uuid())
+  id String @id @default(auto()) @map("_id") @db.ObjectId
 
   productId String
   variantId String
@@ -610,64 +533,55 @@ model OrderItem {
   price       Float
   totalPrice  Float
 
-  orderGroupId String
+  orderGroupId String     @db.ObjectId
   orderGroup   OrderGroup @relation("OrderItemToGroup", fields: [orderGroupId], references: [id], onDelete: Cascade)
 
   status ProductStatus @default(Pending)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  @@index([orderGroupId])
 }
 
 model Wishlist {
-  id String @id @default(uuid())
+  id String @id @default(auto()) @map("_id") @db.ObjectId
 
-  userId String
+  userId String @db.ObjectId
   user   User   @relation("WishlistToUser", fields: [userId], references: [id], onDelete: Cascade)
 
-  productId String
+  productId String  @db.ObjectId
   product   Product @relation("WishlistToProduct", fields: [productId], references: [id], onDelete: Cascade)
 
-  variantId String
+  variantId String         @db.ObjectId
   variant   ProductVariant @relation("WishlistToProductVariant", fields: [variantId], references: [id], onDelete: Cascade)
 
-  sizeId String?
+  sizeId String?  @db.ObjectId
   size   Size?   @relation("WishlistToSize", fields: [sizeId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  @@index([userId])
-  @@index([productId])
-  @@index([variantId])
-  @@index([sizeId])
 }
 
 model Coupon {
-  id        String @id @default(uuid())
+  id        String @id @default(auto()) @map("_id") @db.ObjectId
   code      String @unique
   startDate String
   endDate   String
   discount  Int
 
-  storeId String
+  storeId String @db.ObjectId
   store   Store  @relation("CouponToStore", fields: [storeId], references: [id], onDelete: Cascade)
 
   orders OrderGroup[] @relation("CouponToOrderGroup")
-  users  User[]       @relation("CouponToUser")
+  userCoupons UserCoupon[] @relation("CouponUsers")
 
   carts Cart[] @relation("CouponToCart")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  @@index([storeId])
 }
 
 model PaymentDetails {
-  id String @id @default(uuid())
+  id String @id @default(auto()) @map("_id") @db.ObjectId
 
   paymentInetntId String
   paymentMethod   String
@@ -675,15 +589,42 @@ model PaymentDetails {
   amount          Float
   currency        String
 
-  orderId String @unique
+  orderId String @unique @db.ObjectId
   order   Order  @relation("PaymentDetailsToOrder", fields: [orderId], references: [id], onDelete: Cascade)
 
-  userId String
+  userId String @db.ObjectId
   user   User   @relation("PaymentDetailsToUser", fields: [userId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
 
-  @@index([orderId])
-  @@index([userId])
+// Junction table for User following Store
+model UserFollowingStore {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  userId String @db.ObjectId
+  user   User   @relation("UserFollowing", fields: [userId], references: [id], onDelete: Cascade)
+
+  storeId String @db.ObjectId
+  store   Store  @relation("StoreFollowers", fields: [storeId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, storeId])
+}
+
+// Junction table for User and Coupon
+model UserCoupon {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  userId String @db.ObjectId
+  user   User   @relation("UserCoupons", fields: [userId], references: [id], onDelete: Cascade)
+
+  couponId String @db.ObjectId
+  coupon   Coupon @relation("CouponUsers", fields: [couponId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, couponId])
 }
