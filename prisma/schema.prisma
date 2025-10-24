@@ -96,7 +96,7 @@ model Store {
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
-  userId String @db.ObjectId
+  userId String 
   user   User   @relation("UserStores", fields: [userId], references: [id])
 
   products      Product[]      @relation("StoreToProduct")
@@ -327,7 +327,7 @@ model Review {
 
   images ReviewImage[] @relation("ReviewToReviewImage")
 
-  userId String @db.ObjectId
+  userId String 
   user   User   @relation("ReviewToUser", fields: [userId], references: [id])
 
   productId String  @db.ObjectId
@@ -351,7 +351,7 @@ model ReviewImage {
 
 model Cart {
   id     String @id @default(auto()) @map("_id") @db.ObjectId
-  userId String @unique @db.ObjectId
+  userId String @unique 
   user   User   @relation("UserCart", fields: [userId], references: [id], onDelete: Cascade)
 
   couponId String?  @db.ObjectId
@@ -406,7 +406,7 @@ model ShippingAddress {
 
   orders Order[] @relation("ShippingAddressToOrder")
 
-  userId String @db.ObjectId
+  userId String 
   user   User   @relation("UserShippingAddresses", fields: [userId], references: [id])
 
   countryId String  @db.ObjectId
@@ -464,7 +464,7 @@ model Order {
   shippingAddressId String          @db.ObjectId
   shippingAddress   ShippingAddress @relation("ShippingAddressToOrder", fields: [shippingAddressId], references: [id])
 
-  userId String @db.ObjectId
+  userId String 
   user   User   @relation("UserOrders", fields: [userId], references: [id])
 
   createdAt DateTime @default(now())
@@ -545,7 +545,7 @@ model OrderItem {
 model Wishlist {
   id String @id @default(auto()) @map("_id") @db.ObjectId
 
-  userId String @db.ObjectId
+  userId String 
   user   User   @relation("WishlistToUser", fields: [userId], references: [id], onDelete: Cascade)
 
   productId String  @db.ObjectId
@@ -592,7 +592,7 @@ model PaymentDetails {
   orderId String @unique @db.ObjectId
   order   Order  @relation("PaymentDetailsToOrder", fields: [orderId], references: [id], onDelete: Cascade)
 
-  userId String @db.ObjectId
+  userId String 
   user   User   @relation("PaymentDetailsToUser", fields: [userId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())

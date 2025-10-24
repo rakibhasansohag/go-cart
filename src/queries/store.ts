@@ -72,7 +72,7 @@ export const upsertStore = async (store: Partial<Store>) => {
 			},
 			update: store,
 			create: {
-				id: store.id,
+				// id: store.id, // work on mysql
 				name: store.name!,
 				description: store.description!,
 				email: store.email!,
@@ -81,8 +81,8 @@ export const upsertStore = async (store: Partial<Store>) => {
 				logo: store.logo!,
 				cover: store.cover!,
 				featured: store.featured ?? false,
-				createdAt: store.createdAt ?? new Date(),
-				updatedAt: store.updatedAt ?? new Date(),
+				// createdAt: store.createdAt ?? new Date(),
+				// updatedAt: store.updatedAt ?? new Date(),
 				user: {
 					connect: { id: user.id },
 				},
@@ -325,15 +325,38 @@ export const upsertShippingRate = async (
 		if (!store) throw new Error('Please provide a valid store URL.');
 
 		// Upsert the shipping rate into the database
-		const shippingRateDetails = await db.shippingRate.upsert({
+		// const shippingRateDetails = await db.shippingRate.upsert({
+		// 	where: {
+		// 		id: shippingRate.id,
+		// 	},
+		// 	update: { ...shippingRate, storeId: store.id },
+		// 	create: { ...shippingRate, storeId: store.id },
+		// });
+
+		const existingRate = await db.shippingRate.findFirst({
 			where: {
-				id: shippingRate.id,
+				AND: [{ storeId: store.id }, { countryId: shippingRate.countryId }],
 			},
-			update: { ...shippingRate, storeId: store.id },
-			create: { ...shippingRate, storeId: store.id },
 		});
 
-		return shippingRateDetails;
+		if (existingRate) {
+			return await db.shippingRate.update({
+				where: { id: existingRate.id },
+				data: {
+					...shippingRate,
+					storeId: store.id,
+				},
+			});
+		} else {
+			return await db.shippingRate.create({
+				data: {
+					...shippingRate,
+					storeId: store.id,
+				},
+			});
+		}
+
+		// return shippingRateDetails;
 	} catch (error) {
 		// Log and re-throw any errors
 		throw error;

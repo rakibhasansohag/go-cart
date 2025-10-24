@@ -100,7 +100,7 @@ const StoreDetails: FC<StoreDetailsProps> = ({ data }) => {
 		try {
 			// Upserting category data
 			const response = await upsertStore({
-				id: data?.id ? data.id : v4(),
+				...(data?.id && { id: data.id }),
 				name: values.name,
 				description: values.description,
 				email: values.email,
