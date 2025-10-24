@@ -14,22 +14,18 @@ import { checkIfUserFollowingStore } from './product';
 // Returns: Updated or newly created store details.
 export const upsertStore = async (store: Partial<Store>) => {
 	try {
-		// Get current user
 		const user = await currentUser();
 
-		// Ensure user is authenticated
 		if (!user) throw new Error('Unauthenticated.');
 
-		// Verify seller permission
 		if (user.privateMetadata.role !== 'SELLER')
 			throw new Error(
 				'Unauthorized Access: Seller Privileges Required for Entry.',
 			);
 
-		// Ensure store data is provided
 		if (!store) throw new Error('Please provide store data.');
 
-		// Check if store with same name, email,url, or phone number already exists
+		// Check if store with same name, email, url, or phone number already exists
 		const existingStore = await db.store.findFirst({
 			where: {
 				AND: [
@@ -50,7 +46,6 @@ export const upsertStore = async (store: Partial<Store>) => {
 			},
 		});
 
-		// If a store with same name, email, or phone number already exists, throw an error
 		if (existingStore) {
 			let errorMessage = '';
 			if (existingStore.name === store.name) {
@@ -65,33 +60,42 @@ export const upsertStore = async (store: Partial<Store>) => {
 			throw new Error(errorMessage);
 		}
 
-		// Upsert store details into the database
-		const storeDetails = await db.store.upsert({
-			where: {
-				id: store.id,
-			},
-			update: store,
-			create: {
-				// id: store.id, // work on mysql
-				name: store.name!,
-				description: store.description!,
-				email: store.email!,
-				phone: store.phone!,
-				url: store.url!,
-				logo: store.logo!,
-				cover: store.cover!,
-				featured: store.featured ?? false,
-				// createdAt: store.createdAt ?? new Date(),
-				// updatedAt: store.updatedAt ?? new Date(),
-				user: {
-					connect: { id: user.id },
+		// If updating (has an id), use id as the unique identifier
+		if (store.id) {
+			return await db.store.update({
+				where: {
+					id: store.id,
 				},
-			},
-		});
-
-		console.log(storeDetails);
-
-		return storeDetails;
+				data: {
+					name: store.name,
+					description: store.description,
+					email: store.email,
+					phone: store.phone,
+					logo: store.logo,
+					cover: store.cover,
+					url: store.url,
+					featured: store.featured,
+					updatedAt: new Date(),
+				},
+			});
+		} else {
+			// If creating new (no id), let MongoDB generate it
+			return await db.store.create({
+				data: {
+					name: store.name!,
+					description: store.description!,
+					email: store.email!,
+					phone: store.phone!,
+					url: store.url!,
+					logo: store.logo!,
+					cover: store.cover!,
+					featured: store.featured ?? false,
+					user: {
+						connect: { id: user.id },
+					},
+				},
+			});
+		}
 	} catch (error) {
 		console.log(error);
 		throw error;
