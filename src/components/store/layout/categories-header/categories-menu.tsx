@@ -18,19 +18,12 @@ export default function CategoriesMenu({
 
 	const toggleMenu = (state: boolean) => {
 		setOpen(state);
-		// Delay showing the dropdown until the trigger has finished expanding
-		if (state) {
-			setTimeout(() => {
-				setDropdownVisible(true);
-			}, 100);
-		} else {
-			setDropdownVisible(false);
-		}
+		setDropdownVisible(state);
 	};
 
 	return (
 		<div
-			className='relative w-10 h-10 xl:w-[256px] z-50'
+			className='relative w-10 h-12 xl:w-[256px] xl:h-11 z-50'
 			onMouseEnter={() => toggleMenu(true)}
 			onMouseLeave={() => toggleMenu(false)}
 		>

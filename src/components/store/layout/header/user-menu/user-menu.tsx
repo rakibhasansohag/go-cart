@@ -169,7 +169,7 @@ const extraLinks = [
 	},
 	{
 		title: 'Help Center',
-		link: '',
+		link: '#',
 	},
 	{
 		title: 'Return & Refund Policy',
@@ -177,18 +177,18 @@ const extraLinks = [
 	},
 	{
 		title: 'Legal & Privacy',
-		link: '',
+		link: '#',
 	},
 	{
 		title: 'Discounts & Offers',
-		link: '',
+		link: '#',
 	},
 	{
 		title: 'Order Dispute Resolution',
-		link: '',
+		link: '#',
 	},
 	{
 		title: 'Report a Problem',
-		link: '',
+		link: '#',
 	},
 ];

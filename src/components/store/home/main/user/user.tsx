@@ -114,7 +114,7 @@ export default async function HomeUserCard({
 							backgroundImage: 'url(/assets/images/ads/user-card-ad.png)',
 						}}
 					>
-						<Link href=''>
+						<Link href='/browse'>
 							<div className='h-24'>
 								<div className='mt-2.5 text-main-primary leading-[18px] text-[13px] overflow-hidden'>
 									Your favorite store

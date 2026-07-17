@@ -37,7 +37,7 @@ export default function DownloadApp() {
 								</h3>
 								<div className='mt-4 flex items-center gap-x-2'>
 									<Link
-										href=''
+										href='#'
 										className='rounded-3xl bg-black grid place-items-center px-4 py-3 '
 									>
 										<Image
@@ -48,7 +48,7 @@ export default function DownloadApp() {
 										/>
 									</Link>
 									<Link
-										href=''
+										href='#'
 										className='rounded-3xl bg-black grid place-items-center px-4 py-3'
 									>
 										<Image
