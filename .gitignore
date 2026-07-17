@@ -44,3 +44,28 @@ next-env.d.ts
 
 old_code
 
+# graphify-out — only keep the report, graph.json, and wiki for reference
+# Ignore everything by default, then opt-in the files we want
+graphify-out/
+!graphify-out/GRAPH_REPORT.md
+!graphify-out/graph.json
+!graphify-out/wiki/
+!graphify-out/wiki/**
+
+# graphify internal build artifacts (never commit)
+graphify-out/.graphify_*
+graphify-out/graph.html
+graphify-out/obsidian/
+graphify-out/GRAPH_TREE.html
+graphify-out/cypher.txt
+graphify-out/graph.svg
+graphify-out/graph.graphml
+graphify-out/merged-graph.json
+
+# SQL backup dumps (large, binary-like — use Neon for data)
+backup.sql
+gocart_backup.sql
+
+# scratch files
+scratch-test-mysql.ts
+migrate-to-neon.ts

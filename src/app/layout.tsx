@@ -31,13 +31,13 @@ const barlowFont = Barlow({
 export const metadata: Metadata = {
 	title: 'GoCart | Multi-Vendor E-commerce Platform',
 	description:
-		'GoCart is a modern multi-vendor e-commerce platform where sellers can manage products and buyers can shop seamlessly. Built with Next.js and MySQL.',
+		'GoCart is a modern multi-vendor e-commerce platform where sellers can manage products and buyers can shop seamlessly. Built with Next.js and PostgreSQL.',
 	metadataBase: new URL('http://localhost:3000'),
 	keywords: [
 		'GoCart',
 		'Multi Vendor Ecommerce',
 		'Next.js Ecommerce',
-		'MySQL Ecommerce',
+		'PostgreSQL Ecommerce',
 		'Marketplace',
 		'Online Shopping',
 		'Vendor Dashboard',
@@ -49,7 +49,7 @@ export const metadata: Metadata = {
 	openGraph: {
 		title: 'GoCart | Multi-Vendor E-commerce',
 		description:
-			'A full-featured marketplace built with Next.js and MySQL. Shop or sell with ease on GoCart.',
+			'A full-featured marketplace built with Next.js and PostgreSQL. Shop or sell with ease on GoCart.',
 		url: 'http://localhost:3000',
 		siteName: 'GoCart',
 		images: [
