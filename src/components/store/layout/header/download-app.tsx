@@ -22,7 +22,7 @@ export default function DownloadApp() {
 				</div>
 			</div>
 			{/* Content */}
-			<div className='absolute hidden top-0 group-hover:block cursor-pointer'>
+			<div className='absolute hidden top-0 group-hover:block'>
 				<div className='relative mt-12 -ml-20 w-[300px] bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-700/40 rounded-3xl text-foreground pt-2 px-1 pb-6 z-50 shadow-lg'>
 					{/* Triangle */}
 					<div

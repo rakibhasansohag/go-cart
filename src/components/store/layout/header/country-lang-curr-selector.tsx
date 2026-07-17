@@ -82,7 +82,7 @@ export default function CountryLanguageCurrencySelector({
 				</div>
 			</div>
 			{/* Content */}
-			<div className='absolute hidden top-0 group-hover:block cursor-pointer'>
+			<div className='absolute hidden top-0 group-hover:block'>
 				<div className='relative mt-12 -ml-32 w-[300px] bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-700/40 rounded-[24px] text-foreground pt-2 px-6 pb-6 z-50 shadow-lg'>
 					{/* Triangle */}
 					<div className='w-0 h-0 absolute -top-1.5 right-24 border-l-[10px] border-l-transparent border-b-[10px] border-white dark:border-b-slate-900 border-r-[10px] border-r-transparent' />
