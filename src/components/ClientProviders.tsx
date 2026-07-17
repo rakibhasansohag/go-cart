@@ -25,7 +25,6 @@ export default function ClientProviders({ children }: Props) {
 				attribute='class'
 				defaultTheme='system'
 				enableSystem
-				disableTransitionOnChange
 			>
 				<ModalProvider>
 					<main>{children}</main>

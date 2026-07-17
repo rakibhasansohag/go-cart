@@ -1126,3 +1126,21 @@ iframe[src*="cloudinary"] {
 :root.dark .card .content .brand {
   color: #9ca3af !important;
 }
+
+/* Smooth global theme transitions */
+body,
+header,
+footer,
+.card,
+button,
+select,
+input,
+span,
+a,
+div[class*="bg-"] {
+  transition: background-color 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+    border-color 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+    color 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+    fill 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+    stroke 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}

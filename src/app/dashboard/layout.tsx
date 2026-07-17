@@ -8,7 +8,6 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 				attribute='class'
 				defaultTheme='light'
 				enableSystem
-				disableTransitionOnChange
 			>
 				{children}
 			</ThemeProvider>
