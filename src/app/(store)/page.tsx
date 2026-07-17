@@ -98,7 +98,7 @@ export default async function HomePage() {
 
 							<div>
 								{/* Header */}
-								<div className='text-center h-[32px] leading-[32px] text-[24px] font-extrabold text-main-primary flex justify-center'>
+								<div className='text-center h-[32px] leading-[32px] text-[24px] font-extrabold text-foreground flex justify-center'>
 									<div className='h-[1px] flex-1 border-t-[2px] border-t-[hsla(0,0%,59.2%,.3)] my-4 mx-[14px]' />
 									<span>More to love</span>
 									<div className='h-[1px] flex-1 border-t-[2px] border-t-[hsla(0,0%,59.2%,.3)] my-4 mx-[14px]' />
