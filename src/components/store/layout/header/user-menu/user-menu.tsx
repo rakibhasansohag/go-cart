@@ -67,13 +67,13 @@ export default async function UserMenu() {
 								) : (
 									<div className='space-y-1'>
 										<Link href='/sign-in'>
-											<Button className='w-full bg-main-primary text-white hover:opacity-90'>
+											<Button className='w-full bg-foreground text-background hover:opacity-90 rounded-xl'>
 												Sign in
 											</Button>
 										</Link>
 										<Link
 											href='/sign-up'
-											className='h-10 text-sm text-main-primary flex items-center justify-center hover:underline'
+											className='h-10 text-sm text-foreground flex items-center justify-center hover:underline'
 										>
 											Register
 										</Link>

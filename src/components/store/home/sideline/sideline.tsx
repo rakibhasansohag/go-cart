@@ -10,7 +10,7 @@ import SocialShare from '../../shared/social-share';
 export default function Sideline() {
 	return (
 		<div>
-			<div className='z-30 w-10 h-full absolute top-0 right-0 bg-gradient-to-t from-slate-500 to-slate-800 text-[13px] duration-100'>
+			<div className='z-30 w-10 h-full absolute top-0 right-0 bg-slate-900 border-l border-slate-800 text-[13px] duration-100'>
 				<div className='fixed top-[35%] -translate-y-1/2 text-center'>
 					<Link
 						href='/profile'
