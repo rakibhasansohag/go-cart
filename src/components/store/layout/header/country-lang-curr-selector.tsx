@@ -27,6 +27,8 @@ export default function CountryLanguageCurrencySelector({
 
 	// State to manage countries dropdown visibility
 	const [show, setShow] = useState(false);
+	const [language, setLanguage] = useState('en');
+	const [currency, setCurrency] = useState('BDT');
 
 	const handleCountryClick = async (country: string) => {
 		// Find the country data based on the selected country name
@@ -104,9 +106,17 @@ export default function CountryLanguageCurrencySelector({
 								<div className='mt-4 leading-6 text-[20px] font-bold text-foreground'>
 									Language
 								</div>
-								<div className='relative mt-2.5 h-10 py-0 px-3 border-[1px] border-black/20 dark:border-white/20 rounded-lg flex items-center cursor-pointer overflow-hidden text-ellipsis whitespace-nowrap text-foreground'>
-									<div className='align-middle text-foreground'>English</div>
-									<span className='absolute right-2'>
+								<div className='relative mt-2.5 h-10 border-[1px] border-black/20 dark:border-white/20 rounded-lg flex items-center cursor-pointer text-foreground bg-transparent'>
+									<select
+										value={language}
+										onChange={(e) => setLanguage(e.target.value)}
+										className='w-full h-full bg-transparent px-3 outline-none cursor-pointer appearance-none text-sm text-foreground pr-8'
+									>
+										<option value='en' className='bg-white dark:bg-slate-900 text-foreground'>English</option>
+										<option value='es' className='bg-white dark:bg-slate-900 text-foreground'>Español</option>
+										<option value='fr' className='bg-white dark:bg-slate-900 text-foreground'>Français</option>
+									</select>
+									<span className='absolute right-2 pointer-events-none'>
 										<ChevronDown className='text-foreground scale-75' />
 									</span>
 								</div>
@@ -115,9 +125,17 @@ export default function CountryLanguageCurrencySelector({
 								<div className='mt-4 leading-6 text-[20px] font-bold text-foreground'>
 									Currency
 								</div>
-								<div className='relative mt-2 h-10 py-0 px-3 border-[1px] border-black/20 dark:border-white/20 rounded-lg flex items-center cursor-pointer overflow-hidden text-ellipsis whitespace-nowrap text-foreground'>
-									<div className='align-middle text-foreground'>BDT (BD TAKA - বাংলা)</div>
-									<span className='absolute right-2'>
+								<div className='relative mt-2 h-10 border-[1px] border-black/20 dark:border-white/20 rounded-lg flex items-center cursor-pointer text-foreground bg-transparent'>
+									<select
+										value={currency}
+										onChange={(e) => setCurrency(e.target.value)}
+										className='w-full h-full bg-transparent px-3 outline-none cursor-pointer appearance-none text-sm text-foreground pr-8'
+									>
+										<option value='BDT' className='bg-white dark:bg-slate-900 text-foreground'>BDT (BD TAKA - বাংলা)</option>
+										<option value='USD' className='bg-white dark:bg-slate-900 text-foreground'>USD (US Dollar - $)</option>
+										<option value='EUR' className='bg-white dark:bg-slate-900 text-foreground'>EUR (Euro - €)</option>
+									</select>
+									<span className='absolute right-2 pointer-events-none'>
 										<ChevronDown className='text-foreground scale-75' />
 									</span>
 								</div>
