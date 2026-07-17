@@ -52,8 +52,8 @@ export default function CountrySelector({
 				<button
 					type='button'
 					className={`${
-						disabled ? 'bg-neutral-100' : 'bg-white'
-					} relative w-full border border-black/20 rounded-md pl-3 pr-10 py-2 text-left cursor-default focus:outline-none focus:ring-1  sm:text-sm`}
+						disabled ? 'bg-neutral-100 dark:bg-neutral-800' : 'bg-white dark:bg-slate-800'
+					} relative w-full border border-black/20 dark:border-white/20 rounded-md pl-3 pr-10 py-2 text-left cursor-default focus:outline-none focus:ring-1 sm:text-sm text-foreground`}
 					aria-haspopup='listbox'
 					aria-expanded='true'
 					aria-labelledby='listbox-label'
@@ -96,24 +96,24 @@ export default function CountrySelector({
 							animate={{ opacity: 1 }}
 							exit={{ opacity: 0 }}
 							transition={{ duration: 0.1 }}
-							className='absolute z-10 mt-1 shadow-sm w-full bg-white max-h-80 rounded-md text-base ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm'
+							className='absolute z-10 mt-1 shadow-sm w-full bg-white dark:bg-slate-900 max-h-80 rounded-md text-base ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm text-foreground'
 							tabIndex={-1}
 							role='listbox'
 							aria-labelledby='listbox-label'
 							aria-activedescendant='listbox-option-3'
 						>
-							<div className='sticky top-0 z-10 bg-white'>
-								<li className=' text-gray-900 cursor-default select-none relative py-2 px-3'>
+							<div className='sticky top-0 z-10 bg-white dark:bg-slate-900'>
+								<li className='text-foreground cursor-default select-none relative py-2 px-3'>
 									<input
 										type='search'
 										name='search'
 										autoComplete={'off'}
-										className=' block w-full sm:text-sm rounded-md outline-none'
+										className='block w-full sm:text-sm rounded-md outline-none bg-transparent text-foreground placeholder-muted-foreground'
 										placeholder={'Search a country'}
 										onChange={(e) => setQuery(e.target.value)}
 									/>
 								</li>
-								<hr />
+								<hr className='border-gray-200 dark:border-slate-800' />
 							</div>
 
 							<div
@@ -124,7 +124,7 @@ export default function CountrySelector({
 								{COUNTRIES.filter((country) =>
 									country.name.toLowerCase().startsWith(query.toLowerCase()),
 								).length === 0 ? (
-									<li className='text-gray-900 cursor-default select-none relative py-2 pl-3 pr-9'>
+									<li className='text-foreground cursor-default select-none relative py-2 pl-3 pr-9'>
 										No countries found
 									</li>
 								) : (
@@ -134,7 +134,7 @@ export default function CountrySelector({
 										return (
 											<li
 												key={`${id}-${index}`}
-												className='text-gray-900 cursor-default select-none relative py-2 pl-3 pr-9 flex items-center hover:bg-gray-50 transition'
+												className='text-foreground cursor-default select-none relative py-2 pl-3 pr-9 flex items-center hover:bg-gray-100 dark:hover:bg-slate-800 transition'
 												id='listbox-option-0'
 												role='option'
 												tabIndex={index}

@@ -58,7 +58,10 @@ export default function CountryLanguageCurrencySelector({
 	};
 
 	return (
-		<div className='relative inline-block group'>
+		<div 
+			className='relative inline-block group'
+			onMouseLeave={() => setShow(false)}
+		>
 			{/* Trigger */}
 			<div>
 				<div className='flex items-center h-11 py-0 px-2 cursor-pointer'>
@@ -80,12 +83,12 @@ export default function CountryLanguageCurrencySelector({
 			</div>
 			{/* Content */}
 			<div className='absolute hidden top-0 group-hover:block cursor-pointer'>
-				<div className='relative mt-12 -ml-32 w-[300px]  bg-white rounded-[24px] text-main-primary pt-2 px-6 pb-6 z-50 shadow-lg'>
+				<div className='relative mt-12 -ml-32 w-[300px] bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-700/40 rounded-[24px] text-foreground pt-2 px-6 pb-6 z-50 shadow-lg'>
 					{/* Triangle */}
-					<div className='w-0 h-0 absolute -top-1.5 right-24 border-l-[10px] border-l-transparent border-b-[10px] border-white border-r-[10px] border-r-transparent' />
-					<div className='mt-4 leading-6 text-[20px] font-bold'>Ship to</div>
+					<div className='w-0 h-0 absolute -top-1.5 right-24 border-l-[10px] border-l-transparent border-b-[10px] border-white dark:border-b-slate-900 border-r-[10px] border-r-transparent' />
+					<div className='mt-4 leading-6 text-[20px] font-bold text-foreground'>Ship to</div>
 					<div className='mt-2'>
-						<div className='relative text-main-primary bg-white rounded-lg'>
+						<div className='relative text-foreground bg-transparent rounded-lg'>
 							<CountrySelector
 								id={'countries'}
 								open={show}
@@ -98,24 +101,24 @@ export default function CountryLanguageCurrencySelector({
 								}
 							/>
 							<div>
-								<div className='mt-4 leading-6 text-[20px] font-bold'>
+								<div className='mt-4 leading-6 text-[20px] font-bold text-foreground'>
 									Language
 								</div>
-								<div className='relative mt-2.5 h-10 py-0 px-3 border-[1px] border-black/20 rounded-lg  flex items-center cursor-pointer overflow-hidden text-ellipsis whitespace-nowrap'>
-									<div className='align-middle'>English</div>
+								<div className='relative mt-2.5 h-10 py-0 px-3 border-[1px] border-black/20 dark:border-white/20 rounded-lg flex items-center cursor-pointer overflow-hidden text-ellipsis whitespace-nowrap text-foreground'>
+									<div className='align-middle text-foreground'>English</div>
 									<span className='absolute right-2'>
-										<ChevronDown className='text-main-primary scale-75' />
+										<ChevronDown className='text-foreground scale-75' />
 									</span>
 								</div>
 							</div>
 							<div>
-								<div className='mt-4 leading-6 text-[20px] font-bold'>
+								<div className='mt-4 leading-6 text-[20px] font-bold text-foreground'>
 									Currency
 								</div>
-								<div className='relative mt-2 h-10 py-0 px-3 border-[1px] border-black/20 rounded-lg  flex items-center cursor-pointer overflow-hidden text-ellipsis whitespace-nowrap'>
-									<div className='align-middle'>BDT (BD TAKA - বাংলা)</div>
+								<div className='relative mt-2 h-10 py-0 px-3 border-[1px] border-black/20 dark:border-white/20 rounded-lg flex items-center cursor-pointer overflow-hidden text-ellipsis whitespace-nowrap text-foreground'>
+									<div className='align-middle text-foreground'>BDT (BD TAKA - বাংলা)</div>
 									<span className='absolute right-2'>
-										<ChevronDown className='text-main-primary scale-75' />
+										<ChevronDown className='text-foreground scale-75' />
 									</span>
 								</div>
 							</div>
