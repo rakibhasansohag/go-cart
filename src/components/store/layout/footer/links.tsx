@@ -6,11 +6,11 @@ export default function Links({ subs }: { subs: SubCategory[] }) {
 		<div className='grid md:grid-cols-3 gap-4 mt-5 text-sm'>
 			{/* SubCategories */}
 			<div className='space-y-4'>
-				<h1 className='text-lg font-bold'>Find it Fast</h1>
-				<ul className='flex flex-col gap-y-1'>
+				<h1 className='text-lg font-bold text-foreground'>Find it Fast</h1>
+				<ul className='flex flex-col gap-y-1.5'>
 					{subs.map((sub) => (
 						<Link key={sub.id} href={`/browse?subCategory=${sub.url}`}>
-							<li>
+							<li className='text-muted-foreground hover:text-foreground transition-colors duration-150'>
 								<span>{sub.name}</span>
 							</li>
 						</Link>
@@ -19,11 +19,11 @@ export default function Links({ subs }: { subs: SubCategory[] }) {
 			</div>
 			{/* Profile links */}
 			<div className='space-y-4 '>
-				<h1 className='text-lg font-bold'>Profile</h1>
-				<ul className='flex flex-col gap-y-1'>
+				<h1 className='text-lg font-bold text-foreground'>Profile</h1>
+				<ul className='flex flex-col gap-y-1.5'>
 					{footer_links.slice(0, 6).map((link) => (
 						<Link href={link.link} key={link.link}>
-							<li className=''>
+							<li className='text-muted-foreground hover:text-foreground transition-colors duration-150'>
 								<span>{link.title}</span>
 							</li>
 						</Link>
@@ -31,11 +31,11 @@ export default function Links({ subs }: { subs: SubCategory[] }) {
 				</ul>
 			</div>
 			<div className='space-y-4'>
-				<h1 className='text-lg font-bold'>Customer care</h1>
-				<ul className='flex flex-col gap-y-1'>
+				<h1 className='text-lg font-bold text-foreground'>Customer care</h1>
+				<ul className='flex flex-col gap-y-1.5'>
 					{footer_links.slice(6).map((link) => (
 						<Link href={link.link} key={link.link}>
-							<li>
+							<li className='text-muted-foreground hover:text-foreground transition-colors duration-150'>
 								<span>{link.title}</span>
 							</li>
 						</Link>
