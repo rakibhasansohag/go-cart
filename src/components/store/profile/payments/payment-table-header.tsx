@@ -1,3 +1,4 @@
+import { Button } from '@/components/store/ui/button';
 import { PaymentTableDateFilter, PaymentTableFilter } from '@/lib/types';
 import { cn } from '@/lib/utils';
 
@@ -118,11 +119,14 @@ const PaymentTableHeader: FC<Props> = ({
 					/>
 					{/* Search icon */}
 					<span className='-ml-[1px] rounded-r-md relative bg-background text-center'>
-						<button className='rounded-r-md min-w-[52px] h-8 text-main-primary bg-[linear-gradient(90deg,_#ff640e,_#ff3000)] grid place-items-center'>
+						<Button
+							variant='unstyled'
+							className='rounded-r-md min-w-[52px] h-8 text-main-primary bg-[linear-gradient(90deg,_#ff640e,_#ff3000)] grid place-items-center'
+						>
 							<span className='text-2xl inline-block cursor-pointer'>
 								<SearchIcon />
 							</span>
-						</button>
+						</Button>
 					</span>
 				</div>
 				{/* Filter by date */}

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Home, ShoppingBag } from 'lucide-react';
+import { Button } from '@/components/store/ui/button';
 
 export default function NotFound() {
 	const router = useRouter();
@@ -124,13 +125,14 @@ export default function NotFound() {
 				transition={{ duration: 0.5, delay: 0.4 }}
 				className='flex flex-wrap gap-4 mt-10 justify-center relative z-10'
 			>
-				<button
+				<Button
 					onClick={() => router.back()}
+					variant='unstyled'
 					className='inline-flex items-center justify-center gap-x-2 px-6 h-12 rounded-full border border-border bg-background hover:bg-f5 text-main-primary text-sm font-semibold transition-all duration-200 cursor-pointer'
 				>
 					<ArrowLeft className='w-4 h-4' />
 					Go Back
-				</button>
+				</Button>
 
 				<Link
 					href='/'

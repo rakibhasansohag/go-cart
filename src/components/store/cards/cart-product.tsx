@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { Button } from '@/components/store/ui/button';
 import { useCartStore } from '@/cart-store/useCartStore';
 import { CartProductType, Country } from '@/lib/types';
 import { cn } from '@/lib/utils';
@@ -257,7 +258,10 @@ const CartProduct: FC<Props> = ({
 						</div>
 						{/* Style - size */}
 						<div className='my-1'>
-							<button className='text-main-primary relative h-[24px] bg-gray-100 dark:bg-gray-700 whitespace-normal px-2.5 py-0 max-w-full text-xs leading-4 rounded-xl font-bold cursor-pointer  outline-0'>
+							<Button
+								variant='unstyled'
+								className='text-main-primary relative h-[24px] bg-gray-100 dark:bg-gray-700 whitespace-normal px-2.5 py-0 max-w-full text-xs leading-4 rounded-xl font-bold cursor-pointer outline-0'
+							>
 								<span className='flex items-center justify-between flex-wrap'>
 									<div className='text-left inline-block overflow-hidden text-ellipsis whitespace-nowrap max-w-[95%]'>
 										{size}
@@ -266,7 +270,7 @@ const CartProduct: FC<Props> = ({
 										<ChevronRight className='w-3' />
 									</span>
 								</span>
-							</button>
+							</Button>
 						</div>
 						{/* Price - Delivery */}
 						<div className='flex flex-col gap-y-2 sm:flex-row sm:items-center sm:justify-between mt-2 relative'>

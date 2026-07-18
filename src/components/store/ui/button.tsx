@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { Slot } from '@radix-ui/react-slot';
 import { cva, type VariantProps } from 'class-variance-authority';
+import { motion } from 'framer-motion';
 
 import { cn } from '@/lib/utils';
 
@@ -17,6 +18,7 @@ const buttonVariants = cva(
 				'orange-gradient':
 					'bg-gradient-to-r from-red-600 to-orange-500 hover:bg-gradient-to-l text-white inline-block w-full h-[36px] leading-[36px] text-[14px] font-bold text-center rounded-full cursor-pointer',
 				gray: 'bg-f5 text-main-primary border-f5 inline-block w-full h-[36px] leading-[36px] text-[14px] font-bold text-center rounded-full cursor-pointer',
+				unstyled: '',
 			},
 			size: {
 				default: 'h-11 py-2',
@@ -44,19 +46,26 @@ export interface ButtonProps
 	asChild?: boolean;
 }
 
+const MotionSlot = motion.create(Slot);
+
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
 	(
 		{ className, variant, size, width, rounded, asChild = false, ...props },
 		ref,
 	) => {
-		const Comp = asChild ? Slot : 'button';
+		const Comp = asChild ? MotionSlot : motion.button;
 		return (
 			<Comp
-				className={cn(
-					buttonVariants({ variant, size, width, rounded, className }),
-				)}
-				ref={ref}
-				{...props}
+				whileHover={{ scale: 1.02 }}
+				whileTap={{ scale: 0.96 }}
+				transition={{ type: 'spring', stiffness: 450, damping: 18 }}
+				className={
+					variant === 'unstyled'
+						? className
+						: cn(buttonVariants({ variant, size, width, rounded, className }))
+				}
+				ref={ref as any}
+				{...(props as any)}
 			/>
 		);
 	},

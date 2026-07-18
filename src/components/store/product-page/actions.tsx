@@ -1,4 +1,5 @@
 'use client';
+import { Button } from '@/components/store/ui/button';
 import { useEffect, useState } from 'react';
 import QuantitySelector from './quantity-selector';
 import ReturnPrivacySecurityCard from './returns-security-privacy-card';
@@ -123,30 +124,21 @@ export default function ProductPageActions({
 						/>
 					</div>
 				)}
-				<button
-					disabled={!isProductValid}
+				<Button
+					disabled={!isProductValid || maxQty <= 0}
 					onClick={() => handleBuy()}
-					className={cn(
-						'relative w-full py-2.5 min-w-20 bg-orange-background hover:bg-orange-hover text-white h-11 rounded-3xl leading-6 inline-block font-bold whitespace-nowrap border border-orange-border cursor-pointer transition-all duration-300 ease-bezier-1 select-none',
-						{
-							'cursor-not-allowed': !isProductValid || maxQty <= 0,
-						},
-					)}
+					className='w-full'
 				>
 					<span>Buy now</span>
-				</button>
-				<button
-					disabled={!isProductValid}
-					className={cn(
-						'relative w-full py-2.5 min-w-20 bg-orange-border hover:bg-orange-border/80 text-orange-hover h-11 rounded-3xl leading-6 inline-block font-bold whitespace-nowrap border border-orange-border cursor-pointer transition-all duration-300 ease-bezier-1 select-none',
-						{
-							'cursor-not-allowed': !isProductValid || maxQty <= 0,
-						},
-					)}
+				</Button>
+				<Button
+					variant='outline'
+					disabled={!isProductValid || maxQty <= 0}
+					className='w-full'
 					onClick={() => handleAddToCart()}
 				>
 					<span>Add to cart</span>
-				</button>
+				</Button>
 				<SocialShare
 					url=''
 					quote=''
