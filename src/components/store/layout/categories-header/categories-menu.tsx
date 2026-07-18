@@ -41,7 +41,7 @@ export default function CategoriesMenu({
 				<div
 					onClick={() => toggleMenu(!dropdownVisible)}
 					className={cn(
-						'w-12 xl:w-[256px] h-12 rounded-full -translate-y-1 xl:translate-y-0 xl:h-11 bg-[#535353] text-white text-[20px] relative flex items-center cursor-pointer transition-all duration-100 ease-in-out',
+						'w-12 xl:w-[256px] h-12 rounded-full -translate-y-1 xl:translate-y-0 xl:h-11 bg-neutral-600 text-white text-[20px] relative flex items-center cursor-pointer transition-all duration-100 ease-in-out',
 						{
 							'w-[256px] bg-f5 text-main-primary text-base rounded-t-[20px] rounded-b-none scale-100':
 								open,
