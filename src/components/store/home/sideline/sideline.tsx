@@ -18,12 +18,12 @@ export default function Sideline() {
             bg-[url('/assets/images/sideline/gift.avif')] hover:bg-[url('/assets/images/sideline/gift-opened.avif')] bg-cover"
 					>
 						<span
-							className='hidden group-hover:block absolute -left-[160px] top-0.5 bg-[#373737] text-white px-4
+							className='hidden group-hover:block absolute -left-[160px] top-0.5 bg-neutral-700 text-white px-4
              py-[0.8rem] rounded-sm transition-all duration-500 ease-linear'
 						>
 							Check your profile
 						</span>
-						<div className='hidden group-hover:block w-0 h-0 border-[12px] border-transparent border-l-[#373737] border-r-0 absolute left-[-15px] top-[38%] transition-all duration-500 ease-in-out' />
+						<div className='hidden group-hover:block w-0 h-0 border-[12px] border-transparent border-l-neutral-700 border-r-0 absolute left-[-15px] top-[38%] transition-all duration-500 ease-in-out' />
 					</Link>
 					<SidelineItem link='/profile' image={CouponImg}>
 						Coupons

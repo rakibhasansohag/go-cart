@@ -316,12 +316,12 @@ const CartProduct: FC<Props> = ({
 						</div>
 						{/* Shipping info */}
 						{stock > 0 && (
-							<div className='mt-1 text-xs text-[#999] cursor-pointer'>
+							<div className='mt-1 text-xs text-neutral-400 cursor-pointer'>
 								<div className='flex items-center mb-1'>
 									<span>
-										<Truck className='w-4 inline-block text-[#01A971]' />
+										<Truck className='w-4 inline-block text-emerald-600' />
 										{shippingInfo.totalFee > 0 ? (
-											<span className='text-[#01A971] ml-1'>
+											<span className='text-emerald-600 ml-1'>
 												{shippingMethod === 'ITEM' ? (
 													<>
 														${shippingInfo.initialFee} (first item)
@@ -343,7 +343,7 @@ const CartProduct: FC<Props> = ({
 												)}
 											</span>
 										) : (
-											<span className='text-[#01A971] ml-1'>Free Delivery</span>
+											<span className='text-emerald-600 ml-1'>Free Delivery</span>
 										)}
 									</span>
 								</div>

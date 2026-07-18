@@ -55,7 +55,7 @@ const CartHeader: FC<Props> = ({
 		<div className='bg-background py-4'>
 			<div>
 				<div className='px-6 bg-background'>
-					<div className='flex items-center text-[#222] dark:text-[#fff] font-bold text-2xl'>
+					<div className='flex items-center text-main-primary font-bold text-2xl'>
 						<h1>Cart ({cartLength})</h1>
 					</div>
 				</div>
@@ -88,10 +88,10 @@ const CartHeader: FC<Props> = ({
 						</label>
 						{selectedLength > 0 && (
 							<div
-								className='pl-4 border-l border-l-[#ebebeb] cursor-pointer'
+								className='pl-4 border-l border-l-border cursor-pointer'
 								onClick={() => removeSelectedFromCart()}
 							>
-								<div className='text-[#3170ee] font-semibold text-sm leading-5'>
+								<div className='text-blue-primary font-semibold text-sm leading-5'>
 									Delete all selected products
 								</div>
 							</div>

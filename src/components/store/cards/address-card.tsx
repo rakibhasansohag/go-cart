@@ -103,11 +103,11 @@ const ShippingAddressCard: FC<Props> = ({
 						className='cursor-pointer hidden group-hover:block'
 						onClick={() => setShow(true)}
 					>
-						<span className='text-xs text-[#27f]'>Edit</span>
+						<span className='text-xs text-blue-500'>Edit</span>
 					</div>
 					{isSelected && !address.default && (
 						<div className='cursor-pointer' onClick={() => handleMakeDefault()}>
-							<span className='text-xs text-[#27f]'>Save as default</span>
+							<span className='text-xs text-blue-500'>Save as default</span>
 						</div>
 					)}
 				</div>

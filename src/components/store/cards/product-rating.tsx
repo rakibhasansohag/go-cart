@@ -18,7 +18,7 @@ export default function RatingCard({ rating }: { rating: number }) {
 						edit={false}
 					/>
 				</div>
-				<div className='text-[#03c97a] leading-5 mt-2'>
+				<div className='text-emerald-500 leading-5 mt-2'>
 					All from verified purchases
 				</div>
 			</div>

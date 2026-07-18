@@ -37,7 +37,7 @@ const SearchSuggestions: FC<Props> = ({ suggestions, query }) => {
 					{suggestions.map((sugg) => (
 						<li
 							key={sugg.name}
-							className='w-full h-20 px-6 cursor-pointer hover:bg-[#f5f5f5] dark:hover:bg-[#222] flex items-center gap-x-2'
+							className='w-full h-20 px-6 cursor-pointer hover:bg-f5 flex items-center gap-x-2'
 							onClick={() => handlePush(sugg.link)}
 						>
 							<Image

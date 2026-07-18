@@ -97,7 +97,7 @@ const PlaceOrderCard: FC<Props> = ({
 							/>
 						</svg>
 						<div className='mx-2 5 overflow-hidden w-full'>
-							<p className='mt-1.5 text-xl font-bold text-[#66cdaa] leading-8 mr-3 overflow-hidden text-ellipsis whitespace-nowrap'>
+							<p className='mt-1.5 text-xl font-bold text-emerald-400 leading-8 mr-3 overflow-hidden text-ellipsis whitespace-nowrap'>
 								Coupon applied !
 							</p>
 							<p className='overflow-hidden leading-5 break-all text-zinc-400 max-h-10'>

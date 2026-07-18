@@ -88,7 +88,7 @@ const ProductInfo: FC<Props> = ({
 						SKU: {variant.sku}
 					</span>
 					<span
-						className='inline-block align-middle text-[#2F68A8] mx-1 cursor-pointer'
+						className='inline-block align-middle text-blue-primary mx-1 cursor-pointer'
 						onClick={copySkuToClipboard}
 					>
 						<CopyIcon />
@@ -104,7 +104,7 @@ const ProductInfo: FC<Props> = ({
 						isHalf
 						edit={false}
 					/>
-					<Link href='#reviews' className='text-[#ffd804] hover:underline'>
+					<Link href='#reviews' className='text-yellow-500 hover:underline'>
 						(
 						{numReviews === 0
 							? 'No review yet'

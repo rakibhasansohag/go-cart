@@ -75,8 +75,8 @@ export default function CheckoutProductCard({
 							<div className='mt-1 text-xs cursor-pointer'>
 								<div className='flex items-center mb-1'>
 									<span>
-										<Truck className='w-4 inline-block text-[#01a971]' />
-										<span className='text-[#01a971] ml-1'>
+										<Truck className='w-4 inline-block text-emerald-600' />
+										<span className='text-emerald-600 ml-1'>
 											{shippingFee
 												? `$${shippingFee.toFixed(2)}`
 												: 'Free Delivery'}

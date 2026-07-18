@@ -122,7 +122,7 @@ const ReviewsHeader: FC<Props> = ({
 					/>
 					{/* Search icon */}
 					<span className='-ml-[1px] rounded-r-md relative bg-background text-center'>
-						<button className='rounded-r-md min-w-[52px] h-8 text-main-primary bg-[linear-gradient(90deg,_#ff640e,_#ff3000)] grid place-items-center'>
+						<button className='rounded-r-md min-w-[52px] h-8 text-white bg-gradient-to-r from-orange-primary to-orange-secondary grid place-items-center'>
 							<span className='text-2xl inline-block cursor-pointer'>
 								<SearchIcon />
 							</span>
@@ -134,7 +134,7 @@ const ReviewsHeader: FC<Props> = ({
 					{/* Select */}
 					<div className='relative mb-4 w-fit'>
 						<select
-							className='h-8 px-4 w-40 appearance-none outline-none cursor-pointer hover:border-[1px] hover:border-[#ff640e] border rounded-md'
+							className='h-8 px-4 w-40 appearance-none outline-none cursor-pointer hover:border-[1px] hover:border-orange-primary border rounded-md'
 							value={period}
 							onChange={(e) =>
 								setPeriod(e.target.value as PaymentTableDateFilter)

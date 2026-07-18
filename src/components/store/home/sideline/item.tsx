@@ -22,7 +22,7 @@ const SidelineItem: FC<Props> = ({
 }) => {
 	return (
 		<Link href={link}>
-			<div className='relative group mt-4 w-10 h-10  flex items-center justify-center hover:bg-[#ff4747]'>
+			<div className='relative group mt-4 w-10 h-10  flex items-center justify-center hover:bg-red-500'>
 				<Image src={image} width={35} height={35} alt='' />
 				<div
 					className={cn(
@@ -35,7 +35,7 @@ const SidelineItem: FC<Props> = ({
 				>
 					<span
 						className={cn(
-							'bg-[#373737] text-white w-24 px-4 py-[0.8rem] rounded-sm transition-all duration-500 ease-in',
+							'bg-neutral-700 text-white w-24 px-4 py-[0.8rem] rounded-sm transition-all duration-500 ease-in',
 							{
 								'!w-fit': w_fit,
 							},
@@ -45,7 +45,7 @@ const SidelineItem: FC<Props> = ({
 					</span>
 					<div
 						className={cn(
-							'w-0 h-0 border-[12px] border-transparent border-l-[#373737] border-r-0 transition-all duration-500 ease-in-out mt-[11px]',
+							'w-0 h-0 border-[12px] border-transparent border-l-neutral-700 border-r-0 transition-all duration-500 ease-in-out mt-[11px]',
 							arrowClassName,
 						)}
 					/>

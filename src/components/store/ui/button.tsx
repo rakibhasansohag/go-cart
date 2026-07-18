@@ -11,12 +11,12 @@ const buttonVariants = cva(
 			variant: {
 				default: 'bg-orange-background hover:bg-orange-hover',
 				black: 'bg-black',
-				pink: 'bg-[#ffe6e7] text-orange-background hover:bg-[#e4cdce] hover:text-white',
+				pink: 'bg-orange-border text-orange-background hover:bg-orange-border/80 hover:text-white',
 				outline:
 					'bg-transparent hover:bg-orange-background hover:text-white text-orange-background rounded-md border-orange-background px-2 !h-7 text-sm font-normal',
 				'orange-gradient':
-					'bg-gradient-to-r from-[#ff0a0a] to-[#ff7539] hover:bg-gradient-to-l text-white inline-block w-full h-[36px] leading-[36px] text-[14px] font-bold text-center rounded-full cursor-pointer',
-				gray: 'bg-f5 text-main-primary border-[#f5f5f5] inline-block w-full h-[36px] leading-[36px] text-[14px] font-bold text-center rounded-full cursor-pointer',
+					'bg-gradient-to-r from-red-600 to-orange-500 hover:bg-gradient-to-l text-white inline-block w-full h-[36px] leading-[36px] text-[14px] font-bold text-center rounded-full cursor-pointer',
+				gray: 'bg-f5 text-main-primary border-f5 inline-block w-full h-[36px] leading-[36px] text-[14px] font-bold text-center rounded-full cursor-pointer',
 			},
 			size: {
 				default: 'h-11 py-2',
