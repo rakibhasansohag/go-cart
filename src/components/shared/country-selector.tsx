@@ -1,4 +1,3 @@
-/* eslint-disable @next/next/no-img-element */
 import COUNTRIES from '@/data/countries.json';
 import { SelectMenuOption } from '@/lib/types';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -38,9 +37,8 @@ export default function CountrySelector({
 			<div className='mt-1 relative'>
 				<button
 					type='button'
-					className={`${
-						disabled ? 'bg-neutral-100 dark:bg-neutral-800' : 'bg-white dark:bg-slate-800'
-					} relative w-full border border-black/20 dark:border-white/20 rounded-md pl-3 pr-10 py-2 text-left cursor-default focus:outline-none focus:ring-1 sm:text-sm text-foreground`}
+					className={`${disabled ? 'bg-neutral-100 dark:bg-neutral-800' : 'bg-white dark:bg-slate-800'
+						} relative w-full border border-black/20 dark:border-white/20 rounded-md pl-3 pr-10 py-2 text-left cursor-pointer focus:outline-none focus:ring-1 sm:text-sm text-foreground`}
 					aria-haspopup='listbox'
 					aria-expanded='true'
 					aria-labelledby='listbox-label'
@@ -56,9 +54,8 @@ export default function CountrySelector({
 						{selectedValue.name}
 					</span>
 					<span
-						className={`absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none ${
-							disabled ? 'hidden' : ''
-						}`}
+						className={`absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none ${disabled ? 'hidden' : ''
+							}`}
 					>
 						<svg
 							className='h-5 w-5 text-gray-400'
