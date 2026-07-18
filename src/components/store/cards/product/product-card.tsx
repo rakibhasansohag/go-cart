@@ -13,7 +13,13 @@ import ProductPrice from '../../product-page/product-info/product-price';
 import { addToWishlist } from '@/queries/user';
 import { toast } from 'sonner';
 
-export default function ProductCard({ product }: { product: ProductType }) {
+export default function ProductCard({
+	product,
+	className,
+}: {
+	product: ProductType;
+	className?: string;
+}) {
 	const { name, slug, rating, sales, variantImages, variants, id } = product;
 	const [variant, setVariant] = useState<VariantSimplified>(variants[0]);
 	const { variantSlug, variantName, images, sizes } = variant;
@@ -33,7 +39,7 @@ export default function ProductCard({ product }: { product: ProductType }) {
 		<div
 			onMouseEnter={() => setIsHovered(true)}
 			onMouseLeave={() => setIsHovered(false)}
-			className='relative w-[190px] min-[480px]:w-[225px] min-[1530px]:w-full'
+			className={cn(className || 'w-[190px] min-[480px]:w-[225px] min-[1530px]:w-full', 'relative')}
 		>
 			<div
 				className={cn(
