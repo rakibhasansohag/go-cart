@@ -1,12 +1,11 @@
-//React, Nextjs
+'use client';
+// React, Nextjs
 import Image from 'next/image';
 
 // Import Swiper React components
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Autoplay } from 'swiper/modules';
-
-// Import Swiper styles
-import 'swiper/css';
+import type { Swiper as SwiperType } from 'swiper';
 
 // Types
 import { ProductVariantImage } from '@prisma/client';
@@ -17,46 +16,36 @@ export default function ProductCardImageSwiper({
 }: {
 	images: ProductVariantImage[];
 }) {
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const swiperInstanceRef = useRef<any>(null);
+	const swiperInstanceRef = useRef<SwiperType | null>(null);
 
 	return (
 		<div
-			className='relative mb-2 w-full h-[200px] bg-white contrast-[90%] rounded-2xl overflow-hidden'
-			onMouseEnter={() => {
-				if (swiperInstanceRef.current?.autoplay) {
-					swiperInstanceRef.current.autoplay.start();
-				}
-			}}
+			style={{ position: 'relative', width: '100%', height: '200px', overflow: 'hidden', borderRadius: '1rem', marginBottom: '0.5rem', background: 'white' }}
+			onMouseEnter={() => swiperInstanceRef.current?.autoplay?.start()}
 			onMouseLeave={() => {
-				if (swiperInstanceRef.current?.autoplay) {
-					swiperInstanceRef.current.autoplay.stop();
-					swiperInstanceRef.current.slideTo(0);
-				}
+				swiperInstanceRef.current?.autoplay?.stop();
+				swiperInstanceRef.current?.slideTo(0);
 			}}
 		>
 			<Swiper
 				onSwiper={(swiper) => {
 					swiperInstanceRef.current = swiper;
-					if (swiper.autoplay) {
-						swiper.autoplay.stop();
-					}
+					swiper.autoplay?.stop();
 				}}
 				modules={[Autoplay]}
-				autoplay={{ delay: 500, disableOnInteraction: false }}
+				autoplay={{ delay: 600, disableOnInteraction: false }}
 				slidesPerView={1}
-				className='w-full h-full'
+				loop={images.length > 1}
+				style={{ width: '100%', height: '200px' }}
 			>
 				{images.map((img) => (
-					<SwiperSlide key={img.id} className='w-full h-full'>
-						<Image
-							src={img.url}
-							alt=''
-							width={400}
-							height={400}
-							className='w-full h-full object-cover'
-						/>
-					</SwiperSlide>
+					<SwiperSlide key={img.id} style={{ width: '100%', height: '200px', flexShrink: 0, overflow: 'hidden' }}>
+					<img
+						src={img.url}
+						alt=''
+						style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+					/>
+				</SwiperSlide>
 				))}
 			</Swiper>
 		</div>

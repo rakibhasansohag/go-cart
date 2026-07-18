@@ -1144,3 +1144,22 @@ div[class*="bg-"] {
     fill 0.4s cubic-bezier(0.4, 0, 0.2, 1),
     stroke 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
+
+/* ─── Swiper layout overrides ─── */
+/* Prevent Tailwind's box-sizing/flex reset from breaking swiper slide widths */
+.swiper {
+  width: 100%;
+  height: 100%;
+}
+
+.swiper-wrapper {
+  display: flex;
+  flex-wrap: nowrap;
+}
+
+.swiper-slide {
+  flex-shrink: 0;
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
