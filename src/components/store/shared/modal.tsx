@@ -14,7 +14,7 @@ const Modal: FC<ModalProps> = ({ children, title, show, setShow }) => {
 	const ref = useRef<HTMLDivElement | null>(null);
 	const close = () => setShow(false);
 
-	useOnClickOutside(ref as unknown as React.RefObject<HTMLElement>, close);
+	useOnClickOutside(ref, close);
 
 	if (!show) return null;
 
