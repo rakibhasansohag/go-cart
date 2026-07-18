@@ -1,3 +1,4 @@
+'use client';
 import * as React from "react"
 import { Slot } from "@radix-ui/react-slot"
 import { cva, type VariantProps } from "class-variance-authority"
@@ -53,9 +54,9 @@ function Button({
 
 	return (
 		<Comp
-			whileHover={{ scale: 1.02 }}
-			whileTap={{ scale: 0.97 }}
-			transition={{ type: "spring", stiffness: 500, damping: 18 }}
+			whileHover={{ y: -1.5, boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}
+			whileTap={{ y: 0.5, scale: 0.98 }}
+			transition={{ type: "spring", stiffness: 500, damping: 20 }}
 			data-slot="button"
 			className={variant === 'unstyled' ? className : cn(buttonVariants({ variant, size, className }))}
 			{...(props as any)}
