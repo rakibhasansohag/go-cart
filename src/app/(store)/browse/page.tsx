@@ -1,5 +1,5 @@
 import ProductFilters from '@/components/store/browse-page/filters';
-import ProductSort from '@/components/store/browse-page/sort';
+import BrowseLayoutClient from '@/components/store/browse-page/browse-layout';
 import Header from '@/components/store/layout/header/header';
 import { FiltersQueryType } from '@/lib/types';
 import { getProducts } from '@/queries/product';
@@ -68,23 +68,15 @@ export default async function BrowsePage({
 					<Header />
 				</div>
 
-				{/* Filters Sidebar */}
-				<div className='fixed top-[124px] lg:top-16 left-2 md:left-4 pt-4 h-[calc(100vh-64px)] overflow-auto scrollbar'>
-					<ProductFilters queries={resolvedParams} />{' '}
-				</div>
-
-				{/* Main Content */}
-				<div className='ml-[190px] md:ml-[220px] pt-[140px] lg:pt-20'>
-					{/* Sort Section */}
-					<div className='sticky top-[64px] z-10 px-4 py-2 flex items-center'>
-						<ProductSort />
-					</div>
-
+				{/* Collapsible Layout */}
+				<BrowseLayoutClient
+					filters={<ProductFilters queries={resolvedParams} />}
+				>
 					{/* Product List */}
 					<Suspense fallback={<ProductsGridSkeleton />}>
 						<BrowseProductsList queries={resolvedParams} />
 					</Suspense>
-				</div>
+				</BrowseLayoutClient>
 			</HydrationBoundary>
 		</div>
 	);
