@@ -64,7 +64,7 @@ export default async function BrowsePage({
 		<div className='relative h-screen overflow-hidden'>
 			<HydrationBoundary state={dehydrate(queryClient)}>
 				{/* Header */}
-				<div className='fixed top-0 left-0 w-full z-10'>
+				<div className='fixed top-0 left-0 w-full z-40'>
 					<Header />
 				</div>
 
