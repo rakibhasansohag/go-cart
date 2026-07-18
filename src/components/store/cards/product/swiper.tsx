@@ -7,12 +7,10 @@ import { Autoplay } from 'swiper/modules';
 
 // Import Swiper styles
 import 'swiper/css';
-//import "swiper/css/pagination";
-//import "swiper/css/navigation";
 
 // Types
 import { ProductVariantImage } from '@prisma/client';
-import { useEffect, useRef } from 'react';
+import { useRef } from 'react';
 
 export default function ProductCardImageSwiper({
 	images,
@@ -20,30 +18,43 @@ export default function ProductCardImageSwiper({
 	images: ProductVariantImage[];
 }) {
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const swiperRef = useRef<any>(null);
-	useEffect(() => {
-		if (swiperRef.current && swiperRef.current.swiper) {
-			swiperRef.current.swiper.autoplay.stop();
-		}
-	}, [swiperRef]);
+	const swiperInstanceRef = useRef<any>(null);
+
 	return (
 		<div
 			className='relative mb-2 w-full h-[200px] bg-white contrast-[90%] rounded-2xl overflow-hidden'
-			onMouseEnter={() => swiperRef.current.swiper.autoplay.start()}
+			onMouseEnter={() => {
+				if (swiperInstanceRef.current?.autoplay) {
+					swiperInstanceRef.current.autoplay.start();
+				}
+			}}
 			onMouseLeave={() => {
-				swiperRef.current.swiper.autoplay.stop();
-				swiperRef.current.swiper.slideTo(0);
+				if (swiperInstanceRef.current?.autoplay) {
+					swiperInstanceRef.current.autoplay.stop();
+					swiperInstanceRef.current.slideTo(0);
+				}
 			}}
 		>
-			<Swiper ref={swiperRef} modules={[Autoplay]} autoplay={{ delay: 500 }}>
+			<Swiper
+				onSwiper={(swiper) => {
+					swiperInstanceRef.current = swiper;
+					if (swiper.autoplay) {
+						swiper.autoplay.stop();
+					}
+				}}
+				modules={[Autoplay]}
+				autoplay={{ delay: 500, disableOnInteraction: false }}
+				slidesPerView={1}
+				className='w-full h-full'
+			>
 				{images.map((img) => (
-					<SwiperSlide key={img.id}>
+					<SwiperSlide key={img.id} className='w-full h-full'>
 						<Image
 							src={img.url}
 							alt=''
 							width={400}
 							height={400}
-							className='block object-cover h-[200px] w-48 sm:w-[192px]'
+							className='w-full h-full object-cover'
 						/>
 					</SwiperSlide>
 				))}

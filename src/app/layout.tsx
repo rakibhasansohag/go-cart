@@ -6,6 +6,9 @@ import { Geist, Geist_Mono, Barlow } from 'next/font/google';
 // Global css
 import './globals.css';
 import 'flag-icons/css/flag-icons.min.css';
+import 'swiper/css';
+import 'swiper/css/navigation';
+import 'swiper/css/pagination';
 
 // Theme Provider
 import ClientProviders from '@/components/ClientProviders';
