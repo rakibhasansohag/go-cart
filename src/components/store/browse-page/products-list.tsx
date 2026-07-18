@@ -59,7 +59,7 @@ export default function BrowseProductsList({
 	const { products } = productsData;
 
 	return (
-		<div className='mt-4 px-4 w-full overflow-y-auto max-h-[calc(100vh-155px)] pb-28 scrollbar flex flex-wrap gap-4 min-[1530px]:grid min-[1530px]:grid-cols-5 min-[1530px]:gap-4'>
+		<div className='mt-4 px-4 w-full flex flex-wrap gap-4 min-[1530px]:grid min-[1530px]:grid-cols-5 min-[1530px]:gap-4'>
 			{products.map((product) => (
 				<ProductCard key={product.id + product.slug} product={product} />
 			))}
