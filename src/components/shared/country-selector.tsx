@@ -2,7 +2,8 @@
 import COUNTRIES from '@/data/countries.json';
 import { SelectMenuOption } from '@/lib/types';
 import { AnimatePresence, motion } from 'framer-motion';
-import React, { MutableRefObject, useEffect, useRef, useState } from 'react';
+import React, { useRef, useState } from 'react';
+import useOnClickOutside from '@/hooks/useOnClickOutside';
 
 export interface CountrySelectorProps {
 	id: string;
@@ -23,26 +24,12 @@ export default function CountrySelector({
 }: CountrySelectorProps) {
 	const ref = useRef<HTMLDivElement>(null);
 
-	useEffect(() => {
-		const mutableRef = ref as MutableRefObject<HTMLDivElement | null>;
-
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		const handleClickOutside = (event: any) => {
-			if (
-				mutableRef.current &&
-				!mutableRef.current.contains(event.target) &&
-				open
-			) {
-				onToggle();
-				setQuery('');
-			}
-		};
-
-		document.addEventListener('mousedown', handleClickOutside);
-		return () => {
-			document.removeEventListener('mousedown', handleClickOutside);
-		};
-	}, [ref]);
+	useOnClickOutside(ref, () => {
+		if (open) {
+			onToggle();
+			setQuery('');
+		}
+	});
 
 	const [query, setQuery] = useState('');
 
