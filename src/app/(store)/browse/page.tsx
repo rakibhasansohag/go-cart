@@ -64,9 +64,7 @@ export default async function BrowsePage({
 		<div className='relative min-h-screen bg-background'>
 			<HydrationBoundary state={dehydrate(queryClient)}>
 				{/* Header */}
-				<div className='fixed top-0 left-0 w-full z-40'>
-					<Header />
-				</div>
+				<Header />
 
 				{/* Collapsible Layout */}
 				<BrowseLayoutClient
