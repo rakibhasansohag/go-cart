@@ -1,10 +1,12 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Minus, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { FiltersQueryType } from '@/lib/types';
 import { getFilteredSizes } from '@/queries/size';
 import SizeLink from './size-link';
+import { useSuspenseQuery } from '@tanstack/react-query';
+import { queryKeys } from '@/lib/query-keys';
 
 export default function SizeFilter({
 	queries,
@@ -15,22 +17,14 @@ export default function SizeFilter({
 }) {
 	const { category, subCategory, offer, search } = queries;
 	const [show, setShow] = useState<boolean>(true);
-	const [sizes, setSizes] = useState<{ size: string }[]>([]);
-	const [total, setTotal] = useState<number>(10);
-	const [take, setTake] = useState<number>(10);
+	const take = 10;
 
-	useEffect(() => {
-		handleGetSizes();
-	}, [category, subCategory, offer, take]);
+	const { data } = useSuspenseQuery<{ sizes: { size: string }[]; count: number }>({
+		queryKey: queryKeys.sizes.filtered({ category, offer, subCategory, storeUrl }),
+		queryFn: () => getFilteredSizes({ category, offer, subCategory, storeUrl }, take),
+	});
 
-	const handleGetSizes = async () => {
-		const sizes = await getFilteredSizes(
-			{ category, offer, subCategory, storeUrl },
-			take,
-		);
-		setSizes(sizes.sizes);
-		setTotal(sizes.count);
-	};
+	const sizes = data.sizes;
 	return (
 		<div className='pt-5 pb-4'>
 			{/* Header */}

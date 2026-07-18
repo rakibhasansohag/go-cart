@@ -6,8 +6,8 @@ import OfferFilter from './filters/offer/offer-filter';
 import SizeFilter from './filters/size/size-filter';
 import FiltersHeader from './filters/header';
 import PriceFilter from './filters/price/price';
-
 import ColorFilter from './filters/color/color-filter';
+import { Suspense } from 'react';
 
 export default async function ProductFilters({
 	queries,
@@ -26,9 +26,13 @@ export default async function ProductFilters({
 			<div className='border-t w-40 md:w-44'>
 				<PriceFilter />
 				<CategoryFilter categories={categories} />
-				<ColorFilter queries={queries} storeUrl={storeUrl} />
+				<Suspense fallback={<div className='h-20 w-full animate-pulse bg-neutral-100 dark:bg-neutral-800/50 rounded-md mt-4' />}>
+					<ColorFilter queries={queries} storeUrl={storeUrl} />
+				</Suspense>
 				<OfferFilter offers={offers} />
-				<SizeFilter queries={queries} storeUrl={storeUrl} />
+				<Suspense fallback={<div className='h-20 w-full animate-pulse bg-neutral-100 dark:bg-neutral-800/50 rounded-md mt-4' />}>
+					<SizeFilter queries={queries} storeUrl={storeUrl} />
+				</Suspense>
 			</div>
 		</div>
 	);
