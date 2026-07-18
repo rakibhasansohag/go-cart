@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Minus, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { OfferTag } from '@prisma/client';
+import { AnimatePresence, motion } from 'framer-motion';
 import OfferLink from './offer-link';
 
 export default function OfferFilter({ offers }: { offers: OfferTag[] }) {
@@ -22,15 +23,23 @@ export default function OfferFilter({ offers }: { offers: OfferTag[] }) {
 				</span>
 			</div>
 			{/* Filter */}
-			<div
-				className={cn('mt-2.5 flex flex-wrap gap-2', {
-					hidden: !show,
-				})}
-			>
-				{offers.map((offer) => (
-					<OfferLink key={offer.id} offer={offer} />
-				))}
-			</div>
+			<AnimatePresence initial={false}>
+				{show && (
+					<motion.div
+						initial={{ height: 0, opacity: 0 }}
+						animate={{ height: 'auto', opacity: 1 }}
+						exit={{ height: 0, opacity: 0 }}
+						transition={{ duration: 0.22, ease: 'easeInOut' }}
+						className='overflow-hidden mt-2.5'
+					>
+						<div className='flex flex-wrap gap-2'>
+							{offers.map((offer) => (
+								<OfferLink key={offer.id} offer={offer} />
+							))}
+						</div>
+					</motion.div>
+				)}
+			</AnimatePresence>
 		</div>
 	);
 }

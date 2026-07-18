@@ -8,6 +8,8 @@ import SizeLink from './size-link';
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/query-keys';
 
+import { AnimatePresence, motion } from 'framer-motion';
+
 export default function SizeFilter({
 	queries,
 	storeUrl,
@@ -40,15 +42,23 @@ export default function SizeFilter({
 				</span>
 			</div>
 			{/* Filter */}
-			<div
-				className={cn('mt-2.5 space-y-2', {
-					hidden: !show,
-				})}
-			>
-				{sizes.map((size) => (
-					<SizeLink key={size.size} size={size.size} />
-				))}
-			</div>
+			<AnimatePresence initial={false}>
+				{show && (
+					<motion.div
+						initial={{ height: 0, opacity: 0 }}
+						animate={{ height: 'auto', opacity: 1 }}
+						exit={{ height: 0, opacity: 0 }}
+						transition={{ duration: 0.22, ease: 'easeInOut' }}
+						className='overflow-hidden mt-2.5'
+					>
+						<div className='space-y-2'>
+							{sizes.map((size) => (
+								<SizeLink key={size.size} size={size.size} />
+							))}
+						</div>
+					</motion.div>
+				)}
+			</AnimatePresence>
 		</div>
 	);
 }

@@ -3,6 +3,8 @@ import { Minus, Plus } from 'lucide-react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useState } from 'react';
 
+import { AnimatePresence, motion } from 'framer-motion';
+
 export default function CategoryLink({
 	category,
 }: {
@@ -48,12 +50,12 @@ export default function CategoryLink({
 				<div className='mt-2 leading-5 relative w-full flex items-center justify-between'>
 					<label
 						htmlFor={category.id}
-						className='flex items-center text-left cursor-pointer whitespace-nowrap select-none'
+						className='flex items-center text-left cursor-pointer whitespace-nowrap select-none text-main-primary'
 						onClick={() => handleCategoryChange(category.url)}
 					>
-						<span className='mr-2 border border-neutral-300 w-3 h-3 rounded-full relative grid place-items-center'>
+						<span className='mr-2 border border-neutral-300 dark:border-slate-700 w-3 h-3 rounded-full relative grid place-items-center'>
 							{category.url === categoryQuery && (
-								<div className='h-1.5 w-1.5 inline-block bg-black rounded-full'></div>
+								<div className='h-1.5 w-1.5 inline-block bg-orange-primary rounded-full'></div>
 							)}
 						</span>
 						<div className='flex-1 text-xs inline-block overflow-visible text-clip whitespace-normal'>
@@ -61,34 +63,42 @@ export default function CategoryLink({
 						</div>
 					</label>
 					<span
-						className='cursor-pointer'
+						className='cursor-pointer text-main-secondary'
 						onClick={() => setExpand((prev) => !prev)}
 					>
 						{expand ? <Minus className='w-3' /> : <Plus className='w-3' />}
 					</span>
 				</div>
-				{expand && (
-					<>
-						{category.subCategories.map((sub) => (
-							<section key={sub.id} className='pl-5 mt-2 leading-5 relative'>
-								<label
-									htmlFor={sub.id}
-									className='w-full flex items-center text-left cursor-pointer whitespace-nowrap select-none'
-									onClick={() => handleSubCategoryChange(sub.url)}
-								>
-									<span className='mr-2 border border-neutral-300 w-3 h-3 rounded-full relative grid place-items-center'>
-										{sub.url === subCategoryQuery && (
-											<div className='h-1.5 w-1.5 inline-block bg-black rounded-full'></div>
-										)}
-									</span>
-									<div className='flex-1 text-xs inline-block overflow-visible text-clip whitespace-normal'>
-										{sub.name}
-									</div>
-								</label>
-							</section>
-						))}
-					</>
-				)}
+				<AnimatePresence initial={false}>
+					{expand && (
+						<motion.div
+							initial={{ height: 0, opacity: 0 }}
+							animate={{ height: 'auto', opacity: 1 }}
+							exit={{ height: 0, opacity: 0 }}
+							transition={{ duration: 0.2, ease: 'easeInOut' }}
+							className='overflow-hidden pl-5'
+						>
+							{category.subCategories.map((sub) => (
+								<section key={sub.id} className='mt-2 leading-5 relative'>
+									<label
+										htmlFor={sub.id}
+										className='w-full flex items-center text-left cursor-pointer whitespace-nowrap select-none text-main-secondary'
+										onClick={() => handleSubCategoryChange(sub.url)}
+									>
+										<span className='mr-2 border border-neutral-300 dark:border-slate-800 w-3 h-3 rounded-full relative grid place-items-center'>
+											{sub.url === subCategoryQuery && (
+												<div className='h-1.5 w-1.5 inline-block bg-orange-primary rounded-full'></div>
+											)}
+										</span>
+										<div className='flex-1 text-xs inline-block overflow-visible text-clip whitespace-normal'>
+											{sub.name}
+										</div>
+									</label>
+								</section>
+							))}
+						</motion.div>
+					)}
+				</AnimatePresence>
 			</section>
 		</div>
 	);
