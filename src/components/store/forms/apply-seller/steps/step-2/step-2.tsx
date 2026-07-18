@@ -1,3 +1,4 @@
+import { Button } from '@/components/ui/button';
 import { StoreFormSchema } from '@/lib/schemas';
 import { StoreType } from '@/lib/types';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -234,20 +235,22 @@ export default function Step2({
 				</Form>
 			</AnimatedContainer>
 			<div className='h-[100px] flex pt-4 px-2 justify-between'>
-				<button
+				<Button
 					type='button'
+					variant='unstyled'
 					onClick={() => step > 1 && setStep((prev) => prev - 1)}
 					className='h-10 py-2 px-4 rounded-lg shadow-sm text-gray-600 bg-white hover:bg-gray-100 font-medium border cursor-pointer'
 				>
 					Previous
-				</button>
-				<button
+				</Button>
+				<Button
 					type='submit'
+					variant='unstyled'
 					onClick={form.handleSubmit(handleSubmit)}
 					className='h-10 py-2 px-4 rounded-lg shadow-sm text-white bg-blue-500 hover:bg-blue-700 font-medium cursor-pointer'
 				>
 					Next
-				</button>
+				</Button>
 			</div>
 		</div>
 	);

@@ -1,5 +1,5 @@
 'use client';
-
+import { Button } from '@/components/store/ui/button';
 import { useRouter } from 'next/navigation';
 import {
 	useStripe,
@@ -88,12 +88,13 @@ export default function StripePayment({ orderId }: { orderId: string }) {
 			{errorMessage && (
 				<div className='text-sm text-red-500'>{errorMessage}</div>
 			)}
-			<button
+			<Button
+				variant='black'
 				disabled={!stripe || loading}
-				className='text-white w-full p-5 bg-black mt-2 rounded-md font-bold disabled:opacity-50 disabled:animate-pulse'
+				className='text-white w-full p-5 mt-2 rounded-md font-bold disabled:opacity-50 disabled:animate-pulse'
 			>
 				{loading ? 'Processing' : 'Pay'}
-			</button>
+			</Button>
 		</form>
 	);
 }

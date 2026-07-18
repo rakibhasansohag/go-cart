@@ -10,37 +10,53 @@ import {
 	SheetTrigger,
 	SheetTitle,
 } from '@/components/ui/sheet';
+import { Button } from '@/components/ui/button';
 
 export default function Instructions() {
 	return (
-		<>
-			<aside
-				className='
-          hidden lg:block
-          max-h-[calc(100vh-64px)]
-          overflow-y-auto
-          bg-teal-100 dark:bg-teal-950
-          border-t-4 border-teal-500
-          text-teal-900 dark:text-teal-200
-          px-4 py-4 shadow-md
-          sticky top-[64px]
-        '
-			>
-				<div className='flex gap-3'>
-					<div className='me-1'>
-						<Info className='stroke-teal-500' />
+		<div>
+			<aside className='hidden lg:block lg:col-span-3 h-full max-h-[85vh] overflow-y-auto pr-4 scrollbar'>
+				<div className='bg-white dark:bg-slate-900 rounded-lg shadow-sm border p-6 sticky top-0'>
+					<div className='flex items-center gap-3 mb-6 pb-4 border-b border-gray-100 dark:border-slate-800'>
+						<Info className='h-5 w-5 text-teal-600' />
+						<h3 className='text-lg font-semibold'>Instructions</h3>
 					</div>
-
-					<div className='flex-1'>
-						<p className='font-bold'>Instructions</p>
-
-						<div className='mt-3 space-y-3 pr-2'>
-							{instructions.map((inst, index) => (
-								<div key={index} className='flex gap-x-2 items-start'>
-									<Dot className='mt-1 w-4 text-teal-500' />
-									<p className='text-sm leading-tight'>{inst.info}</p>
-								</div>
-							))}
+					<div className='space-y-6 text-sm text-gray-600 dark:text-gray-300'>
+						<div>
+							<h4 className='font-medium text-gray-900 dark:text-white mb-2'>
+								Overview
+							</h4>
+							<p className='leading-relaxed'>
+								Fill out all 4 steps to apply for a seller account. Each
+								step must be filled with correct information. Click next
+								to move to the next step.
+							</p>
+						</div>
+						<div className='border-t border-gray-100 dark:border-slate-800 pt-4'>
+							<h4 className='font-medium text-gray-900 dark:text-white mb-2'>
+								Important Notes
+							</h4>
+							<ul className='space-y-2.5'>
+								<li className='flex gap-2.5 leading-relaxed'>
+									<Dot className='h-5 w-5 text-teal-600 shrink-0 mt-0.5' />
+									<span>
+										Make sure the store name is unique and not already
+										taken.
+									</span>
+								</li>
+								<li className='flex gap-2.5 leading-relaxed'>
+									<Dot className='h-5 w-5 text-teal-600 shrink-0 mt-0.5' />
+									<span>
+										Upload high quality images for logo and banner.
+									</span>
+								</li>
+								<li className='flex gap-2.5 leading-relaxed'>
+									<Dot className='h-5 w-5 text-teal-600 shrink-0 mt-0.5' />
+									<span>
+										Double check payment details to ensure seamless payouts.
+									</span>
+								</li>
+							</ul>
 						</div>
 					</div>
 				</div>
@@ -50,13 +66,14 @@ export default function Instructions() {
 				<Sheet>
 					<div className='fixed right-4 bottom-20 z-[60]'>
 						<SheetTrigger asChild>
-							<button
+							<Button
+								variant='unstyled'
 								aria-label='Open instructions'
 								title='Instructions'
-								className='inline-flex items-center justify-center rounded-full p-3 bg-white/95 dark:bg-slate-800 shadow-lg border'
+								className='inline-flex items-center justify-center rounded-full p-3 bg-white/95 dark:bg-slate-800 shadow-lg border w-auto'
 							>
 								<Info className='h-5 w-5 text-teal-600' />
-							</button>
+							</Button>
 						</SheetTrigger>
 					</div>
 
@@ -99,7 +116,7 @@ export default function Instructions() {
 					</SheetContent>
 				</Sheet>
 			</div>
-		</>
+		</div>
 	);
 }
 

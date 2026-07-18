@@ -1,3 +1,4 @@
+import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import AnimatedContainer from '../../animated-container';
 
@@ -27,9 +28,12 @@ export default function Step4() {
 						</div>
 
 						<Link href='/'>
-							<button className='w-40 block mx-auto focus:outline-none py-2 px-5 rounded-lg shadow-sm text-center text-main-secondary bg-white dark:bg-black  hover:bg-gray-100 dark:hover:bg-gray-700 font-medium border cursor-pointer'>
+							<Button
+								variant='unstyled'
+								className='w-40 block mx-auto focus:outline-none py-2 px-5 rounded-lg shadow-sm text-center text-main-secondary bg-white dark:bg-black hover:bg-gray-100 dark:hover:bg-gray-700 font-medium border cursor-pointer'
+							>
 								Back to home
-							</button>
+							</Button>
 						</Link>
 					</div>
 				</div>

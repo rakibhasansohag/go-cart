@@ -1,3 +1,4 @@
+import { Button } from '@/components/store/ui/button';
 import {
 	PaymentTableDateFilter,
 	ReviewDateFilter,
@@ -122,11 +123,14 @@ const ReviewsHeader: FC<Props> = ({
 					/>
 					{/* Search icon */}
 					<span className='-ml-[1px] rounded-r-md relative bg-background text-center'>
-						<button className='rounded-r-md min-w-[52px] h-8 text-white bg-gradient-to-r from-orange-primary to-orange-secondary grid place-items-center'>
+						<Button
+							variant='unstyled'
+							className='rounded-r-md min-w-[52px] h-8 text-white bg-gradient-to-r from-orange-primary to-orange-secondary grid place-items-center'
+						>
 							<span className='text-2xl inline-block cursor-pointer'>
 								<SearchIcon />
 							</span>
-						</button>
+						</Button>
 					</span>
 				</div>
 				{/* Filter by date */}
