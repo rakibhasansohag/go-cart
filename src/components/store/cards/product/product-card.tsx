@@ -80,7 +80,7 @@ export default function ProductCard({ product }: { product: ProductType }) {
 							animate={{ height: 'auto', opacity: 1 }}
 							exit={{ height: 0, opacity: 0 }}
 							transition={{ duration: 0.2, ease: 'easeInOut' }}
-							className='absolute -left-[1px] bg-secondary border border-t-0 w-[calc(100%+2px)] px-4 pb-4 rounded-b-3xl shadow-xl z-30 space-y-2 overflow-hidden'
+							className='absolute -left-[1px] bg-secondary border-border border-x border-b w-[calc(100%+2px)] px-4 pb-4 rounded-b-3xl shadow-xl z-30 space-y-2 overflow-hidden'
 						>
 							{/* Variant switcher */}
 							<VariantSwitcher
