@@ -90,8 +90,8 @@ export default function ProductCard({ product }: { product: ProductType }) {
 								selectedVariant={variant}
 							/>
 							{/* Action buttons */}
-							<div className='flex flex-items gap-x-1'>
-								<Button>
+							<div className='flex items-center gap-x-1'>
+								<Button asChild>
 									<Link
 										className='text-main-primary'
 										href={`/product/${slug}?variant=${variantSlug}`}

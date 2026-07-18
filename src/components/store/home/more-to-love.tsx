@@ -23,9 +23,9 @@ export default function MoreToLoveSection() {
 				<div className='h-[1px] flex-1 border-t-[2px] border-t-[hsla(0,0%,59.2%,.3)] my-4 mx-[14px]' />
 			</div>
 			{/* Products grid */}
-			<div className='mt-7 bg-background justify-center flex flex-wrap gap-4 min-[1530px]:grid min-[1530px]:grid-cols-7 min-[1530px]:gap-4 p-4 pb-16 rounded-md'>
-				{products.map((product, i) => (
-					<ProductCard key={i} product={product} />
+			<div className='mt-7 bg-background justify-center flex flex-wrap gap-4 min-[1530px]:grid min-[1530px]:grid-cols-6 min-[1530px]:gap-4 p-4 pb-16 rounded-md'>
+				{products.map((product) => (
+					<ProductCard key={product.id + product.slug} product={product} />
 				))}
 			</div>
 		</div>
