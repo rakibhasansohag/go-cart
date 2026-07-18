@@ -33,11 +33,11 @@ export default function ProductCard({ product }: { product: ProductType }) {
 		<div
 			onMouseEnter={() => setIsHovered(true)}
 			onMouseLeave={() => setIsHovered(false)}
-			className='relative'
+			className='relative w-[190px] min-[480px]:w-[225px] min-[1530px]:w-full'
 		>
 			<div
 				className={cn(
-					'group w-[190px] min-[480px]:w-[225px] relative transition-all duration-300 bg-secondary ease-in-out p-4 border border-transparent',
+					'group w-full relative transition-all duration-300 bg-secondary ease-in-out p-4 border border-transparent',
 					isHovered
 						? 'rounded-t-3xl shadow-xl border-border'
 						: 'rounded-3xl',
