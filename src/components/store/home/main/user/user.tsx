@@ -1,18 +1,22 @@
 import { SimpleProduct } from '@/lib/types';
-import { currentUser } from '@clerk/nextjs/server';
 import Image from 'next/image';
 import UserImg from '@/public/assets/images/default-user.avif';
 import Link from 'next/link';
 import { Button } from '../../../ui/button';
 import UserCardProducts from './products';
 
-export default async function HomeUserCard({
+export default function HomeUserCard({
 	products,
+	user,
 }: {
 	products: SimpleProduct[];
+	user: {
+		imageUrl: string;
+		fullName: string | null;
+		role?: string;
+	} | null;
 }) {
-	const user = await currentUser();
-	const role = user?.privateMetadata.role;
+	const role = user?.role;
 	return (
 		<div className='h-full hidden min-[1170px]:block relative bg-background rounded-md shadow-sm overflow-hidden'>
 			<div

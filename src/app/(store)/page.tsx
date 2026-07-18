@@ -1,6 +1,7 @@
 import { Suspense } from 'react';
 import { dehydrate, HydrationBoundary } from '@tanstack/react-query';
 import { getQueryClient } from '@/lib/get-query-client';
+import { currentUser } from '@clerk/nextjs/server';
 import { queryKeys } from '@/lib/query-keys';
 import { getProducts } from '@/queries/product';
 import { getHomeDataDynamic, getHomeFeaturedCategories } from '@/queries/home';
@@ -21,6 +22,15 @@ import {
 
 export default async function HomePage() {
 	const queryClient = getQueryClient();
+	const user = await currentUser();
+
+	const userMetadata = user
+		? {
+				imageUrl: user.imageUrl,
+				fullName: user.fullName,
+				role: user.privateMetadata?.role as string | undefined,
+		  }
+		: null;
 
 	// Prefetch all home data in parallel on the server
 	await Promise.all([
@@ -55,7 +65,7 @@ export default async function HomePage() {
 						<HydrationBoundary state={dehydrate(queryClient)}>
 							{/* Main sections & Animated deals */}
 							<Suspense fallback={<HomeMainSkeleton />}>
-								<HomeMainAndDeals />
+								<HomeMainAndDeals user={userMetadata} />
 							</Suspense>
 
 							{/* Featured Categories */}

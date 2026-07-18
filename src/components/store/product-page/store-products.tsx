@@ -1,10 +1,11 @@
 'use client';
 import { ProductType } from '@/lib/types';
 import { getProducts } from '@/queries/product';
-import { FC, useEffect, useState } from 'react';
+import { FC } from 'react';
 import ProductList from '../shared/product-list';
-import ProductPageStoreProductsSkeletonLoader from '../skeletons/product-page/store-products';
 import { ChevronRight } from 'lucide-react';
+import { useSuspenseQuery } from '@tanstack/react-query';
+import { queryKeys } from '@/lib/query-keys';
 
 interface Props {
 	storeUrl: string;
@@ -13,23 +14,13 @@ interface Props {
 }
 
 const StoreProducts: FC<Props> = ({ storeUrl, count, storeName }) => {
-	const [products, setProducts] = useState<ProductType[]>([]);
-	const [loading, setLoading] = useState(true);
-	useEffect(() => {
-		getStoreProducts();
-	}, []);
+	const { data: res } = useSuspenseQuery<{ products: ProductType[] }>({
+		queryKey: queryKeys.products.storeProducts(storeUrl),
+		queryFn: () => getProducts({ store: storeUrl }, '', 1, count),
+	});
 
-	const getStoreProducts = async () => {
-		try {
-			setLoading(true);
+	const products = res.products;
 
-			const res = await getProducts({ store: storeUrl }, '', 1, count);
-			setProducts(res.products);
-			setLoading(false);
-		} catch (error) {
-			setLoading(false);
-		}
-	};
 	return (
 		<div className='pt-6' id='reviews'>
 			{/* Title */}
@@ -41,13 +32,7 @@ const StoreProducts: FC<Props> = ({ storeUrl, count, storeName }) => {
 			</div>
 			{/* Products */}
 			<div className='mt-8 min-[620px]:mt-0'>
-				{loading ? (
-					<div>
-						<ProductPageStoreProductsSkeletonLoader />
-					</div>
-				) : (
-					<ProductList products={products} />
-				)}
+				<ProductList products={products} />
 			</div>
 		</div>
 	);

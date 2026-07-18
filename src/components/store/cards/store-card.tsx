@@ -9,6 +9,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { FC, useEffect, useState } from 'react';
 import { toast } from 'sonner';
+import { useQuery } from '@tanstack/react-query';
 
 interface Props {
 	store: {
@@ -30,18 +31,18 @@ const StoreCard: FC<Props> = ({ store, checkForFollowing }) => {
 	const user = useUser();
 	const router = useRouter();
 
+	const { data: followInfo } = useQuery({
+		queryKey: ['store', 'followInfo', id, user.user?.id],
+		queryFn: () => getStoreFollowingInfo(id),
+		enabled: !!id,
+	});
+
 	useEffect(() => {
-		const getDetails = async () => {
-			try {
-				const res = await getStoreFollowingInfo(id);
-				setFollowing(res.isUserFollowingStore);
-				setStoreFollowersCount(res.followersCount);
-			} catch (error) {
-				console.log(error);
-			}
-		};
-		getDetails();
-	}, []);
+		if (followInfo) {
+			setFollowing(followInfo.isUserFollowingStore);
+			setStoreFollowersCount(followInfo.followersCount);
+		}
+	}, [followInfo]);
 	const handleStoreFollow = async () => {
 		if (!user.isSignedIn) router.push('/sign-in');
 		try {

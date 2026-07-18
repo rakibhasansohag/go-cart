@@ -13,7 +13,15 @@ import AnimatedDeals from './animated-deals';
 import MainSwiper from '../shared/swiper';
 import SuperDealsImg from '@/public/assets/images/ads/super-deals.avif';
 
-export function HomeMainAndDeals() {
+export function HomeMainAndDeals({
+	user,
+}: {
+	user: {
+		imageUrl: string;
+		fullName: string | null;
+		role?: string;
+	} | null;
+}) {
 	const { data } = useSuspenseQuery({
 		queryKey: queryKeys.home.dynamic(['best-deals', 'super-deals', 'user-card', 'featured']),
 		queryFn: () =>
@@ -56,6 +64,7 @@ export function HomeMainAndDeals() {
 						products={products_user_card.filter(
 							(product): product is SimpleProduct => 'variantSlug' in product,
 						)}
+						user={user}
 					/>
 				</div>
 			</div>

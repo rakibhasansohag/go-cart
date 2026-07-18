@@ -1,10 +1,10 @@
 'use client';
 import { ProductType } from '@/lib/types';
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import ProductList from '../shared/product-list';
 import { getRelatedProducts } from '@/queries/product-optimized';
-
-import ProductPageRelatedSkeletonLoader from '../skeletons/product-page/related';
+import { useSuspenseQuery } from '@tanstack/react-query';
+import { queryKeys } from '@/lib/query-keys';
 
 export default function RelatedProducts({
 	productId,
@@ -15,26 +15,11 @@ export default function RelatedProducts({
 	categoryId: string;
 	subCategoryId: string;
 }) {
-	const [products, setProducts] = useState<ProductType[]>([]);
-	const [loading, setLoading] = useState<boolean>(false);
+	const { data: products } = useSuspenseQuery<ProductType[]>({
+		queryKey: queryKeys.products.related(productId),
+		queryFn: () => getRelatedProducts(productId, categoryId, subCategoryId),
+	});
 
-	useEffect(() => {
-		const getRelatedProductsHandler = async () => {
-			try {
-				setLoading(true);
-				const res = await getRelatedProducts(
-					productId,
-					categoryId,
-					subCategoryId,
-				);
-				setProducts(res);
-				setLoading(false);
-			} catch (error) {
-				setLoading(false);
-			}
-		};
-		getRelatedProductsHandler();
-	}, []);
 	return (
 		<div className='pt-6' id='reviews'>
 			{/* Title */}
@@ -44,13 +29,7 @@ export default function RelatedProducts({
 				</h2>
 			</div>
 			{/* Products */}
-			{loading ? (
-				<div>
-					<ProductPageRelatedSkeletonLoader />
-				</div>
-			) : (
-				<ProductList products={products} />
-			)}
+			<ProductList products={products} />
 		</div>
 	);
 }

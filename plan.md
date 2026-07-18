@@ -2,7 +2,7 @@
 
 This file tracks the status of the React Query v5 migration.
 
-## Current Progress: Phase 3 (Product Page)
+## Current Progress: Phase 4 (Browse Page)
 
 - [x] **Phase 1: Infrastructure**
   - [x] Install packages (`@tanstack/react-query`, `@tanstack/react-query-devtools`)
@@ -13,9 +13,9 @@ This file tracks the status of the React Query v5 migration.
   - [x] Skeletons for home sections
   - [x] Prefetching in `src/app/(store)/page.tsx`
   - [x] Client component migration to `useSuspenseQuery` + `<Suspense>`
-- [ ] **Phase 3: Product Page**
-  - [ ] Detail page server prefetching
-  - [ ] Review/shipping/related lists client migration
+- [x] **Phase 3: Product Page**
+  - [x] Detail page server prefetching
+  - [x] Review/shipping/related lists client migration
 - [ ] **Phase 4: Browse Page**
   - [ ] Filters & product listings migration
 - [ ] **Phase 5: Profile Pages**
