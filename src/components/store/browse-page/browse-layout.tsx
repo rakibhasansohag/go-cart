@@ -18,7 +18,7 @@ export default function BrowseLayoutClient({
 	const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
 	return (
-		<div className='flex h-[calc(100vh-64px)] pt-[140px] lg:pt-[64px] relative bg-background'>
+		<div className='flex min-h-screen pt-[140px] lg:pt-[64px] relative bg-background'>
 			{/* Collapsible Sidebar */}
 			<motion.div
 				animate={{
@@ -29,7 +29,7 @@ export default function BrowseLayoutClient({
 				transition={{ type: 'spring', stiffness: 320, damping: 30 }}
 				className='fixed top-[140px] lg:top-[64px] left-0 h-[calc(100vh-140px)] lg:h-[calc(100vh-64px)] border-r border-border bg-background overflow-hidden z-20 flex-none'
 			>
-				<div className='w-[250px] h-full p-4 pr-2 pt-6 overflow-y-auto scrollbar'>
+				<div className='w-[250px] h-full p-4 pr-2 pt-6 overflow-y-auto no-scrollbar'>
 					{filters}
 				</div>
 			</motion.div>
@@ -40,10 +40,10 @@ export default function BrowseLayoutClient({
 					paddingLeft: isSidebarOpen ? 250 : 0,
 				}}
 				transition={{ type: 'spring', stiffness: 320, damping: 30 }}
-				className='flex-1 h-[calc(100vh-140px)] lg:h-[calc(100vh-64px)] overflow-y-auto w-full'
+				className='flex-1 w-full'
 			>
 				{/* Top Actions Bar (Sticky) */}
-				<div className='sticky top-0 z-10 bg-background/90 backdrop-blur-md border-b border-border py-3 px-4 flex items-center justify-between gap-4'>
+				<div className='sticky top-[140px] lg:top-[64px] z-10 bg-background/90 backdrop-blur-md border-b border-border py-3 px-4 flex items-center justify-between gap-4'>
 					<Button
 						variant='outline'
 						onClick={() => setIsSidebarOpen((prev) => !prev)}

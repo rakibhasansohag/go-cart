@@ -20,7 +20,7 @@ export default async function ProductFilters({
 	const offers = await getAllOfferTags(storeUrl);
 
 	return (
-		<div className='h-full w-full overflow-y-auto pb-4 pr-1 scrollbar'>
+		<div className='w-full h-auto pb-4'>
 			<FiltersHeader queries={queries} />
 			{/* Filters */}
 			<div className='border-t border-border w-full mt-2'>
