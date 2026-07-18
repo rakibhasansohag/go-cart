@@ -45,7 +45,7 @@ export default function BrowseLayoutClient({
 	}, [isDesktop]);
 
 	return (
-		<div className='flex relative bg-background w-full min-h-screen'>
+		<div className='flex relative bg-background w-full min-h-screen lg:h-[calc(100vh-64px)] lg:overflow-hidden'>
 			<AnimatePresence>
 				{/* Mobile Drawer Backdrop overlay */}
 				{!isDesktop && isSidebarOpen && (
@@ -68,7 +68,7 @@ export default function BrowseLayoutClient({
 						x: isSidebarOpen ? 0 : -250,
 					}}
 					transition={{ type: 'spring', stiffness: 320, damping: 30 }}
-					className='sticky top-[64px] h-[calc(100vh-64px)] border-r border-border bg-background overflow-hidden z-20 flex-none'
+					className='h-full border-r border-border bg-background overflow-hidden z-20 flex-none'
 				>
 					<div className='w-[250px] h-full p-4 pr-2 pt-6 overflow-y-auto no-scrollbar'>
 						{filters}
@@ -101,9 +101,9 @@ export default function BrowseLayoutClient({
 			)}
 
 			{/* Main Content Area */}
-			<div className='flex-1 w-full min-w-0'>
+			<div className='flex-1 w-full min-w-0 lg:h-[calc(100vh-64px)] lg:overflow-y-auto scrollbar'>
 				{/* Top Actions Bar (Sticky) */}
-				<div className='sticky top-0 lg:top-[64px] z-10 bg-background/90 backdrop-blur-md border-b border-border py-3 px-4 flex items-center justify-between gap-4'>
+				<div className='sticky top-0 z-10 bg-background/90 backdrop-blur-md border-b border-border py-3 px-4 flex items-center justify-between gap-4'>
 					<Button
 						variant='outline'
 						onClick={() => setIsSidebarOpen((prev) => !prev)}

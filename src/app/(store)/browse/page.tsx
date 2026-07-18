@@ -61,7 +61,7 @@ export default async function BrowsePage({
 	]);
 
 	return (
-		<div className='relative min-h-screen bg-background'>
+		<div className='relative min-h-screen lg:h-screen lg:overflow-hidden bg-background'>
 			<HydrationBoundary state={dehydrate(queryClient)}>
 				{/* Header */}
 				<Header />
