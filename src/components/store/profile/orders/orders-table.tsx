@@ -85,6 +85,7 @@ export default function OrdersTable({
 }) {
 	// Pagination
 	const [page, setPage] = useState<number>(1);
+	const [pageSize, setPageSize] = useState<number>(10);
 
 	// Filter
 	const [filter, setFilter] = useState<OrderTableFilter>(prev_filter || '');
@@ -96,9 +97,9 @@ export default function OrdersTable({
 	const [search, setSearch] = useState<string>('');
 
 	useEffect(() => {
-		// Reset to page 1 when filters or search changes
+		// Reset to page 1 when filters, search or page size changes
 		setPage(1);
-	}, [filter, period, search]);
+	}, [filter, period, search, pageSize]);
 
 	return (
 		<div>
@@ -120,6 +121,8 @@ export default function OrdersTable({
 						search={search}
 						page={page}
 						setPage={setPage}
+						pageSize={pageSize}
+						setPageSize={setPageSize}
 					/>
 				</Suspense>
 			</div>
@@ -133,16 +136,20 @@ function OrdersTableContent({
 	search,
 	page,
 	setPage,
+	pageSize,
+	setPageSize,
 }: {
 	filter: OrderTableFilter;
 	period: OrderTableDateFilter;
 	search: string;
 	page: number;
 	setPage: Dispatch<SetStateAction<number>>;
+	pageSize: number;
+	setPageSize: Dispatch<SetStateAction<number>>;
 }) {
 	const { data: res } = useSuspenseQuery({
-		queryKey: queryKeys.profile.orders({ filter, period, search, page }),
-		queryFn: () => getUserOrders(filter, period, search, page),
+		queryKey: queryKeys.profile.orders({ filter, period, search, page, pageSize }),
+		queryFn: () => getUserOrders(filter, period, search, page, pageSize),
 	});
 
 	const data = res.orders;
@@ -245,7 +252,13 @@ function OrdersTableContent({
 					</div>
 				</div>
 			</div>
-			<Pagination page={page} setPage={setPage} totalPages={totalDataPages} />
+			<Pagination
+				page={page}
+				setPage={setPage}
+				totalPages={totalDataPages}
+				pageSize={pageSize}
+				setPageSize={setPageSize}
+			/>
 		</>
 	);
 }

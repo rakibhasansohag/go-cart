@@ -1,13 +1,55 @@
 'use client';
+
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion } from 'framer-motion';
+import { useQueryClient } from '@tanstack/react-query';
+import { queryKeys } from '@/lib/query-keys';
+import {
+	getUserOrders,
+	getUserPayments,
+	getUserReviews,
+	getUserWishlist,
+	getUserFollowedStores,
+} from '@/queries/profile';
 
 export default function ProfileSidebar() {
 	const pathname = usePathname();
 	const path = pathname.split('/profile/')[1];
 	const path_trim = path ? path.split('/')[0] : null;
+
+	const queryClient = useQueryClient();
+
+	const prefetchRouteData = (link: string) => {
+		if (link === '/profile/orders') {
+			queryClient.prefetchQuery({
+				queryKey: queryKeys.profile.orders({ filter: '', period: '', search: '', page: 1, pageSize: 10 }),
+				queryFn: () => getUserOrders('', '', '', 1, 10),
+			});
+		} else if (link === '/profile/payment') {
+			queryClient.prefetchQuery({
+				queryKey: queryKeys.profile.payments({ filter: '', period: '', search: '', page: 1, pageSize: 10 }),
+				queryFn: () => getUserPayments('', '', '', 1, 10),
+			});
+		} else if (link === '/profile/reviews') {
+			queryClient.prefetchQuery({
+				queryKey: queryKeys.profile.reviews({ filter: '', period: '', search: '', page: 1, pageSize: 10 }),
+				queryFn: () => getUserReviews('', '', '', 1, 10),
+			});
+		} else if (link.startsWith('/profile/wishlist/')) {
+			queryClient.prefetchQuery({
+				queryKey: queryKeys.profile.wishlist(1),
+				queryFn: () => getUserWishlist(1),
+			});
+		} else if (link.startsWith('/profile/following/')) {
+			queryClient.prefetchQuery({
+				queryKey: queryKeys.profile.following(1),
+				queryFn: () => getUserFollowedStores(1),
+			});
+		}
+	};
+
 	return (
 		<div>
 			<div className='w-full p-4 text-xs text-main-secondary'>
@@ -43,6 +85,7 @@ export default function ProfileSidebar() {
 						return (
 							<Link key={item.link} href={item.link}>
 								<motion.div
+									onMouseEnter={() => prefetchRouteData(item.link)}
 									className={cn(
 										'relative flex h-10 items-center text-sm px-4 cursor-pointer transition-all duration-200 select-none overflow-hidden rounded-md mx-2 my-1',
 										isActive

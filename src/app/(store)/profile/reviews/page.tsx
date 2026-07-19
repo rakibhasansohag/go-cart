@@ -17,8 +17,8 @@ export default async function ProfileReviewsPage() {
 	const queryClient = getQueryClient();
 
 	await queryClient.prefetchQuery({
-		queryKey: queryKeys.profile.reviews({ filter: '', period: '', search: '', page: 1 }),
-		queryFn: () => getUserReviews('', '', '', 1),
+		queryKey: queryKeys.profile.reviews({ filter: '', period: '', search: '', page: 1, pageSize: 10 }),
+		queryFn: () => getUserReviews('', '', '', 1, 10),
 	});
 
 	return (

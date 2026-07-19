@@ -10,6 +10,9 @@ import Tabs from '@/components/store/ui/tabs';
 import { useRouter } from 'next/navigation';
 import { Dispatch, FC, SetStateAction, useEffect, useState } from 'react';
 import { DeleteIcon, SearchIcon } from '../../icons';
+import { useQueryClient } from '@tanstack/react-query';
+import { queryKeys } from '@/lib/query-keys';
+import { getUserReviews } from '@/queries/profile';
 
 interface Props {
 	filter: ReviewFilter;
@@ -29,6 +32,7 @@ const ReviewsHeader: FC<Props> = ({
 	setPeriod,
 }) => {
 	const router = useRouter();
+	const queryClient = useQueryClient();
 
 	// Handle debounced search input
 	const [debouncedSearch, setDebouncedSearch] = useState<string>(search);
@@ -59,6 +63,12 @@ const ReviewsHeader: FC<Props> = ({
 								} else {
 									setFilter(val);
 								}
+							}}
+							onHover={(val) => {
+								queryClient.prefetchQuery({
+									queryKey: queryKeys.profile.reviews({ filter: val, period, search, page: 1, pageSize: 10 }),
+									queryFn: () => getUserReviews(val, period, search, 1, 10),
+								});
 							}}
 							layoutId="review-tabs"
 						/>

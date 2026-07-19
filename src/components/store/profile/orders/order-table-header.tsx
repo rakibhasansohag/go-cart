@@ -1,11 +1,12 @@
 import { Button } from '@/components/store/ui/button';
 import { OrderTableDateFilter, OrderTableFilter } from '@/lib/types';
-import { cn } from '@/lib/utils';
-
 import Tabs from '@/components/store/ui/tabs';
 import { useRouter } from 'next/navigation';
 import { Dispatch, FC, SetStateAction, useEffect, useState } from 'react';
 import { DeleteIcon, SearchIcon } from '../../icons';
+import { useQueryClient } from '@tanstack/react-query';
+import { queryKeys } from '@/lib/query-keys';
+import { getUserOrders } from '@/queries/profile';
 
 interface Props {
 	filter: OrderTableFilter;
@@ -25,6 +26,7 @@ const OrderTableHeader: FC<Props> = ({
 	setPeriod,
 }) => {
 	const router = useRouter();
+	const queryClient = useQueryClient();
 
 	// Handle debounced search input
 	const [debouncedSearch, setDebouncedSearch] = useState<string>(search);
@@ -55,6 +57,12 @@ const OrderTableHeader: FC<Props> = ({
 								} else {
 									setFilter(val);
 								}
+							}}
+							onHover={(val) => {
+								queryClient.prefetchQuery({
+									queryKey: queryKeys.profile.orders({ filter: val, period, search, page: 1, pageSize: 10 }),
+									queryFn: () => getUserOrders(val, period, search, 1, 10),
+								});
 							}}
 							layoutId="order-tabs"
 						/>

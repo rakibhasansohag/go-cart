@@ -13,6 +13,7 @@ interface TabsProps<T extends string = string> {
 	items: TabItem<T>[];
 	value: T;
 	onChange: (value: T) => void;
+	onHover?: (value: T) => void;
 	layoutId: string;
 	className?: string;
 	tabClassName?: string;
@@ -22,6 +23,7 @@ export default function Tabs<T extends string = string>({
 	items,
 	value,
 	onChange,
+	onHover,
 	layoutId,
 	className,
 	tabClassName,
@@ -41,7 +43,10 @@ export default function Tabs<T extends string = string>({
 					return (
 						<button
 							key={item.value}
-							onMouseEnter={() => setHoveredIndex(idx)}
+							onMouseEnter={() => {
+								setHoveredIndex(idx);
+								if (onHover) onHover(item.value);
+							}}
 							onMouseLeave={() => setHoveredIndex(null)}
 							onClick={() => onChange(item.value)}
 							className={cn(

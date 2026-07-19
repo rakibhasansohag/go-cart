@@ -18,8 +18,8 @@ export default async function ProfilePaymentPage() {
 	const queryClient = getQueryClient();
 
 	await queryClient.prefetchQuery({
-		queryKey: queryKeys.profile.payments({ filter: '', period: '', search: '', page: 1 }),
-		queryFn: () => getUserPayments('', '', '', 1),
+		queryKey: queryKeys.profile.payments({ filter: '', period: '', search: '', page: 1, pageSize: 10 }),
+		queryFn: () => getUserPayments('', '', '', 1, 10),
 	});
 
 	return (

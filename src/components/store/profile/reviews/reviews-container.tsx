@@ -17,6 +17,7 @@ import { queryKeys } from '@/lib/query-keys';
 export default function ReviewsContainer() {
 	// Pagination
 	const [page, setPage] = useState<number>(1);
+	const [pageSize, setPageSize] = useState<number>(10);
 
 	// Filter
 	const [filter, setFilter] = useState<ReviewFilter>('');
@@ -28,9 +29,9 @@ export default function ReviewsContainer() {
 	const [search, setSearch] = useState<string>('');
 
 	useEffect(() => {
-		// Reset to page 1 when filters or search changes
+		// Reset to page 1 when filters, search or page size changes
 		setPage(1);
-	}, [filter, period, search]);
+	}, [filter, period, search, pageSize]);
 
 	return (
 		<div>
@@ -52,6 +53,8 @@ export default function ReviewsContainer() {
 						search={search}
 						page={page}
 						setPage={setPage}
+						pageSize={pageSize}
+						setPageSize={setPageSize}
 					/>
 				</Suspense>
 			</div>
@@ -65,16 +68,20 @@ function ReviewsContainerContent({
 	search,
 	page,
 	setPage,
+	pageSize,
+	setPageSize,
 }: {
 	filter: ReviewFilter;
 	period: ReviewDateFilter;
 	search: string;
 	page: number;
 	setPage: React.Dispatch<React.SetStateAction<number>>;
+	pageSize: number;
+	setPageSize: React.Dispatch<React.SetStateAction<number>>;
 }) {
 	const { data: res } = useSuspenseQuery({
-		queryKey: queryKeys.profile.reviews({ filter, period, search, page }),
-		queryFn: () => getUserReviews(filter, period, search, page),
+		queryKey: queryKeys.profile.reviews({ filter, period, search, page, pageSize }),
+		queryFn: () => getUserReviews(filter, period, search, page, pageSize),
 	});
 
 	const data = res.reviews;
@@ -89,7 +96,13 @@ function ReviewsContainerContent({
 				))}
 			</div>
 			<div className='mt-2'>
-				<Pagination page={page} setPage={setPage} totalPages={totalDataPages} />
+				<Pagination
+					page={page}
+					setPage={setPage}
+					totalPages={totalDataPages}
+					pageSize={pageSize}
+					setPageSize={setPageSize}
+				/>
 			</div>
 		</>
 	);

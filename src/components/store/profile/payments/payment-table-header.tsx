@@ -6,6 +6,9 @@ import Tabs from '@/components/store/ui/tabs';
 import { useRouter } from 'next/navigation';
 import { Dispatch, FC, SetStateAction, useEffect, useState } from 'react';
 import { DeleteIcon, SearchIcon } from '../../icons';
+import { useQueryClient } from '@tanstack/react-query';
+import { queryKeys } from '@/lib/query-keys';
+import { getUserPayments } from '@/queries/profile';
 
 interface Props {
 	filter: PaymentTableFilter;
@@ -25,6 +28,7 @@ const PaymentTableHeader: FC<Props> = ({
 	setPeriod,
 }) => {
 	const router = useRouter();
+	const queryClient = useQueryClient();
 
 	// Handle debounced search input
 	const [debouncedSearch, setDebouncedSearch] = useState<string>(search);
@@ -55,6 +59,12 @@ const PaymentTableHeader: FC<Props> = ({
 								} else {
 									setFilter(val);
 								}
+							}}
+							onHover={(val) => {
+								queryClient.prefetchQuery({
+									queryKey: queryKeys.profile.payments({ filter: val, period, search, page: 1, pageSize: 10 }),
+									queryFn: () => getUserPayments(val, period, search, 1, 10),
+								});
 							}}
 							layoutId="payment-tabs"
 						/>

@@ -17,9 +17,10 @@ import { queryKeys } from '@/lib/query-keys';
 export default function PaymentsTable() {
 	// Pagination
 	const [page, setPage] = useState<number>(1);
+	const [pageSize, setPageSize] = useState<number>(10);
 
 	// Filter
-	const [filter, setFilter] = useState<PaymentTableFilter>('');
+	const [filter, setFilter] = useState<PaymentTableFilter>( '');
 
 	// Date period filter
 	const [period, setPeriod] = useState<PaymentTableDateFilter>('');
@@ -28,9 +29,9 @@ export default function PaymentsTable() {
 	const [search, setSearch] = useState<string>('');
 
 	useEffect(() => {
-		// Reset to page 1 when filters or search changes
+		// Reset to page 1 when filters, search or page size changes
 		setPage(1);
-	}, [filter, period, search]);
+	}, [filter, period, search, pageSize]);
 
 	return (
 		<div>
@@ -52,6 +53,8 @@ export default function PaymentsTable() {
 						search={search}
 						page={page}
 						setPage={setPage}
+						pageSize={pageSize}
+						setPageSize={setPageSize}
 					/>
 				</Suspense>
 			</div>
@@ -65,16 +68,20 @@ function PaymentsTableContent({
 	search,
 	page,
 	setPage,
+	pageSize,
+	setPageSize,
 }: {
 	filter: PaymentTableFilter;
 	period: PaymentTableDateFilter;
 	search: string;
 	page: number;
 	setPage: React.Dispatch<React.SetStateAction<number>>;
+	pageSize: number;
+	setPageSize: React.Dispatch<React.SetStateAction<number>>;
 }) {
 	const { data: res } = useSuspenseQuery({
-		queryKey: queryKeys.profile.payments({ filter, period, search, page }),
-		queryFn: () => getUserPayments(filter, period, search, page),
+		queryKey: queryKeys.profile.payments({ filter, period, search, page, pageSize }),
+		queryFn: () => getUserPayments(filter, period, search, page, pageSize),
 	});
 
 	const data = res.payments;
@@ -146,7 +153,13 @@ function PaymentsTableContent({
 					</div>
 				</div>
 			</div>
-			<Pagination page={page} setPage={setPage} totalPages={totalDataPages} />
+			<Pagination
+				page={page}
+				setPage={setPage}
+				totalPages={totalDataPages}
+				pageSize={pageSize}
+				setPageSize={setPageSize}
+			/>
 		</>
 	);
 }

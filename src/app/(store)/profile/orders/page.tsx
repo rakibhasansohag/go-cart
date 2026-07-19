@@ -9,8 +9,8 @@ export default async function ProfileOrdersPage() {
 	const queryClient = getQueryClient();
 
 	await queryClient.prefetchQuery({
-		queryKey: queryKeys.profile.orders({ filter: '', period: '', search: '', page: 1 }),
-		queryFn: () => getUserOrders('', '', '', 1),
+		queryKey: queryKeys.profile.orders({ filter: '', period: '', search: '', page: 1, pageSize: 10 }),
+		queryFn: () => getUserOrders('', '', '', 1, 10),
 	});
 
 	return (
