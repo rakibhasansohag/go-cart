@@ -15,20 +15,20 @@ import Pagination from '../../shared/pagination';
 import { getUserOrders } from '@/queries/profile';
 import OrderTableHeader from './order-table-header';
 
+import { useSuspenseQuery } from '@tanstack/react-query';
+import { queryKeys } from '@/lib/query-keys';
+
 export default function OrdersTable({
 	orders,
 	totalPages,
 	prev_filter,
 }: {
-	orders: UserOrderType[];
-	totalPages: number;
+	orders?: UserOrderType[];
+	totalPages?: number;
 	prev_filter?: OrderTableFilter;
 }) {
-	const [data, setData] = useState<UserOrderType[]>(orders);
-
 	// Pagination
 	const [page, setPage] = useState<number>(1);
-	const [totalDataPages, setTotalDataPages] = useState<number>(totalPages);
 
 	// Filter
 	const [filter, setFilter] = useState<OrderTableFilter>(prev_filter || '');
@@ -39,21 +39,18 @@ export default function OrdersTable({
 	// Search filter
 	const [search, setSearch] = useState<string>('');
 
+	const { data: res } = useSuspenseQuery({
+		queryKey: queryKeys.profile.orders({ filter, period, search, page }),
+		queryFn: () => getUserOrders(filter, period, search, page),
+	});
+
+	const data = res.orders;
+	const totalDataPages = res.totalPages;
+
 	useEffect(() => {
 		// Reset to page 1 when filters or search changes
 		setPage(1);
 	}, [filter, period, search]);
-
-	useEffect(() => {
-		const getData = async () => {
-			const res = await getUserOrders(filter, period, search, page);
-			if (res) {
-				setData(res.orders);
-				setTotalDataPages(res.totalPages);
-			}
-		};
-		getData();
-	}, [page, filter, search, period]);
 	return (
 		<div>
 			<div className=''>

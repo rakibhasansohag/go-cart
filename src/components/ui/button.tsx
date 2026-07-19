@@ -59,6 +59,7 @@ function Button({
 			transition={{ type: "spring", stiffness: 500, damping: 20 }}
 			data-slot="button"
 			className={variant === 'unstyled' ? className : cn(buttonVariants({ variant, size, className }))}
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
 			{...(props as any)}
 		/>
 	)

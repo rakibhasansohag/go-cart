@@ -16,9 +16,9 @@ export const queryKeys = {
 		orders: (filters: object) => ['profile', 'orders', filters] as const,
 		payments: (filters: object) => ['profile', 'payments', filters] as const,
 		reviews: (filters: object) => ['profile', 'reviews', filters] as const,
-		wishlist: () => ['profile', 'wishlist'] as const,
-		following: () => ['profile', 'following'] as const,
-		history: (ids: string[]) => ['profile', 'history', ids] as const,
+		wishlist: (page: number) => ['profile', 'wishlist', page] as const,
+		following: (page: number) => ['profile', 'following', page] as const,
+		history: (ids: string[], page: number) => ['profile', 'history', { ids, page }] as const,
 	},
 	categories: {
 		all: () => ['categories'] as const,

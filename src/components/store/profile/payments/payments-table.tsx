@@ -10,18 +10,18 @@ import Pagination from '../../shared/pagination';
 import { getUserPayments } from '@/queries/profile';
 import PaymentTableHeader from './payment-table-header';
 
+import { useSuspenseQuery } from '@tanstack/react-query';
+import { queryKeys } from '@/lib/query-keys';
+
 export default function PaymentsTable({
 	payments,
 	totalPages,
 }: {
-	payments: UserPaymentType[];
-	totalPages: number;
+	payments?: UserPaymentType[];
+	totalPages?: number;
 }) {
-	const [data, setData] = useState<UserPaymentType[]>(payments);
-
 	// Pagination
 	const [page, setPage] = useState<number>(1);
-	const [totalDataPages, setTotalDataPages] = useState<number>(totalPages);
 
 	// Filter
 	const [filter, setFilter] = useState<PaymentTableFilter>('');
@@ -32,21 +32,18 @@ export default function PaymentsTable({
 	// Search filter
 	const [search, setSearch] = useState<string>('');
 
+	const { data: res } = useSuspenseQuery({
+		queryKey: queryKeys.profile.payments({ filter, period, search, page }),
+		queryFn: () => getUserPayments(filter, period, search, page),
+	});
+
+	const data = res.payments;
+	const totalDataPages = res.totalPages;
+
 	useEffect(() => {
 		// Reset to page 1 when filters or search changes
 		setPage(1);
 	}, [filter, period, search]);
-
-	useEffect(() => {
-		const getData = async () => {
-			const res = await getUserPayments(filter, period, search, page);
-			if (res) {
-				setData(res.payments);
-				setTotalDataPages(res.totalPages);
-			}
-		};
-		getData();
-	}, [page, filter, search, period]);
 	return (
 		<div>
 			<div className=''>

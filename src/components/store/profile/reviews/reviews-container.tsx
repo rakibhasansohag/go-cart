@@ -10,18 +10,18 @@ import { getUserReviews } from '@/queries/profile';
 import ReviewCard from '../../cards/review';
 import ReviewsHeader from './reviews-header';
 
+import { useSuspenseQuery } from '@tanstack/react-query';
+import { queryKeys } from '@/lib/query-keys';
+
 export default function ReviewsContainer({
 	reviews,
 	totalPages,
 }: {
-	reviews: ReviewWithImageType[];
-	totalPages: number;
+	reviews?: ReviewWithImageType[];
+	totalPages?: number;
 }) {
-	const [data, setData] = useState<ReviewWithImageType[]>(reviews);
-
 	// Pagination
 	const [page, setPage] = useState<number>(1);
-	const [totalDataPages, setTotalDataPages] = useState<number>(totalPages);
 
 	// Filter
 	const [filter, setFilter] = useState<ReviewFilter>('');
@@ -32,21 +32,18 @@ export default function ReviewsContainer({
 	// Search filter
 	const [search, setSearch] = useState<string>('');
 
+	const { data: res } = useSuspenseQuery({
+		queryKey: queryKeys.profile.reviews({ filter, period, search, page }),
+		queryFn: () => getUserReviews(filter, period, search, page),
+	});
+
+	const data = res.reviews;
+	const totalDataPages = res.totalPages;
+
 	useEffect(() => {
 		// Reset to page 1 when filters or search changes
 		setPage(1);
 	}, [filter, period, search]);
-
-	useEffect(() => {
-		const getData = async () => {
-			const res = await getUserReviews(filter, period, search, page);
-			if (res) {
-				setData(res.reviews);
-				setTotalDataPages(res.totalPages);
-			}
-		};
-		getData();
-	}, [page, filter, search, period]);
 	return (
 		<div>
 			<div className=''>

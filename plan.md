@@ -18,8 +18,8 @@ This file tracks the status of the React Query v5 migration.
   - [x] Review/shipping/related lists client migration
 - [x] **Phase 4: Browse Page**
   - [x] Filters & product listings migration
-- [ ] **Phase 5: Profile Pages**
-  - [ ] Orders, payments, reviews, wishlist, history, following pages
+- [x] **Phase 5: Profile Pages**
+  - [x] Orders, payments, reviews, wishlist, history, following pages
 - [ ] **Phase 6: Store Page**
   - [ ] Store product grid
 - [ ] **Phase 7: Mutations & Invalidations**
