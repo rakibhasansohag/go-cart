@@ -45,16 +45,16 @@ export default function Tabs<T extends string = string>({
 							onMouseLeave={() => setHoveredIndex(null)}
 							onClick={() => onChange(item.value)}
 							className={cn(
-								'relative px-4 text-main-primary whitespace-nowrap cursor-pointer leading-6 transition-colors duration-200 bg-transparent border-none outline-none select-none font-medium',
+								'relative px-4 text-main-primary whitespace-nowrap cursor-pointer leading-6 transition-colors duration-200 bg-transparent border-none outline-none focus:outline-none focus:ring-0 select-none font-medium',
 								isActive ? 'font-bold text-main-primary' : 'text-gray-500 hover:text-main-primary',
 								tabClassName
 							)}
 						>
-							{/* Hover Pill Background */}
-							{hoveredIndex === idx && (
+							{/* Hover Underline */}
+							{hoveredIndex === idx && !isActive && (
 								<motion.div
-									layoutId={`hover-pill-${layoutId}`}
-									className="absolute inset-0 bg-white/[0.04] dark:bg-black/[0.02] rounded-md"
+									layoutId={`hover-underline-${layoutId}`}
+									className="absolute bottom-[-12px] left-1/2 -translate-x-1/2 h-[3px] w-6 bg-[#fd384f]/30 rounded-full pointer-events-none z-0"
 									initial={{ opacity: 0 }}
 									animate={{ opacity: 1 }}
 									exit={{ opacity: 0 }}
@@ -66,7 +66,7 @@ export default function Tabs<T extends string = string>({
 							{isActive && (
 								<motion.div
 									layoutId={`active-underline-${layoutId}`}
-									className="absolute bottom-[-12px] left-1/2 -translate-x-1/2 h-[3px] w-6 bg-[#fd384f] rounded-full"
+									className="absolute bottom-[-12px] left-1/2 -translate-x-1/2 h-[3px] w-6 bg-[#fd384f] rounded-full z-10"
 									transition={{
 										type: 'spring',
 										stiffness: 380,
@@ -78,7 +78,7 @@ export default function Tabs<T extends string = string>({
 							{/* Tap/Click Animation */}
 							<motion.span
 								whileTap={{ scale: 0.95 }}
-								className="block"
+								className="block relative z-10 pointer-events-none"
 							>
 								{item.title}
 							</motion.span>
