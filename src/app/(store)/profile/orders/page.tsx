@@ -3,7 +3,7 @@ import { dehydrate, HydrationBoundary } from '@tanstack/react-query';
 import { getQueryClient } from '@/lib/get-query-client';
 import { queryKeys } from '@/lib/query-keys';
 import { getUserOrders } from '@/queries/profile';
-import OrdersTable from '@/components/store/profile/orders/orders-table';
+import OrdersTable, { OrdersTableSkeleton } from '@/components/store/profile/orders/orders-table';
 
 export default async function ProfileOrdersPage() {
 	const queryClient = getQueryClient();
@@ -16,7 +16,7 @@ export default async function ProfileOrdersPage() {
 	return (
 		<div>
 			<HydrationBoundary state={dehydrate(queryClient)}>
-				<Suspense fallback={<div className="flex items-center justify-center p-8">Loading orders...</div>}>
+				<Suspense fallback={<OrdersTableSkeleton />}>
 					<OrdersTable />
 				</Suspense>
 			</HydrationBoundary>
