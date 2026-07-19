@@ -43,7 +43,7 @@ const ProductList: FC<Props> = ({ products, title, link, arrow }) => {
 					)}
 				>
 					{products.map((product, index) => (
-						<ProductCard key={`${product.id}-${index}`} product={product} />
+						<ProductCard key={`${product.id}-${index}`} product={product} className='w-full' />
 					))}
 				</div>
 			) : (
