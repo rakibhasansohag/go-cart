@@ -90,6 +90,7 @@ const PaymentTableHeader: FC<Props> = ({
 					placeholder='Search payment method...'
 					value={debouncedSearch}
 					onChange={setDebouncedSearch}
+					onSubmit={() => setSearch(debouncedSearch)}
 					categoryLabel='Payments'
 				/>
 				<SelectDropdown

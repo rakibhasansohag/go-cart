@@ -1,8 +1,9 @@
 'use client';
+
 import { SearchResult } from '@/lib/types';
 import { Search as SearchIcon } from 'lucide-react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { ChangeEvent, useState } from 'react';
+import { ChangeEvent, useState, useEffect } from 'react';
 import SearchSuggestions from './suggestions';
 import { Button } from '@/components/store/ui/button';
 
@@ -10,7 +11,7 @@ export default function Search() {
 	const searchParams = useSearchParams();
 	const pathname = usePathname();
 	const params = new URLSearchParams(searchParams);
-	const { push, replace } = useRouter();
+	const { push } = useRouter();
 
 	const search_query_url = params.get('search');
 
@@ -19,17 +20,28 @@ export default function Search() {
 	);
 	const [suggestions, setSuggestions] = useState<SearchResult[]>([]);
 
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const handleInputChange = async (e: ChangeEvent<HTMLInputElement>) => {
-		const value = e.target.value;
-		setSearchQuery(value);
-		if (value) {
-			const res = await fetch(`/api/search?q=${value}`);
-			const data = await res.json();
-			setSuggestions(data);
-		} else {
+	useEffect(() => {
+		const query = searchQuery.trim();
+		if (!query) {
 			setSuggestions([]);
+			return;
 		}
+
+		const delayDebounceFn = setTimeout(async () => {
+			try {
+				const res = await fetch(`/api/search?q=${query}`);
+				const data = await res.json();
+				setSuggestions(data);
+			} catch (error) {
+				console.error(error);
+			}
+		}, 300);
+
+		return () => clearTimeout(delayDebounceFn);
+	}, [searchQuery]);
+
+	const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
+		setSearchQuery(e.target.value);
 	};
 
 	const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {

@@ -88,6 +88,7 @@ const OrderTableHeader: FC<Props> = ({
 					placeholder='Order ID, product or store name'
 					value={debouncedSearch}
 					onChange={setDebouncedSearch}
+					onSubmit={() => setSearch(debouncedSearch)}
 					categoryLabel='Orders'
 				/>
 				<SelectDropdown

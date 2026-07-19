@@ -12,12 +12,12 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useState, Suspense, Dispatch, SetStateAction } from 'react';
 import Pagination from '../../shared/pagination';
-import { getUserOrders } from '@/queries/profile';
-import OrderTableHeader from './order-table-header';
+
 import { Skeleton } from '@/components/ui/skeleton';
 
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/query-keys';
+import OrderTableHeader from './order-table-header';
 
 export function OrdersTableSkeleton() {
 	return (
@@ -149,7 +149,17 @@ function OrdersTableContent({
 }) {
 	const { data: res } = useSuspenseQuery({
 		queryKey: queryKeys.profile.orders({ filter, period, search, page, pageSize }),
-		queryFn: () => getUserOrders(filter, period, search, page, pageSize),
+		queryFn: async () => {
+			const res = await fetch(`/api/profile/orders?filter=${filter}&period=${period}&search=${search}&page=${page}&pageSize=${pageSize}`);
+			if (!res.ok) throw new Error('Failed to fetch orders');
+			return res.json() as Promise<{
+				orders: UserOrderType[];
+				totalPages: number;
+				currentPage: number;
+				pageSize: number;
+				totalCount: number;
+			}>;
+		},
 	});
 
 	const data = res.orders;
@@ -204,7 +214,7 @@ function OrdersTableContent({
 															#{order.id}
 														</p>
 														<p className='block antialiased font-sans text-sm leading-normal font-normal'>
-															Placed on: {order.createdAt.toDateString()}
+															Placed on: {new Date(order.createdAt).toDateString()}
 														</p>
 													</div>
 												</div>

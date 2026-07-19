@@ -8,7 +8,6 @@ import {
 import Link from 'next/link';
 import { useEffect, useState, Suspense } from 'react';
 import Pagination from '../../shared/pagination';
-import { getUserPayments } from '@/queries/profile';
 import PaymentTableHeader from './payment-table-header';
 
 import { useSuspenseQuery } from '@tanstack/react-query';
@@ -81,7 +80,17 @@ function PaymentsTableContent({
 }) {
 	const { data: res } = useSuspenseQuery({
 		queryKey: queryKeys.profile.payments({ filter, period, search, page, pageSize }),
-		queryFn: () => getUserPayments(filter, period, search, page, pageSize),
+		queryFn: async () => {
+			const res = await fetch(`/api/profile/payments?filter=${filter}&period=${period}&search=${search}&page=${page}&pageSize=${pageSize}`);
+			if (!res.ok) throw new Error('Failed to fetch payments');
+			return res.json() as Promise<{
+				payments: UserPaymentType[];
+				totalPages: number;
+				currentPage: number;
+				pageSize: number;
+				totalCount: number;
+			}>;
+		},
 	});
 
 	const data = res.payments;
@@ -129,7 +138,7 @@ function PaymentsTableContent({
 															#{payment.id}
 														</p>
 														<p className='block antialiased font-sans text-sm leading-normal font-normal'>
-															Last action: {payment.updatedAt.toDateString()}
+															Last action: {new Date(payment.updatedAt).toDateString()}
 														</p>
 													</div>
 												</div>

@@ -90,6 +90,7 @@ const ReviewsHeader: FC<Props> = ({
 					placeholder='Search reviews...'
 					value={debouncedSearch}
 					onChange={setDebouncedSearch}
+					onSubmit={() => setSearch(debouncedSearch)}
 					categoryLabel='Reviews'
 				/>
 				<SelectDropdown

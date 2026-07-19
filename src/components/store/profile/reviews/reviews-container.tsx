@@ -7,7 +7,6 @@ import {
 } from '@/lib/types';
 import { useEffect, useState, Suspense } from 'react';
 import Pagination from '../../shared/pagination';
-import { getUserReviews } from '@/queries/profile';
 import ReviewCard from '../../cards/review';
 import ReviewsHeader from './reviews-header';
 
@@ -81,7 +80,17 @@ function ReviewsContainerContent({
 }) {
 	const { data: res } = useSuspenseQuery({
 		queryKey: queryKeys.profile.reviews({ filter, period, search, page, pageSize }),
-		queryFn: () => getUserReviews(filter, period, search, page, pageSize),
+		queryFn: async () => {
+			const res = await fetch(`/api/profile/reviews?filter=${filter}&period=${period}&search=${search}&page=${page}&pageSize=${pageSize}`);
+			if (!res.ok) throw new Error('Failed to fetch reviews');
+			return res.json() as Promise<{
+				reviews: ReviewWithImageType[];
+				totalPages: number;
+				currentPage: number;
+				pageSize: number;
+				totalCount: number;
+			}>;
+		},
 	});
 
 	const data = res.reviews;
