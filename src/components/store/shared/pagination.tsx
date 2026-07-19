@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils';
-import { MoveLeft, MoveRight } from 'lucide-react';
+import { MoveLeft, MoveRight, ChevronDown } from 'lucide-react';
 import { Dispatch, FC, SetStateAction } from 'react';
 
 interface Props {
@@ -11,7 +11,7 @@ interface Props {
 }
 
 const Pagination: FC<Props> = ({ page, setPage, totalPages, pageSize, setPageSize }) => {
-	const hasMultiplePages = totalPages && totalPages > 1;
+	const hasMultiplePages = !!(totalPages && totalPages > 1);
 	const hasPageSizeSelector = !!(pageSize && setPageSize);
 
 	if (!hasMultiplePages && !hasPageSizeSelector) return null;
@@ -33,19 +33,24 @@ const Pagination: FC<Props> = ({ page, setPage, totalPages, pageSize, setPageSiz
 				{hasPageSizeSelector && (
 					<div className='flex items-center gap-x-2 text-xs text-gray-500 mr-auto pt-3'>
 						<span>Items per page:</span>
-						<select
-							value={pageSize}
-							onChange={(e) => {
-								setPageSize(Number(e.target.value));
-								setPage(1);
-							}}
-							className='h-7 px-2 border rounded-md bg-background text-main-primary cursor-pointer hover:border-orange-background outline-none'
-						>
-							<option value={5}>5</option>
-							<option value={10}>10</option>
-							<option value={20}>20</option>
-							<option value={50}>50</option>
-						</select>
+						<div className='relative w-16 h-7 flex items-center'>
+							<select
+								value={pageSize}
+								onChange={(e) => {
+									setPageSize(Number(e.target.value));
+									setPage(1);
+								}}
+								className='h-7 pl-2 pr-6 appearance-none outline-none cursor-pointer border border-border rounded-md bg-secondary text-xs text-main-primary transition-all duration-200 hover:border-gray-400 focus:border-orange-background focus:ring-1 focus:ring-orange-background shadow-sm w-full'
+							>
+								<option value={5}>5</option>
+								<option value={10}>10</option>
+								<option value={20}>20</option>
+								<option value={50}>50</option>
+							</select>
+							<span className='absolute inset-y-0 right-0 flex items-center pr-1.5 pointer-events-none text-main-secondary'>
+								<ChevronDown className='w-3.5 h-3.5' />
+							</span>
+						</div>
 					</div>
 				)}
 
