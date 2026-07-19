@@ -83,7 +83,7 @@ export default function ProfileSidebar() {
 							(pathname.startsWith(item.link) && item.link !== '/profile')
 						);
 						return (
-							<Link key={item.link} href={item.link}>
+							<Link key={item.link} href={item.link} prefetch={false}>
 								<motion.div
 									onMouseEnter={() => prefetchRouteData(item.link)}
 									className={cn(
