@@ -2,7 +2,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 export default function ReviewsLoading() {
 	return (
-		<div className='bg-background py-4 px-6 rounded-xl'>
+		<div className='bg-background py-4 px-4 sm:px-6 rounded-xl border border-border/10 shadow-sm'>
 			<h1 className='text-lg mb-1 font-bold'>Your reviews</h1>
 			{/* Header skeleton */}
 			<div className='pt-1 pb-3 bg-background space-y-4 rounded-xl'>

@@ -21,7 +21,7 @@ export default async function ProfileWishlistPage({
 	});
 
 	return (
-		<div className='bg-background py-4 px-6 rounded-xl'>
+		<div className='bg-background py-4 px-4 sm:px-6 rounded-xl border border-border/10 shadow-sm'>
 			<h1 className='text-lg mb-5 font-bold'>Your Wishlist</h1>
 			<HydrationBoundary state={dehydrate(queryClient)}>
 				<Suspense fallback={<div className="flex items-center justify-center p-8">Loading wishlist...</div>}>

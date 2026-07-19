@@ -48,10 +48,10 @@ const PaymentTableHeader: FC<Props> = ({
 	const hasActiveFilters = filter !== '' || debouncedSearch !== '' || period !== '';
 
 	return (
-		<div className='pt-4 pb-3 px-6 bg-background rounded-xl'>
-			<div className='flex items-center justify-between'>
-				<div className='-ml-3 text-main-primary text-sm'>
-					<div className='relative overflow-x-hidden'>
+		<div className='pt-4 pb-3 px-4 sm:px-6 bg-background rounded-t-xl'>
+			<div className='flex items-center justify-between gap-x-2'>
+				<div className='-ml-3 text-main-primary text-sm flex-1 min-w-0'>
+					<div className='relative overflow-x-auto scrollbar-none'>
 						<Tabs
 							items={filters.map((f) => ({ title: f.title, value: f.filter }))}
 							value={filter}
@@ -74,29 +74,34 @@ const PaymentTableHeader: FC<Props> = ({
 					</div>
 				</div>
 				{hasActiveFilters && (
-					<ClearFiltersButton
-						onClick={() => {
-							setFilter('');
-							setDebouncedSearch('');
-							setSearch('');
-							setPeriod('');
-						}}
-					/>
+					<div className='shrink-0 pl-2'>
+						<ClearFiltersButton
+							onClick={() => {
+								setFilter('');
+								setDebouncedSearch('');
+								setSearch('');
+								setPeriod('');
+							}}
+						/>
+					</div>
 				)}
 			</div>
 			{/* Search form - Date filter */}
-			<div className='flex items-center justify-between gap-4 mt-3'>
-				<SearchInput
-					placeholder='Search payment method...'
-					value={debouncedSearch}
-					onChange={setDebouncedSearch}
-					onSubmit={() => setSearch(debouncedSearch)}
-					categoryLabel='Payments'
-				/>
+			<div className='flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mt-3 w-full'>
+				<div className='flex-1 w-full'>
+					<SearchInput
+						placeholder='Search payment method...'
+						value={debouncedSearch}
+						onChange={setDebouncedSearch}
+						onSubmit={() => setSearch(debouncedSearch)}
+						categoryLabel='Payments'
+					/>
+				</div>
 				<SelectDropdown
 					options={date_filters}
 					value={period}
 					onChange={(val) => setPeriod(val as PaymentTableDateFilter)}
+					className='w-full sm:w-44'
 				/>
 			</div>
 		</div>

@@ -5,7 +5,7 @@ export default function OrdersLoading() {
 	return (
 		<div>
 			{/* Header skeleton */}
-			<div className='pt-4 pb-3 px-6 bg-background space-y-4 rounded-xl shadow-sm border border-border/10'>
+			<div className='pt-4 pb-3 px-4 sm:px-6 bg-background space-y-4 rounded-xl shadow-sm border border-border/10'>
 				<div className='flex items-center justify-between'>
 					<div className='flex gap-x-6 h-10 items-center'>
 						<Skeleton className='h-5 w-16' />

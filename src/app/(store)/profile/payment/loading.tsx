@@ -4,7 +4,7 @@ export default function PaymentsLoading() {
 	return (
 		<div>
 			{/* Header skeleton */}
-			<div className='pt-4 pb-3 px-6 bg-background space-y-4 rounded-xl shadow-sm border border-border/10'>
+			<div className='pt-4 pb-3 px-4 sm:px-6 bg-background space-y-4 rounded-xl shadow-sm border border-border/10'>
 				<div className='flex items-center justify-between'>
 					<div className='flex gap-x-6 h-10 items-center'>
 						<Skeleton className='h-5 w-16' />
@@ -18,8 +18,8 @@ export default function PaymentsLoading() {
 				</div>
 			</div>
 
-			<div className='overflow-hidden mt-5 rounded-xl'>
-				<div className='bg-background px-6 py-5'>
+			<div className='overflow-hidden mt-5 rounded-xl border border-border/10 shadow-sm'>
+				<div className='bg-background px-4 sm:px-6 py-5'>
 					<div className='max-h-[700px] overflow-x-auto overflow-y-auto border rounded-md'>
 						<table className='w-full min-w-max table-auto text-left'>
 							<thead>

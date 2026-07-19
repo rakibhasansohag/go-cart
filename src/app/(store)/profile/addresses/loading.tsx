@@ -2,7 +2,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 export default function AddressesLoading() {
 	return (
-		<div className='bg-background py-4 px-6 rounded-xl'>
+		<div className='bg-background py-4 px-4 sm:px-6 rounded-xl border border-border/10 shadow-sm'>
 			<div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
 				{Array.from({ length: 2 }).map((_, i) => (
 					<div key={i} className='border p-6 rounded-xl space-y-4 bg-background'>

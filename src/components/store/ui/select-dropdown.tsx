@@ -21,7 +21,7 @@ const SelectDropdown: FC<Props> = ({
 	className,
 }) => {
 	return (
-		<div className={cn('relative w-fit h-10 flex items-center', className)}>
+		<div className={cn('relative h-10 flex items-center', className || 'w-fit')}>
 			<select
 				value={value}
 				onChange={(e) => onChange(e.target.value)}

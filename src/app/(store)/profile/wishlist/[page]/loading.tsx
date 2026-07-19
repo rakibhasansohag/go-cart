@@ -2,7 +2,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 export default function WishlistLoading() {
 	return (
-		<div className='bg-background py-4 px-6 rounded-xl'>
+		<div className='bg-background py-4 px-4 sm:px-6 rounded-xl border border-border/10 shadow-sm'>
 			<h1 className='text-lg mb-5 font-bold'>Your Wishlist</h1>
 			<div className='grid grid-cols-2 min-[480px]:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4 gap-4'>
 				{Array.from({ length: 4 }).map((_, i) => (
