@@ -2,6 +2,7 @@
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { motion } from 'framer-motion';
 
 export default function ProfileSidebar() {
 	const pathname = usePathname();
@@ -34,24 +35,39 @@ export default function ProfileSidebar() {
 						</div>
 					</div>
 					{/* Links */}
-					{menu.map((item) => (
-						<Link key={item.link} href={item.link}>
-							<div
-								className={cn(
-									'relative flex h-9 items-center text-sm px-4 cursor-pointer hover:bg-f5',
-									{
-										'bg-f5  user-menu-item':
-											item.link &&
-											(pathname === item.link ||
-												(pathname.startsWith(item.link) &&
-													item.link !== '/profile')),
-									},
-								)}
-							>
-								<span>{item.title}</span>
-							</div>
-						</Link>
-					))}
+					{menu.map((item) => {
+						const isActive = item.link && (
+							pathname === item.link ||
+							(pathname.startsWith(item.link) && item.link !== '/profile')
+						);
+						return (
+							<Link key={item.link} href={item.link}>
+								<motion.div
+									className={cn(
+										'relative flex h-10 items-center text-sm px-4 cursor-pointer transition-all duration-200 select-none overflow-hidden rounded-md mx-2 my-1',
+										isActive
+											? 'text-[#fd384f] font-bold bg-[#fd384f]/10'
+											: 'text-main-secondary hover:text-main-primary hover:bg-white/[0.04]',
+									)}
+									whileTap={{ scale: 0.97, x: 3 }}
+								>
+									{/* Active Sidebar Indicator Line */}
+									{isActive && (
+										<motion.div
+											layoutId="active-sidebar-indicator"
+											className="absolute left-0 top-0 bottom-0 w-1 bg-[#fd384f] rounded-r-full"
+											transition={{
+												type: 'spring',
+												stiffness: 380,
+												damping: 30,
+											}}
+										/>
+									)}
+									<span className="relative z-10 pl-1">{item.title}</span>
+								</motion.div>
+							</Link>
+						);
+					})}
 				</div>
 			</div>
 		</div>
