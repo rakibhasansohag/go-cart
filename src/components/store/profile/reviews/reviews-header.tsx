@@ -6,6 +6,7 @@ import {
 } from '@/lib/types';
 import { cn } from '@/lib/utils';
 
+import Tabs from '@/components/store/ui/tabs';
 import { useRouter } from 'next/navigation';
 import { Dispatch, FC, SetStateAction, useEffect, useState } from 'react';
 import { DeleteIcon, SearchIcon } from '../../icons';
@@ -48,29 +49,19 @@ const ReviewsHeader: FC<Props> = ({
 			<div className='flex items-center justify-between'>
 				<div className='-ml-3 text-main-primary text-sm'>
 					<div className='relative overflow-x-hidden'>
-						<div className='py-4 inline-flex items-center bg-background justify-center relative'>
-							{filters.map((f, i) => (
-								<div
-									key={f.filter}
-									className={cn(
-										'relative px-4 text-main-primary whitespace-nowrap cursor-pointer leading-6',
-										{
-											'user-orders-table-tr font-bold': f.filter === filter,
-										},
-									)}
-									onClick={() => {
-										if (f.filter === '') {
-											router.refresh();
-											setFilter(f.filter);
-										} else {
-											setFilter(f.filter as ReviewFilter);
-										}
-									}}
-								>
-									{f.title}
-								</div>
-							))}
-						</div>
+						<Tabs
+							items={filters.map((f) => ({ title: f.title, value: f.filter }))}
+							value={filter}
+							onChange={(val) => {
+								if (val === '') {
+									router.refresh();
+									setFilter(val);
+								} else {
+									setFilter(val);
+								}
+							}}
+							layoutId="review-tabs"
+						/>
 					</div>
 				</div>
 				<div
@@ -175,7 +166,7 @@ const ReviewsHeader: FC<Props> = ({
 
 export default ReviewsHeader;
 
-const filters = [
+const filters: { title: string; filter: ReviewFilter }[] = [
 	{
 		title: 'View all',
 		filter: '',
