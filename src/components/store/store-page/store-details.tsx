@@ -23,47 +23,44 @@ export default function StoreDetails({
 	});
 
 	return (
-		<div className='relative w-full pb-28'>
-			<div className='relative'>
+		<div className='relative w-full pb-4 md:pb-44'>
+			<div className='relative flex flex-col'>
 				<Image
 					src={cover}
 					alt={name}
 					width={2000}
 					height={500}
-					className='w-full h-44 md:h-96 object-cover rounded-b-2xl'
+					className='w-full h-44 md:h-96 object-cover object-top rounded-b-2xl'
 				/>
-				<div className='absolute -bottom-[140px] left-2 flex flex-col md:flex-row md:w-[calc(100%-1rem)] md:justify-between md:items-center '>
-					<div className='flex'>
+				<div className='relative -mt-14 md:mt-0 md:absolute md:-bottom-[140px] left-0 md:left-2 flex flex-col md:flex-row w-full md:w-[calc(100%-1rem)] justify-between items-center px-4 md:px-0 md:gap-y-0 text-center md:text-left'>
+					<div className='flex flex-col md:flex-row items-center gap-y-3 md:gap-y-0'>
 						<Image
 							src={logo}
 							alt={name}
 							width={200}
 							height={200}
-							className='w-28 h-28 md:h-44 md:w-44 object-cover rounded-full shadow-2xl'
+							className='w-28 h-28 md:h-44 md:w-44 object-cover rounded-full shadow-2xl border-4 border-background bg-background shrink-0'
 						/>
-						<div className='mt-9 md:mt-14 ml-1'>
-							<div className='flex items-center gap-x-1'>
-								<h1 className='font-bold text-md capitalize leading-5 line-clamp-1'>
+						<div className='mb-2 md:mb-0 md:mt-14 ml-0 md:ml-6 flex flex-col items-center md:items-start'>
+							<div className='flex items-center gap-x-1 justify-center md:justify-start'>
+								<h1 className='font-bold text-lg md:text-xl capitalize leading-5 line-clamp-1 text-main-primary'>
 									{name.toLowerCase()}
 								</h1>
-								<CircleCheckBig className='stroke-green-400 mt-0.5' />
+								<CircleCheckBig className='stroke-green-400 w-5 h-5 shrink-0' />
 							</div>
-							<div className='flex items-center gap-x-1'>
-								<div className='text-sm leading-5'>
+							<div className='flex items-center gap-x-1 mt-1 justify-center md:justify-start'>
+								<div className='text-xs md:text-sm leading-5 text-main-secondary'>
 									<strong>100%</strong>
 									<span> Positive Feedback</span> <br />
 									<strong>{followersCount}</strong>
-									<strong>
+									<span>
 										{followersCount > 1 ? ' Followers' : ' Follower'}
-									</strong>
+									</span>
 								</div>
 							</div>
-							{/* <div className='text-sm leading-5 md:max-w-6/12'>
-								<strong>{description}</strong>
-							</div> */}
 						</div>
 					</div>
-					<div className='w-full md:w-fit flex justify-end ml-5 md:ml-0'>
+					<div className='w-full md:w-fit flex justify-center md:justify-end mt-2 md:mt-0'>
 						<FollowStore
 							id={details.id}
 							isUserFollowingStore={details.isUserFollowingStore}
