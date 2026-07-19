@@ -2,7 +2,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 export default function HistoryLoading() {
 	return (
-		<div className='bg-background py-4 px-6 rounded-xl mt-5'>
+		<div className='bg-background py-4 px-6 rounded-xl'>
+			<h1 className='text-lg mb-5 font-bold'>Your product view history</h1>
 			<div className='grid grid-cols-2 min-[480px]:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4 gap-4'>
 				{Array.from({ length: 4 }).map((_, i) => (
 					<div key={i} className='border p-4 rounded-2xl space-y-3 bg-background'>
