@@ -51,7 +51,8 @@ export default function ProfileSidebar() {
 	};
 
 	return (
-		<div>
+		<div className='w-full lg:w-[296px]'>
+			{/* Breadcrumbs */}
 			<div className='w-full p-4 text-xs text-main-secondary'>
 				<span>
 					<Link href='/'>Home</Link>
@@ -69,8 +70,10 @@ export default function ProfileSidebar() {
 					</span>
 				)}
 			</div>
-			<div className='bg-background'>
-				<div className='py-3 inline-block w-full lg:w-[296px] min-h-72'>
+
+			{/* Desktop Sidebar (lg and up) */}
+			<div className='hidden lg:block bg-background rounded-xl border border-border/10 shadow-sm'>
+				<div className='py-3 inline-block w-full min-h-72'>
 					<div className='font-bold text-main-primary flex h-9 items-center px-4'>
 						<div className='whitespace-nowrap overflow-ellipsis overflow-hidden'>
 							Account
@@ -107,6 +110,37 @@ export default function ProfileSidebar() {
 										/>
 									)}
 									<span className="relative z-10 pl-1">{item.title}</span>
+								</motion.div>
+							</Link>
+						);
+					})}
+				</div>
+			</div>
+
+			{/* Mobile/Tablet Horizontal Scroll Menu (below lg) */}
+			<div className='block lg:hidden w-full overflow-hidden mb-2'>
+				<div
+					className='flex items-center gap-x-2 overflow-x-auto py-2.5 px-4 bg-background rounded-xl border border-border/10 shadow-sm w-full'
+					style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+				>
+					{menu.map((item) => {
+						const isActive = item.link && (
+							pathname === item.link ||
+							(pathname.startsWith(item.link) && item.link !== '/profile')
+						);
+						return (
+							<Link key={item.link} href={item.link} prefetch={false} className="shrink-0">
+								<motion.div
+									onMouseEnter={() => prefetchRouteData(item.link)}
+									className={cn(
+										'px-4 py-2 text-xs rounded-full font-medium transition-all duration-200 select-none whitespace-nowrap cursor-pointer',
+										isActive
+											? 'bg-[#fd384f] text-white shadow-sm font-semibold'
+											: 'bg-secondary text-main-secondary hover:text-main-primary hover:bg-white/[0.02]',
+									)}
+									whileTap={{ scale: 0.95 }}
+								>
+									<span>{item.title}</span>
 								</motion.div>
 							</Link>
 						);
