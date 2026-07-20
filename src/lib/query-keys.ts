@@ -37,4 +37,15 @@ export const queryKeys = {
 		followInfo: (storeId: string, userId: string) =>
 			['store', 'followInfo', storeId, userId] as const,
 	},
+	dashboard: {
+		categories: () => ['dashboard', 'categories'] as const,
+		subCategories: () => ['dashboard', 'subCategories'] as const,
+		offerTags: () => ['dashboard', 'offerTags'] as const,
+		stores: () => ['dashboard', 'stores'] as const,
+		products: (storeUrl: string) => ['dashboard', 'products', storeUrl] as const,
+		coupons: (storeUrl: string) => ['dashboard', 'coupons', storeUrl] as const,
+		orders: (storeUrl: string) => ['dashboard', 'orders', storeUrl] as const,
+		shipping: (storeUrl: string) => ['dashboard', 'shipping', storeUrl] as const,
+		storeSettings: (storeUrl: string) => ['dashboard', 'settings', storeUrl] as const,
+	},
 } as const;

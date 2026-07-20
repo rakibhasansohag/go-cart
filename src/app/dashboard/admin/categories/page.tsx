@@ -1,34 +1,27 @@
-import { Plus } from 'lucide-react';
-import DataTable from '../../../../components/ui/data-table';
-import { getAllCategories } from '../../../../queries/category';
-import CategoryDetails from '../../../../components/dashboard/forms/category-details';
-import { columns } from './columns';
+import { Suspense } from 'react';
+import { dehydrate, HydrationBoundary } from '@tanstack/react-query';
+import { getQueryClient } from '@/lib/get-query-client';
+import { getAllCategories } from '@/queries/category';
+import { queryKeys } from '@/lib/query-keys';
+import CategoriesTable from './categories-table';
+import DataTableSkeleton from '@/components/dashboard/shared/table-skeleton';
 
 const AdminCategoriesPage = async () => {
-	// Retreive all categories
-	const categories = await getAllCategories();
-
 	const CLOUDINARY_CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_PRESET;
 	if (!CLOUDINARY_CLOUD_NAME) throw new Error('Missing Cloudinary Cloud Name');
 
-	// Checking if no categories are found
-	if (!categories) return null;
+	const queryClient = getQueryClient();
+	await queryClient.prefetchQuery({
+		queryKey: queryKeys.dashboard.categories(),
+		queryFn: () => getAllCategories(),
+	});
 
 	return (
-		<DataTable
-			actionButtonText={
-				<>
-					<Plus size={15} />
-					Create category
-				</>
-			}
-			modalChildren={<CategoryDetails cloudinary_key={CLOUDINARY_CLOUD_NAME} />}
-			newTabLink='/dashboard/admin/categories/new'
-			filterValue='name'
-			data={categories}
-			searchPlaceholder='Search category name...'
-			columns={columns}
-		/>
+		<HydrationBoundary state={dehydrate(queryClient)}>
+			<Suspense fallback={<DataTableSkeleton />}>
+				<CategoriesTable cloudinary_key={CLOUDINARY_CLOUD_NAME} />
+			</Suspense>
+		</HydrationBoundary>
 	);
 };
 

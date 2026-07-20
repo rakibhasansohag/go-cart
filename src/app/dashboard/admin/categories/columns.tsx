@@ -46,8 +46,10 @@ import {
 // Queries
 import { deleteCategory, getCategory } from '@/queries/category';
 
-// Tanstack React Table
+// Tanstack React Query & Table
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { ColumnDef } from '@tanstack/react-table';
+import { queryKeys } from '@/lib/query-keys';
 
 // Prisma models
 import { Category } from '@prisma/client';
@@ -124,13 +126,26 @@ interface CellActionsProps {
 const CellActions: React.FC<CellActionsProps> = ({ rowData }) => {
 	// Hooks
 	const { setOpen, setClose } = useModal();
-	const [loading, setLoading] = useState(false);
-	
+	const queryClient = useQueryClient();
+
+	const deleteMutation = useMutation({
+		mutationFn: (id: string) => deleteCategory(id),
+		onSuccess: () => {
+			toast('delete Category', {
+				description: 'The category has been deleted.',
+			});
+			queryClient.invalidateQueries({
+				queryKey: queryKeys.dashboard.categories(),
+			});
+			setClose();
+		},
+		onError: (error: Error) => {
+			toast.error(error.message || 'Failed to delete category');
+		},
+	});
 
 	const CLOUDINARY_CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_PRESET;
 	if (!CLOUDINARY_CLOUD_NAME) throw new Error('Missing Cloudinary Cloud Name');
-
-	const router = useRouter();
 
 	// Return null if rowData or rowData.id don't exist
 	if (!rowData || !rowData.id) return null;
@@ -186,17 +201,10 @@ const CellActions: React.FC<CellActionsProps> = ({ rowData }) => {
 				<AlertDialogFooter className='flex items-center'>
 					<AlertDialogCancel className='mb-2'>Cancel</AlertDialogCancel>
 					<AlertDialogAction
-						disabled={loading}
+						disabled={deleteMutation.isPending}
 						className='bg-destructive hover:bg-destructive mb-2 text-white'
-						onClick={async () => {
-							setLoading(true);
-							await deleteCategory(rowData.id);
-							toast('delete Category', {
-								description: 'The category has been deleted.',
-							});
-							setLoading(false);
-							router.refresh();
-							setClose();
+						onClick={() => {
+							deleteMutation.mutate(rowData.id);
 						}}
 					>
 						Delete

@@ -39,8 +39,8 @@ Do one phase at a time. Mark it `[x]` when done and tested before moving to the 
 All dashboard pages currently use direct DB calls in server components and `router.refresh()` in mutation handlers.
 Goal: prefetch on server, `useSuspenseQuery` on client, `useMutation` + cache invalidation instead of `router.refresh()`.
 
-- [ ] **Phase 8.1 — Extend query-keys.ts**
-  - [ ] Add `dashboard.*` namespace: categories, subCategories, offerTags, stores, products, coupons, orders, shipping, storeSettings
+- [x] **Phase 8.1 — Extend query-keys.ts**
+  - [x] Add `dashboard.*` namespace: categories, subCategories, offerTags, stores, products, coupons, orders, shipping, storeSettings
   - **Test**: TypeScript compiles with no errors (`tsc --noEmit`)
 
 - [ ] **Phase 8.2 — Admin: Categories**

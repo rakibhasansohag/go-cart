@@ -40,6 +40,8 @@ import ImageUpload from '../shared/image-upload';
 import { upsertCategory } from '../../../queries/category';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { queryKeys } from '@/lib/query-keys';
 
 
 interface CategoryDetailsProps {
@@ -49,6 +51,7 @@ interface CategoryDetailsProps {
 
 const CategoryDetails = ({ data, cloudinary_key }: CategoryDetailsProps) => {
 	const router = useRouter();
+	const queryClient = useQueryClient();
 
 	const form = useForm<z.infer<typeof CategoryFormSchema>>({
 		mode: 'onChange', // Form validation mode
@@ -62,8 +65,37 @@ const CategoryDetails = ({ data, cloudinary_key }: CategoryDetailsProps) => {
 		},
 	});
 
-	// Loading status based on form submission
-	const isLoading = form.formState.isSubmitting;
+	const upsertMutation = useMutation({
+		mutationFn: upsertCategory,
+		onSuccess: (response) => {
+			toast.success(
+				data?.id
+					? 'Category has been updated.'
+					: `Congratulations! '${response?.name}' is now created.`,
+			);
+			queryClient.invalidateQueries({
+				queryKey: queryKeys.dashboard.categories(),
+			});
+			if (!data?.id) {
+				router.push('/dashboard/admin/categories');
+			}
+		},
+		onError: (error: any) => {
+			console.error('Full error details:', {
+				error,
+				formState: form.getValues(),
+				formErrors: form.formState.errors,
+			});
+			toast.error(
+				`Operation failed: ${
+					error instanceof Error ? error.message : 'Unknown error'
+				}`,
+			);
+		},
+	});
+
+	// Loading status based on form submission or mutation pending
+	const isLoading = form.formState.isSubmitting || upsertMutation.isPending;
 
 	// Rest form values on form submission
 	useEffect(() => {
@@ -79,48 +111,17 @@ const CategoryDetails = ({ data, cloudinary_key }: CategoryDetailsProps) => {
 
 	// Submit handler for form submission
 	const handleSubmit = async () => {
-		try {
-			const values = form.getValues();
+		const values = form.getValues();
 
-			// Upserting Category data
-			const response = await upsertCategory({
-				id: data?.id ? data.id : v4(),
-				name: values?.name.trim(),
-				image: values?.image[0].url,
-				url: values?.url.trim(),
-				featured: values.featured!,
-				createdAt: new Date(),
-				updatedAt: new Date(),
-			});
-
-			console.log('Upsert data:', response);
-
-			// displaying success message
-			toast.success(
-				data?.id
-					? 'Category has been updated.'
-					: `Congratulations! '${response?.name}' is now created.`,
-			);
-
-			// Redirect or Refresh data
-			if (data?.id) {
-				router.refresh();
-			} else {
-				router.push('/dashboard/admin/categories');
-			}
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		} catch (error: any) {
-			console.error('Full error details:', {
-				error,
-				formState: form.getValues(),
-				formErrors: form.formState.errors,
-			});
-			toast.error(
-				`Operation failed: ${
-					error instanceof Error ? error.message : 'Unknown error'
-				}`,
-			);
-		}
+		await upsertMutation.mutateAsync({
+			id: data?.id ? data.id : v4(),
+			name: values?.name.trim(),
+			image: values?.image[0].url,
+			url: values?.url.trim(),
+			featured: values.featured!,
+			createdAt: new Date(),
+			updatedAt: new Date(),
+		});
 	};
 
 	return (
