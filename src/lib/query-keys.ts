@@ -19,6 +19,7 @@ export const queryKeys = {
 		wishlist: (page: number) => ['profile', 'wishlist', page] as const,
 		following: (page: number) => ['profile', 'following', page] as const,
 		history: (ids: string[], page: number) => ['profile', 'history', { ids, page }] as const,
+		addresses: () => ['profile', 'addresses'] as const,
 	},
 	categories: {
 		all: () => ['categories'] as const,
