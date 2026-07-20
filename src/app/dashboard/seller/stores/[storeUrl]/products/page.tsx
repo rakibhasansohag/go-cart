@@ -1,58 +1,48 @@
+import { Suspense } from 'react';
+import { dehydrate, HydrationBoundary } from '@tanstack/react-query';
+import { getQueryClient } from '@/lib/get-query-client';
 import { getAllStoreProducts } from '@/queries/product';
-import DataTable from '@/components/ui/data-table';
-import { columns } from './columns';
-import { Plus } from 'lucide-react';
-import ProductDetails from '@/components/dashboard/forms/product-details';
-import { getAllCategories } from '@/queries/category';
+import { getAllCategoriesWithSubs } from '@/queries/category';
 import { getAllOfferTags } from '@/queries/offer-tag';
 import { db } from '@/lib/db';
+import { queryKeys } from '@/lib/query-keys';
+import ProductsTable from './products-table';
+import DataTableSkeleton from '@/components/dashboard/shared/table-skeleton';
 
-// Type for awaited params
 type StoreParams = { storeUrl: string };
 
 export default async function SellerProductsPage({
 	params,
 }: {
-	// Next 15 app routes pass awaitable proxies type as Promise<...>
 	params: Promise<StoreParams>;
 }) {
-	// await the whole proxy first (Next 15 requirement)
 	const { storeUrl } = await params;
+	const queryClient = getQueryClient();
 
-	// Fetching products data from the database for the active store
-	const products = await getAllStoreProducts(storeUrl);
-
-	const categories = await getAllCategories();
-	const offerTags = await getAllOfferTags();
-
-	const countries = await db.country.findMany({
-		orderBy: {
-			createdAt: 'desc',
-		},
-	});
+	const [, categories, offerTags, countries] = await Promise.all([
+		queryClient.prefetchQuery({
+			queryKey: queryKeys.dashboard.products(storeUrl),
+			queryFn: () => getAllStoreProducts(storeUrl),
+		}),
+		getAllCategoriesWithSubs(),
+		getAllOfferTags(),
+		db.country.findMany({
+			orderBy: {
+				createdAt: 'desc',
+			},
+		}),
+	]);
 
 	return (
-		<DataTable
-			actionButtonText={
-				<>
-					<Plus size={15} />
-					Create product
-				</>
-			}
-			modalChildren={
-				<ProductDetails
+		<HydrationBoundary state={dehydrate(queryClient)}>
+			<Suspense fallback={<DataTableSkeleton />}>
+				<ProductsTable
+					storeUrl={storeUrl}
 					categories={categories}
 					offerTags={offerTags}
-					storeUrl={storeUrl}
 					countries={countries}
 				/>
-			}
-			newTabLink={`/dashboard/seller/stores/${storeUrl}/products/new`}
-			filterValue='name'
-			data={products}
-			columns={columns}
-			searchPlaceholder='Search product name...'
-			maxWidth='lg:max-w-6xl'
-		/>
+			</Suspense>
+		</HydrationBoundary>
 	);
 }

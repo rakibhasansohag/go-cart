@@ -35,8 +35,11 @@ import { CopyPlus, FilePenLine, MoreHorizontal, Trash } from 'lucide-react';
 // Queries
 import { deleteProduct } from '@/queries/product';
 
-// Tanstack React Table
+// Tanstack React Query & Table
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { ColumnDef } from '@tanstack/react-table';
+import { useParams } from 'next/navigation';
+import { queryKeys } from '@/lib/query-keys';
 
 // Types
 import { StoreProductType } from '@/lib/types';
@@ -173,9 +176,26 @@ interface CellActionsProps {
 const CellActions: React.FC<CellActionsProps> = ({ productId }) => {
 	// Hooks
 	const { setClose } = useModal();
-	const [loading, setLoading] = useState(false);
+	const queryClient = useQueryClient();
+	const params = useParams<{ storeUrl: string }>();
 
-	const router = useRouter();
+	const deleteMutation = useMutation({
+		mutationFn: (id: string) => deleteProduct(id),
+		onSuccess: () => {
+			toast('Deleted product', {
+				description: 'The product has been deleted.',
+			});
+			if (params?.storeUrl) {
+				queryClient.invalidateQueries({
+					queryKey: queryKeys.dashboard.products(params.storeUrl),
+				});
+			}
+			setClose();
+		},
+		onError: (error: Error) => {
+			toast.error(error.message || 'Failed to delete product');
+		},
+	});
 
 	// Return null if rowData or rowData.id don't exist
 	if (!productId) return null;
@@ -211,17 +231,10 @@ const CellActions: React.FC<CellActionsProps> = ({ productId }) => {
 				<AlertDialogFooter className='flex items-center'>
 					<AlertDialogCancel className='mb-2'>Cancel</AlertDialogCancel>
 					<AlertDialogAction
-						disabled={loading}
+						disabled={deleteMutation.isPending}
 						className='bg-destructive hover:bg-destructive mb-2 text-white'
-						onClick={async () => {
-							setLoading(true);
-							await deleteProduct(productId);
-							toast('Deleted product', {
-								description: 'The product has been deleted.',
-							});
-							setLoading(false);
-							router.refresh();
-							setClose();
+						onClick={() => {
+							deleteMutation.mutate(productId);
 						}}
 					>
 						Delete

@@ -60,6 +60,8 @@ import { v4 } from 'uuid';
 
 // Types
 import { ProductWithVariantType } from '@/lib/types';
+import { useQueryClient } from '@tanstack/react-query';
+import { queryKeys } from '@/lib/query-keys';
 
 import ClickToAddInputs from './click-to-add';
 import {
@@ -124,6 +126,7 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 }) => {
 	// Initializing necessary hooks
 	const router = useRouter(); // Hook for routing
+	const queryClient = useQueryClient();
 
 	// Is new variant page
 	const isNewVariantPage = data?.productId && !data?.variantId;
@@ -443,6 +446,11 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 					? 'Product has been updated.'
 					: `Congratulations! product ${values.name} is now created.`,
 			);
+
+			// Invalidate query cache for store products
+			queryClient.invalidateQueries({
+				queryKey: queryKeys.dashboard.products(storeUrl),
+			});
 
 			// Redirect or Refresh data
 			if (data?.productId && data?.variantId) {

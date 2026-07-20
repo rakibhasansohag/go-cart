@@ -68,11 +68,11 @@ Goal: prefetch on server, `useSuspenseQuery` on client, `useMutation` + cache in
   - [x] `StoreStatusSelect` — replace `useState`-only with `useMutation` + optimistic update on stores cache
   - **Test**: Stores load, status badge updates instantly, delete removes row without reload
 
-- [ ] **Phase 8.6 — Seller: Products**
-  - [ ] Convert `[storeUrl]/products/page.tsx` → prefetch 4 queries in parallel (`Promise.all`)
-  - [ ] Create `products-table.tsx` client component
-  - [ ] Delete mutation + `invalidateQueries(dashboard.products(storeUrl))`
-  - [ ] `product-details.tsx` form mutation → `invalidateQueries`
+- [x] **Phase 8.6 — Seller: Products**
+  - [x] Convert `[storeUrl]/products/page.tsx` → prefetch 4 queries in parallel (`Promise.all`)
+  - [x] Create `products-table.tsx` client component
+  - [x] Delete mutation + `invalidateQueries(dashboard.products(storeUrl))`
+  - [x] `product-details.tsx` form mutation → `invalidateQueries`
   - **Test**: Products table loads, delete/create works without reload
 
 - [ ] **Phase 8.7 — Seller: Coupons**
