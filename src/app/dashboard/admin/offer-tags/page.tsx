@@ -1,39 +1,24 @@
-// Queries
+import { Suspense } from 'react';
+import { dehydrate, HydrationBoundary } from '@tanstack/react-query';
+import { getQueryClient } from '@/lib/get-query-client';
 import { getAllOfferTags } from '@/queries/offer-tag';
-
-// Data table
-import DataTable from '@/components/ui/data-table';
-
-// Plus icon
-import { Plus } from 'lucide-react';
-
-// Offer tag details
-import OfferTagDetails from '@/components/dashboard/forms/offer-tag-details';
-
-// Columns
-import { columns } from './columns';
+import { queryKeys } from '@/lib/query-keys';
+import OfferTagsTable from './offer-tags-table';
+import DataTableSkeleton from '@/components/dashboard/shared/table-skeleton';
 
 export default async function AdminOfferTagsPage() {
-	// Fetching offer tags data from the database
-	const categories = await getAllOfferTags();
+	const queryClient = getQueryClient();
 
-	// Checking if no offer tags are found
-	if (!categories) return null; // If no offer tags found, return null
+	await queryClient.prefetchQuery({
+		queryKey: queryKeys.dashboard.offerTags(),
+		queryFn: () => getAllOfferTags(),
+	});
 
 	return (
-		<DataTable
-			actionButtonText={
-				<>
-					<Plus size={15} />
-					Create offer tag
-				</>
-			}
-			newTabLink='/dashboard/admin/offer-tags/new'
-			modalChildren={<OfferTagDetails />}
-			filterValue='name'
-			data={categories}
-			searchPlaceholder='Search offer tag name...'
-			columns={columns}
-		/>
+		<HydrationBoundary state={dehydrate(queryClient)}>
+			<Suspense fallback={<DataTableSkeleton />}>
+				<OfferTagsTable />
+			</Suspense>
+		</HydrationBoundary>
 	);
 }

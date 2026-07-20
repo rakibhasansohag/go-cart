@@ -39,8 +39,10 @@ import { Edit, MoreHorizontal, Trash } from 'lucide-react';
 // Queries
 import { deleteOfferTag, getOfferTag } from '@/queries/offer-tag';
 
-// Tanstack React Table
+// Tanstack React Query & Table
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { ColumnDef } from '@tanstack/react-table';
+import { queryKeys } from '@/lib/query-keys';
 
 // Prisma models
 import { OfferTag } from '@prisma/client';
@@ -87,9 +89,23 @@ interface CellActionsProps {
 const CellActions: React.FC<CellActionsProps> = ({ rowData }) => {
 	// Hooks
 	const { setOpen, setClose } = useModal();
-	const [loading, setLoading] = useState(false);
+	const queryClient = useQueryClient();
 
-	const router = useRouter();
+	const deleteMutation = useMutation({
+		mutationFn: (id: string) => deleteOfferTag(id),
+		onSuccess: () => {
+			toast('Deleted category', {
+				description: 'The category has been deleted.',
+			});
+			queryClient.invalidateQueries({
+				queryKey: queryKeys.dashboard.offerTags(),
+			});
+			setClose();
+		},
+		onError: (error: Error) => {
+			toast.error(error.message || 'Failed to delete offer tag');
+		},
+	});
 
 	// Return null if rowData or rowData.id don't exist
 	if (!rowData || !rowData.id) return null;
@@ -146,17 +162,10 @@ const CellActions: React.FC<CellActionsProps> = ({ rowData }) => {
 				<AlertDialogFooter className='flex items-center'>
 					<AlertDialogCancel className='mb-2'>Cancel</AlertDialogCancel>
 					<AlertDialogAction
-						disabled={loading}
+						disabled={deleteMutation.isPending}
 						className='bg-destructive hover:bg-destructive mb-2 text-white'
-						onClick={async () => {
-							setLoading(true);
-							await deleteOfferTag(rowData.id);
-							toast('Deleted category', {
-								description: 'The category has been deleted.',
-							});
-							setLoading(false);
-							router.refresh();
-							setClose();
+						onClick={() => {
+							deleteMutation.mutate(rowData.id);
 						}}
 					>
 						Delete

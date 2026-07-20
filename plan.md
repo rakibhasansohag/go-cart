@@ -56,9 +56,9 @@ Goal: prefetch on server, `useSuspenseQuery` on client, `useMutation` + cache in
   - [x] `subCategory-details.tsx` form mutation → `invalidateQueries`
   - **Test**: Table loads, create/delete updates list without page reload
 
-- [ ] **Phase 8.4 — Admin: Offer Tags**
-  - [ ] Same pattern for `admin/offer-tags`
-  - [ ] `offer-tag-details.tsx` form mutation → `invalidateQueries`
+- [x] **Phase 8.4 — Admin: Offer Tags**
+  - [x] Same pattern for `admin/offer-tags`
+  - [x] `offer-tag-details.tsx` form mutation → `invalidateQueries`
   - **Test**: Table loads, create/delete updates list without page reload
 
 - [ ] **Phase 8.5 — Admin: Stores + Optimistic Status**
