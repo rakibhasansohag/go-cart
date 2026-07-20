@@ -12,6 +12,8 @@ import { Heart } from 'lucide-react';
 import ProductPrice from '../../product-page/product-info/product-price';
 import { addToWishlist } from '@/queries/user';
 import { toast } from 'sonner';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { queryKeys } from '@/lib/query-keys';
 
 export default function ProductCard({
 	product,
@@ -25,14 +27,21 @@ export default function ProductCard({
 	const { variantSlug, variantName, images, sizes } = variant;
 	const [isHovered, setIsHovered] = useState(false);
 
-	const handleaddToWishlist = async () => {
-		try {
-			const res = await addToWishlist(id, variant.variantId);
-			if (res) toast.success('Product successfully added to wishlist.');
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		} catch (error: any) {
+	const queryClient = useQueryClient();
+
+	const addToWishlistMutation = useMutation({
+		mutationFn: () => addToWishlist(id, variant.variantId),
+		onSuccess: () => {
+			toast.success('Product successfully added to wishlist.');
+			queryClient.invalidateQueries({ queryKey: queryKeys.profile.wishlist(1) });
+		},
+		onError: (error: any) => {
 			toast.error(error.toString());
-		}
+		},
+	});
+
+	const handleaddToWishlist = () => {
+		addToWishlistMutation.mutate();
 	};
 
 	return (

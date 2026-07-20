@@ -20,7 +20,7 @@ This file tracks the status of the React Query v5 migration.
   - [x] Filters & product listings migration
 - [x] **Phase 5: Profile Pages**
   - [x] Orders, payments, reviews, wishlist, history, following pages
-- [ ] **Phase 6: Store Page**
-  - [ ] Store product grid
-- [ ] **Phase 7: Mutations & Invalidations**
-  - [ ] Cart/wishlist/reviews mutations wrapped in `useMutation`
+- [x] **Phase 6: Store Page**
+  - [x] Store product grid
+- [x] **Phase 7: Mutations & Invalidations**
+  - [x] Cart/wishlist/reviews mutations wrapped in `useMutation`
