@@ -61,11 +61,11 @@ Goal: prefetch on server, `useSuspenseQuery` on client, `useMutation` + cache in
   - [x] `offer-tag-details.tsx` form mutation → `invalidateQueries`
   - **Test**: Table loads, create/delete updates list without page reload
 
-- [ ] **Phase 8.5 — Admin: Stores + Optimistic Status**
-  - [ ] Convert `admin/stores/page.tsx` to server prefetch
-  - [ ] Create `stores-table.tsx` client component
-  - [ ] Delete mutation + `invalidateQueries`
-  - [ ] `StoreStatusSelect` — replace `useState`-only with `useMutation` + optimistic update on stores cache
+- [x] **Phase 8.5 — Admin: Stores + Optimistic Status**
+  - [x] Convert `admin/stores/page.tsx` to server prefetch
+  - [x] Create `stores-table.tsx` client component
+  - [x] Delete mutation + `invalidateQueries`
+  - [x] `StoreStatusSelect` — replace `useState`-only with `useMutation` + optimistic update on stores cache
   - **Test**: Stores load, status badge updates instantly, delete removes row without reload
 
 - [ ] **Phase 8.6 — Seller: Products**

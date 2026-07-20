@@ -1,20 +1,24 @@
-// Queries
+import { Suspense } from 'react';
+import { dehydrate, HydrationBoundary } from '@tanstack/react-query';
+import { getQueryClient } from '@/lib/get-query-client';
 import { getAllStores } from '@/queries/store';
-
-// Data table
-import DataTable from '@/components/ui/data-table';
-import { columns } from './columns';
+import { queryKeys } from '@/lib/query-keys';
+import StoresTable from './stores-table';
+import DataTableSkeleton from '@/components/dashboard/shared/table-skeleton';
 
 export default async function AdminStoresPage() {
-	// Fetching stores data from the database
-	const stores = await getAllStores();
+	const queryClient = getQueryClient();
+
+	await queryClient.prefetchQuery({
+		queryKey: queryKeys.dashboard.stores(),
+		queryFn: () => getAllStores(),
+	});
 
 	return (
-		<DataTable
-			filterValue='name'
-			data={stores}
-			searchPlaceholder='Search store name...'
-			columns={columns}
-		/>
+		<HydrationBoundary state={dehydrate(queryClient)}>
+			<Suspense fallback={<DataTableSkeleton />}>
+				<StoresTable />
+			</Suspense>
+		</HydrationBoundary>
 	);
 }
