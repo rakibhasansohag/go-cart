@@ -1,13 +1,14 @@
-import StoreDefaultShippingDetails from '@/components/dashboard/forms/store-default-shipping-details';
-import DataTable from '@/components/ui/data-table';
+import { Suspense } from 'react';
+import { dehydrate, HydrationBoundary } from '@tanstack/react-query';
+import { getQueryClient } from '@/lib/get-query-client';
 import {
 	getStoreDefaultShippingDetails,
 	getStoreShippingRates,
 } from '@/queries/store';
-import { redirect } from 'next/navigation';
-import { columns } from './columns';
+import { queryKeys } from '@/lib/query-keys';
+import ShippingView from './shipping-view';
+import DataTableSkeleton from '@/components/dashboard/shared/table-skeleton';
 
-// typed alias for clarity
 type StoreParams = { storeUrl: string };
 
 export default async function SellerStoreShippingPage({
@@ -15,21 +16,25 @@ export default async function SellerStoreShippingPage({
 }: {
 	params: Promise<StoreParams>;
 }) {
-	// await the whole proxy first (Next 15 requirement)
 	const { storeUrl } = await params;
+	const queryClient = getQueryClient();
 
-	const shippingDetails = await getStoreDefaultShippingDetails(storeUrl);
-	const shippingRates = await getStoreShippingRates(storeUrl);
-	if (!shippingDetails || !shippingRates) return redirect('/');
+	await queryClient.prefetchQuery({
+		queryKey: queryKeys.dashboard.shipping(storeUrl),
+		queryFn: async () => {
+			const [details, rates] = await Promise.all([
+				getStoreDefaultShippingDetails(storeUrl),
+				getStoreShippingRates(storeUrl),
+			]);
+			return { details, rates };
+		},
+	});
+
 	return (
-		<div>
-			<StoreDefaultShippingDetails data={shippingDetails} storeUrl={storeUrl} />
-			<DataTable
-				filterValue='countryName'
-				data={shippingRates}
-				columns={columns}
-				searchPlaceholder='Search by country name...'
-			/>
-		</div>
+		<HydrationBoundary state={dehydrate(queryClient)}>
+			<Suspense fallback={<DataTableSkeleton />}>
+				<ShippingView storeUrl={storeUrl} />
+			</Suspense>
+		</HydrationBoundary>
 	);
 }

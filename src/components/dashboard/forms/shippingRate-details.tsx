@@ -35,6 +35,8 @@ import { Input } from '@/components/ui/input';
 
 // Queries
 import { upsertShippingRate } from '@/queries/store';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { queryKeys } from '@/lib/query-keys';
 
 // Utils
 import { v4 } from 'uuid';
@@ -55,6 +57,7 @@ const ShippingRateDetails: FC<ShippingRateDetailsProps> = ({
 }) => {
 	// Initializing necessary hooks
 	const router = useRouter(); // Hook for routing
+	const queryClient = useQueryClient();
 
 	// Form hook for managing form state and validation
 	const form = useForm<z.infer<typeof ShippingRateFormSchema>>({
@@ -89,8 +92,23 @@ const ShippingRateDetails: FC<ShippingRateDetailsProps> = ({
 		},
 	});
 
-	// Loading status based on form submission
-	const isLoading = form.formState.isSubmitting;
+	const upsertMutation = useMutation({
+		mutationFn: (rateData: any) => upsertShippingRate(storeUrl, rateData),
+		onSuccess: (response) => {
+			if (response?.id) {
+				toast.success('Shipping rates updated successfully !');
+				queryClient.invalidateQueries({
+					queryKey: queryKeys.dashboard.shipping(storeUrl),
+				});
+			}
+		},
+		onError: (error: any) => {
+			toast.error(error.message);
+		},
+	});
+
+	// Loading status based on form submission or mutation pending
+	const isLoading = form.formState.isSubmitting || upsertMutation.isPending;
 
 	// Reset form values when data changes
 	useEffect(() => {
@@ -102,39 +120,21 @@ const ShippingRateDetails: FC<ShippingRateDetailsProps> = ({
 	// Submit handler for form submission
 	const handleSubmit = async () => {
 		const values = form.getValues();
-		try {
-			// Upserting category data
-			const response = await upsertShippingRate(storeUrl, {
-				id: data?.shippingRate ? data.shippingRate.id : v4(),
-				countryId: data?.countryId ? data.countryId : '',
-				shippingService: values.shippingService,
-				shippingFeePerItem: values.shippingFeePerItem,
-				shippingFeeForAdditionalItem: values.shippingFeeForAdditionalItem,
-				shippingFeePerKg: values.shippingFeePerKg,
-				shippingFeeFixed: values.shippingFeeFixed,
-				deliveryTimeMin: values.deliveryTimeMin,
-				deliveryTimeMax: values.deliveryTimeMax,
-				returnPolicy: values.returnPolicy,
-				storeId: '',
-				createdAt: new Date(),
-				updatedAt: new Date(),
-			});
-
-			console.log('shippingRate Values ==>', response);
-
-			if (response.id) {
-				// Displaying success message
-				toast.success('Shipping rates updated successfully !');
-
-				// Redirect or Refresh data
-				router.refresh();
-
-				// Closing the dialog
-			}
-		} catch (error: any) {
-			// Handling form submission errors
-			toast.error(error.message);
-		}
+		await upsertMutation.mutateAsync({
+			id: data?.shippingRate ? data.shippingRate.id : v4(),
+			countryId: data?.countryId ? data.countryId : '',
+			shippingService: values.shippingService,
+			shippingFeePerItem: values.shippingFeePerItem,
+			shippingFeeForAdditionalItem: values.shippingFeeForAdditionalItem,
+			shippingFeePerKg: values.shippingFeePerKg,
+			shippingFeeFixed: values.shippingFeeFixed,
+			deliveryTimeMin: values.deliveryTimeMin,
+			deliveryTimeMax: values.deliveryTimeMax,
+			returnPolicy: values.returnPolicy,
+			storeId: '',
+			createdAt: new Date(),
+			updatedAt: new Date(),
+		});
 	};
 
 	return (

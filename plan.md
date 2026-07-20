@@ -82,22 +82,22 @@ Goal: prefetch on server, `useSuspenseQuery` on client, `useMutation` + cache in
   - [x] `coupon-details.tsx` form mutation → `invalidateQueries`
   - **Test**: Coupons table loads, create/delete works without reload
 
-- [ ] **Phase 8.8 — Seller: Orders + Optimistic Status**
-  - [ ] Convert `[storeUrl]/orders/page.tsx` → server prefetch
-  - [ ] Create `orders-table.tsx` client component
-  - [ ] `OrderStatusSelect` → `useMutation` + optimistic update on orders cache
-  - [ ] `ProductStatusSelect` → `useMutation` + optimistic update on orders cache
+- [x] **Phase 8.8 — Seller: Orders + Optimistic Status**
+  - [x] Convert `[storeUrl]/orders/page.tsx` → server prefetch
+  - [x] Create `orders-table.tsx` client component
+  - [x] `OrderStatusSelect` → `useMutation` + optimistic update on orders cache
+  - [x] `ProductStatusSelect` → `useMutation` + optimistic update on orders cache
   - **Test**: Orders load, status changes update inline without reload
 
-- [ ] **Phase 8.9 — Seller: Shipping**
-  - [ ] Convert `[storeUrl]/shipping/page.tsx` → server prefetch (2 queries)
-  - [ ] Create `shipping-view.tsx` client component
-  - [ ] `store-default-shipping-details.tsx` form mutation → `invalidateQueries`
-  - [ ] `shippingRate-details.tsx` form mutation → `invalidateQueries`
+- [x] **Phase 8.9 — Seller: Shipping**
+  - [x] Convert `[storeUrl]/shipping/page.tsx` → server prefetch (2 queries)
+  - [x] Create `shipping-view.tsx` client component
+  - [x] `store-default-shipping-details.tsx` form mutation → `invalidateQueries`
+  - [x] `shippingRate-details.tsx` form mutation → `invalidateQueries`
   - **Test**: Shipping defaults and rates load, edit works without reload
 
-- [ ] **Phase 8.10 — Seller: Settings**
-  - [ ] Convert `[storeUrl]/settings/page.tsx` → server prefetch
-  - [ ] Create `store-settings-view.tsx` client component
-  - [ ] `store-details.tsx` form mutation → `invalidateQueries`
+- [x] **Phase 8.10 — Seller: Settings**
+  - [x] Convert `[storeUrl]/settings/page.tsx` → server prefetch
+  - [x] Create `store-settings-view.tsx` client component
+  - [x] `store-details.tsx` form mutation → `invalidateQueries`
   - **Test**: Settings form loads prefetched data, save works without reload

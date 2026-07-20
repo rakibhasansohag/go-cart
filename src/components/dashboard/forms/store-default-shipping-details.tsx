@@ -31,6 +31,8 @@ import { Textarea } from '@/components/ui/textarea';
 
 // Queries
 import { updateStoreDefaultShippingDetails } from '@/queries/store';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { queryKeys } from '@/lib/query-keys';
 
 // Types
 import { StoreDefaultShippingType } from '@/lib/types';
@@ -49,6 +51,7 @@ const StoreDefaultShippingDetails: FC<StoreDefaultShippingDetailsProps> = ({
 }) => {
 	// Initializing necessary hooks
 	const router = useRouter(); // Hook for routing
+	const queryClient = useQueryClient();
 
 	// Form hook for managing form state and validation
 	const form = useForm<z.infer<typeof StoreShippingFormSchema>>({
@@ -68,8 +71,25 @@ const StoreDefaultShippingDetails: FC<StoreDefaultShippingDetailsProps> = ({
 		},
 	});
 
-	// Loading status based on form submission
-	const isLoading = form.formState.isSubmitting;
+	const updateMutation = useMutation({
+		mutationFn: (values: any) => updateStoreDefaultShippingDetails(storeUrl, values),
+		onSuccess: (response) => {
+			if (response?.id) {
+				toast.success('Store Default shipping details has been updated.');
+				queryClient.invalidateQueries({
+					queryKey: queryKeys.dashboard.shipping(storeUrl),
+				});
+			}
+		},
+		onError: (error: any) => {
+			toast.error('Oops!', {
+				description: error.toString(),
+			});
+		},
+	});
+
+	// Loading status based on form submission or mutation pending
+	const isLoading = form.formState.isSubmitting || updateMutation.isPending;
 
 	// Reset form values when data changes
 	useEffect(() => {
@@ -81,34 +101,17 @@ const StoreDefaultShippingDetails: FC<StoreDefaultShippingDetailsProps> = ({
 	// Submit handler for form submission
 	const handleSubmit = async () => {
 		const values = form.getValues();
-
-		try {
-			// Upserting category data
-			const response = await updateStoreDefaultShippingDetails(storeUrl, {
-				defaultShippingService: values.defaultShippingService,
-				defaultShippingFeePerItem: values.defaultShippingFeePerItem,
-				defaultShippingFeeForAdditionalItem:
-					values.defaultShippingFeeForAdditionalItem,
-				defaultShippingFeePerKg: values.defaultShippingFeePerKg,
-				defaultShippingFeeFixed: values.defaultShippingFeeFixed,
-				defaultDeliveryTimeMin: values.defaultDeliveryTimeMin,
-				defaultDeliveryTimeMax: values.defaultDeliveryTimeMax,
-				returnPolicy: values.returnPolicy,
-			});
-
-			if (response?.id) {
-				// Displaying success message
-				toast.success('Store Default shipping details has been updated.');
-
-				//Refresh data
-				router.refresh();
-			}
-		} catch (error: any) {
-			// Handling form submission errors
-			toast.error('Oops!', {
-				description: error.toString(),
-			});
-		}
+		await updateMutation.mutateAsync({
+			defaultShippingService: values.defaultShippingService,
+			defaultShippingFeePerItem: values.defaultShippingFeePerItem,
+			defaultShippingFeeForAdditionalItem:
+				values.defaultShippingFeeForAdditionalItem,
+			defaultShippingFeePerKg: values.defaultShippingFeePerKg,
+			defaultShippingFeeFixed: values.defaultShippingFeeFixed,
+			defaultDeliveryTimeMin: values.defaultDeliveryTimeMin,
+			defaultDeliveryTimeMax: values.defaultDeliveryTimeMax,
+			returnPolicy: values.returnPolicy,
+		});
 	};
 
 	return (
