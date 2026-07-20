@@ -43,12 +43,12 @@ Goal: prefetch on server, `useSuspenseQuery` on client, `useMutation` + cache in
   - [x] Add `dashboard.*` namespace: categories, subCategories, offerTags, stores, products, coupons, orders, shipping, storeSettings
   - **Test**: TypeScript compiles with no errors (`tsc --noEmit`)
 
-- [ ] **Phase 8.2 — Admin: Categories**
-  - [ ] Convert `admin/categories/page.tsx` to server prefetch + `HydrationBoundary`
-  - [ ] Create `categories-table.tsx` client component with `useSuspenseQuery`
-  - [ ] Replace `router.refresh()` in `columns.tsx` delete with `useMutation` + `invalidateQueries`
-  - [ ] Replace `router.refresh()` in `category-details.tsx` form with `useMutation` + `invalidateQueries`
-  - [ ] Add skeleton fallback in `<Suspense>`
+- [x] **Phase 8.2 — Admin: Categories**
+  - [x] Convert `admin/categories/page.tsx` to server prefetch + `HydrationBoundary`
+  - [x] Create `categories-table.tsx` client component with `useSuspenseQuery`
+  - [x] Replace `router.refresh()` in `columns.tsx` delete with `useMutation` + `invalidateQueries`
+  - [x] Replace `router.refresh()` in `category-details.tsx` form with `useMutation` + `invalidateQueries`
+  - [x] Add skeleton fallback in `<Suspense>`
   - **Test**: Table loads, create/delete updates list without page reload
 
 - [ ] **Phase 8.3 — Admin: SubCategories**
