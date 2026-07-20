@@ -1,37 +1,27 @@
-// Data table
-import SubCategoryDetails from '@/components/dashboard/forms/subCategory-details';
-import DataTable from '@/components/ui/data-table';
-
-// Queries
-import { getAllCategories } from '@/queries/category';
+import { Suspense } from 'react';
+import { dehydrate, HydrationBoundary } from '@tanstack/react-query';
+import { getQueryClient } from '@/lib/get-query-client';
 import { getAllSubCategories } from '@/queries/subCategory';
-import { Plus } from 'lucide-react';
-import { columns } from './columns';
+import { getAllCategories } from '@/queries/category';
+import { queryKeys } from '@/lib/query-keys';
+import SubCategoriesTable from './subcategories-table';
+import DataTableSkeleton from '@/components/dashboard/shared/table-skeleton';
 
 export default async function AdminSubCategoriesPage() {
-	// Fetching subCategories data from the database
-	const subCategories = await getAllSubCategories();
+	const queryClient = getQueryClient();
 
-	// Checking if no subCategories are found
-	if (!subCategories) return null; // If no subCategories found, return null
+	await queryClient.prefetchQuery({
+		queryKey: queryKeys.dashboard.subCategories(),
+		queryFn: () => getAllSubCategories(),
+	});
 
-	// Fetching categories data from the database
 	const categories = await getAllCategories();
 
 	return (
-		<DataTable
-			actionButtonText={
-				<>
-					<Plus size={15} />
-					Create SubCategory
-				</>
-			}
-			modalChildren={<SubCategoryDetails categories={categories} />}
-			newTabLink='/dashboard/admin/subCategories/new'
-			filterValue='name'
-			data={subCategories}
-			searchPlaceholder='Search subCategory name...'
-			columns={columns}
-		/>
+		<HydrationBoundary state={dehydrate(queryClient)}>
+			<Suspense fallback={<DataTableSkeleton />}>
+				<SubCategoriesTable categories={categories} />
+			</Suspense>
+		</HydrationBoundary>
 	);
 }

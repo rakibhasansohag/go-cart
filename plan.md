@@ -51,9 +51,9 @@ Goal: prefetch on server, `useSuspenseQuery` on client, `useMutation` + cache in
   - [x] Add skeleton fallback in `<Suspense>`
   - **Test**: Table loads, create/delete updates list without page reload
 
-- [ ] **Phase 8.3 — Admin: SubCategories**
-  - [ ] Same pattern as 8.2 for `admin/subCategories`
-  - [ ] `subCategory-details.tsx` form mutation → `invalidateQueries`
+- [x] **Phase 8.3 — Admin: SubCategories**
+  - [x] Same pattern as 8.2 for `admin/subCategories`
+  - [x] `subCategory-details.tsx` form mutation → `invalidateQueries`
   - **Test**: Table loads, create/delete updates list without page reload
 
 - [ ] **Phase 8.4 — Admin: Offer Tags**
