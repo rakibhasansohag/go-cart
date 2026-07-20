@@ -54,12 +54,7 @@ const OrderTableHeader: FC<Props> = ({
 							items={filters.map((f) => ({ title: f.title, value: f.filter }))}
 							value={filter}
 							onChange={(val) => {
-								if (val === '') {
-									router.refresh();
-									setFilter(val);
-								} else {
-									setFilter(val);
-								}
+								setFilter(val);
 							}}
 							onHover={(val) => {
 								queryClient.prefetchQuery({
