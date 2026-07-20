@@ -37,6 +37,8 @@ import { useModal } from '@/providers/modal-provider';
 
 // Queries
 import { upsertCoupon } from '@/queries/coupon';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { queryKeys } from '@/lib/query-keys';
 
 // Utils
 import { v4 } from 'uuid';
@@ -58,9 +60,9 @@ interface CouponDetailsProps {
 
 const CouponDetails: FC<CouponDetailsProps> = ({ data, storeUrl }) => {
 	// Initializing necessary hooks
-
 	const router = useRouter(); // Hook for routing
 	const { setClose } = useModal();
+	const queryClient = useQueryClient();
 
 	// Form hook for managing form state and validation
 	const form = useForm<z.infer<typeof CouponFormSchema>>({
@@ -75,8 +77,29 @@ const CouponDetails: FC<CouponDetailsProps> = ({ data, storeUrl }) => {
 		},
 	});
 
-	// Loading status based on form submission
-	const isLoading = form.formState.isSubmitting;
+	const upsertMutation = useMutation({
+		mutationFn: (couponData: any) => upsertCoupon(couponData, storeUrl),
+		onSuccess: (response) => {
+			toast.success(
+				data?.id
+					? 'Coupon has been updated.'
+					: `Congratulations! '${response?.code}' is now created.`,
+			);
+			queryClient.invalidateQueries({
+				queryKey: queryKeys.dashboard.coupons(storeUrl),
+			});
+			setClose();
+			if (!data?.id) {
+				router.push(`/dashboard/seller/stores/${storeUrl}/coupons`);
+			}
+		},
+		onError: (error: any) => {
+			toast.error(error.toString());
+		},
+	});
+
+	// Loading status based on form submission or mutation pending
+	const isLoading = form.formState.isSubmitting || upsertMutation.isPending;
 
 	// Reset form values when data changes
 	useEffect(() => {
@@ -88,43 +111,16 @@ const CouponDetails: FC<CouponDetailsProps> = ({ data, storeUrl }) => {
 	// Submit handler for form submission
 	const handleSubmit = async () => {
 		const values = form.getValues();
-
-		try {
-			// Upserting category data
-			const response = await upsertCoupon(
-				{
-					id: data?.id ? data.id : v4(),
-					code: values.code,
-					discount: values.discount,
-					startDate: values.startDate,
-					endDate: values.endDate,
-					storeId: '',
-					createdAt: new Date(),
-					updatedAt: new Date(),
-				},
-				storeUrl,
-			);
-
-			// Displaying success message
-			toast.success(
-				data?.id
-					? 'Coupon has been updated.'
-					: `Congratulations! '${response?.code}' is now created.`,
-			);
-
-			setClose();
-
-			// Redirect or Refresh data
-			if (data?.id) {
-				router.refresh();
-			} else {
-				router.push(`/dashboard/seller/stores/${storeUrl}/coupons`);
-			}
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		} catch (error: any) {
-			// Handling form submission errors
-			toast.error(error.toString());
-		}
+		await upsertMutation.mutateAsync({
+			id: data?.id ? data.id : v4(),
+			code: values.code,
+			discount: values.discount,
+			startDate: values.startDate,
+			endDate: values.endDate,
+			storeId: '',
+			createdAt: new Date(),
+			updatedAt: new Date(),
+		});
 	};
 
 	return (

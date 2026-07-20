@@ -75,11 +75,11 @@ Goal: prefetch on server, `useSuspenseQuery` on client, `useMutation` + cache in
   - [x] `product-details.tsx` form mutation → `invalidateQueries`
   - **Test**: Products table loads, delete/create works without reload
 
-- [ ] **Phase 8.7 — Seller: Coupons**
-  - [ ] Convert `[storeUrl]/coupons/page.tsx` → server prefetch
-  - [ ] Create `coupons-table.tsx` client component
-  - [ ] Delete + create mutation → `invalidateQueries(dashboard.coupons(storeUrl))`
-  - [ ] `coupon-details.tsx` form mutation → `invalidateQueries`
+- [x] **Phase 8.7 — Seller: Coupons**
+  - [x] Convert `[storeUrl]/coupons/page.tsx` → server prefetch
+  - [x] Create `coupons-table.tsx` client component
+  - [x] Delete + create mutation → `invalidateQueries(dashboard.coupons(storeUrl))`
+  - [x] `coupon-details.tsx` form mutation → `invalidateQueries`
   - **Test**: Coupons table loads, create/delete works without reload
 
 - [ ] **Phase 8.8 — Seller: Orders + Optimistic Status**

@@ -1,41 +1,31 @@
-// Queries
-import DataTable from '@/components/ui/data-table';
-import { columns } from './columns';
-import { Plus } from 'lucide-react';
+import { Suspense } from 'react';
+import { dehydrate, HydrationBoundary } from '@tanstack/react-query';
+import { getQueryClient } from '@/lib/get-query-client';
 import { getStoreCoupons } from '@/queries/coupon';
-import CouponDetails from '@/components/dashboard/forms/coupon-details';
+import { queryKeys } from '@/lib/query-keys';
+import CouponsTable from './coupons-table';
+import DataTableSkeleton from '@/components/dashboard/shared/table-skeleton';
 
-
-// Type for awaited params
 type StoreParams = { storeUrl: string };
 
 export default async function SellerCouponsPage({
 	params,
 }: {
-	// Next 15 app routes pass awaitable proxies type as Promise<...>
 	params: Promise<StoreParams>;
 }) {
-	// await the whole proxy first (Next 15 requirement)
 	const { storeUrl } = await params;
+	const queryClient = getQueryClient();
 
-	// Get all store coupons
-	const coupons = await getStoreCoupons(storeUrl);
+	await queryClient.prefetchQuery({
+		queryKey: queryKeys.dashboard.coupons(storeUrl),
+		queryFn: () => getStoreCoupons(storeUrl),
+	});
+
 	return (
-		<div>
-			<DataTable
-				actionButtonText={
-					<>
-						<Plus size={15} />
-						Create coupon
-					</>
-				}
-				modalChildren={<CouponDetails storeUrl={storeUrl} />}
-				newTabLink={`/dashboard/seller/stores/${storeUrl}/coupons/new`}
-				filterValue='code'
-				data={coupons}
-				columns={columns}
-				searchPlaceholder='Search coupon ...'
-			/>
-		</div>
+		<HydrationBoundary state={dehydrate(queryClient)}>
+			<Suspense fallback={<DataTableSkeleton />}>
+				<CouponsTable storeUrl={storeUrl} />
+			</Suspense>
+		</HydrationBoundary>
 	);
 }
