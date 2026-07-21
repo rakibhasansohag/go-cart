@@ -22,7 +22,7 @@ export default async function SellerOrdersPage({
 
 	const queryClient = getQueryClient();
 
-	await queryClient.prefetchQuery({
+	queryClient.prefetchQuery({
 		queryKey: queryKeys.dashboard.orders(storeUrl),
 		queryFn: () => getStoreOrders(storeUrl),
 	});

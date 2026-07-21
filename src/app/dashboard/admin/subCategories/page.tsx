@@ -10,7 +10,7 @@ import DataTableSkeleton from '@/components/dashboard/shared/table-skeleton';
 export default async function AdminSubCategoriesPage() {
 	const queryClient = getQueryClient();
 
-	await queryClient.prefetchQuery({
+	queryClient.prefetchQuery({
 		queryKey: queryKeys.dashboard.subCategories(),
 		queryFn: () => getAllSubCategories(),
 	});

@@ -16,7 +16,7 @@ export default async function SellerCouponsPage({
 	const { storeUrl } = await params;
 	const queryClient = getQueryClient();
 
-	await queryClient.prefetchQuery({
+	queryClient.prefetchQuery({
 		queryKey: queryKeys.dashboard.coupons(storeUrl),
 		queryFn: () => getStoreCoupons(storeUrl),
 	});

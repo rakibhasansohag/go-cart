@@ -9,7 +9,7 @@ import DataTableSkeleton from '@/components/dashboard/shared/table-skeleton';
 export default async function AdminOfferTagsPage() {
 	const queryClient = getQueryClient();
 
-	await queryClient.prefetchQuery({
+	queryClient.prefetchQuery({
 		queryKey: queryKeys.dashboard.offerTags(),
 		queryFn: () => getAllOfferTags(),
 	});

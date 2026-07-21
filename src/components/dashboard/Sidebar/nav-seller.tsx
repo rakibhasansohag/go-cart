@@ -38,12 +38,12 @@ export default function SidebarNavSeller({
 					placeholder='Search menu...'
 					value={searchQuery}
 					onChange={(e) => setSearchQuery(e.target.value)}
-					className='h-9 text-xs pl-8 bg-muted/40 border-border/60 focus-visible:ring-1 focus-visible:ring-primary rounded-lg transition-all'
+					className='h-9 text-xs pl-8 bg-muted/40 border-border/60 focus-visible:ring-1 focus-visible:ring-primary rounded-lg transition-colors'
 				/>
 			</div>
 
 			{/* Navigation List */}
-			<nav className='space-y-1 w-full'>
+			<nav className='space-y-1.5 w-full'>
 				{filteredLinks.length === 0 ? (
 					<p className='text-xs text-muted-foreground text-center py-4'>
 						No menu links found.
@@ -67,18 +67,18 @@ export default function SidebarNavSeller({
 								onMouseEnter={() => router.prefetch(targetHref)}
 								onClick={onNavigate}
 								className={cn(
-									'relative flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ease-out group select-none',
+									'relative flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-300 ease-in-out group select-none',
 									isActive
-										? 'bg-primary/10 text-primary font-semibold'
-										: 'text-muted-foreground hover:text-foreground hover:bg-muted/70 hover:translate-x-1.5'
+										? 'bg-primary/10 text-primary font-semibold shadow-xs'
+										: 'text-muted-foreground hover:text-foreground hover:bg-muted/70'
 								)}
 							>
 								{isActive && (
-									<span className='absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-primary rounded-r-full shadow-xs transition-all duration-300' />
+									<span className='absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-primary rounded-r-full shadow-xs transition-all duration-300' />
 								)}
 								<span
 									className={cn(
-										'transition-all duration-200 group-hover:scale-110 shrink-0',
+										'transition-transform duration-300 ease-in-out group-hover:scale-110 shrink-0',
 										isActive ? 'text-primary' : 'group-hover:text-primary'
 									)}
 								>

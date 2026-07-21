@@ -19,11 +19,12 @@ export default async function SellerProductsPage({
 	const { storeUrl } = await params;
 	const queryClient = getQueryClient();
 
-	const [, categories, offerTags, countries] = await Promise.all([
-		queryClient.prefetchQuery({
-			queryKey: queryKeys.dashboard.products(storeUrl),
-			queryFn: () => getAllStoreProducts(storeUrl),
-		}),
+	queryClient.prefetchQuery({
+		queryKey: queryKeys.dashboard.products(storeUrl),
+		queryFn: () => getAllStoreProducts(storeUrl),
+	});
+
+	const [categories, offerTags, countries] = await Promise.all([
 		getAllCategoriesWithSubs(),
 		getAllOfferTags(),
 		db.country.findMany({

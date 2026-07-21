@@ -11,7 +11,7 @@ const AdminCategoriesPage = async () => {
 	if (!CLOUDINARY_CLOUD_NAME) throw new Error('Missing Cloudinary Cloud Name');
 
 	const queryClient = getQueryClient();
-	await queryClient.prefetchQuery({
+	queryClient.prefetchQuery({
 		queryKey: queryKeys.dashboard.categories(),
 		queryFn: () => getAllCategories(),
 	});

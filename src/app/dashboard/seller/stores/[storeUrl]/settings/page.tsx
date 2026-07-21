@@ -26,7 +26,7 @@ export default async function SellerStoreSettingsPage({
 
 	const queryClient = getQueryClient();
 
-	await queryClient.prefetchQuery({
+	queryClient.prefetchQuery({
 		queryKey: queryKeys.dashboard.storeSettings(storeUrl),
 		queryFn: async () => storeDetails,
 	});

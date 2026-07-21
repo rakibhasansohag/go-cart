@@ -9,7 +9,7 @@ import DataTableSkeleton from '@/components/dashboard/shared/table-skeleton';
 export default async function AdminOrdersPage() {
 	const queryClient = getQueryClient();
 
-	await queryClient.prefetchQuery({
+	queryClient.prefetchQuery({
 		queryKey: queryKeys.dashboard.adminOrders(),
 		queryFn: () => getAllAdminOrders(),
 	});

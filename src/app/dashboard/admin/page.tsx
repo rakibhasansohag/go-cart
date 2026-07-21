@@ -9,7 +9,7 @@ import DataTableSkeleton from '@/components/dashboard/shared/table-skeleton';
 export default async function AdminDashboardPage() {
 	const queryClient = getQueryClient();
 
-	await queryClient.prefetchQuery({
+	queryClient.prefetchQuery({
 		queryKey: queryKeys.dashboard.adminAnalytics(),
 		queryFn: () => getAdminAnalyticsData(),
 	});

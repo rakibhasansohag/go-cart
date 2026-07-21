@@ -19,7 +19,7 @@ export default async function SellerStoreShippingPage({
 	const { storeUrl } = await params;
 	const queryClient = getQueryClient();
 
-	await queryClient.prefetchQuery({
+	queryClient.prefetchQuery({
 		queryKey: queryKeys.dashboard.shipping(storeUrl),
 		queryFn: async () => {
 			const [details, rates] = await Promise.all([
