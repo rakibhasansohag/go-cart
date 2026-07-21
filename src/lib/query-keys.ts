@@ -48,5 +48,8 @@ export const queryKeys = {
 		orders: (storeUrl: string) => ['dashboard', 'orders', storeUrl] as const,
 		shipping: (storeUrl: string) => ['dashboard', 'shipping', storeUrl] as const,
 		storeSettings: (storeUrl: string) => ['dashboard', 'settings', storeUrl] as const,
+		adminAnalytics: () => ['dashboard', 'adminAnalytics'] as const,
+		sellerAnalytics: (storeUrl: string) => ['dashboard', 'sellerAnalytics', storeUrl] as const,
+		adminOrders: () => ['dashboard', 'adminOrders'] as const,
 	},
 } as const;
