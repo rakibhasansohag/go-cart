@@ -11,7 +11,7 @@ export default function Header() {
 	const isAdmin = pathname.startsWith('/dashboard/admin');
 
 	return (
-		<header className='fixed z-[20] md:left-[300px] left-0 top-0 right-0 h-[65px] px-6 bg-background/80 backdrop-blur-md flex items-center justify-between border-b border-border/60 transition-all'>
+		<header className='fixed z-[20] lg:left-[300px] left-0 top-0 right-0 h-[65px] px-4 sm:px-6 bg-background/80 backdrop-blur-md flex items-center justify-between border-b border-border/60 transition-all'>
 			{/* Left section: Quick Breadcrumb */}
 			<div className='flex items-center gap-2 text-xs text-muted-foreground font-medium'>
 				<Link

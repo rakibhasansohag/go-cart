@@ -28,11 +28,11 @@ interface SidebarProps {
 const Sidebar: FC<SidebarProps> = async ({ isAdmin, stores }) => {
 	const user = await currentUser();
 	return (
-		<div className='w-[300px] border-r h-screen p-4 flex flex-col fixed top-0 left-0 bottom-0'>
-			<Link href='/' replace>
+		<aside className='hidden lg:flex w-[300px] border-r border-border/60 h-screen p-4 flex-col fixed top-0 left-0 bottom-0 bg-background z-30 overflow-y-auto scrollbar-none'>
+			<Link href='/' replace className='shrink-0'>
 				<Logo width='100%' height='180px' />
 			</Link>
-			<Separator className='mt-3' />
+			<Separator className='mt-3 shrink-0' />
 			{user && <UserInfo user={user} />}
 			{!isAdmin && stores && <StoreSwitcher stores={stores} />}
 			{isAdmin ? (
@@ -40,7 +40,7 @@ const Sidebar: FC<SidebarProps> = async ({ isAdmin, stores }) => {
 			) : (
 				<SidebarNavSeller menuLinks={SellerDashboardSidebarOptions} />
 			)}
-		</div>
+		</aside>
 	);
 };
 
