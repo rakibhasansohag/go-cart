@@ -1,5 +1,5 @@
 import DataTableSkeleton from '@/components/dashboard/shared/table-skeleton';
 
-export default function SellerLoading() {
+export default function AdminLoading() {
 	return <DataTableSkeleton />;
 }

@@ -3,8 +3,13 @@ import { Badge } from '@/components/ui/badge';
 import { User } from '@clerk/nextjs/server';
 import React from 'react';
 
-export default function UserInfo({ user }: { user: User | null }) {
-	const role = user?.privateMetadata.role?.toString();
+export default function UserInfo({ user }: { user: any }) {
+	const role = (
+		user?.privateMetadata?.role ||
+		user?.publicMetadata?.role ||
+		user?.unsafeMetadata?.role ||
+		''
+	)?.toString();
 	const firstName = user?.firstName || '';
 	const lastName = user?.lastName || '';
 	const userName = `${firstName} ${lastName}`.trim() || 'User';

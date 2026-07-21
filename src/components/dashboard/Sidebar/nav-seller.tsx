@@ -1,27 +1,13 @@
 'use client';
 
-// React, Next.js
+import { useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-
-// UI Components
-import {
-	Command,
-	CommandEmpty,
-	CommandGroup,
-	CommandInput,
-	CommandItem,
-	CommandList,
-} from '@/components/ui/command';
-
-// Icons
+import { usePathname, useRouter } from 'next/navigation';
 import { icons } from '@/constants/icons';
-
-// types
 import { DashboardSidebarMenuInterface } from '@/lib/types';
-
-// Utils
 import { cn } from '@/lib/utils';
+import { Search } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 
 interface SidebarNavSellerProps {
 	menuLinks: DashboardSidebarMenuInterface[];
@@ -33,61 +19,77 @@ export default function SidebarNavSeller({
 	onNavigate,
 }: SidebarNavSellerProps) {
 	const pathname = usePathname();
+	const router = useRouter();
+	const [searchQuery, setSearchQuery] = useState('');
+
 	const storeUrlStart = pathname.split('/stores/')[1];
 	const activeStore = storeUrlStart ? storeUrlStart.split('/')[0] : '';
 
+	const filteredLinks = menuLinks.filter((link) =>
+		link.label.toLowerCase().includes(searchQuery.toLowerCase())
+	);
+
 	return (
-		<nav className='relative grow'>
-			<Command className='rounded-lg overflow-visible bg-transparent'>
-				<CommandInput placeholder='Search menu...' className='h-9 text-xs' />
-				<CommandList className='py-2 overflow-visible'>
-					<CommandEmpty>No Links Found.</CommandEmpty>
-					<CommandGroup className='overflow-visible pt-1 relative space-y-1'>
-						{menuLinks.map((link, index) => {
-							let icon;
-							const iconSearch = icons.find((icon) => icon.value === link.icon);
-							if (iconSearch) icon = <iconSearch.path />;
+		<div className='flex flex-col gap-3 w-full grow'>
+			{/* Menu Search Filter */}
+			<div className='relative w-full'>
+				<Search className='absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none' />
+				<Input
+					placeholder='Search menu...'
+					value={searchQuery}
+					onChange={(e) => setSearchQuery(e.target.value)}
+					className='h-9 text-xs pl-8 bg-muted/40 border-border/60 focus-visible:ring-1 focus-visible:ring-primary rounded-lg transition-all'
+				/>
+			</div>
 
-							const targetHref = `/dashboard/seller/stores/${activeStore}/${link.link}`;
-							const isActive =
-								link.link === ''
-									? pathname === `/dashboard/seller/stores/${activeStore}`
-									: targetHref === pathname;
+			{/* Navigation List */}
+			<nav className='space-y-1 w-full'>
+				{filteredLinks.length === 0 ? (
+					<p className='text-xs text-muted-foreground text-center py-4'>
+						No menu links found.
+					</p>
+				) : (
+					filteredLinks.map((link, index) => {
+						let icon;
+						const iconSearch = icons.find((icon) => icon.value === link.icon);
+						if (iconSearch) icon = <iconSearch.path />;
 
-							return (
-								<CommandItem
-									key={index}
+						const targetHref = `/dashboard/seller/stores/${activeStore}/${link.link}`;
+						const isActive =
+							link.link === ''
+								? pathname === `/dashboard/seller/stores/${activeStore}`
+								: targetHref === pathname;
+
+						return (
+							<Link
+								key={index}
+								href={targetHref}
+								onMouseEnter={() => router.prefetch(targetHref)}
+								onClick={onNavigate}
+								className={cn(
+									'relative flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ease-out group select-none',
+									isActive
+										? 'bg-primary/10 text-primary font-semibold'
+										: 'text-muted-foreground hover:text-foreground hover:bg-muted/70 hover:translate-x-1.5'
+								)}
+							>
+								{isActive && (
+									<span className='absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-primary rounded-r-full shadow-xs transition-all duration-300' />
+								)}
+								<span
 									className={cn(
-										'w-full h-11 cursor-pointer my-1 rounded-xl p-0 relative transition-all duration-200 group',
-										isActive
-											? 'bg-primary/10 text-primary font-semibold'
-											: 'text-muted-foreground hover:text-foreground hover:bg-muted/60 hover:translate-x-1'
+										'transition-all duration-200 group-hover:scale-110 shrink-0',
+										isActive ? 'text-primary' : 'group-hover:text-primary'
 									)}
 								>
-									{isActive && (
-										<span className='absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-primary rounded-r-full shadow-xs' />
-									)}
-									<Link
-										href={targetHref}
-										onClick={onNavigate}
-										className='flex items-center gap-3 px-3.5 py-2.5 w-full h-full text-sm font-medium'
-									>
-										<span
-											className={cn(
-												'transition-transform duration-200 group-hover:scale-110',
-												isActive ? 'text-primary' : 'group-hover:text-primary'
-											)}
-										>
-											{icon}
-										</span>
-										<span>{link.label}</span>
-									</Link>
-								</CommandItem>
-							);
-						})}
-					</CommandGroup>
-				</CommandList>
-			</Command>
-		</nav>
+									{icon}
+								</span>
+								<span className='truncate'>{link.label}</span>
+							</Link>
+						);
+					})
+				)}
+			</nav>
+		</div>
 	);
 }
