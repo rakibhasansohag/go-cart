@@ -22,22 +22,22 @@ export default function DownloadApp() {
 				</div>
 			</div>
 			{/* Content */}
-			<div className='absolute hidden top-0 group-hover:block cursor-pointer'>
-				<div className='relative mt-12 -ml-20 w-[300px] bg-white dark:bg-accent rounded-3xl text-main-primary pt-2 px-1 pb-6 z-50 shadow-lg shadow-main-primary'>
+			<div className='absolute hidden top-0 group-hover:block'>
+				<div className='relative mt-12 -ml-20 w-[300px] bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-700/40 rounded-3xl text-foreground pt-2 px-1 pb-6 z-50 shadow-lg'>
 					{/* Triangle */}
 					<div
 						className='w-0 h-0 absolute -top-1.5 left-36 border-l-[10px] border-l-transparent
-           border-b-[10px] border-white border-r-[10px] border-r-transparent '
+           border-b-[10px] border-white dark:border-b-slate-900 border-r-[10px] border-r-transparent '
 					/>
 					<div className='py-3 px-1 break-words '>
 						<div className='flex '>
 							<div className='mx-3'>
-								<h3 className='font-bold text-[20px] text-black dark:!text-white m-0 max-w-40 mx-auto'>
+								<h3 className='font-bold text-[20px] text-foreground m-0 max-w-40 mx-auto'>
 									Download the GoCart app
 								</h3>
 								<div className='mt-4 flex items-center gap-x-2'>
 									<Link
-										href=''
+										href='#'
 										className='rounded-3xl bg-black grid place-items-center px-4 py-3 '
 									>
 										<Image
@@ -48,7 +48,7 @@ export default function DownloadApp() {
 										/>
 									</Link>
 									<Link
-										href=''
+										href='#'
 										className='rounded-3xl bg-black grid place-items-center px-4 py-3'
 									>
 										<Image

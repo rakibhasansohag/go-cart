@@ -58,20 +58,22 @@ export default function Step1({
 			</AnimatedContainer>
 			{isSignedIn && (
 				<div className='h-[100px] flex pt-4 px-2 justify-between'>
-					<button
+					<Button
 						type='button'
+						variant='unstyled'
 						onClick={() => step > 1 && setStep((prev) => prev - 1)}
-						className='h-10 py-2 px-4 rounded-lg shadow-sm text-gray-600 bg-white hover:bg-gray-100 font-medium border cursor-pointer'
+						className='h-10 py-2 px-4 rounded-lg shadow-sm text-gray-600 bg-white hover:bg-gray-100 font-medium border cursor-pointer w-auto'
 					>
 						Previous
-					</button>
-					<button
+					</Button>
+					<Button
 						type='submit'
+						variant='unstyled'
 						onClick={() => step < 4 && setStep((prev) => prev + 1)}
-						className='h-10 py-2 px-4 rounded-lg shadow-sm text-white bg-blue-500 hover:bg-blue-700 font-medium cursor-pointer'
+						className='h-10 py-2 px-4 rounded-lg shadow-sm text-white bg-blue-500 hover:bg-blue-700 font-medium cursor-pointer w-auto'
 					>
 						Next
-					</button>
+					</Button>
 				</div>
 			)}
 		</div>

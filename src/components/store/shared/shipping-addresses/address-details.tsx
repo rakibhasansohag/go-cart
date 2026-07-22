@@ -33,6 +33,8 @@ import { Input } from '@/components/ui/input';
 
 // Queries
 import { upsertShippingAddress } from '@/queries/user';
+import { useQueryClient } from '@tanstack/react-query';
+import { queryKeys } from '@/lib/query-keys';
 // Utils
 import { v4 } from 'uuid';
 import { toast } from 'sonner';
@@ -52,6 +54,7 @@ const AddressDetails: FC<AddressDetailsProps> = ({
 }) => {
 	// Initializing necessary hooks
 	const router = useRouter(); // Hook for routing
+	const queryClient = useQueryClient();
 
 	// State for country selector
 	const [isOpen, setIsOpen] = useState<boolean>(false);
@@ -125,6 +128,9 @@ const AddressDetails: FC<AddressDetailsProps> = ({
 			);
 
 			// Refresh data
+			queryClient.invalidateQueries({
+				queryKey: queryKeys.profile.addresses(),
+			});
 			router.refresh();
 			setShow(false);
 			// eslint-disable-next-line @typescript-eslint/no-explicit-any

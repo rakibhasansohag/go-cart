@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+
 'use client';
 
 // React, Next.js
@@ -24,8 +24,8 @@ type ModalContextType = {
 export const ModalContext = createContext<ModalContextType>({
 	data: {},
 	isOpen: false,
-	setOpen: (modal: React.ReactNode, fetchData?: () => Promise<any>) => {},
-	setClose: () => {},
+	setOpen: (modal: React.ReactNode, fetchData?: () => Promise<any>) => { },
+	setClose: () => { },
 });
 
 const ModalProvider: React.FC<ModalProviderProps> = ({ children }) => {
@@ -73,12 +73,10 @@ const ModalProvider: React.FC<ModalProviderProps> = ({ children }) => {
 		setData({});
 	};
 
-	if (!isMounted) return null;
-
 	return (
 		<ModalContext.Provider value={{ data, setOpen, setClose, isOpen }}>
 			{children}
-			{showingModal}
+			{isMounted && showingModal}
 		</ModalContext.Provider>
 	);
 };

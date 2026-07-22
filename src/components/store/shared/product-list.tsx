@@ -35,12 +35,15 @@ const ProductList: FC<Props> = ({ products, title, link, arrow }) => {
 			{title && <Title />}
 			{products.length > 0 ? (
 				<div
-					className={cn('flex flex-wrap gap-4 ', {
-						'mt-2': title,
-					})}
+					className={cn(
+						'grid grid-cols-2 min-[480px]:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4 gap-4',
+						{
+							'mt-2': title,
+						}
+					)}
 				>
 					{products.map((product, index) => (
-						<ProductCard key={`${product.id}-${index}`} product={product} />
+						<ProductCard key={`${product.id}-${index}`} product={product} className='w-full' />
 					))}
 				</div>
 			) : (

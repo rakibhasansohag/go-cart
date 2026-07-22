@@ -8,6 +8,8 @@ import { Dispatch, FC, SetStateAction, useState } from 'react';
 import { PulseLoader } from 'react-spinners';
 import { toast } from 'sonner';
 
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+
 interface Props {
 	id: string;
 	isUserFollowingStore: boolean;
@@ -20,14 +22,13 @@ const FollowStore: FC<Props> = ({
 	setFollowersCount,
 }) => {
 	const [following, setFollowing] = useState<boolean>(isUserFollowingStore);
-	const [loading, setLoading] = useState<boolean>(false);
 	const user = useUser();
 	const router = useRouter();
-	const handleStoreFollow = async () => {
-		if (!user.isSignedIn) router.push('/sign-in');
-		try {
-			setLoading(true);
-			const res = await followStore(id);
+	const queryClient = useQueryClient();
+
+	const followMutation = useMutation({
+		mutationFn: () => followStore(id),
+		onSuccess: (res) => {
 			setFollowing(res);
 			if (setFollowersCount) {
 				if (res === true) {
@@ -36,11 +37,21 @@ const FollowStore: FC<Props> = ({
 					setFollowersCount((prev) => prev - 1);
 				}
 			}
-			setLoading(false);
-		} catch (error) {
-			setLoading(false);
+			queryClient.invalidateQueries({ queryKey: ['store', 'followInfo', id] });
+		},
+		onError: () => {
 			toast.error('Something happened, Try again later !');
+		},
+	});
+
+	const loading = followMutation.isPending;
+
+	const handleStoreFollow = () => {
+		if (!user.isSignedIn) {
+			router.push('/sign-in');
+			return;
 		}
+		followMutation.mutate();
 	};
 	return (
 		<div className='w-fit  md:w-96'>

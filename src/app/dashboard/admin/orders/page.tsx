@@ -1,7 +1,11 @@
-import { notFound } from 'next/navigation';
+import { Suspense } from 'react';
+import AdminOrdersTable from './admin-orders-table';
+import DataTableSkeleton from '@/components/dashboard/shared/table-skeleton';
 
-function page() {
-	return notFound();
+export default function AdminOrdersPage() {
+	return (
+		<Suspense fallback={<DataTableSkeleton />}>
+			<AdminOrdersTable />
+		</Suspense>
+	);
 }
-
-export default page;

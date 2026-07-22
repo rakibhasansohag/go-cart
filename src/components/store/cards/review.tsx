@@ -22,7 +22,7 @@ export default function ReviewCard({
 		.map((color) => ({ name: color.trim() }));
 
 	return (
-		<div className='border border-[#d8d8d8] rounded-xl flex h-fit relative py-4 px-2.5'>
+		<div className='border border-neutral-300 rounded-xl flex h-fit relative py-4 px-2.5'>
 			<div className='w-16 px- space-y-1'>
 				<Image
 					src={user.picture}

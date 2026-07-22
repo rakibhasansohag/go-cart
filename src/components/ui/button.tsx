@@ -1,6 +1,8 @@
+'use client';
 import * as React from "react"
 import { Slot } from "@radix-ui/react-slot"
 import { cva, type VariantProps } from "class-variance-authority"
+import { motion } from "framer-motion"
 
 import { cn } from "@/lib/utils"
 
@@ -20,6 +22,7 @@ const buttonVariants = cva(
 				ghost:
 					'hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50',
 				link: 'text-primary underline-offset-4 hover:underline',
+				unstyled: '',
 			},
 			size: {
 				default: 'h-9 px-4 py-2 has-[>svg]:px-3',
@@ -35,25 +38,31 @@ const buttonVariants = cva(
 	},
 );
 
-function Button({
-  className,
-  variant,
-  size,
-  asChild = false,
-  ...props
-}: React.ComponentProps<"button"> &
-  VariantProps<typeof buttonVariants> & {
-    asChild?: boolean
-  }) {
-  const Comp = asChild ? Slot : "button"
+const MotionSlot = motion.create(Slot);
 
-  return (
-    <Comp
-      data-slot="button"
-      className={cn(buttonVariants({ variant, size, className }))}
-      {...props}
-    />
-  )
+function Button({
+	className,
+	variant,
+	size,
+	asChild = false,
+	...props
+}: React.ComponentProps<"button"> &
+	VariantProps<typeof buttonVariants> & {
+		asChild?: boolean
+	}) {
+	const Comp = asChild ? MotionSlot : motion.button;
+
+	return (
+		<Comp
+			whileHover={{ y: -1.5, boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}
+			whileTap={{ y: 0.5, scale: 0.98 }}
+			transition={{ type: "spring", stiffness: 500, damping: 20 }}
+			data-slot="button"
+			className={variant === 'unstyled' ? className : cn(buttonVariants({ variant, size, className }))}
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			{...(props as any)}
+		/>
+	)
 }
 
 export { Button, buttonVariants }

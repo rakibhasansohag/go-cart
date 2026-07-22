@@ -29,7 +29,7 @@ export default function AnimatedDeals({
 	}, []); // Empty dependency array ensures the date is stable
 
 	return (
-		<div className='relative bg-[#ed3835] w-full rounded-md overflow-hidden'>
+		<div className='relative bg-red-600 w-full rounded-md overflow-hidden'>
 			<span className='inline-block w-full font-semibold text-center text-4xl text-white outline-none absolute top-[53%]'>
 				Up to 90%
 			</span>
@@ -42,7 +42,7 @@ export default function AnimatedDeals({
 			/>
 			<Link
 				href='/browse'
-				className=' bg-[#ffaf00] absolute top-[25%] left-[7%] min-[1070px]:left-[10%] rounded-[24px] w-[140px] h-[181px] z-10 flex justify-center'
+				className=' bg-amber-500 absolute top-[25%] left-[7%] min-[1070px]:left-[10%] rounded-[24px] w-[140px] h-[181px] z-10 flex justify-center'
 			>
 				<Image
 					src={TopSellerImg}
@@ -57,7 +57,7 @@ export default function AnimatedDeals({
 			</Link>
 			<Link
 				href='/browse'
-				className=' bg-[#ffaf00] absolute top-[25%] right-[7%] min-[1070px]:right-[10%] rounded-[24px] w-[140px] h-[181px] z-10 flex justify-center'
+				className=' bg-amber-500 absolute top-[25%] right-[7%] min-[1070px]:right-[10%] rounded-[24px] w-[140px] h-[181px] z-10 flex justify-center'
 			>
 				<Image
 					src={TopRatedImg}

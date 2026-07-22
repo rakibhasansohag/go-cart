@@ -631,3 +631,15 @@ export const getStorePageDetails = async (storeUrl: string) => {
 	}
 	return { ...store, isUserFollowingStore };
 };
+
+export const getStoreByUrl = async (storeUrl: string) => {
+	try {
+		return await db.store.findUnique({
+			where: { url: storeUrl },
+		});
+	} catch (error) {
+		console.error(error);
+		throw error;
+	}
+};
+

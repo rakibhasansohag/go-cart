@@ -91,13 +91,14 @@ const ImageUploadStore: FC<ImageUploadProps> = ({
 
 					return (
 						<>
-							<button
+							<Button
 								type='button'
+								variant='unstyled'
 								disabled={disabled}
-								ref={btnRef}
+								ref={btnRef as any}
 								onClick={onClick}
 								className='hidden'
-							></button>
+							/>
 						</>
 					);
 				}}

@@ -8,13 +8,13 @@ export default function CategoryCard({
 	category: FeaturedCategoryType;
 }) {
 	return (
-		<div className='w-full h-full rounded-[10px] bg-white'>
+		<div className='w-full h-full rounded-[10px] bg-card dark:bg-slate-900/50 border border-slate-200/60 dark:border-slate-800/60 shadow-sm'>
 			<Link href={`/browse?category=${category.url}`}>
 				<div className='px-5 pt-4 flex items-center justify-between'>
-					<span className='text-[20px] text-[#222] font-extrabold line-clamp-1 overflow-hidden flex-1'>
+					<span className='text-[20px] text-foreground font-extrabold line-clamp-1 overflow-hidden flex-1'>
 						{category.name}
 					</span>
-					<span className='block  text-[14px] text-[#222] mr-2.5 hover:underline'>
+					<span className='block text-[14px] text-muted-foreground hover:text-foreground mr-2.5 hover:underline'>
 						View more
 					</span>
 				</div>

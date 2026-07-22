@@ -1,3 +1,7 @@
+import { Suspense } from 'react';
+import { dehydrate, HydrationBoundary } from '@tanstack/react-query';
+import { getQueryClient } from '@/lib/get-query-client';
+import { queryKeys } from '@/lib/query-keys';
 import PaymentsTable from '@/components/store/profile/payments/payments-table';
 import { getUserPayments } from '@/queries/profile';
 import { currentUser } from '@clerk/nextjs/server';
@@ -11,12 +15,20 @@ export default async function ProfilePaymentPage() {
 		redirect(`/sign-in?redirect=/profile/payment`);
 	}
 
-	const payments_data = await getUserPayments();
+	const queryClient = getQueryClient();
 
-	const { payments, totalPages } = payments_data;
+	await queryClient.prefetchQuery({
+		queryKey: queryKeys.profile.payments({ filter: '', period: '', search: '', page: 1, pageSize: 10 }),
+		queryFn: () => getUserPayments('', '', '', 1, 10),
+	});
+
 	return (
 		<div>
-			<PaymentsTable payments={payments} totalPages={totalPages} />
+			<HydrationBoundary state={dehydrate(queryClient)}>
+				<Suspense fallback={<div className="flex items-center justify-center p-8">Loading payments...</div>}>
+					<PaymentsTable />
+				</Suspense>
+			</HydrationBoundary>
 		</div>
 	);
 }

@@ -10,9 +10,16 @@ import ProductReviews from '@/components/store/product-page/reviews/product-revi
 import StoreProducts from '@/components/store/product-page/store-products';
 import { Separator } from '@/components/ui/separator';
 import { Country } from '@/lib/types';
-import { retrieveProductDetailsOptimized } from '@/queries/product-optimized';
+import { retrieveProductDetailsOptimized, getRelatedProducts, getProductFilteredReviews } from '@/queries/product-optimized';
+import { getProducts } from '@/queries/product';
 import { cookies } from 'next/headers';
 import { notFound, redirect } from 'next/navigation';
+import { Suspense } from 'react';
+import { dehydrate, HydrationBoundary } from '@tanstack/react-query';
+import { getQueryClient } from '@/lib/get-query-client';
+import { queryKeys } from '@/lib/query-keys';
+import ProductPageRelatedSkeletonLoader from '@/components/store/skeletons/product-page/related';
+import ProductPageStoreProductsSkeletonLoader from '@/components/store/skeletons/product-page/store-products';
 
 
 type ProductParams = { productSlug: string };
@@ -37,9 +44,30 @@ export default async function ProductPage({
 		return redirect('/');
 	}
 
+	const queryClient = getQueryClient();
+
 	// Data
-	const data = await retrieveProductDetailsOptimized(productSlug);
+	const data = await queryClient.fetchQuery({
+		queryKey: queryKeys.products.detail(productSlug),
+		queryFn: () => retrieveProductDetailsOptimized(productSlug),
+	});
 	if (!data) return notFound();
+
+	// Prefetch downstream queries in parallel on the server
+	await Promise.all([
+		queryClient.prefetchQuery({
+			queryKey: queryKeys.products.related(data.id),
+			queryFn: () => getRelatedProducts(data.id, data.categoryId, data.subCategoryId),
+		}),
+		queryClient.prefetchQuery({
+			queryKey: queryKeys.products.storeProducts(data.store.url),
+			queryFn: () => getProducts({ store: data.store.url }, '', 1, 5),
+		}),
+		queryClient.prefetchQuery({
+			queryKey: ['reviews', data.id, { rating: undefined, hasImages: undefined }, undefined, 1, 4],
+			queryFn: () => getProductFilteredReviews(data.id, { rating: undefined, hasImages: undefined }, undefined, 1, 4),
+		}),
+	]);
 
 	const variant = data.variants.find(
 		(v: { slug: string }) => v.slug === variantSlug,
@@ -83,20 +111,23 @@ export default async function ProductPage({
 			<Header />
 			<CategoriesHeader />
 			<div className='p-4 2xl:px-28 overflow-x-hidden mx-auto'>
-				<ProductPageContainer
-					productData={data}
-					// pass the awaited primitive
-					variantSlug={variantSlug}
-					userCountry={userCountry}
-				>
-					<>
-						<Separator />
-						<RelatedProducts
-							productId={data.id}
-							categoryId={data.categoryId}
-							subCategoryId={data.subCategoryId}
-						/>
-					</>
+				<HydrationBoundary state={dehydrate(queryClient)}>
+					<ProductPageContainer
+						productData={data}
+						// pass the awaited primitive
+						variantSlug={variantSlug}
+						userCountry={userCountry}
+					>
+						<>
+							<Separator />
+							<Suspense fallback={<ProductPageRelatedSkeletonLoader />}>
+								<RelatedProducts
+									productId={data.id}
+									categoryId={data.categoryId}
+									subCategoryId={data.subCategoryId}
+								/>
+							</Suspense>
+						</>
 					<Separator className='mt-6' />
 					<ProductReviews
 						productId={data.id}
@@ -119,12 +150,15 @@ export default async function ProductPage({
 					<Separator className='mt-6' />
 					<div className='h-6' />
 					<StoreCard store={storeData} />
-					<StoreProducts
-						storeUrl={data.store.url}
-						storeName={data.store.name}
-						count={5}
-					/>
-				</ProductPageContainer>
+						<Suspense fallback={<ProductPageStoreProductsSkeletonLoader />}>
+							<StoreProducts
+								storeUrl={data.store.url}
+								storeName={data.store.name}
+								count={5}
+							/>
+						</Suspense>
+					</ProductPageContainer>
+				</HydrationBoundary>
 			</div>
 		</div>
 	);

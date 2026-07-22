@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { CatgegoryWithSubsType } from '@/lib/types';
 import { Minus, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { AnimatePresence, motion } from 'framer-motion';
 import CategoryLink from './category-link';
 
 export default function CategoryFilter({
@@ -26,15 +27,21 @@ export default function CategoryFilter({
 				</span>
 			</div>
 			{/* Filter */}
-			<div
-				className={cn('mt-2.5', {
-					hidden: !show,
-				})}
-			>
-				{categories.map((category) => (
-					<CategoryLink key={category.id} category={category} />
-				))}
-			</div>
+			<AnimatePresence initial={false}>
+				{show && (
+					<motion.div
+						initial={{ height: 0, opacity: 0 }}
+						animate={{ height: 'auto', opacity: 1 }}
+						exit={{ height: 0, opacity: 0 }}
+						transition={{ duration: 0.22, ease: 'easeInOut' }}
+						className='overflow-hidden mt-2.5'
+					>
+						{categories.map((category) => (
+							<CategoryLink key={category.id} category={category} />
+						))}
+					</motion.div>
+				)}
+			</AnimatePresence>
 		</div>
 	);
 }

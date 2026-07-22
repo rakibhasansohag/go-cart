@@ -79,35 +79,38 @@ const ShippingAddressCard: FC<Props> = ({
 				<input type='checkbox' hidden id={address.id} />
 			</label>
 			{/* Address */}
-			<div className='w-full border-t pt-2'>
+			<div className='w-full border-t pt-2 pr-20 relative min-w-0'>
 				{/* Full name - Phone number */}
-				<div className='flex max-w-[328px] overflow-hidden text-ellipsis whitespace-nowrap'>
-					<span className='mr-4 text-sm text-main-primary font-semibold capitalize'>
+				<div className='flex flex-wrap items-center gap-x-2 text-sm leading-normal'>
+					<span className='text-main-primary font-semibold capitalize'>
 						{address.firstName} {address.lastName}
 					</span>
-					<span>{address.phone}</span>
+					<span className='text-main-secondary text-xs'>{address.phone}</span>
 				</div>
 				{/* Address 1 - Address 2 */}
-				<div className='text-sm max-w-[90%] text-main-secondary leading-4 overflow-hidden text-ellipsis whitespace-nowrap'>
+				<div className='text-sm text-main-secondary leading-normal mt-1 break-words'>
 					{address.address1}
 					{address.address2 && `, ${address.address2}`}
 				</div>
 				{/* State - City - Country - Zipcode */}
-				<div className='text-sm max-w-[90%] text-main-secondary leading-4 overflow-hidden text-ellipsis whitespace-nowrap'>
+				<div className='text-sm text-main-secondary leading-normal break-words'>
 					{address.state}, {address.city}, {address.country.name},&nbsp;
 					{address.zip_code}
 				</div>
 				{/* Save as default - Edit */}
-				<div className='absolute right-0 top-1/2 flex items-center gap-x-3'>
+				<div className='absolute right-0 top-2 flex flex-col items-end gap-y-1.5'>
 					<div
-						className='cursor-pointer hidden group-hover:block'
+						className='cursor-pointer block md:hidden md:group-hover:block bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 px-2 py-0.5 rounded text-xs transition-colors font-medium border border-blue-500/20'
 						onClick={() => setShow(true)}
 					>
-						<span className='text-xs text-[#27f]'>Edit</span>
+						<span>Edit</span>
 					</div>
 					{isSelected && !address.default && (
-						<div className='cursor-pointer' onClick={() => handleMakeDefault()}>
-							<span className='text-xs text-[#27f]'>Save as default</span>
+						<div
+							className='cursor-pointer bg-green-500/10 hover:bg-green-500/20 text-green-600 px-2 py-0.5 rounded text-xs transition-colors font-medium border border-green-500/20'
+							onClick={() => handleMakeDefault()}
+						>
+							<span>Save as default</span>
 						</div>
 					)}
 				</div>

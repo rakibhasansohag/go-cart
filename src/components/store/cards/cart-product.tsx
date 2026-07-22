@@ -1,8 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { Button } from '@/components/store/ui/button';
 import { useCartStore } from '@/cart-store/useCartStore';
 import { CartProductType, Country } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { addToWishlist } from '@/queries/user';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { queryKeys } from '@/lib/query-keys';
 import {
 	Check,
 	ChevronRight,
@@ -165,14 +168,22 @@ const CartProduct: FC<Props> = ({
 		}
 	};
 
-	// Handle add product to wishlist
-	const handleaddToWishlist = async () => {
-		try {
-			const res = await addToWishlist(productId, variantId, sizeId);
-			if (res) toast.success('Product successfully added to wishlist.');
-		} catch (error: any) {
+	const queryClient = useQueryClient();
+
+	const addToWishlistMutation = useMutation({
+		mutationFn: () => addToWishlist(productId, variantId, sizeId),
+		onSuccess: () => {
+			toast.success('Product successfully added to wishlist.');
+			queryClient.invalidateQueries({ queryKey: queryKeys.profile.wishlist(1) });
+		},
+		onError: (error: any) => {
 			toast.error(error.toString());
-		}
+		},
+	});
+
+	// Handle add product to wishlist
+	const handleaddToWishlist = () => {
+		addToWishlistMutation.mutate();
 	};
 
 	// TODO : Handle remove product from wishlist
@@ -257,7 +268,10 @@ const CartProduct: FC<Props> = ({
 						</div>
 						{/* Style - size */}
 						<div className='my-1'>
-							<button className='text-main-primary relative h-[24px] bg-gray-100 dark:bg-gray-700 whitespace-normal px-2.5 py-0 max-w-full text-xs leading-4 rounded-xl font-bold cursor-pointer  outline-0'>
+							<Button
+								variant='unstyled'
+								className='text-main-primary relative h-[24px] bg-gray-100 dark:bg-gray-700 whitespace-normal px-2.5 py-0 max-w-full text-xs leading-4 rounded-xl font-bold cursor-pointer outline-0'
+							>
 								<span className='flex items-center justify-between flex-wrap'>
 									<div className='text-left inline-block overflow-hidden text-ellipsis whitespace-nowrap max-w-[95%]'>
 										{size}
@@ -266,7 +280,7 @@ const CartProduct: FC<Props> = ({
 										<ChevronRight className='w-3' />
 									</span>
 								</span>
-							</button>
+							</Button>
 						</div>
 						{/* Price - Delivery */}
 						<div className='flex flex-col gap-y-2 sm:flex-row sm:items-center sm:justify-between mt-2 relative'>
@@ -316,12 +330,12 @@ const CartProduct: FC<Props> = ({
 						</div>
 						{/* Shipping info */}
 						{stock > 0 && (
-							<div className='mt-1 text-xs text-[#999] cursor-pointer'>
+							<div className='mt-1 text-xs text-neutral-400 cursor-pointer'>
 								<div className='flex items-center mb-1'>
 									<span>
-										<Truck className='w-4 inline-block text-[#01A971]' />
+										<Truck className='w-4 inline-block text-emerald-600' />
 										{shippingInfo.totalFee > 0 ? (
-											<span className='text-[#01A971] ml-1'>
+											<span className='text-emerald-600 ml-1'>
 												{shippingMethod === 'ITEM' ? (
 													<>
 														${shippingInfo.initialFee} (first item)
@@ -343,7 +357,7 @@ const CartProduct: FC<Props> = ({
 												)}
 											</span>
 										) : (
-											<span className='text-[#01A971] ml-1'>Free Delivery</span>
+											<span className='text-emerald-600 ml-1'>Free Delivery</span>
 										)}
 									</span>
 								</div>

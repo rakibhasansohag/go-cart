@@ -48,8 +48,10 @@ import {
 import { getAllCategories } from '@/queries/category';
 import { deleteSubCategory, getSubCategory } from '@/queries/subCategory';
 
-// Tanstack React Table
+// Tanstack React Query & Table
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { ColumnDef } from '@tanstack/react-table';
+import { queryKeys } from '@/lib/query-keys';
 
 // Prisma models
 import { Category } from '@prisma/client';
@@ -135,20 +137,26 @@ interface CellActionsProps {
 const CellActions: React.FC<CellActionsProps> = ({ rowData }) => {
 	// Declare all hooks at the top
 	const { setOpen, setClose } = useModal();
-	const [loading, setLoading] = useState(false);
-
-	const router = useRouter();
 	const [categories, setCategories] = useState<Category[]>([]);
+	const queryClient = useQueryClient();
 
-	useEffect(() => {
-		const fetchCategories = async () => {
-			const categories = await getAllCategories();
-			setCategories(categories);
-		};
-		fetchCategories();
-	}, []);
+	const deleteMutation = useMutation({
+		mutationFn: (id: string) => deleteSubCategory(id),
+		onSuccess: () => {
+			toast('Deleted subCategory', {
+				description: 'The subCategory has been deleted.',
+			});
+			queryClient.invalidateQueries({
+				queryKey: queryKeys.dashboard.subCategories(),
+			});
+			setClose();
+		},
+		onError: (error: Error) => {
+			toast.error(error.message || 'Failed to delete subCategory');
+		},
+	});
 
-	// Early return only after hooks are declared
+	// Return null if rowData or rowData.id don't exist
 	if (!rowData || !rowData.id) return null;
 
 	return (
@@ -164,7 +172,9 @@ const CellActions: React.FC<CellActionsProps> = ({ rowData }) => {
 					<DropdownMenuLabel>Actions</DropdownMenuLabel>
 					<DropdownMenuItem
 						className='flex gap-2'
-						onClick={() => {
+						onClick={async () => {
+							const fetchedCategories = await getAllCategories();
+							setCategories(fetchedCategories);
 							setOpen(
 								<CustomModal>
 									<SubCategoryDetails
@@ -204,17 +214,10 @@ const CellActions: React.FC<CellActionsProps> = ({ rowData }) => {
 				<AlertDialogFooter className='flex items-center'>
 					<AlertDialogCancel className='mb-2'>Cancel</AlertDialogCancel>
 					<AlertDialogAction
-						disabled={loading}
+						disabled={deleteMutation.isPending}
 						className='bg-destructive hover:bg-destructive mb-2 text-white'
-						onClick={async () => {
-							setLoading(true);
-							await deleteSubCategory(rowData.id);
-							toast('Deleted subCategory', {
-								description: 'The subCategory has been deleted.',
-							});
-							setLoading(false);
-							router.refresh();
-							setClose();
+						onClick={() => {
+							deleteMutation.mutate(rowData.id);
 						}}
 					>
 						Delete

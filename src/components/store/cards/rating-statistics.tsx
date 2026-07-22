@@ -24,9 +24,9 @@ export default function RatingStatisticsCard({
 								isHalf
 								edit={false}
 							/>
-							<div className='relative w-full flex-1 h-1.5 mx-2.5 bg-[#e2dfdf] rounded-full'>
+							<div className='relative w-full flex-1 h-1.5 mx-2.5 bg-neutral-300 rounded-full'>
 								<div
-									className='absolute left-0 h-full rounded-full bg-[#ffc50A]'
+									className='absolute left-0 h-full rounded-full bg-yellow-400'
 									style={{ width: `${rating.percentage}%` }}
 								/>
 							</div>

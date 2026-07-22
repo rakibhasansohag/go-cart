@@ -6,7 +6,7 @@ export default function ProductAssurancePolicy() {
 		<div className='mt-4'>
 			<h3 className='text-main-primary'>GoCart assurance</h3>
 			<Link
-				href=''
+				href='#'
 				className='text-main-primary flex items-center mt-3 text-sm'
 			>
 				<ShieldCheck className='w-5' />
@@ -18,7 +18,7 @@ export default function ProductAssurancePolicy() {
 				</div>
 			</Link>
 			<Link
-				href=''
+				href='#'
 				className='text-main-primary flex items-center mt-3 text-sm'
 			>
 				<Lock className='w-5' />
@@ -33,7 +33,7 @@ export default function ProductAssurancePolicy() {
 				</div>
 			</Link>
 			<Link
-				href=''
+				href='#'
 				className='text-main-primary flex items-center mt-3 text-sm'
 			>
 				<ShieldAlert className='w-5' />

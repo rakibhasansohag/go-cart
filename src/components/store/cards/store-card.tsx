@@ -9,6 +9,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { FC, useEffect, useState } from 'react';
 import { toast } from 'sonner';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 interface Props {
 	store: {
@@ -23,42 +24,53 @@ interface Props {
 }
 
 const StoreCard: FC<Props> = ({ store, checkForFollowing }) => {
-	const { id, name, logo, url, followersCount, isUserFollowingStore } = store;
-	const [following, setFollowing] = useState<boolean>(isUserFollowingStore);
+	const { id, logo, name, followersCount, url } = store;
+	const [following, setFollowing] = useState<boolean>(
+		store.isUserFollowingStore,
+	);
 	const [storeFollowersCount, setStoreFollowersCount] =
 		useState<number>(followersCount);
 	const user = useUser();
 	const router = useRouter();
+	const queryClient = useQueryClient();
+
+	const { data: followInfo } = useQuery({
+		queryKey: ['store', 'followInfo', id, user.user?.id],
+		queryFn: () => getStoreFollowingInfo(id),
+		enabled: !!id,
+	});
 
 	useEffect(() => {
-		const getDetails = async () => {
-			try {
-				const res = await getStoreFollowingInfo(id);
-				setFollowing(res.isUserFollowingStore);
-				setStoreFollowersCount(res.followersCount);
-			} catch (error) {
-				console.log(error);
-			}
-		};
-		getDetails();
-	}, []);
-	const handleStoreFollow = async () => {
-		if (!user.isSignedIn) router.push('/sign-in');
-		try {
-			const res = await followStore(id);
+		if (followInfo) {
+			setFollowing(followInfo.isUserFollowingStore);
+			setStoreFollowersCount(followInfo.followersCount);
+		}
+	}, [followInfo]);
+
+	const followMutation = useMutation({
+		mutationFn: () => followStore(id),
+		onSuccess: (res) => {
 			setFollowing(res);
 			if (res) {
 				setStoreFollowersCount((prev) => prev + 1);
 				toast.success(`You are now following ${name}`);
-			}
-			if (!res) {
+			} else {
 				setStoreFollowersCount((prev) => prev - 1);
 				toast.success(`You unfollowed ${name}`);
 			}
-			// eslint-disable-next-line @typescript-eslint/no-unused-vars
-		} catch (error) {
+			queryClient.invalidateQueries({ queryKey: ['store', 'followInfo', id] });
+		},
+		onError: () => {
 			toast.error('Something happened, Try again later !');
+		},
+	});
+
+	const handleStoreFollow = () => {
+		if (!user.isSignedIn) {
+			router.push('/sign-in');
+			return;
 		}
+		followMutation.mutate();
 	};
 	return (
 		<div className='w-full'>

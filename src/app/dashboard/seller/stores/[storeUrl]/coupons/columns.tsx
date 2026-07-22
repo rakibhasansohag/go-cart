@@ -33,8 +33,10 @@ import { useModal } from '@/providers/modal-provider';
 // Lucide icons
 import { Edit, MoreHorizontal, Trash } from 'lucide-react';
 
-// Tanstack React Table
+// Tanstack React Query & Table
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { ColumnDef } from '@tanstack/react-table';
+import { queryKeys } from '@/lib/query-keys';
 
 // Types
 
@@ -105,14 +107,26 @@ interface CellActionsProps {
 const CellActions: React.FC<CellActionsProps> = ({ coupon }) => {
 	// Hooks
 	const { setOpen, setClose } = useModal();
-	const [loading, setLoading] = useState(false);
-
-	const router = useRouter();
+	const queryClient = useQueryClient();
 
 	const params = useParams<{ storeUrl: string }>();
 
+	const deleteMutation = useMutation({
+		mutationFn: (id: string) => deleteCoupon(id, params.storeUrl),
+		onSuccess: () => {
+			toast.success('Coupon deleted successfully');
+			queryClient.invalidateQueries({
+				queryKey: queryKeys.dashboard.coupons(params.storeUrl),
+			});
+			setClose();
+		},
+		onError: (error: Error) => {
+			toast.error(error.message || 'Failed to delete coupon');
+		},
+	});
+
 	// Return null if rowData or rowData.id don't exist
-	if (!coupon) return null;
+	if (!coupon || !coupon.id) return null;
 
 	return (
 		<AlertDialog>
@@ -126,7 +140,7 @@ const CellActions: React.FC<CellActionsProps> = ({ coupon }) => {
 				<DropdownMenuContent align='end'>
 					<DropdownMenuLabel>Actions</DropdownMenuLabel>
 					<DropdownMenuItem
-						className='flex gap-2 cursor-pointer'
+						className='flex gap-2'
 						onClick={() => {
 							setOpen(
 								// Custom modal component
@@ -172,15 +186,10 @@ const CellActions: React.FC<CellActionsProps> = ({ coupon }) => {
 				<AlertDialogFooter className='flex items-center'>
 					<AlertDialogCancel className='mb-2'>Cancel</AlertDialogCancel>
 					<AlertDialogAction
-						disabled={loading}
+						disabled={deleteMutation.isPending}
 						className='bg-destructive hover:bg-destructive mb-2 text-white'
-						onClick={async () => {
-							setLoading(true);
-							await deleteCoupon(coupon.id, params.storeUrl);
-							toast.success('Coupon deleted successfully');
-							setLoading(false);
-							router.refresh();
-							setClose();
+						onClick={() => {
+							deleteMutation.mutate(coupon.id);
 						}}
 					>
 						Delete

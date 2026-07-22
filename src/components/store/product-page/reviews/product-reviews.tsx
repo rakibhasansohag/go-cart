@@ -17,6 +17,7 @@ import ReviewDetails from '../../forms/review-details';
 import { getProductFilteredReviews } from '@/queries/product-optimized';
 import ProductPageReviewsSkeletonLoader from '../../skeletons/product-page/reviews';
 import { DotLoader } from 'react-spinners';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
 
 interface Props {
 	productId: string;
@@ -66,56 +67,21 @@ const ProductReviews: FC<Props> = ({
 	const [page, setPage] = useState<number>(1);
 	const [pageSize, setPageSize] = useState<number>(4);
 
-	// Guard to avoid double-fetch on initial mount
-	const isFirstLoad = useRef<boolean>(true);
+	const { data: res } = useQuery({
+		queryKey: ['reviews', productId, filters, sort, page, pageSize],
+		queryFn: () => getProductFilteredReviews(productId, filters, sort, page, pageSize),
+		placeholderData: keepPreviousData,
+	});
 
-	// main fetch function
-	const fetchReviews = async (pageToFetch = 1) => {
-		try {
-			setFilterLoading(true);
-
-			const res = await getProductFilteredReviews(
-				productId,
-				filters,
-				sort,
-				pageToFetch,
-				pageSize,
-			);
-
-			// Expecting res = { reviews: ReviewWithImageType[], statistics: { totalReviews, ratingStatistics... } }
+	useEffect(() => {
+		if (res) {
 			setData(res.reviews ?? []);
 			setStatistics(res.statistics ?? defaultData);
-			setLoading(false);
-			setFilterLoading(false);
-		} catch (error) {
-			console.error('fetchReviews error:', error);
+			setAverageRating(rating);
 			setLoading(false);
 			setFilterLoading(false);
 		}
-	};
-
-	// When filters or sort change: reset to page 1 and fetch page 1
-	useEffect(() => {
-		setPage(1);
-		(async () => {
-			await fetchReviews(1);
-			// ensure next page-change triggers fetch
-			isFirstLoad.current = false;
-		})();
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [filters, sort, pageSize, productId]);
-
-	// When page changes (user clicked), fetch that page
-	useEffect(() => {
-		// Skip the initial page effect if we already fetched via the filters effect on mount
-		if (isFirstLoad.current) {
-			// initial page fetch already handled by the filters effect on mount
-			isFirstLoad.current = false;
-			return;
-		}
-		fetchReviews(page);
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [page, pageSize]);
+	}, [res, rating]);
 
 	// total pages calculation (prefer server-provided totalReviews)
 	const totalItems =

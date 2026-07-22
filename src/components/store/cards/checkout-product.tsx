@@ -1,3 +1,4 @@
+import { Button } from '@/components/store/ui/button';
 import { CartItem } from '@prisma/client';
 import { ChevronRight, Truck } from 'lucide-react';
 import Image from 'next/image';
@@ -44,7 +45,10 @@ export default function CheckoutProductCard({
 						</div>
 						{/* Style - Size */}
 						<div className='my-1'>
-							<button className='text-main-primary relative h-[24px] bg-gray-100 dark:bg-gray-800 whitespace-normal px-2.5 py-0 max-w-full text-xs leading-4 rounded-xl font-bold cursor-pointer  outline-0'>
+							<Button
+								variant='unstyled'
+								className='text-main-primary relative h-[24px] bg-gray-100 dark:bg-gray-800 whitespace-normal px-2.5 py-0 max-w-full text-xs leading-4 rounded-xl font-bold cursor-pointer outline-0'
+							>
 								<span className='flex items-center justify-between flex-wrap'>
 									<div className='text-left inline-block overflow-hidden text-ellipsis whitespace-nowrap max-w-[95%]'>
 										{product.size}
@@ -53,7 +57,7 @@ export default function CheckoutProductCard({
 										<ChevronRight className='w-3' />
 									</span>
 								</span>
-							</button>
+							</Button>
 						</div>
 						{/* Price - Delievery */}
 						<div className='flex flex-col justify-between mt-2 relative'>
@@ -75,8 +79,8 @@ export default function CheckoutProductCard({
 							<div className='mt-1 text-xs cursor-pointer'>
 								<div className='flex items-center mb-1'>
 									<span>
-										<Truck className='w-4 inline-block text-[#01a971]' />
-										<span className='text-[#01a971] ml-1'>
+										<Truck className='w-4 inline-block text-emerald-600' />
+										<span className='text-emerald-600 ml-1'>
 											{shippingFee
 												? `$${shippingFee.toFixed(2)}`
 												: 'Free Delivery'}

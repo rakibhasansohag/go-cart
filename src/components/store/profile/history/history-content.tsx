@@ -9,53 +9,47 @@ interface HistoryContentProps {
 	initialPage: number;
 }
 
+import { useQuery } from '@tanstack/react-query';
+import { queryKeys } from '@/lib/query-keys';
+
 const HistoryContent: FC<HistoryContentProps> = ({ initialPage }) => {
-	const [products, setProducts] = useState<any>([]);
 	const [currentPage, setCurrentPage] = useState<number>(initialPage);
-	const [totalPages, setTotalPages] = useState<number>(0);
-	const [loading, setLoading] = useState<boolean>(true); // Set initial loading to true
+	const [historyIds, setHistoryIds] = useState<string[]>([]);
+	const [isMounted, setIsMounted] = useState<boolean>(false);
 
 	useEffect(() => {
-		// Fetch history from localStorage
-		const fetchHistory = async () => {
-			const historyString = localStorage.getItem('productHistory');
-			if (!historyString) {
-				setProducts([]);
-				setTotalPages(0);
-				setLoading(false);
-				return;
-			}
-
+		setIsMounted(true);
+		const historyString = localStorage.getItem('productHistory');
+		if (historyString) {
 			try {
-				const pageNumber = currentPage;
-				setLoading(true);
-
 				const productHistory = JSON.parse(historyString);
-
-				// Fetch products by ids
-				const res = await getProductsByIds(productHistory, pageNumber);
-
-				// Remove duplicates
-				const seenIds = new Set();
-				const uniqueProducts = res.products.filter((product: any) => {
-					const isDuplicate = seenIds.has(product.id);
-					seenIds.add(product.id);
-					return !isDuplicate;
-				});
-
-				setProducts(uniqueProducts);
-				setTotalPages(res.totalPages);
-				setLoading(false);
+				if (Array.isArray(productHistory)) {
+					setHistoryIds(productHistory);
+				}
 			} catch (error) {
-				console.error('Error fetching product history:', error);
-				setProducts([]);
-				setTotalPages(0);
-				setLoading(false);
+				console.error('Error parsing product history:', error);
 			}
-		};
+		}
+	}, []);
 
-		fetchHistory();
-	}, [currentPage]); // Re-fetch data when currentPage state changes
+	const { data: res, isLoading } = useQuery({
+		queryKey: queryKeys.profile.history(historyIds, currentPage),
+		queryFn: () => getProductsByIds(historyIds, currentPage),
+		enabled: isMounted && historyIds.length > 0,
+	});
+
+	const products = res ? res.products : [];
+	const totalPages = res ? res.totalPages : 0;
+
+	// Remove duplicates
+	const seenIds = new Set();
+	const uniqueProducts = products.filter((product: any) => {
+		const isDuplicate = seenIds.has(product.id);
+		seenIds.add(product.id);
+		return !isDuplicate;
+	});
+
+	const loading = !isMounted || (isLoading && historyIds.length > 0);
 
 	return (
 		<div className='bg-background py-4 px-6 rounded-xl'>
@@ -78,9 +72,9 @@ const HistoryContent: FC<HistoryContentProps> = ({ initialPage }) => {
 					</div>
 					<span className='sr-only'>Loading...</span>
 				</div>
-			) : products.length > 0 ? (
+			) : uniqueProducts.length > 0 ? (
 				<div className='pb-16'>
-					<ProductList products={products} />
+					<ProductList products={uniqueProducts} />
 					<div className='mt-2'>
 						<Pagination
 							page={currentPage}

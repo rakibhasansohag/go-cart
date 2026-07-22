@@ -1,6 +1,8 @@
+'use client';
 import * as React from 'react';
 import { Slot } from '@radix-ui/react-slot';
 import { cva, type VariantProps } from 'class-variance-authority';
+import { motion } from 'framer-motion';
 
 import { cn } from '@/lib/utils';
 
@@ -11,12 +13,13 @@ const buttonVariants = cva(
 			variant: {
 				default: 'bg-orange-background hover:bg-orange-hover',
 				black: 'bg-black',
-				pink: 'bg-[#ffe6e7] text-orange-background hover:bg-[#e4cdce] hover:text-white',
+				pink: 'bg-orange-border text-orange-background hover:bg-orange-border/80 hover:text-white',
 				outline:
 					'bg-transparent hover:bg-orange-background hover:text-white text-orange-background rounded-md border-orange-background px-2 !h-7 text-sm font-normal',
 				'orange-gradient':
-					'bg-gradient-to-r from-[#ff0a0a] to-[#ff7539] hover:bg-gradient-to-l text-white inline-block w-full h-[36px] leading-[36px] text-[14px] font-bold text-center rounded-full cursor-pointer',
-				gray: 'bg-f5 text-main-primary border-[#f5f5f5] inline-block w-full h-[36px] leading-[36px] text-[14px] font-bold text-center rounded-full cursor-pointer',
+					'bg-gradient-to-r from-red-600 to-orange-500 hover:bg-gradient-to-l text-white inline-block w-full h-[36px] leading-[36px] text-[14px] font-bold text-center rounded-full cursor-pointer',
+				gray: 'bg-f5 text-main-primary border-f5 inline-block w-full h-[36px] leading-[36px] text-[14px] font-bold text-center rounded-full cursor-pointer',
+				unstyled: '',
 			},
 			size: {
 				default: 'h-11 py-2',
@@ -40,23 +43,32 @@ const buttonVariants = cva(
 
 export interface ButtonProps
 	extends React.ButtonHTMLAttributes<HTMLButtonElement>,
-		VariantProps<typeof buttonVariants> {
+	VariantProps<typeof buttonVariants> {
 	asChild?: boolean;
 }
+
+const MotionSlot = motion.create(Slot);
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
 	(
 		{ className, variant, size, width, rounded, asChild = false, ...props },
 		ref,
 	) => {
-		const Comp = asChild ? Slot : 'button';
+		const Comp = asChild ? MotionSlot : motion.button;
 		return (
 			<Comp
-				className={cn(
-					buttonVariants({ variant, size, width, rounded, className }),
-				)}
-				ref={ref}
-				{...props}
+				whileHover={{ y: -1.5, boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}
+				whileTap={{ y: 0.5, scale: 0.98 }}
+				transition={{ type: 'spring', stiffness: 500, damping: 20 }}
+				className={
+					variant === 'unstyled'
+						? className
+						: cn(buttonVariants({ variant, size, width, rounded, className }))
+				}
+				// eslint-disable-next-line @typescript-eslint/no-explicit-any
+				ref={ref as any}
+				// eslint-disable-next-line @typescript-eslint/no-explicit-any
+				{...(props as any)}
 			/>
 		);
 	},

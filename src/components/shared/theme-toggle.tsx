@@ -1,18 +1,12 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuTrigger,
-} from '../ui/dropdown-menu';
 import { Button } from '../ui/button';
-import { MoonIcon, SunIcon } from 'lucide-react';
+import { MoonIcon, SunIcon, Laptop } from 'lucide-react';
 import { useTheme } from 'next-themes';
 
 function ThemeToggle() {
-	const { setTheme, theme, resolvedTheme } = useTheme();
+	const { setTheme, theme } = useTheme();
 	const [mounted, setMounted] = useState(false);
 
 	// Avoid hydration mismatch
@@ -32,32 +26,24 @@ function ThemeToggle() {
 		);
 	}
 
+	const handleToggle = () => {
+		const nextTheme = theme === 'system' ? 'light' : theme === 'light' ? 'dark' : 'system';
+		setTheme(nextTheme);
+	};
+
 	return (
-		<DropdownMenu>
-			<DropdownMenuTrigger asChild>
-				<Button
-					variant={'outline'}
-					size={'icon'}
-					className='w-10 h-10 rounded-full relative'
-					title={`Current: ${theme} (${resolvedTheme})`} // Debug info
-				>
-					<SunIcon className='h-[1.4rem] w-[1.4rem] rotate-0 scale-100 transition-all duration-300 ease-in-out dark:-rotate-90 dark:scale-0' />
-					<MoonIcon className='absolute h-[1.4rem] w-[1.4rem] rotate-90 scale-0 transition-all duration-300 ease-in-out dark:rotate-0 dark:scale-100' />
-					<span className='sr-only'>Toggle theme</span>
-				</Button>
-			</DropdownMenuTrigger>
-			<DropdownMenuContent align='end'>
-				<DropdownMenuItem onClick={() => setTheme('light')}>
-					Light {theme === 'light' && '✓'}
-				</DropdownMenuItem>
-				<DropdownMenuItem onClick={() => setTheme('dark')}>
-					Dark {theme === 'dark' && '✓'}
-				</DropdownMenuItem>
-				<DropdownMenuItem onClick={() => setTheme('system')}>
-					System {theme === 'system' && '✓'}
-				</DropdownMenuItem>
-			</DropdownMenuContent>
-		</DropdownMenu>
+		<Button
+			variant={'outline'}
+			size={'icon'}
+			className='w-10 h-10 rounded-full relative overflow-hidden flex items-center justify-center'
+			onClick={handleToggle}
+			title={`Theme: ${theme}`}
+		>
+			<SunIcon className={`h-[1.4rem] w-[1.4rem] transition-all duration-300 ease-in-out absolute ${theme === 'light' ? 'scale-100 rotate-0 opacity-100' : 'scale-0 rotate-90 opacity-0'}`} />
+			<MoonIcon className={`h-[1.4rem] w-[1.4rem] transition-all duration-300 ease-in-out absolute ${theme === 'dark' ? 'scale-100 rotate-0 opacity-100' : 'scale-0 -rotate-90 opacity-0'}`} />
+			<Laptop className={`h-[1.4rem] w-[1.4rem] transition-all duration-300 ease-in-out absolute ${theme === 'system' ? 'scale-100 rotate-0 opacity-100' : 'scale-0 rotate-180 opacity-0'}`} />
+			<span className='sr-only'>Toggle theme</span>
+		</Button>
 	);
 }
 

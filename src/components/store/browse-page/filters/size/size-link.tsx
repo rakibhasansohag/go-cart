@@ -37,7 +37,7 @@ export default function SizeLink({ size }: { size: string }) {
 		>
 			<span
 				className={cn(
-					'mr-2 border border-[#ccc] w-3 h-3 relative flex items-center justify-center rrounded-full',
+					'mr-2 border border-neutral-300 w-3 h-3 relative flex items-center justify-center rrounded-full',
 					{
 						'bg-black text-white border-black': size === existed_size,
 					},

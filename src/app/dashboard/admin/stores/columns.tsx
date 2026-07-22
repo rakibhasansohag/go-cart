@@ -44,8 +44,10 @@ import {
 // Queries
 import { deleteStore } from '@/queries/store';
 
-// Tanstack React Table
+// Tanstack React Query & Table
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { ColumnDef } from '@tanstack/react-table';
+import { queryKeys } from '@/lib/query-keys';
 
 // Prisma models
 import { AdminStoreType, StoreStatus } from '@/lib/types';
@@ -165,8 +167,21 @@ interface CellActionsProps {
 const CellActions: React.FC<CellActionsProps> = ({ storeId }) => {
 	// Hooks
 	const { setClose } = useModal();
-	const [loading, setLoading] = useState(false);
-	const router = useRouter();
+	const queryClient = useQueryClient();
+
+	const deleteMutation = useMutation({
+		mutationFn: (id: string) => deleteStore(id),
+		onSuccess: () => {
+			toast.info('Store deleted successfully');
+			queryClient.invalidateQueries({
+				queryKey: queryKeys.dashboard.stores(),
+			});
+			setClose();
+		},
+		onError: (error: Error) => {
+			toast.error(error.message || 'Failed to delete store');
+		},
+	});
 
 	// Return null if rowData or rowData.id don't exist
 	if (!storeId) return null;
@@ -203,15 +218,10 @@ const CellActions: React.FC<CellActionsProps> = ({ storeId }) => {
 				<AlertDialogFooter className='flex items-center'>
 					<AlertDialogCancel className='mb-2'>Cancel</AlertDialogCancel>
 					<AlertDialogAction
-						disabled={loading}
+						disabled={deleteMutation.isPending}
 						className='bg-destructive hover:bg-destructive mb-2 text-main-primary'
-						onClick={async () => {
-							setLoading(true);
-							await deleteStore(storeId);
-							toast.info('Store deleted successfully');
-							setLoading(false);
-							router.refresh();
-							setClose();
+						onClick={() => {
+							deleteMutation.mutate(storeId);
 						}}
 					>
 						Delete

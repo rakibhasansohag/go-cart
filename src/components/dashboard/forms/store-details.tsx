@@ -42,6 +42,8 @@ import ImageUpload from '../shared/image-upload';
 
 // Queries
 import { upsertStore } from '@/queries/store';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { queryKeys } from '@/lib/query-keys';
 
 // Utils
 import { v4 } from 'uuid';
@@ -54,6 +56,7 @@ interface StoreDetailsProps {
 const StoreDetails: FC<StoreDetailsProps> = ({ data }) => {
 	// Initializing necessary hooks
 	const router = useRouter(); // Hook for routing
+	const queryClient = useQueryClient();
 
 	// Form hook for managing form state and validation
 	const form = useForm<z.infer<typeof StoreFormSchema>>({
@@ -73,8 +76,34 @@ const StoreDetails: FC<StoreDetailsProps> = ({ data }) => {
 		},
 	});
 
-	// Loading status based on form submission
-	const isLoading = form.formState.isSubmitting;
+	const upsertMutation = useMutation({
+		mutationFn: upsertStore,
+		onSuccess: (response) => {
+			toast.success(
+				data?.id
+					? 'Store has been updated.'
+					: `Congratulations! ${response?.name} Store is now created.`,
+			);
+			if (data?.url) {
+				queryClient.invalidateQueries({
+					queryKey: queryKeys.dashboard.storeSettings(data.url),
+				});
+			}
+			queryClient.invalidateQueries({
+				queryKey: queryKeys.dashboard.stores(),
+			});
+			if (!data?.id) {
+				router.push(`/dashboard/seller/stores/`);
+			}
+		},
+		onError: (error: any) => {
+			console.dir(error);
+			toast.error(error.toString());
+		},
+	});
+
+	// Loading status based on form submission or mutation pending
+	const isLoading = form.formState.isSubmitting || upsertMutation.isPending;
 
 	// Reset form values when data changes
 	useEffect(() => {
@@ -96,43 +125,19 @@ const StoreDetails: FC<StoreDetailsProps> = ({ data }) => {
 	// Submit handler for form submission
 	const handleSubmit = async () => {
 		const values = form.getValues();
-
-		try {
-			// Upserting category data
-			const response = await upsertStore({
-				id: data?.id ? data.id : v4(),
-				name: values.name,
-				description: values.description,
-				email: values.email,
-				phone: values.phone,
-				logo: values.logo[0].url,
-				cover: values.cover[0].url,
-				url: values.url,
-				featured: values.featured,
-				createdAt: new Date(),
-				updatedAt: new Date(),
-			});
-
-			console.log('Upsert data:', response);
-
-			// Displaying success message
-			toast.success(
-				data?.id
-					? 'Store has been updated.'
-					: `Congratulations! ${response?.name} Store is now created.`,
-			);
-
-			// Redirect or Refresh data
-			if (data?.id) {
-				router.refresh();
-			} else {
-				router.push(`/dashboard/seller/stores/`);
-			}
-		} catch (error: any) {
-			console.dir(error);
-			// Handling form submission errors
-			toast.error(error.toString());
-		}
+		await upsertMutation.mutateAsync({
+			id: data?.id ? data.id : v4(),
+			name: values.name,
+			description: values.description,
+			email: values.email,
+			phone: values.phone,
+			logo: values.logo[0].url,
+			cover: values.cover[0].url,
+			url: values.url,
+			featured: values.featured,
+			createdAt: new Date(),
+			updatedAt: new Date(),
+		});
 	};
 
 	return (

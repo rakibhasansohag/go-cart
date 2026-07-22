@@ -22,7 +22,7 @@ export default async function Header() {
 	}
 
 	return (
-		<div className='bg-gradient-to-r from-slate-500 to-slate-800'>
+		<div className='bg-gradient-to-r from-slate-500 to-slate-800 lg:sticky lg:top-0 lg:z-40 shadow-sm'>
 			<div className='h-full w-full lg:flex text-white px-4 lg:px-12'>
 				<div className='flex lg:w-full lg:flex-1 flex-col lg:flex-row gap-3 py-3'>
 					<div className='flex items-center justify-between'>

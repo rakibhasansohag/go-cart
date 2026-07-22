@@ -1,34 +1,24 @@
-// Queries
-import DataTable from '@/components/ui/data-table';
-import { columns } from './columns';
-
-import { getStoreOrders } from '@/queries/store';
+import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
+import OrdersTable from './orders-table';
+import DataTableSkeleton from '@/components/dashboard/shared/table-skeleton';
 
-
+type StoreParams = { storeUrl: string };
 
 export default async function SellerOrdersPage({
 	params,
 }: {
-	params: Promise<{ storeUrl: string }>;
+	params: Promise<StoreParams>;
 }) {
 	const { storeUrl } = await params;
 
-	// optional guard
 	if (!storeUrl) {
 		return notFound();
 	}
 
-	// Get all store coupons
-	const orders = await getStoreOrders(storeUrl);
 	return (
-		<div>
-			<DataTable
-				filterValue='id'
-				data={orders}
-				columns={columns}
-				searchPlaceholder='Search order by id ...'
-			/>
-		</div>
+		<Suspense fallback={<DataTableSkeleton />}>
+			<OrdersTable storeUrl={storeUrl} />
+		</Suspense>
 	);
 }

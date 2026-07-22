@@ -67,13 +67,13 @@ export default async function UserMenu() {
 								) : (
 									<div className='space-y-1'>
 										<Link href='/sign-in'>
-											<Button className='w-full bg-main-primary text-white hover:opacity-90'>
+											<Button className='w-full bg-foreground text-background hover:opacity-90 rounded-xl'>
 												Sign in
 											</Button>
 										</Link>
 										<Link
 											href='/sign-up'
-											className='h-10 text-sm text-main-primary flex items-center justify-center hover:underline'
+											className='h-10 text-sm text-foreground flex items-center justify-center hover:underline'
 										>
 											Register
 										</Link>
@@ -92,7 +92,7 @@ export default async function UserMenu() {
 							</div>
 
 							{/* Links */}
-							<div className='max-h-[calc(100vh-200px)] overflow-y-auto pt-3 px-3 pb-4'>
+							<div className='max-h-[calc(100vh-200px)] overflow-y-auto overflow-x-hidden pt-3 px-3 pb-4'>
 								<ul className='grid grid-cols-3 gap-3 py-2'>
 									{links.map((item) => (
 										<li key={item.title} className='grid place-items-center'>
@@ -117,7 +117,7 @@ export default async function UserMenu() {
 
 								<Separator className='!max-w-[257px] mx-auto dark:bg-slate-700/60' />
 
-								<ul className='pt-3 pr-4 pb-2 pl-4 w-[288px] space-y-1.5'>
+								<ul className='pt-3 pr-4 pb-2 pl-4 w-full space-y-1.5'>
 									{extraLinks.map((item, i) => (
 										<li key={i}>
 											<Link href={item.link}>
@@ -169,7 +169,7 @@ const extraLinks = [
 	},
 	{
 		title: 'Help Center',
-		link: '',
+		link: '#',
 	},
 	{
 		title: 'Return & Refund Policy',
@@ -177,18 +177,18 @@ const extraLinks = [
 	},
 	{
 		title: 'Legal & Privacy',
-		link: '',
+		link: '#',
 	},
 	{
 		title: 'Discounts & Offers',
-		link: '',
+		link: '#',
 	},
 	{
 		title: 'Order Dispute Resolution',
-		link: '',
+		link: '#',
 	},
 	{
 		title: 'Report a Problem',
-		link: '',
+		link: '#',
 	},
 ];

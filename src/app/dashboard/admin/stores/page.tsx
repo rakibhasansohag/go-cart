@@ -1,20 +1,11 @@
-// Queries
-import { getAllStores } from '@/queries/store';
+import { Suspense } from 'react';
+import StoresTable from './stores-table';
+import DataTableSkeleton from '@/components/dashboard/shared/table-skeleton';
 
-// Data table
-import DataTable from '@/components/ui/data-table';
-import { columns } from './columns';
-
-export default async function AdminStoresPage() {
-	// Fetching stores data from the database
-	const stores = await getAllStores();
-
+export default function AdminStoresPage() {
 	return (
-		<DataTable
-			filterValue='name'
-			data={stores}
-			searchPlaceholder='Search store name...'
-			columns={columns}
-		/>
+		<Suspense fallback={<DataTableSkeleton />}>
+			<StoresTable />
+		</Suspense>
 	);
 }

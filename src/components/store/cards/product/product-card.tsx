@@ -3,6 +3,7 @@ import { ProductType, VariantSimplified } from '@/lib/types';
 import Link from 'next/link';
 import { useState } from 'react';
 import ReactStars from 'react-rating-stars-component';
+import { AnimatePresence, motion } from 'framer-motion';
 import ProductCardImageSwiper from './swiper';
 import VariantSwitcher from './variant-switcher';
 import { cn } from '@/lib/utils';
@@ -11,30 +12,50 @@ import { Heart } from 'lucide-react';
 import ProductPrice from '../../product-page/product-info/product-price';
 import { addToWishlist } from '@/queries/user';
 import { toast } from 'sonner';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { queryKeys } from '@/lib/query-keys';
 
-export default function ProductCard({ product }: { product: ProductType }) {
+export default function ProductCard({
+	product,
+	className,
+}: {
+	product: ProductType;
+	className?: string;
+}) {
 	const { name, slug, rating, sales, variantImages, variants, id } = product;
 	const [variant, setVariant] = useState<VariantSimplified>(variants[0]);
 	const { variantSlug, variantName, images, sizes } = variant;
+	const [isHovered, setIsHovered] = useState(false);
 
-	const handleaddToWishlist = async () => {
-		try {
-			const res = await addToWishlist(id, variant.variantId);
-			if (res) toast.success('Product successfully added to wishlist.');
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		} catch (error: any) {
+	const queryClient = useQueryClient();
+
+	const addToWishlistMutation = useMutation({
+		mutationFn: () => addToWishlist(id, variant.variantId),
+		onSuccess: () => {
+			toast.success('Product successfully added to wishlist.');
+			queryClient.invalidateQueries({ queryKey: queryKeys.profile.wishlist(1) });
+		},
+		onError: (error: any) => {
 			toast.error(error.toString());
-		}
+		},
+	});
+
+	const handleaddToWishlist = () => {
+		addToWishlistMutation.mutate();
 	};
 
 	return (
-		<div>
+		<div
+			onMouseEnter={() => setIsHovered(true)}
+			onMouseLeave={() => setIsHovered(false)}
+			className={cn(className || 'w-[190px] min-[480px]:w-[225px] min-[1530px]:w-full', 'relative')}
+		>
 			<div
 				className={cn(
-					'group w-[190px] min-[480px]:w-[225px] relative transition-all duration-75 bg-secondary ease-in-out p-4 rounded-t-3xl border border-transparent hover:shadow-xl hover:border-border',
-					{
-						'': true,
-					},
+					'group w-full relative transition-all duration-300 bg-secondary ease-in-out p-4 border border-transparent',
+					isHovered
+						? 'rounded-t-3xl shadow-xl border-border'
+						: 'rounded-3xl',
 				)}
 			>
 				<div className='relative w-full h-full'>
@@ -67,33 +88,43 @@ export default function ProductCard({ product }: { product: ProductType }) {
 						<ProductPrice sizes={sizes} isCard handleChange={() => {}} />
 					</Link>
 				</div>
-				<div className='hidden group-hover:block absolute -left-[1px] bg-secondary border border-t-0  w-[calc(100%+2px)] px-4 pb-4 rounded-b-3xl shadow-xl z-30 space-y-2'>
-					{/* Variant switcher */}
-					<VariantSwitcher
-						images={variantImages}
-						variants={variants}
-						setVariant={setVariant}
-						selectedVariant={variant}
-					/>
-					{/* Action buttons */}
-					<div className='flex flex-items gap-x-1'>
-						<Button>
-							<Link
-								className='text-main-primary'
-								href={`/product/${slug}?variant=${variantSlug}`}
-							>
-								Add to cart
-							</Link>
-						</Button>
-						<Button
-							variant='black'
-							size='icon'
-							onClick={() => handleaddToWishlist()}
+				<AnimatePresence>
+					{isHovered && (
+						<motion.div
+							initial={{ height: 0, opacity: 0 }}
+							animate={{ height: 'auto', opacity: 1 }}
+							exit={{ height: 0, opacity: 0 }}
+							transition={{ duration: 0.2, ease: 'easeInOut' }}
+							className='absolute -left-[1px] bg-secondary border-border border-x border-b w-[calc(100%+2px)] px-4 pb-4 rounded-b-3xl shadow-xl z-30 space-y-2 overflow-hidden'
 						>
-							<Heart className='w-5 text-pink-300' />
-						</Button>
-					</div>
-				</div>
+							{/* Variant switcher */}
+							<VariantSwitcher
+								images={variantImages}
+								variants={variants}
+								setVariant={setVariant}
+								selectedVariant={variant}
+							/>
+							{/* Action buttons */}
+							<div className='flex items-center gap-x-1'>
+								<Button asChild>
+									<Link
+										className='text-main-primary'
+										href={`/product/${slug}?variant=${variantSlug}`}
+									>
+										Add to cart
+									</Link>
+								</Button>
+								<Button
+									variant='black'
+									size='icon'
+									onClick={() => handleaddToWishlist()}
+								>
+									<Heart className='w-5 text-pink-300' />
+								</Button>
+							</div>
+						</motion.div>
+					)}
+				</AnimatePresence>
 			</div>
 		</div>
 	);

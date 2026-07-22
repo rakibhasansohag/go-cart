@@ -1,11 +1,14 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Minus, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { FiltersQueryType } from '@/lib/types';
-import SizeLink from './color';
 import { getFilteredColors } from '@/queries/color';
 import ColorCircle from './color';
+import { useSuspenseQuery } from '@tanstack/react-query';
+import { queryKeys } from '@/lib/query-keys';
+
+import { AnimatePresence, motion } from 'framer-motion';
 
 export default function ColorFilter({
 	queries,
@@ -16,23 +19,13 @@ export default function ColorFilter({
 }) {
 	const { category, subCategory, offer, search } = queries;
 	const [show, setShow] = useState<boolean>(true);
-	const [colors, setColors] = useState<{ name: string }[]>([]);
-	const [total, setTotal] = useState<number>(10);
-	const [take, setTake] = useState<number>(10);
+	const take = 10;
+	const { data } = useSuspenseQuery<{ colors: { name: string }[]; count: number }>({
+		queryKey: queryKeys.colors.filtered({ category, offer, subCategory, storeUrl }),
+		queryFn: () => getFilteredColors({ category, offer, subCategory, storeUrl }, take),
+	});
 
-	useEffect(() => {
-		handleGetColors();
-	}, [category, subCategory, offer, take]);
-
-	const handleGetColors = async () => {
-		const data = await getFilteredColors(
-			{ category, offer, subCategory, storeUrl },
-			take,
-		);
-		setColors(data.colors);
-		setTotal(data.count);
-	};
-	console.log('colors', colors);
+	const colors = data.colors;
 	return (
 		<div className='pt-5 pb-4'>
 			{/* Header */}
@@ -48,15 +41,23 @@ export default function ColorFilter({
 				</span>
 			</div>
 			{/* Filter */}
-			<div
-				className={cn('mt-2.5 grid grid-cols-6 gap-4', {
-					hidden: !show,
-				})}
-			>
-				{colors.map((color) => (
-					<ColorCircle key={color.name} color={color.name} />
-				))}
-			</div>
+			<AnimatePresence initial={false}>
+				{show && (
+					<motion.div
+						initial={{ height: 0, opacity: 0 }}
+						animate={{ height: 'auto', opacity: 1 }}
+						exit={{ height: 0, opacity: 0 }}
+						transition={{ duration: 0.22, ease: 'easeInOut' }}
+						className='overflow-hidden mt-2.5'
+					>
+						<div className='grid grid-cols-6 gap-4'>
+							{colors.map((color) => (
+								<ColorCircle key={color.name} color={color.name} />
+							))}
+						</div>
+					</motion.div>
+				)}
+			</AnimatePresence>
 		</div>
 	);
 }

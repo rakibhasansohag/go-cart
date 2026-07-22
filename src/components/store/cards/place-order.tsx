@@ -1,5 +1,5 @@
 import { ShippingAddress } from '@prisma/client';
-import { Dispatch, FC, SetStateAction, useState } from 'react';
+import { Dispatch, FC, SetStateAction } from 'react';
 import { Button } from '../ui/button';
 import FastDelivery from './fast-delivery';
 import { SecurityPrivacyCard } from '../product-page/returns-security-privacy-card';
@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils';
 import { CartWithCartItemsType } from '@/lib/types';
 import ApplyCouponForm from '../forms/apply-coupon';
 import { PulseLoader } from 'react-spinners';
+import { useMutation } from '@tanstack/react-query';
 
 interface Props {
 	shippingAddress: ShippingAddress | null;
@@ -23,23 +24,39 @@ const PlaceOrderCard: FC<Props> = ({
 	setCartData,
 	cartData,
 }) => {
-	const [loading, setLoading] = useState<boolean>(false);
 	const { id, coupon, subTotal, shippingFees, total } = cartData;
 	const { push } = useRouter();
 	const emptyCart = useCartStore((state) => state.emptyCart);
-	const handlePlaceOrder = async () => {
-		setLoading(true);
-		if (!shippingAddress) {
-			toast.error('Select a shipping address first !');
-		} else {
+
+	const placeOrderMutation = useMutation({
+		mutationFn: async () => {
+			if (!shippingAddress) {
+				throw new Error('Select a shipping address first !');
+			}
 			const order = await placeOrder(shippingAddress, id);
 			if (order) {
 				emptyCart();
 				await emptyUserCart();
-				push(`/order/${order.orderId}`);
+				return order;
 			}
+			throw new Error('Failed to place order.');
+		},
+		onSuccess: (order) => {
+			push(`/order/${order.orderId}`);
+		},
+		onError: (error: any) => {
+			toast.error(error.message || error.toString());
+		},
+	});
+
+	const loading = placeOrderMutation.isPending;
+
+	const handlePlaceOrder = () => {
+		if (!shippingAddress) {
+			toast.error('Select a shipping address first !');
+			return;
 		}
-		setLoading(false);
+		placeOrderMutation.mutate();
 	};
 
 	let discountedAmount = 0;
@@ -97,7 +114,7 @@ const PlaceOrderCard: FC<Props> = ({
 							/>
 						</svg>
 						<div className='mx-2 5 overflow-hidden w-full'>
-							<p className='mt-1.5 text-xl font-bold text-[#66cdaa] leading-8 mr-3 overflow-hidden text-ellipsis whitespace-nowrap'>
+							<p className='mt-1.5 text-xl font-bold text-emerald-400 leading-8 mr-3 overflow-hidden text-ellipsis whitespace-nowrap'>
 								Coupon applied !
 							</p>
 							<p className='overflow-hidden leading-5 break-all text-zinc-400 max-h-10'>

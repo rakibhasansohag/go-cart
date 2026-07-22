@@ -40,6 +40,8 @@ import ImageUpload from '../shared/image-upload';
 
 // Queries
 import { upsertSubCategory } from '@/queries/subCategory';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { queryKeys } from '@/lib/query-keys';
 
 // Utils
 import { v4 } from 'uuid';
@@ -66,8 +68,8 @@ const SubCategoryDetails: FC<SubCategoryDetailsProps> = ({
 	goBack,
 }) => {
 	// Initializing necessary hooks
-
 	const router = useRouter(); // Hook for routing
+	const queryClient = useQueryClient();
 
 	// Form hook for managing form state and validation
 	const form = useForm<z.infer<typeof SubCategoryFormSchema>>({
@@ -83,8 +85,28 @@ const SubCategoryDetails: FC<SubCategoryDetailsProps> = ({
 		},
 	});
 
-	// Loading status based on form submission
-	const isLoading = form.formState.isSubmitting;
+	const upsertMutation = useMutation({
+		mutationFn: upsertSubCategory,
+		onSuccess: (response) => {
+			toast(
+				data?.id
+					? 'SubCategory has been updated.'
+					: `Congratulations! '${response?.name}' is now created.`,
+			);
+			queryClient.invalidateQueries({
+				queryKey: queryKeys.dashboard.subCategories(),
+			});
+			if (!data?.id) {
+				router.push('/dashboard/admin/subCategories');
+			}
+		},
+		onError: (error: any) => {
+			toast.error(error.toString());
+		},
+	});
+
+	// Loading status based on form submission or mutation pending
+	const isLoading = form.formState.isSubmitting || upsertMutation.isPending;
 
 	const formData = form.watch();
 
@@ -103,37 +125,17 @@ const SubCategoryDetails: FC<SubCategoryDetailsProps> = ({
 
 	// Submit handler for form submission
 	const handleSubmit = async () => {
-		try {
-			const values = form.getValues();
-			// Upserting category data
-			const response = await upsertSubCategory({
-				id: data?.id ? data.id : v4(),
-				name: values.name,
-				image: values.image[0].url,
-				url: values.url,
-				featured: values.featured!,
-				categoryId: values.categoryId,
-				createdAt: new Date(),
-				updatedAt: new Date(),
-			});
-
-			// Displaying success message
-			toast(
-				data?.id
-					? 'SubCategory has been updated.'
-					: `Congratulations! '${response?.name}' is now created.`,
-			);
-
-			// Redirect or Refresh data
-			if (data?.id) {
-				router.refresh();
-			} else {
-				router.push('/dashboard/admin/subCategories');
-			}
-		} catch (error: any) {
-			// Handling form submission errors
-			toast.error(error.toString());
-		}
+		const values = form.getValues();
+		await upsertMutation.mutateAsync({
+			id: data?.id ? data.id : v4(),
+			name: values.name,
+			image: values.image[0].url,
+			url: values.url,
+			featured: values.featured!,
+			categoryId: values.categoryId,
+			createdAt: new Date(),
+			updatedAt: new Date(),
+		});
 	};
 
 	const HandleGoBack = () => {

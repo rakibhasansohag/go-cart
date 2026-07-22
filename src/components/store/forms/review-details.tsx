@@ -20,6 +20,8 @@ import { Button } from '../ui/button';
 import { PulseLoader } from 'react-spinners';
 
 import { upsertReview } from '@/queries/review';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { queryKeys } from '@/lib/query-keys';
 import { v4 } from 'uuid';
 
 import type { AddReviewForm } from '@/lib/schemas';
@@ -83,16 +85,11 @@ export default function ReviewDetails({
 		form.setValue('images', images);
 	}, [images, form]);
 
-	// Loading status based on form submission
-	const isLoading = form.formState.isSubmitting;
+	const queryClient = useQueryClient();
 
-	// Errors
-	const errors = form.formState.errors;
-
-	// Submit handler for form submission
-	const handleSubmit = async (values: z.infer<typeof AddReviewSchema>) => {
-		try {
-			const response = await upsertReview(productId, {
+	const upsertReviewMutation = useMutation({
+		mutationFn: (values: z.infer<typeof AddReviewSchema>) => {
+			return upsertReview(productId, {
 				id: data?.id || v4(),
 				variant: values.variantName,
 				variantImage: values.variantImage,
@@ -103,6 +100,8 @@ export default function ReviewDetails({
 				size: values.size,
 				color: values.color,
 			});
+		},
+		onSuccess: (response) => {
 			if (response.review.id) {
 				const rev = reviews.filter((rev) => rev.id !== response.review.id);
 				setReviews([...rev, response.review]);
@@ -112,13 +111,28 @@ export default function ReviewDetails({
 				// Reset form after successful submission
 				form.reset();
 				setImages([]);
+
+				// Invalidate relevant queries
+				queryClient.invalidateQueries({ queryKey: ['reviews', productId] });
+				queryClient.invalidateQueries({ queryKey: ['profile', 'reviews'] });
 			} else {
 				toast.error(response.message);
 			}
-		} catch (error: any) {
-			// Handling form submission errors
+		},
+		onError: (error: any) => {
 			toast.error(error?.toString() ?? 'Something went wrong');
-		}
+		},
+	});
+
+	// Loading status based on form submission
+	const isLoading = form.formState.isSubmitting || upsertReviewMutation.isPending;
+
+	// Errors
+	const errors = form.formState.errors;
+
+	// Submit handler for form submission
+	const handleSubmit = (values: z.infer<typeof AddReviewSchema>) => {
+		upsertReviewMutation.mutate(values);
 	};
 
 	const variants = variantsInfo.map((v) => ({
@@ -249,7 +263,7 @@ export default function ReviewDetails({
 										<FormItem>
 											<FormControl>
 												<textarea
-													className='min-h-32 p-4 w-full rounded-xl focus:outline-none ring-1 ring-[transparent] focus:ring-[#11BE86] bg-background'
+													className='min-h-32 p-4 w-full rounded-xl focus:outline-none ring-1 ring-transparent focus:ring-emerald-500 bg-background'
 													placeholder='Write your review...'
 													value={field.value}
 													onChange={field.onChange}

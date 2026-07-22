@@ -6,7 +6,7 @@ import Newsletter from './newsletter';
 export default async function Footer() {
 	const subs = await getSubcategories(7, true);
 	return (
-		<div className='w-full bg-white dark:bg-accent'>
+		<div className='w-full bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 text-foreground'>
 			<Newsletter />
 			<div className='max-w-[1430px] mx-auto'>
 				<div className='p-5'>

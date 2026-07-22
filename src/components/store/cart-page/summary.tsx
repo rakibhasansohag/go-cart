@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import { saveUserCart } from '@/queries/user';
 import { PulseLoader } from 'react-spinners';
+import { useMutation } from '@tanstack/react-query';
 
 interface Props {
 	cartItems: CartProductType[];
@@ -13,7 +14,18 @@ interface Props {
 
 const CartSummary: FC<Props> = ({ cartItems, shippingFees }) => {
 	const router = useRouter();
-	const [loading, setLoading] = useState<boolean>(false);
+
+	const saveCartMutation = useMutation({
+		mutationFn: () => saveUserCart(cartItems),
+		onSuccess: () => {
+			router.push('/checkout');
+		},
+		onError: (error: any) => {
+			toast.error(error.toString());
+		},
+	});
+
+	const loading = saveCartMutation.isPending;
 
 	// Calculate subtotal from cartItems
 	const subtotal = cartItems.reduce((total, item) => {
@@ -23,17 +35,8 @@ const CartSummary: FC<Props> = ({ cartItems, shippingFees }) => {
 	// Calculate total price including shipping fees
 	const total = subtotal + shippingFees;
 
-	const handleSaveCart = async () => {
-		try {
-			setLoading(true);
-			const res = await saveUserCart(cartItems);
-			if (res) router.push('/checkout');
-			setLoading(false);
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		} catch (error: any) {
-			toast.error(error.toString());
-			setLoading(false);
-		}
+	const handleSaveCart = () => {
+		saveCartMutation.mutate();
 	};
 	return (
 		<div className='relative py-4 px-6 bg-background'>

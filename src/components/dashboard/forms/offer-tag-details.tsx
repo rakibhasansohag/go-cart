@@ -37,6 +37,8 @@ import { Input } from '@/components/ui/input';
 
 // Queries
 import { upsertOfferTag } from '@/queries/offer-tag';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { queryKeys } from '@/lib/query-keys';
 
 // Utils
 import { v4 } from 'uuid';
@@ -50,8 +52,8 @@ interface OfferTagDetailsProps {
 
 const OfferTagDetails: FC<OfferTagDetailsProps> = ({ data }) => {
 	// Initializing necessary hooks
-
 	const router = useRouter(); // Hook for routing
+	const queryClient = useQueryClient();
 
 	// Form hook for managing form state and validation
 	const form = useForm<z.infer<typeof OfferTagFormSchema>>({
@@ -64,8 +66,30 @@ const OfferTagDetails: FC<OfferTagDetailsProps> = ({ data }) => {
 		},
 	});
 
-	// Loading status based on form submission
-	const isLoading = form.formState.isSubmitting;
+	const upsertMutation = useMutation({
+		mutationFn: upsertOfferTag,
+		onSuccess: (response) => {
+			toast(
+				data?.id
+					? 'Offer tag has been updated.'
+					: `Congratulations! '${response?.name}' is now created.`,
+			);
+			queryClient.invalidateQueries({
+				queryKey: queryKeys.dashboard.offerTags(),
+			});
+			if (!data?.id) {
+				router.push('/dashboard/admin/offer-tags');
+			}
+		},
+		onError: (error: any) => {
+			toast.error('Oops!', {
+				description: error.toString(),
+			});
+		},
+	});
+
+	// Loading status based on form submission or mutation pending
+	const isLoading = form.formState.isSubmitting || upsertMutation.isPending;
 
 	// Reset form values when data changes
 	useEffect(() => {
@@ -80,38 +104,13 @@ const OfferTagDetails: FC<OfferTagDetailsProps> = ({ data }) => {
 	// Submit handler for form submission
 	const handleSubmit = async () => {
 		const values = form.getValues();
-
-		try {
-			// Upserting category data
-			const response = await upsertOfferTag({
-				id: data?.id ? data.id : v4(),
-				name: values.name,
-				url: values.url,
-				createdAt: new Date(),
-				updatedAt: new Date(),
-			});
-
-			// Displaying success message
-			toast(
-				data?.id
-					? 'Offer tag has been updated.'
-					: `Congratulations! '${response?.name}' is now created.`,
-			);
-
-			console.log(response);
-
-			// Redirect or Refresh data
-			if (response?.id) {
-				router.refresh();
-			} else {
-				router.push('/dashboard/admin/offer-tags');
-			}
-		} catch (error: any) {
-			// Handling form submission errors
-			toast.error('Oops!', {
-				description: error.toString(),
-			});
-		}
+		await upsertMutation.mutateAsync({
+			id: data?.id ? data.id : v4(),
+			name: values.name,
+			url: values.url,
+			createdAt: new Date(),
+			updatedAt: new Date(),
+		});
 	};
 
 	return (

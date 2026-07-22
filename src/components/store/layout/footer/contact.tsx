@@ -10,17 +10,17 @@ export default function Contact() {
 				<div className='flex items-center gap-x-6'>
 					<Headset className='scale-[190%] stroke-slate-400' />
 					<div className='flex flex-col'>
-						<span className='font-bold text-sm'>
+						<span className='font-bold text-sm text-foreground'>
 							Got Questions ? Call us 24/7!
 						</span>
-						<span className='text-xl'>(800) 9213-6472 , (800) 7324-1859</span>
+						<span className='text-xl text-foreground font-semibold'>(800) 9213-6472 , (800) 7324-1859</span>
 					</div>
 				</div>
 			</div>
 			<div className='flex flex-col'>
-				<b>Contact Info</b>
-				<span className='text-sm'>
-					<b>Address:</b> 1234 Street Name, Dhaka, Bangladesh
+				<b className='text-foreground'>Contact Info</b>
+				<span className='text-sm text-muted-foreground'>
+					<b className='text-foreground'>Address:</b> 1234 Street Name, Dhaka, Bangladesh
 				</span>
 				<div className='flex flex-wap gap-2 mt-4'>
 					<SocialLogo
