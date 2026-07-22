@@ -1,31 +1,42 @@
 'use client';
 
-import { useSuspenseQuery } from '@tanstack/react-query';
+import { useQuery, useSuspenseQuery } from '@tanstack/react-query';
 import { Plus } from 'lucide-react';
 import DataTable from '@/components/ui/data-table';
 import { getAllStoreProducts } from '@/queries/product';
+import { getAllCategoriesWithSubs } from '@/queries/category';
+import { getAllOfferTags } from '@/queries/offer-tag';
+import { getAllCountries } from '@/queries/country';
 import ProductDetails from '@/components/dashboard/forms/product-details';
 import { columns } from './columns';
 import { queryKeys } from '@/lib/query-keys';
-import { Country, OfferTag } from '@prisma/client';
-import { CategoryWithSubs } from '@/queries/category';
 
 interface ProductsTableProps {
 	storeUrl: string;
-	categories: CategoryWithSubs[];
-	offerTags: OfferTag[];
-	countries: Country[];
 }
 
-export default function ProductsTable({
-	storeUrl,
-	categories,
-	offerTags,
-	countries,
-}: ProductsTableProps) {
+export default function ProductsTable({ storeUrl }: ProductsTableProps) {
 	const { data: products } = useSuspenseQuery({
 		queryKey: queryKeys.dashboard.products(storeUrl),
 		queryFn: () => getAllStoreProducts(storeUrl),
+	});
+
+	const { data: categories = [] } = useQuery({
+		queryKey: ['categoriesWithSubs'],
+		queryFn: () => getAllCategoriesWithSubs(),
+		staleTime: 10 * 60 * 1000,
+	});
+
+	const { data: offerTags = [] } = useQuery({
+		queryKey: queryKeys.dashboard.offerTags(),
+		queryFn: () => getAllOfferTags(),
+		staleTime: 10 * 60 * 1000,
+	});
+
+	const { data: countries = [] } = useQuery({
+		queryKey: ['countries'],
+		queryFn: () => getAllCountries(),
+		staleTime: 10 * 60 * 1000,
 	});
 
 	if (!products) return null;

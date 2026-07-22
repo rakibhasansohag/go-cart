@@ -1,8 +1,4 @@
 import { Suspense } from 'react';
-import { dehydrate, HydrationBoundary } from '@tanstack/react-query';
-import { getQueryClient } from '@/lib/get-query-client';
-import { getStoreOrders } from '@/queries/store';
-import { queryKeys } from '@/lib/query-keys';
 import { notFound } from 'next/navigation';
 import OrdersTable from './orders-table';
 import DataTableSkeleton from '@/components/dashboard/shared/table-skeleton';
@@ -20,18 +16,9 @@ export default async function SellerOrdersPage({
 		return notFound();
 	}
 
-	const queryClient = getQueryClient();
-
-	queryClient.prefetchQuery({
-		queryKey: queryKeys.dashboard.orders(storeUrl),
-		queryFn: () => getStoreOrders(storeUrl),
-	});
-
 	return (
-		<HydrationBoundary state={dehydrate(queryClient)}>
-			<Suspense fallback={<DataTableSkeleton />}>
-				<OrdersTable storeUrl={storeUrl} />
-			</Suspense>
-		</HydrationBoundary>
+		<Suspense fallback={<DataTableSkeleton />}>
+			<OrdersTable storeUrl={storeUrl} />
+		</Suspense>
 	);
 }

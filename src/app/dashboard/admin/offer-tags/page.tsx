@@ -1,24 +1,11 @@
 import { Suspense } from 'react';
-import { dehydrate, HydrationBoundary } from '@tanstack/react-query';
-import { getQueryClient } from '@/lib/get-query-client';
-import { getAllOfferTags } from '@/queries/offer-tag';
-import { queryKeys } from '@/lib/query-keys';
 import OfferTagsTable from './offer-tags-table';
 import DataTableSkeleton from '@/components/dashboard/shared/table-skeleton';
 
-export default async function AdminOfferTagsPage() {
-	const queryClient = getQueryClient();
-
-	queryClient.prefetchQuery({
-		queryKey: queryKeys.dashboard.offerTags(),
-		queryFn: () => getAllOfferTags(),
-	});
-
+export default function AdminOfferTagsPage() {
 	return (
-		<HydrationBoundary state={dehydrate(queryClient)}>
-			<Suspense fallback={<DataTableSkeleton />}>
-				<OfferTagsTable />
-			</Suspense>
-		</HydrationBoundary>
+		<Suspense fallback={<DataTableSkeleton />}>
+			<OfferTagsTable />
+		</Suspense>
 	);
 }

@@ -2,20 +2,17 @@
 
 import { useSuspenseQuery } from '@tanstack/react-query';
 import StoreDetails from '@/components/dashboard/forms/store-details';
+import { getStoreByUrl } from '@/queries/store';
 import { queryKeys } from '@/lib/query-keys';
 
 interface StoreSettingsViewProps {
 	storeUrl: string;
-	initialStoreDetails: any;
 }
 
-export default function StoreSettingsView({
-	storeUrl,
-	initialStoreDetails,
-}: StoreSettingsViewProps) {
+export default function StoreSettingsView({ storeUrl }: StoreSettingsViewProps) {
 	const { data: storeDetails } = useSuspenseQuery({
 		queryKey: queryKeys.dashboard.storeSettings(storeUrl),
-		queryFn: async () => initialStoreDetails,
+		queryFn: () => getStoreByUrl(storeUrl),
 	});
 
 	if (!storeDetails) return null;

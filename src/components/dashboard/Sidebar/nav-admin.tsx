@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
@@ -21,21 +21,11 @@ export default function SidebarNavAdmin({
 }: SidebarNavAdminProps) {
 	const pathname = usePathname();
 	const router = useRouter();
-	const [isPending, startTransition] = useTransition();
 	const [searchQuery, setSearchQuery] = useState('');
 
 	const filteredLinks = menuLinks.filter((link) =>
 		link.label.toLowerCase().includes(searchQuery.toLowerCase())
 	);
-
-	const handleLinkClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
-		if (pathname === href) return;
-		e.preventDefault();
-		if (onNavigate) onNavigate();
-		startTransition(() => {
-			router.push(href);
-		});
-	};
 
 	return (
 		<div className='flex flex-col gap-3 w-full grow'>
@@ -84,7 +74,10 @@ export default function SidebarNavAdmin({
 
 								<Link
 									href={link.link}
-									onClick={(e) => handleLinkClick(e, link.link)}
+									prefetch={true}
+									onClick={() => {
+										if (onNavigate) onNavigate();
+									}}
 									className={cn(
 										'relative z-10 flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-colors duration-200 select-none group',
 										isActive

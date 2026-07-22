@@ -1,11 +1,4 @@
 import { Suspense } from 'react';
-import { dehydrate, HydrationBoundary } from '@tanstack/react-query';
-import { getQueryClient } from '@/lib/get-query-client';
-import {
-	getStoreDefaultShippingDetails,
-	getStoreShippingRates,
-} from '@/queries/store';
-import { queryKeys } from '@/lib/query-keys';
 import ShippingView from './shipping-view';
 import ShippingSkeleton from '@/components/dashboard/shared/shipping-skeleton';
 
@@ -17,24 +10,10 @@ export default async function SellerStoreShippingPage({
 	params: Promise<StoreParams>;
 }) {
 	const { storeUrl } = await params;
-	const queryClient = getQueryClient();
-
-	queryClient.prefetchQuery({
-		queryKey: queryKeys.dashboard.shipping(storeUrl),
-		queryFn: async () => {
-			const [details, rates] = await Promise.all([
-				getStoreDefaultShippingDetails(storeUrl),
-				getStoreShippingRates(storeUrl),
-			]);
-			return { details, rates };
-		},
-	});
 
 	return (
-		<HydrationBoundary state={dehydrate(queryClient)}>
-			<Suspense fallback={<ShippingSkeleton />}>
-				<ShippingView storeUrl={storeUrl} />
-			</Suspense>
-		</HydrationBoundary>
+		<Suspense fallback={<ShippingSkeleton />}>
+			<ShippingView storeUrl={storeUrl} />
+		</Suspense>
 	);
 }
