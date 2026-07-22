@@ -1,64 +1,43 @@
-export default function GlobalLoading() {
+import OverviewSkeleton from '@/components/dashboard/shared/overview-skeleton';
+import { Skeleton } from '@/components/ui/skeleton';
+
+export default function DashboardLoading() {
 	return (
-		<div className='min-h-screen grid place-items-center bg-background'>
-			<div className='flex flex-col items-center gap-6'>
-				{/* Animated segmented ring + pulse */}
-				<svg className='w-28 h-28' viewBox='0 0 100 100' aria-hidden>
-					<defs>
-						<linearGradient id='g1' x1='0' x2='1'>
-							<stop offset='0%' stopColor='#ff7a4d' />
-							<stop offset='50%' stopColor='#ffbe4d' />
-							<stop offset='100%' stopColor='#ffd76d' />
-						</linearGradient>
-					</defs>
-
-					<g transform='translate(50,50)'>
-						{/* background ring */}
-						<circle r='40' fill='none' stroke='#11182710' strokeWidth='10' />
-						{/* animated arc */}
-						<path
-							d='M 40 0 A 40 40 0 0 1 0 -40'
-							stroke='url(#g1)'
-							strokeWidth='10'
-							strokeLinecap='round'
-							fill='none'
-							className='origin-center animate-[spin_1.6s_linear_infinite]'
-						/>
-						{/* small orbiting dot */}
-						<circle
-							r='5'
-							cx='40'
-							cy='0'
-							fill='#ff7a4d'
-							className='animate-[orbit_1.6s_linear_infinite]'
-						/>
-					</g>
-
-					<style>{`
-            @keyframes spin { to { transform: rotate(360deg); } }
-            @keyframes orbit { 
-              0% { transform: rotate(0deg) translateX(0) rotate(0deg); } 
-              100% { transform: rotate(360deg) translateX(0) rotate(-360deg); } 
-            }
-          `}</style>
-				</svg>
-
-				<div className='text-center'>
-					<h3 className='text-xl font-semibold text-main-primary'>
-						Loading your experience…
-					</h3>
-					<p className='text-sm text-muted-foreground mt-1'>
-						Hang tight — preparing your dashboard.
-					</p>
+		<div className='w-full min-h-screen bg-background text-foreground flex overflow-hidden'>
+			{/* Sidebar Skeleton (hidden on mobile, visible on desktop) */}
+			<div className='hidden lg:flex flex-col w-[300px] border-r border-border p-4 space-y-6 fixed left-0 top-0 bottom-0 bg-card z-20'>
+				<div className='flex items-center gap-3 px-2 py-3'>
+					<Skeleton className='h-8 w-8 rounded-lg' />
+					<Skeleton className='h-5 w-32 rounded-md' />
 				</div>
+				<div className='space-y-3 pt-4'>
+					{Array.from({ length: 7 }).map((_, i) => (
+						<div key={i} className='flex items-center gap-3 px-3 py-2'>
+							<Skeleton className='h-5 w-5 rounded-md' />
+							<Skeleton className='h-4 w-36 rounded-md' />
+						</div>
+					))}
+				</div>
+			</div>
 
-				{/* Skeleton row to hint layout */}
-				<div className='w-[90vw] max-w-4xl p-4 bg-white/5 rounded-lg shadow-inner'>
-					<div className='flex items-center gap-4'>
-						<div className='w-48 h-8 rounded-md bg-slate-200/30 animate-pulse' />
-						<div className='flex-1 h-8 rounded-md bg-slate-200/20 animate-pulse' />
+			{/* Main Content Area Skeleton */}
+			<div className='w-full lg:ml-[300px] ml-0 flex flex-col min-w-0 transition-all'>
+				{/* Top Header Skeleton */}
+				<div className='h-[65px] border-b border-border px-4 sm:px-6 flex items-center justify-between fixed top-0 right-0 left-0 lg:left-[300px] bg-background/80 backdrop-blur z-10'>
+					<div className='flex items-center gap-3'>
+						<Skeleton className='h-8 w-8 rounded-md lg:hidden' />
+						<Skeleton className='h-5 w-40 rounded-md' />
+					</div>
+					<div className='flex items-center gap-3'>
+						<Skeleton className='h-9 w-9 rounded-full' />
+						<Skeleton className='h-9 w-9 rounded-full' />
 					</div>
 				</div>
+
+				{/* Body Content Skeleton */}
+				<main className='w-full mt-[65px] p-4 sm:p-6 lg:p-8 flex-1'>
+					<OverviewSkeleton />
+				</main>
 			</div>
 		</div>
 	);

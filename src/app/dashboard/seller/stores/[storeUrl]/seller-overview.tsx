@@ -1,12 +1,13 @@
 'use client';
 
-import { useSuspenseQuery } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { getSellerStoreAnalyticsData } from '@/queries/analytics';
 import { queryKeys } from '@/lib/query-keys';
 import StatCard from '@/components/dashboard/analytics/stat-card';
 import OverviewChart from '@/components/dashboard/analytics/overview-chart';
 import StatusDistribution from '@/components/dashboard/analytics/status-distribution';
 import RecentTransactions from '@/components/dashboard/analytics/recent-transactions';
+import OverviewSkeleton from '@/components/dashboard/shared/overview-skeleton';
 import { DollarSign, Package, ShoppingBag, Users } from 'lucide-react';
 
 interface SellerOverviewProps {
@@ -14,12 +15,12 @@ interface SellerOverviewProps {
 }
 
 export default function SellerOverview({ storeUrl }: SellerOverviewProps) {
-	const { data } = useSuspenseQuery({
+	const { data, isLoading } = useQuery({
 		queryKey: queryKeys.dashboard.sellerAnalytics(storeUrl),
 		queryFn: () => getSellerStoreAnalyticsData(storeUrl),
 	});
 
-	if (!data) return null;
+	if (isLoading || !data) return <OverviewSkeleton />;
 
 	return (
 		<div className='space-y-6'>

@@ -1,20 +1,21 @@
 'use client';
 
-import { useSuspenseQuery } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { getAdminAnalyticsData } from '@/queries/analytics';
 import { queryKeys } from '@/lib/query-keys';
 import StatCard from '@/components/dashboard/analytics/stat-card';
 import OverviewChart from '@/components/dashboard/analytics/overview-chart';
 import RecentTransactions from '@/components/dashboard/analytics/recent-transactions';
+import OverviewSkeleton from '@/components/dashboard/shared/overview-skeleton';
 import { DollarSign, ShoppingBag, Store, Users } from 'lucide-react';
 
 export default function AdminOverview() {
-	const { data } = useSuspenseQuery({
+	const { data, isLoading } = useQuery({
 		queryKey: queryKeys.dashboard.adminAnalytics(),
 		queryFn: () => getAdminAnalyticsData(),
 	});
 
-	if (!data) return null;
+	if (isLoading || !data) return <OverviewSkeleton />;
 
 	return (
 		<div className='space-y-6'>
