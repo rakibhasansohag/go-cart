@@ -3,12 +3,19 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
+import { useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { icons } from '@/constants/icons';
 import { DashboardSidebarMenuInterface } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { queryKeys } from '@/lib/query-keys';
+import { getAdminAnalyticsData, getAllAdminOrders } from '@/queries/analytics';
+import { getAllCategories } from '@/queries/category';
+import { getAllSubCategories } from '@/queries/subCategory';
+import { getAllOfferTags } from '@/queries/offer-tag';
+import { getAllStores } from '@/queries/store';
 
 interface SidebarNavAdminProps {
 	menuLinks: DashboardSidebarMenuInterface[];
@@ -21,11 +28,47 @@ export default function SidebarNavAdmin({
 }: SidebarNavAdminProps) {
 	const pathname = usePathname();
 	const router = useRouter();
+	const queryClient = useQueryClient();
 	const [searchQuery, setSearchQuery] = useState('');
 
 	const filteredLinks = menuLinks.filter((link) =>
 		link.label.toLowerCase().includes(searchQuery.toLowerCase())
 	);
+
+	const handleHover = (link: string) => {
+		router.prefetch(link);
+		if (link === '/dashboard/admin') {
+			queryClient.prefetchQuery({
+				queryKey: queryKeys.dashboard.adminAnalytics(),
+				queryFn: () => getAdminAnalyticsData(),
+			});
+		} else if (link === '/dashboard/admin/orders') {
+			queryClient.prefetchQuery({
+				queryKey: queryKeys.dashboard.adminOrders(),
+				queryFn: () => getAllAdminOrders(),
+			});
+		} else if (link === '/dashboard/admin/categories') {
+			queryClient.prefetchQuery({
+				queryKey: queryKeys.dashboard.categories(),
+				queryFn: () => getAllCategories(),
+			});
+		} else if (link === '/dashboard/admin/subCategories') {
+			queryClient.prefetchQuery({
+				queryKey: queryKeys.dashboard.subCategories(),
+				queryFn: () => getAllSubCategories(),
+			});
+		} else if (link === '/dashboard/admin/offer-tags') {
+			queryClient.prefetchQuery({
+				queryKey: queryKeys.dashboard.offerTags(),
+				queryFn: () => getAllOfferTags(),
+			});
+		} else if (link === '/dashboard/admin/stores') {
+			queryClient.prefetchQuery({
+				queryKey: queryKeys.dashboard.stores(),
+				queryFn: () => getAllStores(),
+			});
+		}
+	};
 
 	return (
 		<div className='flex flex-col gap-3 w-full grow'>
@@ -61,7 +104,7 @@ export default function SidebarNavAdmin({
 								whileTap={{ scale: 0.98 }}
 								transition={{ type: 'spring', stiffness: 400, damping: 25 }}
 								className='relative'
-								onMouseEnter={() => router.prefetch(link.link)}
+								onMouseEnter={() => handleHover(link.link)}
 							>
 								{/* Active Pill Indicator */}
 								{isActive && (
