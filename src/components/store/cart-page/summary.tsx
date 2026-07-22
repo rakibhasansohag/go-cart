@@ -1,5 +1,5 @@
 import { CartProductType } from '@/lib/types';
-import { FC, useState } from 'react';
+import { FC } from 'react';
 import { Button } from '../ui/button';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
@@ -20,8 +20,8 @@ const CartSummary: FC<Props> = ({ cartItems, shippingFees }) => {
 		onSuccess: () => {
 			router.push('/checkout');
 		},
-		onError: (error: any) => {
-			toast.error(error.toString());
+		onError: (error: Error) => {
+			toast.error(error.message || error.toString());
 		},
 	});
 

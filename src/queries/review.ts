@@ -89,7 +89,7 @@ export const upsertReview = async (
 		const averageRating = totalRating / productReviews.length;
 
 		// Update the product rating
-		const updatedProduct = await db.product.update({
+		await db.product.update({
 			where: {
 				id: productId,
 			},

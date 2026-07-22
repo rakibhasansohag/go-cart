@@ -912,8 +912,9 @@ const getUserCountry =  async () => {
 		) {
 			return parsedCountry;
 		}
+	} catch {
 		return defaultCountry;
-	} catch (error) {}
+	}
 };
 
 const formatProductResponse = (
@@ -1445,7 +1446,7 @@ export const getProductsByIds = async (
 			products: ordered_products,
 			totalPages,
 		};
-	} catch (error) {
+	} catch {
 		throw new Error('Failed to fetch products. Please try again.');
 	}
 };

@@ -848,8 +848,9 @@ const getUserCountry = async () => {
 		) {
 			return parsedCountry;
 		}
+	} catch {
 		return defaultCountry;
-	} catch (error) {}
+	}
 };
 
 const formatProductResponse = (

@@ -594,7 +594,7 @@ export const updateCheckoutProductstWithLatest = async (
 					},
 				});
 				return newCartItem;
-			} catch (error) {
+			} catch {
 				return cartProduct;
 			}
 		}),
@@ -712,7 +712,7 @@ export const upsertShippingAddress = async (
 							default: false,
 						},
 					});
-				} catch (error) {
+				} catch {
 					throw new Error('Could not reset default shipping addresses');
 				}
 			}

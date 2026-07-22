@@ -17,15 +17,18 @@ export type ModalData = {
 type ModalContextType = {
 	data: ModalData;
 	isOpen: boolean;
-	setOpen: (modal: React.ReactNode, fetchData?: () => Promise<any>) => void;
+	setOpen: (
+		modal: React.ReactNode,
+		fetchData?: () => Promise<Record<string, unknown>>,
+	) => void;
 	setClose: () => void;
 };
 
 export const ModalContext = createContext<ModalContextType>({
 	data: {},
 	isOpen: false,
-	setOpen: (modal: React.ReactNode, fetchData?: () => Promise<any>) => { },
-	setClose: () => { },
+	setOpen: () => {},
+	setClose: () => {},
 });
 
 const ModalProvider: React.FC<ModalProviderProps> = ({ children }) => {
@@ -49,7 +52,7 @@ const ModalProvider: React.FC<ModalProviderProps> = ({ children }) => {
 
 	const setOpen = async (
 		modal: React.ReactNode,
-		fetchData?: () => Promise<any>,
+		fetchData?: () => Promise<Record<string, unknown>>,
 	) => {
 		if (!modal) return;
 
