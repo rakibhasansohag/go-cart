@@ -5,7 +5,7 @@ import { db } from '@/lib/db';
 import { redirect } from 'next/navigation';
 import { queryKeys } from '@/lib/query-keys';
 import StoreSettingsView from './store-settings-view';
-import DataTableSkeleton from '@/components/dashboard/shared/table-skeleton';
+import FormSkeleton from '@/components/dashboard/shared/form-skeleton';
 
 type StoreParams = { storeUrl: string };
 
@@ -33,7 +33,7 @@ export default async function SellerStoreSettingsPage({
 
 	return (
 		<HydrationBoundary state={dehydrate(queryClient)}>
-			<Suspense fallback={<DataTableSkeleton />}>
+			<Suspense fallback={<FormSkeleton />}>
 				<StoreSettingsView
 					storeUrl={storeUrl}
 					initialStoreDetails={storeDetails}

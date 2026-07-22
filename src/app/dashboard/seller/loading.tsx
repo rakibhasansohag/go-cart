@@ -1,5 +1,5 @@
-import DataTableSkeleton from '@/components/dashboard/shared/table-skeleton';
+import OverviewSkeleton from '@/components/dashboard/shared/overview-skeleton';
 
 export default function SellerLoading() {
-	return <DataTableSkeleton />;
+	return <OverviewSkeleton />;
 }

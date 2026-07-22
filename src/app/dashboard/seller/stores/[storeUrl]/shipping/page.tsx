@@ -7,7 +7,7 @@ import {
 } from '@/queries/store';
 import { queryKeys } from '@/lib/query-keys';
 import ShippingView from './shipping-view';
-import DataTableSkeleton from '@/components/dashboard/shared/table-skeleton';
+import ShippingSkeleton from '@/components/dashboard/shared/shipping-skeleton';
 
 type StoreParams = { storeUrl: string };
 
@@ -32,7 +32,7 @@ export default async function SellerStoreShippingPage({
 
 	return (
 		<HydrationBoundary state={dehydrate(queryClient)}>
-			<Suspense fallback={<DataTableSkeleton />}>
+			<Suspense fallback={<ShippingSkeleton />}>
 				<ShippingView storeUrl={storeUrl} />
 			</Suspense>
 		</HydrationBoundary>

@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useTransition } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
+import { motion } from 'framer-motion';
 import { icons } from '@/constants/icons';
 import { DashboardSidebarMenuInterface } from '@/lib/types';
 import { cn } from '@/lib/utils';
@@ -20,11 +21,21 @@ export default function SidebarNavAdmin({
 }: SidebarNavAdminProps) {
 	const pathname = usePathname();
 	const router = useRouter();
+	const [isPending, startTransition] = useTransition();
 	const [searchQuery, setSearchQuery] = useState('');
 
 	const filteredLinks = menuLinks.filter((link) =>
 		link.label.toLowerCase().includes(searchQuery.toLowerCase())
 	);
+
+	const handleLinkClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+		if (pathname === href) return;
+		e.preventDefault();
+		if (onNavigate) onNavigate();
+		startTransition(() => {
+			router.push(href);
+		});
+	};
 
 	return (
 		<div className='flex flex-col gap-3 w-full grow'>
@@ -40,7 +51,7 @@ export default function SidebarNavAdmin({
 			</div>
 
 			{/* Navigation List */}
-			<nav className='space-y-1.5 w-full'>
+			<nav className='space-y-1.5 w-full relative'>
 				{filteredLinks.length === 0 ? (
 					<p className='text-xs text-muted-foreground text-center py-4'>
 						No menu links found.
@@ -54,31 +65,46 @@ export default function SidebarNavAdmin({
 						const isActive = link.link === pathname;
 
 						return (
-							<Link
+							<motion.div
 								key={index}
-								href={link.link}
+								whileHover={{ x: 3 }}
+								whileTap={{ scale: 0.98 }}
+								transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+								className='relative'
 								onMouseEnter={() => router.prefetch(link.link)}
-								onClick={onNavigate}
-								className={cn(
-									'relative flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-300 ease-in-out group select-none',
-									isActive
-										? 'bg-primary/10 text-primary font-semibold shadow-xs'
-										: 'text-muted-foreground hover:text-foreground hover:bg-muted/70'
-								)}
 							>
+								{/* Active Pill Indicator */}
 								{isActive && (
-									<span className='absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-primary rounded-r-full shadow-xs transition-all duration-300' />
+									<motion.span
+										layoutId='sidebar-active-indicator-admin'
+										transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+										className='absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-primary rounded-r-full shadow-xs z-20 pointer-events-none'
+									/>
 								)}
-								<span
+
+								<Link
+									href={link.link}
+									onClick={(e) => handleLinkClick(e, link.link)}
 									className={cn(
-										'transition-transform duration-300 ease-in-out group-hover:scale-110 shrink-0',
-										isActive ? 'text-primary' : 'group-hover:text-primary'
+										'relative z-10 flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-colors duration-200 select-none group',
+										isActive
+											? 'bg-primary/10 text-primary font-semibold'
+											: 'text-muted-foreground hover:text-foreground hover:bg-muted/70'
 									)}
 								>
-									{icon}
-								</span>
-								<span className='truncate'>{link.label}</span>
-							</Link>
+									<motion.span
+										whileHover={{ scale: 1.15, rotate: 2 }}
+										transition={{ type: 'spring', stiffness: 350, damping: 15 }}
+										className={cn(
+											'shrink-0 transition-colors duration-200',
+											isActive ? 'text-primary' : 'group-hover:text-primary'
+										)}
+									>
+										{icon}
+									</motion.span>
+									<span className='truncate'>{link.label}</span>
+								</Link>
+							</motion.div>
 						);
 					})
 				)}

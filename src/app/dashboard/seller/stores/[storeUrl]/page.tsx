@@ -4,7 +4,7 @@ import { getQueryClient } from '@/lib/get-query-client';
 import { getSellerStoreAnalyticsData } from '@/queries/analytics';
 import { queryKeys } from '@/lib/query-keys';
 import SellerOverview from './seller-overview';
-import DataTableSkeleton from '@/components/dashboard/shared/table-skeleton';
+import OverviewSkeleton from '@/components/dashboard/shared/overview-skeleton';
 
 type StoreParams = { storeUrl: string };
 
@@ -23,7 +23,7 @@ export default async function SellerStoresPage({
 
 	return (
 		<HydrationBoundary state={dehydrate(queryClient)}>
-			<Suspense fallback={<DataTableSkeleton />}>
+			<Suspense fallback={<OverviewSkeleton />}>
 				<SellerOverview storeUrl={storeUrl} />
 			</Suspense>
 		</HydrationBoundary>

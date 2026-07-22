@@ -4,7 +4,7 @@ import { getQueryClient } from '@/lib/get-query-client';
 import { getAdminAnalyticsData } from '@/queries/analytics';
 import { queryKeys } from '@/lib/query-keys';
 import AdminOverview from './admin-overview';
-import DataTableSkeleton from '@/components/dashboard/shared/table-skeleton';
+import OverviewSkeleton from '@/components/dashboard/shared/overview-skeleton';
 
 export default async function AdminDashboardPage() {
 	const queryClient = getQueryClient();
@@ -16,7 +16,7 @@ export default async function AdminDashboardPage() {
 
 	return (
 		<HydrationBoundary state={dehydrate(queryClient)}>
-			<Suspense fallback={<DataTableSkeleton />}>
+			<Suspense fallback={<OverviewSkeleton />}>
 				<AdminOverview />
 			</Suspense>
 		</HydrationBoundary>

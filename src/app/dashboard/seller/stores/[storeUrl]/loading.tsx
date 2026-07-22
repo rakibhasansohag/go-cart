@@ -1,5 +1,5 @@
 import OverviewSkeleton from '@/components/dashboard/shared/overview-skeleton';
 
-export default function AdminLoading() {
+export default function SellerStoreLoading() {
 	return <OverviewSkeleton />;
 }
