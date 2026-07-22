@@ -58,14 +58,19 @@ const StoreSwitcher: FC<StoreSwitcherProps> = ({ stores, className }) => {
 					role='combobox'
 					aria-expanded={open}
 					aria-label='Select a store'
-					className={cn('w-[250px] justify-between', className)}
+					className={cn(
+						'w-full h-10 px-3.5 my-3 justify-between rounded-xl font-medium text-xs border-border/60 shadow-xs hover:bg-muted/60 transition-colors',
+						className,
+					)}
 				>
-					<StoreIcon className='mr-2 w-4 h-4' />
-					{activeStore?.label}
-					<ChevronsUpDown className='ml-auto h-4 w-4 shrink-0 opacity-50' />
+					<div className='flex items-center truncate gap-2'>
+						<StoreIcon className='w-4 h-4 text-primary shrink-0' />
+						<span className='truncate'>{activeStore?.label || 'Select store'}</span>
+					</div>
+					<ChevronsUpDown className='ml-2 h-3.5 w-3.5 shrink-0 opacity-50' />
 				</Button>
 			</PopoverTrigger>
-			<PopoverContent className='w-[250px] p-0'>
+			<PopoverContent className='w-[var(--radix-popover-trigger-width)] min-w-[250px] p-0'>
 				<Command>
 					<CommandList>
 						<CommandInput placeholder='Search stores...' />

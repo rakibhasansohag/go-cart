@@ -89,7 +89,7 @@ export default function SidebarNavSeller({
 	return (
 		<div className='flex flex-col gap-3 w-full grow'>
 			{/* Menu Search Filter */}
-			<div className='relative w-full'>
+			<div className='relative w-full mb-2'>
 				<Search className='absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none' />
 				<Input
 					placeholder='Search menu...'
