@@ -14,7 +14,7 @@ interface Props {
 
 const CartSummary: FC<Props> = ({ cartItems, shippingFees }) => {
 	const router = useRouter();
-	//fds
+
 	const saveCartMutation = useMutation({
 		mutationFn: () => saveUserCart(cartItems),
 		onSuccess: () => {

@@ -5,6 +5,8 @@ import { queryKeys } from '@/lib/query-keys';
 import { getUserOrders } from '@/queries/profile';
 import OrdersTable, { OrdersTableSkeleton } from '@/components/store/profile/orders/orders-table';
 
+export const dynamic = 'force-dynamic';
+
 export default async function ProfileOrdersPage() {
 	const queryClient = getQueryClient();
 

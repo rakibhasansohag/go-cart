@@ -7,6 +7,8 @@ import { getUserPayments } from '@/queries/profile';
 import { currentUser } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
 
+export const dynamic = 'force-dynamic';
+
 export default async function ProfilePaymentPage() {
 	const user = await currentUser();
 	console.log('server currentUser() =>', !!user, user?.id);

@@ -7,6 +7,8 @@ import { getUserShippingAddresses } from '@/queries/user';
 import { queryKeys } from '@/lib/query-keys';
 import DataTableSkeleton from '@/components/dashboard/shared/table-skeleton';
 
+export const dynamic = 'force-dynamic';
+
 export default async function ProfileAddressesPage() {
 	const queryClient = getQueryClient();
 

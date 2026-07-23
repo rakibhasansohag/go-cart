@@ -17,7 +17,7 @@ export default clerkMiddleware(async (auth, req) => {
 
 	const { userId } = await auth();
 
-	console.log('[middleware] path=', pathname, ' userId=', userId);
+	console.log('[proxy] path=', pathname, ' userId=', userId);
 
 	// If a signed-in user tries to open /sign-in, send them away
 	if (userId && authRoutes(req)) {
