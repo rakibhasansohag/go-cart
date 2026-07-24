@@ -14,6 +14,7 @@ import { queryKeys } from '@/lib/query-keys';
 import { getSellerStoreAnalyticsData } from '@/queries/analytics';
 import { getAllStoreProducts } from '@/queries/product';
 import { getStoreCoupons } from '@/queries/coupon';
+import { getStoreInventory } from '@/queries/inventory';
 import {
 	getStoreDefaultShippingDetails,
 	getStoreOrders,
@@ -66,6 +67,11 @@ export default function SidebarNavSeller({
 			queryClient.prefetchQuery({
 				queryKey: queryKeys.dashboard.coupons(activeStore),
 				queryFn: () => getStoreCoupons(activeStore),
+			});
+		} else if (linkItem === 'inventory') {
+			queryClient.prefetchQuery({
+				queryKey: queryKeys.dashboard.inventory(activeStore),
+				queryFn: () => getStoreInventory(activeStore),
 			});
 		} else if (linkItem === 'shipping') {
 			queryClient.prefetchQuery({

@@ -130,64 +130,65 @@ export default function DataTable<TData, TValue>({
 	return (
 		<>
 			{/* Search input and action button */}
-			<div className='flex items-center justify-between'>
-				<div className='flex items-center py-4 gap-2 relative'>
-					<Search className='text-muted-foreground' />
-					<Input
-						placeholder={searchPlaceholder}
-						value={
-							isServerMode
-								? searchInput
-								: ((table.getColumn(filterValue)?.getFilterValue() as string) ?? '')
-						}
-						onChange={(event) => {
-							const val = event.target.value;
-							if (isServerMode) {
-								setSearchInput(val);
-							} else {
-								table.getColumn(filterValue)?.setFilterValue(val);
+			{!noHeader && (
+				<div className='flex items-center justify-between'>
+					<div className='flex items-center py-4 gap-2 relative'>
+						<Search className='text-muted-foreground' />
+						<Input
+							placeholder={searchPlaceholder}
+							value={
+								isServerMode
+									? searchInput
+									: (filterValue ? (table.getColumn(filterValue)?.getFilterValue() as string) ?? '' : '')
 							}
-						}}
-						className='h-12 w-72'
-					/>
-					{isLoading && <Loader2 className='h-4 w-4 animate-spin text-muted-foreground ml-2' />}
-				</div>
-				<div className='flex gap-x-2'>
-					{modalChildren && (
-						<Button
-							className='flex gap-2'
-							onClick={() => {
-								if (modalChildren)
-									setOpen(
-										<CustomModal
-											heading={heading || ''}
-											subheading={subheading || ''}
-											maxWidth={maxWidth}
-										>
-											{modalChildren}
-										</CustomModal>,
-									);
+							onChange={(event) => {
+								const val = event.target.value;
+								if (isServerMode) {
+									setSearchInput(val);
+								} else if (filterValue) {
+									table.getColumn(filterValue)?.setFilterValue(val);
+								}
 							}}
-						>
-							{actionButtonText}
-						</Button>
-					)}
-					{newTabLink && (
-						<Link href={newTabLink}>
-							<Button variant='outline'>
-								<FilePlus2 className='me-1' /> Create in new page
+							className='h-12 w-72'
+						/>
+						{isLoading && <Loader2 className='h-4 w-4 animate-spin text-muted-foreground ml-2' />}
+					</div>
+					<div className='flex gap-x-2'>
+						{modalChildren && (
+							<Button
+								className='flex gap-2'
+								onClick={() => {
+									if (modalChildren)
+										setOpen(
+											<CustomModal
+												heading={heading || ''}
+												subheading={subheading || ''}
+												maxWidth={maxWidth}
+											>
+												{modalChildren}
+											</CustomModal>,
+										);
+								}}
+							>
+								{actionButtonText}
 							</Button>
-						</Link>
-					)}
+						)}
+						{newTabLink && (
+							<Link href={newTabLink}>
+								<Button variant='outline'>
+									<FilePlus2 className='me-1' /> Create in new page
+								</Button>
+							</Link>
+						)}
+					</div>
 				</div>
-			</div>
+			)}
 
 			{/* Table */}
 			<div className='border bg-background rounded-lg relative'>
 				<Table className=''>
 					{/* Table header */}
-					{!noHeader && (
-						<TableHeader>
+					<TableHeader>
 							{table.getHeaderGroups().map((headerGroup) => (
 								<TableRow key={headerGroup.id}>
 									{headerGroup.headers.map((header) => {
@@ -205,7 +206,6 @@ export default function DataTable<TData, TValue>({
 								</TableRow>
 							))}
 						</TableHeader>
-					)}
 
 					{/* Table body */}
 					<TableBody>

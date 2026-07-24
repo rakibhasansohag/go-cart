@@ -94,15 +94,34 @@ export const columns: ColumnDef<StoreProductType>[] = [
 												{variant.variantName}
 											</h1>
 											{/* Sizes */}
-											<div className='flex flex-wrap gap-2 max-w-72 mt-1'>
-												{variant.sizes.map((size) => (
-													<span
-														key={size.size}
-														className='w-fit p-1 rounded-md text-[11px] font-medium border-2 bg-white/10'
-													>
-														{size.size} - ({size.quantity}) - {size.price}$
-													</span>
-												))}
+											<div className='flex flex-wrap gap-1.5 max-w-72 mt-1.5'>
+												{variant.sizes.map((size) => {
+													const isOut = size.quantity === 0;
+													const isLow = size.quantity > 0 && size.quantity < 5;
+													return (
+														<span
+															key={size.size}
+															className={`w-fit px-2 py-0.5 rounded-md text-[11px] font-medium border flex items-center gap-1 ${
+																isOut
+																	? 'bg-destructive/10 text-destructive border-destructive/30'
+																	: isLow
+																	? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30'
+																	: 'bg-muted/30 text-foreground border-border/80'
+															}`}
+														>
+															<span
+																className={`w-1.5 h-1.5 rounded-full ${
+																	isOut
+																		? 'bg-destructive'
+																		: isLow
+																		? 'bg-amber-500'
+																		: 'bg-emerald-500'
+																}`}
+															/>
+															{size.size} · {size.quantity} in stock · ${size.price}
+														</span>
+													);
+												})}
 											</div>
 										</div>
 									</div>

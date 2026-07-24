@@ -57,5 +57,6 @@ export const queryKeys = {
 			['dashboard', 'adminOrders', { page, limit, search }] as const,
 		adminCoupons: (page?: number, limit?: number, search?: string) =>
 			['dashboard', 'adminCoupons', { page, limit, search }] as const,
+		inventory: (storeUrl: string) => ['dashboard', 'inventory', storeUrl] as const,
 	},
 } as const;
