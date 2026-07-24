@@ -596,6 +596,19 @@ div.jodit-tooltip {
   pointer-events: auto !important;
 }
 
+/* Restore pointer-events on ALL Jodit popup descendants so scrolling works
+   inside dropdowns (e.g. font-size list) when Radix Dialog sets body
+   pointer-events:none. Without this, mouse-wheel scroll is blocked on the
+   inner .jodit-popup__content scroll container. */
+.jodit-popup *,
+.jodit-popup__content,
+.jodit-popup__content *,
+.jodit-toolbar-popup *,
+.jodit-ui-popup *,
+.jodit-popup-container * {
+  pointer-events: auto !important;
+}
+
 /* Ensure body pointer-events: none set by Radix dialog does not block Cloudinary widget or Jodit popups */
 body[style*="pointer-events: none"] iframe[src*="cloudinary"],
 body[style*="pointer-events: none"] #cloudinary-widget,
@@ -603,9 +616,14 @@ body[style*="pointer-events: none"] [id*="cloudinary"],
 body[style*="pointer-events: none"] .cloudinary-widget-overlay,
 body[style*="pointer-events: none"] .cloudinary-widget,
 body[style*="pointer-events: none"] .jodit-popup,
+body[style*="pointer-events: none"] .jodit-popup *,
+body[style*="pointer-events: none"] .jodit-popup__content,
+body[style*="pointer-events: none"] .jodit-popup__content *,
 body[style*="pointer-events: none"] .jodit-toolbar-popup,
+body[style*="pointer-events: none"] .jodit-toolbar-popup *,
 body[style*="pointer-events: none"] .jodit-tooltip,
-body[style*="pointer-events: none"] .jodit-ui-popup {
+body[style*="pointer-events: none"] .jodit-ui-popup,
+body[style*="pointer-events: none"] .jodit-ui-popup * {
   pointer-events: auto !important;
 }
 
