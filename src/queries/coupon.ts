@@ -317,3 +317,84 @@ export const deleteCoupon = async (couponId: string, storeUrl: string) => {
     throw error;
   }
 };
+
+export const getAllAdminCoupons = async ({
+	page = 1,
+	limit = 10,
+	search = '',
+}: {
+	page?: number;
+	limit?: number;
+	search?: string;
+} = {}) => {
+	try {
+		const user = await currentUser();
+		if (!user || user.privateMetadata.role !== 'ADMIN') {
+			throw new Error('Unauthorized Access: Admin privileges required.');
+		}
+
+		const skip = Math.max(0, (page - 1) * limit);
+
+		const where = search.trim()
+			? {
+					OR: [
+						{ code: { contains: search.trim(), mode: 'insensitive' as const } },
+						{ store: { name: { contains: search.trim(), mode: 'insensitive' as const } } },
+					],
+			  }
+			: {};
+
+		const [coupons, totalCount] = await Promise.all([
+			db.coupon.findMany({
+				where,
+				include: {
+					store: {
+						select: {
+							id: true,
+							name: true,
+							url: true,
+						},
+					},
+					_count: {
+						select: {
+							orders: true,
+						},
+					},
+				},
+				orderBy: {
+					createdAt: 'desc',
+				},
+				skip,
+				take: limit,
+			}),
+			db.coupon.count({ where }),
+		]);
+
+		return {
+			coupons,
+			totalCount,
+			totalPages: Math.ceil(totalCount / limit) || 1,
+			page,
+			limit,
+		};
+	} catch (error) {
+		throw error;
+	}
+};
+
+export const deleteAdminCoupon = async (couponId: string) => {
+	try {
+		const user = await currentUser();
+		if (!user || user.privateMetadata.role !== 'ADMIN') {
+			throw new Error('Unauthorized Access: Admin privileges required.');
+		}
+
+		if (!couponId) throw new Error('Please provide a valid coupon ID.');
+
+		return await db.coupon.delete({
+			where: { id: couponId },
+		});
+	} catch (error) {
+		throw error;
+	}
+};

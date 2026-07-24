@@ -55,5 +55,7 @@ export const queryKeys = {
 		sellerAnalytics: (storeUrl: string) => ['dashboard', 'sellerAnalytics', storeUrl] as const,
 		adminOrders: (page?: number, limit?: number, search?: string) =>
 			['dashboard', 'adminOrders', { page, limit, search }] as const,
+		adminCoupons: (page?: number, limit?: number, search?: string) =>
+			['dashboard', 'adminCoupons', { page, limit, search }] as const,
 	},
 } as const;

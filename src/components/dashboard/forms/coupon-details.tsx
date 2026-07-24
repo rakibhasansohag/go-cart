@@ -55,7 +55,7 @@ import 'react-calendar/dist/Calendar.css';
 import 'react-clock/dist/Clock.css';
 
 interface CouponDetailsProps {
-	data?: Coupon;
+	data?: Coupon | null;
 	storeUrl: string;
 }
 

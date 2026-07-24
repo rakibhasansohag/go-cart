@@ -22,6 +22,7 @@ import {
 	SubCategory,
 } from '@prisma/client';
 import { getAllSubCategories } from '@/queries/subCategory';
+import { getAllAdminCoupons } from '@/queries/coupon';
 import { getOrder } from '@/queries/order';
 import {
 	getAllStoreProducts,
@@ -380,6 +381,10 @@ export type ProductWishlistType = Prisma.PromiseReturnType<
 export type StoreOrderType = Prisma.PromiseReturnType<
 	typeof getStoreOrders
 >['orders'][0];
+
+export type AdminCouponType = Prisma.PromiseReturnType<
+	typeof getAllAdminCoupons
+>['coupons'][0];
 
 export type ProductSimpleVariantType = {
 	variantId: string;
