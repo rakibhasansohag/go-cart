@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { UserButton, useUser } from '@clerk/nextjs';
 import ThemeToggle from '@/components/shared/theme-toggle';
 import Link from 'next/link';
-import { Home, LayoutDashboard, Menu } from 'lucide-react';
+import { Menu } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import {
 	Sheet,
@@ -24,6 +24,7 @@ import {
 } from '@/constants/data';
 import { Store } from '@prisma/client';
 import { Button } from '@/components/ui/button';
+import DashboardBreadcrumbs from './dashboard-breadcrumbs';
 
 interface HeaderProps {
 	isAdmin?: boolean;
@@ -87,21 +88,8 @@ export default function Header({ isAdmin: propIsAdmin, stores }: HeaderProps) {
 					</SheetContent>
 				</Sheet>
 
-				{/* Quick Breadcrumb */}
-				<div className='flex items-center gap-2 text-xs text-muted-foreground font-medium'>
-					<Link
-						href='/'
-						className='flex items-center gap-1.5 hover:text-foreground transition-colors'
-					>
-						<Home className='w-3.5 h-3.5' />
-						<span className='hidden sm:inline'>Home</span>
-					</Link>
-					<span>/</span>
-					<div className='flex items-center gap-1.5 text-foreground font-semibold'>
-						<LayoutDashboard className='w-3.5 h-3.5 text-primary' />
-						<span>{isAdmin ? 'Admin Portal' : 'Seller Dashboard'}</span>
-					</div>
-				</div>
+				{/* Dynamic Dashboard Breadcrumbs */}
+				<DashboardBreadcrumbs />
 			</div>
 
 			{/* Right section: Theme & Profile */}
