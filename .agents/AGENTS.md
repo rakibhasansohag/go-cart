@@ -95,5 +95,7 @@ Safe to do — the runtime value is correct; the error is purely a type-declarat
     - **UI Form Lockdown**: Set `disabled={isLoading || Boolean(data?.id)}` on Store Email and Store URL input fields when editing an existing store, preventing modification in the client UI.
 21. In `src/app/dashboard/seller/stores/[storeUrl]/settings/page.tsx` & `store-settings-view.tsx`:
     - **Server-Side Prefetching for Store Settings**: Updated `page.tsx` (Server Component) to fetch `getStoreByUrl(storeUrl)` on the server and pass it as `initialStore` to `StoreSettingsView`. Replaced `useSuspenseQuery` with `useQuery` seeded with `initialData: initialStore`, resolving the React console warning (`Cannot update a component ('Router') while rendering a different component ('StoreSettingsView')`).
+22. In `store-details.tsx` & `image-upload.tsx`:
+    - **Store Information Responsive UI**: Fixed non-responsive hardcoded `-left-48 inset-x-96` and static `348px` height classes. Changed logo avatar container positioning to `absolute -bottom-14 sm:-bottom-20 left-4 sm:left-8 z-10` and scaled avatar dimensions to `w-36 h-36 sm:w-48 sm:h-48 md:w-52 md:h-52`. Made cover photo height responsive (`h-[200px] sm:h-[280px] md:h-[348px]`), ensuring the store header fits cleanly across mobile, tablet, and desktop screens without horizontal overflow.
 
 

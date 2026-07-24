@@ -132,7 +132,7 @@ const ImageUpload = ({
 					return (
 						<div
 							className={cn(
-								'relative rounded-full w-52 h-52 bg-gray-200 dark:bg-gray-800 border-2 border-white dark:border-gray-700 shadow-2xl overflow-visible cursor-pointer group transition-transform duration-300 ease-bezier-1 ease-in-out hover:scale-105 will-change-transform',
+								'relative rounded-full w-36 h-36 sm:w-48 sm:h-48 md:w-52 md:h-52 bg-gray-200 dark:bg-gray-800 border-2 border-white dark:border-gray-700 shadow-2xl overflow-visible cursor-pointer group transition-transform duration-300 ease-bezier-1 ease-in-out hover:scale-105 will-change-transform',
 								{
 									'bg-red-100 dark:bg-red-900/30': error,
 									'animate-pulse': isBouncing,
@@ -146,18 +146,18 @@ const ImageUpload = ({
 									alt='Variant image'
 									width={300}
 									height={300}
-									className='w-52 h-52 rounded-full object-cover absolute top-0 left-0 bottom-0 right-0'
+									className='w-36 h-36 sm:w-48 sm:h-48 md:w-52 md:h-52 rounded-full object-cover absolute top-0 left-0 bottom-0 right-0'
 								/>
 							) : (
-								<div className='w-52 h-52 rounded-full flex flex-col items-center justify-center text-gray-400 dark:text-gray-500 gap-2 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-full'>
-									<ImageIcon className='w-12 h-12 stroke-[1.5] group-hover:scale-110 transition-transform duration-300 ease-bezier-1 ease-in-out' />
+								<div className='w-36 h-36 sm:w-48 sm:h-48 md:w-52 md:h-52 rounded-full flex flex-col items-center justify-center text-gray-400 dark:text-gray-500 gap-2 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-full'>
+									<ImageIcon className='w-10 h-10 sm:w-12 sm:h-12 stroke-[1.5] group-hover:scale-110 transition-transform duration-300 ease-bezier-1 ease-in-out' />
 									<span className='text-xs font-medium text-muted-foreground'>Upload Image</span>
 								</div>
 							)}
 
 							<button
 								type='button'
-								className='z-20 absolute right-0 bottom-6 flex items-center font-medium text-[17px] h-14 w-14 justify-center text-white bg-gradient-to-t from-blue-500 to-blue-300 border-none shadow-lg rounded-full hover:shadow-md active:shadow-sm cursor-pointer hover:scale-110 transition-transform duration-300 ease-bezier-1 ease-in-out will-change-transform'
+								className='z-20 absolute right-0 bottom-2 sm:bottom-6 flex items-center font-medium text-[17px] h-10 w-10 sm:h-14 sm:w-14 justify-center text-white bg-gradient-to-t from-blue-500 to-blue-300 border-none shadow-lg rounded-full hover:shadow-md active:shadow-sm cursor-pointer hover:scale-110 transition-transform duration-300 ease-bezier-1 ease-in-out will-change-transform'
 								disabled={disabled}
 								onClick={(e) => {
 									e.stopPropagation();
@@ -182,13 +182,12 @@ const ImageUpload = ({
 		return (
 			<div
 				className={cn(
-					'relative w-full bg-gray-100 rounded-lg bg-gradient-to-b from-gray-100 via-gray-100 to-gray-400 overflow-hidden',
+					'relative w-full h-[200px] sm:h-[280px] md:h-[348px] bg-gray-100 rounded-lg bg-gradient-to-b from-gray-100 via-gray-100 to-gray-400 overflow-hidden',
 					{
 						'from-red-100 to-red-200 ': error,
 						'animate-bounce': isBouncing,
 					},
 				)}
-				style={{ height: '348px' }}
 			>
 				{value.length > 0 && (
 					<Image
