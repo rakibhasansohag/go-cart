@@ -35,8 +35,8 @@ export default async function HomePage() {
 	// Prefetch all home data in parallel on the server
 	await Promise.all([
 		queryClient.prefetchQuery({
-			queryKey: queryKeys.products.list({}, '', 1),
-			queryFn: () => getProducts({}, '', 1, 100),
+			queryKey: queryKeys.products.list({}, '', null),
+			queryFn: () => getProducts({}, '', null, 100),
 		}),
 		queryClient.prefetchQuery({
 			queryKey: queryKeys.home.featuredCategories(),

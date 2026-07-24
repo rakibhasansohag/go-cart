@@ -8,8 +8,8 @@ import ProductCard from '@/components/store/cards/product/product-card';
 
 export default function MoreToLoveSection() {
 	const { data: productsData } = useSuspenseQuery({
-		queryKey: queryKeys.products.list({}, '', 1),
-		queryFn: () => getProducts({}, '', 1, 100),
+		queryKey: queryKeys.products.list({}, '', null),
+		queryFn: () => getProducts({}, '', null, 100),
 	});
 
 	const { products } = productsData;

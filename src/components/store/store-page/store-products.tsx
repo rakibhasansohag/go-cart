@@ -29,8 +29,8 @@ export default function StoreProducts({
 
 	// Fetch store products using useSuspenseQuery for instant caching and updates
 	const { data: productsData } = useSuspenseQuery({
-		queryKey: queryKeys.products.list(filterOptions, sort || '', 1),
-		queryFn: () => getProducts(filterOptions, sort),
+		queryKey: queryKeys.products.list(filterOptions, sort || '', null),
+		queryFn: () => getProducts(filterOptions, sort, null),
 	});
 
 	const { products } = productsData;

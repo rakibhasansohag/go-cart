@@ -16,7 +16,7 @@ interface Props {
 const StoreProducts: FC<Props> = ({ storeUrl, count, storeName }) => {
 	const { data: res } = useSuspenseQuery<{ products: ProductType[] }>({
 		queryKey: queryKeys.products.storeProducts(storeUrl),
-		queryFn: () => getProducts({ store: storeUrl }, '', 1, count),
+		queryFn: () => getProducts({ store: storeUrl }, '', null, count),
 	});
 
 	const products = res.products;

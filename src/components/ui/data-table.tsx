@@ -20,11 +20,12 @@ import {
 	flexRender,
 	getCoreRowModel,
 	getFilteredRowModel,
+	getPaginationRowModel,
 	useReactTable,
 } from '@tanstack/react-table';
 
 // Lucide icons
-import { FilePlus2, Search } from 'lucide-react';
+import { ChevronLeft, ChevronRight, FilePlus2, Search } from 'lucide-react';
 
 // Modal provider hook
 import { useModal } from '@/providers/modal-provider';
@@ -44,6 +45,7 @@ interface DataTableProps<TData, TValue> {
 	subheading?: string;
 	noHeader?: true;
 	maxWidth?: string;
+	pageSize?: number;
 }
 
 export default function DataTable<TData, TValue>({
@@ -58,6 +60,7 @@ export default function DataTable<TData, TValue>({
 	noHeader,
 	newTabLink,
 	maxWidth,
+	pageSize = 10,
 }: DataTableProps<TData, TValue>) {
 	// Modal state
 	const { setOpen } = useModal();
@@ -68,6 +71,12 @@ export default function DataTable<TData, TValue>({
 		columns,
 		getCoreRowModel: getCoreRowModel(),
 		getFilteredRowModel: getFilteredRowModel(),
+		getPaginationRowModel: getPaginationRowModel(),
+		initialState: {
+			pagination: {
+				pageSize,
+			},
+		},
 	});
 
 	return (
@@ -178,6 +187,58 @@ export default function DataTable<TData, TValue>({
 						)}
 					</TableBody>
 				</Table>
+			</div>
+
+			{/* Table Pagination Controls */}
+			<div className='flex items-center justify-between py-4 px-2'>
+				<div className='text-sm text-muted-foreground'>
+					Showing {table.getRowModel().rows.length} of{' '}
+					{table.getFilteredRowModel().rows.length} item(s)
+				</div>
+				<div className='flex items-center gap-6'>
+					<div className='flex items-center gap-2'>
+						<span className='text-sm font-medium'>Rows per page</span>
+						<select
+							value={table.getState().pagination.pageSize}
+							onChange={(e) => {
+								table.setPageSize(Number(e.target.value));
+							}}
+							className='h-9 w-[70px] rounded-md border border-input bg-background px-2 text-xs focus:outline-none focus:ring-1 focus:ring-primary'
+						>
+							{[5, 10, 20, 50].map((size) => (
+								<option key={size} value={size}>
+									{size}
+								</option>
+							))}
+						</select>
+					</div>
+
+					<div className='text-sm font-medium'>
+						Page {table.getState().pagination.pageIndex + 1} of{' '}
+						{table.getPageCount() || 1}
+					</div>
+
+					<div className='flex items-center gap-2'>
+						<Button
+							variant='outline'
+							size='sm'
+							onClick={() => table.previousPage()}
+							disabled={!table.getCanPreviousPage()}
+							className='h-9 px-3'
+						>
+							<ChevronLeft className='h-4 w-4 me-1' /> Previous
+						</Button>
+						<Button
+							variant='outline'
+							size='sm'
+							onClick={() => table.nextPage()}
+							disabled={!table.getCanNextPage()}
+							className='h-9 px-3'
+						>
+							Next <ChevronRight className='h-4 w-4 ms-1' />
+						</Button>
+					</div>
+				</div>
 			</div>
 		</>
 	);

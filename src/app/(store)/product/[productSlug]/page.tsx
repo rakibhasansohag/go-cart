@@ -61,7 +61,7 @@ export default async function ProductPage({
 		}),
 		queryClient.prefetchQuery({
 			queryKey: queryKeys.products.storeProducts(data.store.url),
-			queryFn: () => getProducts({ store: data.store.url }, '', 1, 5),
+			queryFn: () => getProducts({ store: data.store.url }, '', null, 5),
 		}),
 		queryClient.prefetchQuery({
 			queryKey: ['reviews', data.id, { rating: undefined, hasImages: undefined }, undefined, 1, 4],

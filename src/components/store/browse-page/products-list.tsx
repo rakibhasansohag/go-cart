@@ -38,7 +38,7 @@ export default function BrowseProductsList({
 				color: Array.isArray(color) ? color : color ? [color] : undefined,
 			},
 			sort || '',
-			1, // default page
+			null, // default cursor
 		),
 		queryFn: () =>
 			getProducts(
@@ -53,6 +53,7 @@ export default function BrowseProductsList({
 					color: Array.isArray(color) ? color : color ? [color] : undefined,
 				},
 				sort,
+				null,
 			),
 	});
 

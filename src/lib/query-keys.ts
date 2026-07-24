@@ -1,8 +1,8 @@
 export const queryKeys = {
 	products: {
 		all: () => ['products'] as const,
-		list: (filters: object, sort: string, page: number) =>
-			['products', 'list', { filters, sort, page }] as const,
+		list: (filters: object, sort: string, cursor?: string | null) =>
+			['products', 'list', { filters, sort, cursor }] as const,
 		detail: (slug: string) => ['products', 'detail', slug] as const,
 		byIds: (ids: string[]) => ['products', 'byIds', ids] as const,
 		related: (productId: string) => ['products', 'related', productId] as const,

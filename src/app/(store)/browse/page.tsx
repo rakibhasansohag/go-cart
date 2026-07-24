@@ -47,8 +47,8 @@ export default async function BrowsePage({
 	// Prefetch products and metadata filters on the server in parallel
 	await Promise.all([
 		queryClient.prefetchQuery({
-			queryKey: queryKeys.products.list(filterOptions, sort || '', 1),
-			queryFn: () => getProducts(filterOptions, sort),
+			queryKey: queryKeys.products.list(filterOptions, sort || '', null),
+			queryFn: () => getProducts(filterOptions, sort, null),
 		}),
 		queryClient.prefetchQuery({
 			queryKey: queryKeys.colors.filtered({ category, offer, subCategory }),

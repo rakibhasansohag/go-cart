@@ -420,21 +420,35 @@ export const getProductMainInfo = async (productId: string) => {
 };
 
 // Function: getAllStoreProducts
-// Description: Retrieves all products from a specific store based on the store URL.
+// Description: Retrieves products from a specific store based on the store URL using cursor-based pagination.
 // Access Level: Public
 // Parameters:
 //   - storeUrl: The URL of the store whose products are to be retrieved.
-// Returns: Array of products from the specified store, including category, subcategory, and variant details.
-export const getAllStoreProducts = async (storeUrl: string) => {
+//   - cursor: Optional product ID cursor for pagination.
+//   - limit: Optional number of products to fetch per page (default = 20).
+// Returns: Object with products array, nextCursor, and hasNextPage boolean.
+export const getAllStoreProducts = async (
+	storeUrl: string,
+	cursor?: string | null,
+	limit: number = 20,
+) => {
 	// Retrieve store details from the database using the store URL
 	const store = await db.store.findUnique({ where: { url: storeUrl } });
 	if (!store) throw new Error('Please provide a valid store URL.');
 
-	// Retrieve all products associated with the store
-	const products = await db.product.findMany({
+	// Retrieve products associated with the store using cursor pagination
+	const rawProducts = await db.product.findMany({
 		where: {
 			storeId: store.id,
 		},
+		take: limit + 1,
+		...(cursor
+			? {
+					cursor: { id: cursor },
+					skip: 1,
+			  }
+			: {}),
+		orderBy: { createdAt: 'desc' },
 		include: {
 			category: true,
 			subCategory: true,
@@ -455,7 +469,16 @@ export const getAllStoreProducts = async (storeUrl: string) => {
 		},
 	});
 
-	return products;
+	const hasNextPage = rawProducts.length > limit;
+	const products = hasNextPage ? rawProducts.slice(0, limit) : rawProducts;
+	const nextCursor =
+		hasNextPage && products.length > 0 ? products[products.length - 1].id : null;
+
+	return {
+		products,
+		nextCursor,
+		hasNextPage,
+	};
 };
 
 // Function: deleteProduct
@@ -497,13 +520,10 @@ export const deleteProduct = async (productId: string) => {
 export const getProducts = async (
 	filters: any = {},
 	sortBy = '',
-	page: number = 1,
+	cursor?: string | null,
 	pageSize: number = 10,
 ) => {
-	// Default values for page and pageSize
-	const currentPage = page;
 	const limit = pageSize;
-	const skip = (currentPage - 1) * limit;
 
 	// Construct the base query
 	const wherClause: any = {
@@ -658,12 +678,17 @@ export const getProducts = async (
 			orderBy = { views: 'desc' };
 	}
 
-	// Get all filtered, sorted products
-	const products = await db.product.findMany({
+	// Get all filtered, sorted products using cursor-based pagination
+	const rawProducts = await db.product.findMany({
 		where: wherClause,
 		orderBy,
-		take: limit, // Limit to page size
-		skip: skip, // Skip the products of previous pages
+		take: limit + 1,
+		...(cursor
+			? {
+					cursor: { id: cursor },
+					skip: 1,
+			  }
+			: {}),
 		include: {
 			variants: {
 				include: {
@@ -678,6 +703,11 @@ export const getProducts = async (
 			},
 		},
 	});
+
+	const hasNextPage = rawProducts.length > limit;
+	const products = hasNextPage ? rawProducts.slice(0, limit) : rawProducts;
+	const nextCursor =
+		hasNextPage && products.length > 0 ? products[products.length - 1].id : null;
 
 	type VariantWithSizes = ProductVariant & { sizes: Size[] };
 
@@ -748,23 +778,14 @@ export const getProducts = async (
 		};
 	});
 
-	/*
-  const totalCount = await db.product.count({
-    where: wherClause,
-  });
-  */
-
-	const totalCount = products.length;
-
-	// Calculate total pages
-	const totalPages = Math.ceil(totalCount / pageSize);
+	const totalCount = productsWithFilteredVariants.length;
 
 	// Return the paginated data along with metadata
 	return {
 		products: productsWithFilteredVariants,
-		totalPages,
-		currentPage,
-		pageSize,
+		nextCursor,
+		hasNextPage,
+		pageSize: limit,
 		totalCount,
 	};
 };
