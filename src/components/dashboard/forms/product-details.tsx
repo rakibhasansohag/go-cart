@@ -1458,6 +1458,7 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 															<FormControl>
 																<div ref={dateTimePickerRef} className='inline-block max-w-full'>
 																	<DateTimePicker
+																		calendarProps={{ showFixedNumberOfWeeks: true }}
 																		className='inline-flex items-center gap-2 p-2 border rounded-md shadow-sm max-w-full'
 																		calendarIcon={
 																			<span className='text-gray-500 hover:text-gray-600 cursor-pointer'>

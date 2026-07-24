@@ -110,11 +110,7 @@ export const ProductFormSchema = z.object({
 		.string()
 		.nonempty('Product name is required.')
 		.min(2, { message: 'Product name must be at least 2 characters long.' })
-		.max(200, { message: 'Product name cannot exceed 200 characters.' })
-		.regex(/^(?!.*(?:[-_&'"']|\s){2,})[a-zA-Z0-9\s\-_&'"]+$/, {
-			message:
-				'Product name may only contain letters, numbers, spaces, hyphens (-), underscores (_), ampersands (&), apostrophes (\'), and double quotes ("), without consecutive special characters or spaces.',
-		}),
+		.max(200, { message: 'Product name cannot exceed 200 characters.' }),
 	description: z
 		.string()
 		.nonempty('Product description is required.')
@@ -132,10 +128,6 @@ export const ProductFormSchema = z.object({
 		})
 		.max(100, {
 			message: 'Product variant name cannot exceed 100 characters.',
-		})
-		.regex(/^(?!.*(?:[-_ ]){2,})[a-zA-Z0-9_ -]+$/, {
-			message:
-				'Product variant name may only contain letters, numbers, spaces, hyphens, and underscores, without consecutive special characters.',
 		}),
 	variantDescription: z
 		.string()

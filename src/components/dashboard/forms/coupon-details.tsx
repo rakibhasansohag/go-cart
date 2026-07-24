@@ -183,6 +183,7 @@ const CouponDetails: FC<CouponDetailsProps> = ({ data, storeUrl }) => {
 										<FormLabel>Start date</FormLabel>
 										<FormControl>
 											<DateTimePicker
+												calendarProps={{ showFixedNumberOfWeeks: true }}
 												onChange={(date) => {
 													field.onChange(
 														date ? format(date, "yyyy-MM-dd'T'HH:mm:ss") : '',
@@ -204,6 +205,7 @@ const CouponDetails: FC<CouponDetailsProps> = ({ data, storeUrl }) => {
 										<FormLabel>End date</FormLabel>
 										<FormControl>
 											<DateTimePicker
+												calendarProps={{ showFixedNumberOfWeeks: true }}
 												onChange={(date) => {
 													field.onChange(
 														date ? format(date, "yyyy-MM-dd'T'HH:mm:ss") : '',

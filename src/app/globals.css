@@ -954,6 +954,20 @@ body[style*="pointer-events: none"] .jodit-ui-popup * {
   color: #ffffff !important;
 }
 
+/* Fix Calendar Height Shift across months (Stable 6-week layout) */
+.react-calendar__month-view__days {
+  min-height: 216px !important;
+}
+
+.react-calendar__tile {
+  min-height: 36px !important;
+  max-height: 36px !important;
+  padding: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
 /* DateTimePicker Input Wrapper & Buttons */
 .dark .react-datetime-picker__wrapper {
   border-color: rgba(255, 255, 255, 0.15) !important;
