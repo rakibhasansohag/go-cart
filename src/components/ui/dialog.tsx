@@ -46,7 +46,7 @@ function DialogOverlay({
   )
 }
 
-const isCloudinaryElement = (target: EventTarget | null) => {
+const isExternalWidgetElement = (target: EventTarget | null) => {
   if (!target) return false
   if (target instanceof Element) {
     return (
@@ -54,6 +54,11 @@ const isCloudinaryElement = (target: EventTarget | null) => {
       target.closest('[id*="cloudinary"]') !== null ||
       target.closest(".cloudinary-widget") !== null ||
       target.closest(".cloudinary-widget-overlay") !== null ||
+      target.closest(".jodit-popup") !== null ||
+      target.closest(".jodit-toolbar-popup") !== null ||
+      target.closest(".jodit-tooltip") !== null ||
+      target.closest(".jodit-ui-popup") !== null ||
+      target.closest(".jodit-container") !== null ||
       target.tagName === "IFRAME"
     )
   }
@@ -76,19 +81,19 @@ const DialogContent = React.forwardRef<
         className
       )}
       onInteractOutside={(e) => {
-        if (isCloudinaryElement(e.target)) {
+        if (isExternalWidgetElement(e.target)) {
           e.preventDefault()
         }
         props.onInteractOutside?.(e)
       }}
       onFocusOutside={(e) => {
-        if (isCloudinaryElement(e.target)) {
+        if (isExternalWidgetElement(e.target)) {
           e.preventDefault()
         }
         props.onFocusOutside?.(e)
       }}
       onPointerDownOutside={(e) => {
-        if (isCloudinaryElement(e.target)) {
+        if (isExternalWidgetElement(e.target)) {
           e.preventDefault()
         }
         props.onPointerDownOutside?.(e)

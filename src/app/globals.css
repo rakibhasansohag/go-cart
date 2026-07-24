@@ -576,24 +576,36 @@
 
 }
 
-/* Ensure Cloudinary widget appears above all modals and is clickable */
+/* Ensure Cloudinary widget & Jodit editor popups appear above all modals and are clickable */
 .cloudinary-widget-overlay,
 .cloudinary_upload_widget,
 .cloudinary-widget,
 #cloudinary-widget,
 [id*="cloudinary"],
 .cloudinary-upload-widget,
-iframe[src*="cloudinary"] {
+iframe[src*="cloudinary"],
+.jodit-popup-container,
+.jodit-popup,
+.jodit-toolbar-popup,
+.jodit-tooltip,
+.jodit-ui-popup,
+div.jodit-popup,
+div.jodit-toolbar-popup,
+div.jodit-tooltip {
   z-index: 999999 !important;
   pointer-events: auto !important;
 }
 
-/* Ensure body pointer-events: none set by Radix dialog does not block Cloudinary widget */
+/* Ensure body pointer-events: none set by Radix dialog does not block Cloudinary widget or Jodit popups */
 body[style*="pointer-events: none"] iframe[src*="cloudinary"],
 body[style*="pointer-events: none"] #cloudinary-widget,
 body[style*="pointer-events: none"] [id*="cloudinary"],
 body[style*="pointer-events: none"] .cloudinary-widget-overlay,
-body[style*="pointer-events: none"] .cloudinary-widget {
+body[style*="pointer-events: none"] .cloudinary-widget,
+body[style*="pointer-events: none"] .jodit-popup,
+body[style*="pointer-events: none"] .jodit-toolbar-popup,
+body[style*="pointer-events: none"] .jodit-tooltip,
+body[style*="pointer-events: none"] .jodit-ui-popup {
   pointer-events: auto !important;
 }
 
