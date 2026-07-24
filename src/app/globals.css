@@ -828,6 +828,7 @@ body[style*="pointer-events: none"] .jodit-ui-popup * {
 .no-scrollbar::-webkit-scrollbar {
   display: none !important;
 }
+
 .no-scrollbar {
   -ms-overflow-style: none !important;
   scrollbar-width: none !important;
@@ -980,6 +981,28 @@ body[style*="pointer-events: none"] .jodit-ui-popup * {
   color: #ffffff !important;
 }
 
+/* Hide number input spinner stepper controls (up/down arrows) */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button,
+.react-datetime-picker__inputGroup__input::-webkit-inner-spin-button,
+.react-datetime-picker__inputGroup__input::-webkit-outer-spin-button {
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  appearance: none !important;
+  margin: 0 !important;
+  display: none !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  height: 0 !important;
+  width: 0 !important;
+}
+
+input[type="number"],
+.react-datetime-picker__inputGroup__input {
+  -moz-appearance: textfield !important;
+  appearance: textfield !important;
+}
+
 /* AM/PM Select Dropdown */
 .dark .react-datetime-picker__inputGroup__amPm {
   background-color: #1f2937 !important;
@@ -1068,6 +1091,7 @@ body[style*="pointer-events: none"] .jodit-ui-popup * {
   max-width: 100% !important;
   overflow-x: auto !important;
 }
+
 .dark .react-datetime-picker__inputGroup__input:focus {
   background-color: #2563eb !important;
   color: #ffffff !important;
