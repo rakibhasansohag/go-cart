@@ -26,26 +26,38 @@ export const upsertStore = async (store: Partial<Store>) => {
 				'Unauthorized Access: Seller Privileges Required for Entry.',
 			);
 
-		// Ensure store data is provided
-		if (!store) throw new Error('Please provide store data.');
+		// If store.id exists, we are updating an existing store
+		if (store.id) {
+			const existingStoreById = await db.store.findUnique({
+				where: { id: store.id },
+			});
 
-		// Check if store with same name, email,url, or phone number already exists
+			if (existingStoreById) {
+				// Server-side Guard: Email and Store URL are immutable once created.
+				// Strip email and url from update payload so they can never be modified.
+				const { email, url, createdAt, updatedAt, ...updateData } = store;
+
+				const storeDetails = await db.store.update({
+					where: { id: store.id },
+					data: {
+						...updateData,
+						updatedAt: new Date(),
+					},
+				});
+
+				return storeDetails;
+			}
+		}
+
+		// Creating a new store
+		// Check if store with same name, email, url, or phone number already exists
 		const existingStore = await db.store.findFirst({
 			where: {
-				AND: [
-					{
-						OR: [
-							{ name: store.name },
-							{ email: store.email },
-							{ phone: store.phone },
-							{ url: store.url },
-						],
-					},
-					{
-						NOT: {
-							id: store.id,
-						},
-					},
+				OR: [
+					{ name: store.name },
+					{ email: store.email },
+					{ phone: store.phone },
+					{ url: store.url },
 				],
 			},
 		});
@@ -65,13 +77,9 @@ export const upsertStore = async (store: Partial<Store>) => {
 			throw new Error(errorMessage);
 		}
 
-		// Upsert store details into the database
-		const storeDetails = await db.store.upsert({
-			where: {
-				id: store.id,
-			},
-			update: store,
-			create: {
+		// Create new store
+		const storeDetails = await db.store.create({
+			data: {
 				id: store.id,
 				name: store.name!,
 				description: store.description!,

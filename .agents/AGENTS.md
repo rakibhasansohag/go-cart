@@ -90,5 +90,8 @@ Safe to do — the runtime value is correct; the error is purely a type-declarat
 19. In `src/app/dashboard/seller/stores/[storeUrl]/shipping/page.tsx` & `shipping-view.tsx`:
     - **Server Data Prefetching**: Updated `page.tsx` (Server Component) to fetch `getStoreDefaultShippingDetails` and `getStoreShippingRates` on the server and pass them as `initialDetails` & `initialRates` to `ShippingView`.
     - **Eliminated setState-during-render warning**: Replaced `useSuspenseQuery` with `useQuery` seeded with `initialData`. This resolved the React warning (`Cannot update a component ('Router') while rendering a different component ('ShippingView')`), while retaining client-side pagination speed in `@/components/ui/data-table`.
+20. In `src/queries/store.ts` & `store-details.tsx`:
+    - **Server-Side Immutable Guard**: In `upsertStore`, added a server guard that strips `email` and `url` from the `update` object when editing an existing store. This guarantees that API payloads cannot alter a store's email or URL.
+    - **UI Form Lockdown**: Set `disabled={isLoading || Boolean(data?.id)}` on Store Email and Store URL input fields when editing an existing store, preventing modification in the client UI.
 
 

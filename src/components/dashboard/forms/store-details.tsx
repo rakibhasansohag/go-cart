@@ -241,15 +241,25 @@ const StoreDetails: FC<StoreDetailsProps> = ({ data }) => {
 							{/* Email - Phone */}
 							<div className='flex flex-col gap-6 md:flex-row'>
 								<FormField
-									disabled={isLoading}
+									disabled={isLoading || Boolean(data?.id)}
 									control={form.control}
 									name='email'
 									render={({ field }) => (
 										<FormItem className='flex-1'>
 											<FormLabel>Store email</FormLabel>
 											<FormControl>
-												<Input placeholder='Email' {...field} type='email' />
+												<Input
+													placeholder='Email'
+													{...field}
+													type='email'
+													disabled={isLoading || Boolean(data?.id)}
+												/>
 											</FormControl>
+											{data?.id && (
+												<FormDescription>
+													Store email cannot be changed after store creation.
+												</FormDescription>
+											)}
 											<FormMessage />
 										</FormItem>
 									)}
@@ -270,15 +280,24 @@ const StoreDetails: FC<StoreDetailsProps> = ({ data }) => {
 								/>
 							</div>
 							<FormField
-								disabled={isLoading}
+								disabled={isLoading || Boolean(data?.id)}
 								control={form.control}
 								name='url'
 								render={({ field }) => (
 									<FormItem className='flex-1'>
 										<FormLabel>Store url</FormLabel>
 										<FormControl>
-											<Input placeholder='/store-url' {...field} />
+											<Input
+												placeholder='/store-url'
+												{...field}
+												disabled={isLoading || Boolean(data?.id)}
+											/>
 										</FormControl>
+										{data?.id && (
+											<FormDescription>
+												Store URL slug is permanent and cannot be changed.
+											</FormDescription>
+										)}
 										<FormMessage />
 									</FormItem>
 								)}
