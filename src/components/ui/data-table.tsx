@@ -203,7 +203,7 @@ export default function DataTable<TData, TValue>({
 							onChange={(e) => {
 								table.setPageSize(Number(e.target.value));
 							}}
-							className='h-9 w-[70px] rounded-md border border-input bg-background px-2 text-xs focus:outline-none focus:ring-1 focus:ring-primary'
+							className='h-9 w-[70px] rounded-md border border-input bg-background px-2 text-xs focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer'
 						>
 							{[5, 10, 20, 50].map((size) => (
 								<option key={size} value={size}>
