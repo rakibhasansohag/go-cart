@@ -66,5 +66,6 @@ Safe to do — the runtime value is correct; the error is purely a type-declarat
    - Populate `subCategories` directly from `categories` prop (`CategoryWithSubs[]`) if available for instant zero-latency subcategory updates.
    - Handle empty subcategory state gracefully when a selected category has no subcategories (`No sub-categories available` placeholder & fallback menu item).
    - Use `ProductDetailsFormSkeleton` when data is loading.
+4. In `image-upload.tsx`, added `transition-transform duration-300 ease-bezier-1 ease-in-out will-change-transform` to profile upload container, icon, and button for smooth enter and exit hover scale animations.
 
 

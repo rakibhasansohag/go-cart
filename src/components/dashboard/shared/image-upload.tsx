@@ -8,7 +8,7 @@ import Image from 'next/image';
 // Cloudinary
 import { CldUploadWidget } from 'next-cloudinary';
 import { Button } from '@/components/ui/button';
-import { Trash } from 'lucide-react';
+import { Trash, ImageIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface ImageUploadProps {
@@ -103,65 +103,72 @@ const ImageUpload = ({
 
 	if (type === 'profile') {
 		return (
-			<div
-				className={cn(
-					'relative  rounded-full w-52 h-52  bg-gray-200 border-2 border-white shadow-2xl overflow-visible',
-					{
-						'bg-red-100': error,
-						'animate-pulse': isBouncing,
-					},
-				)}
-			>
-				{value.length > 0 && (
-					<Image
-						src={value[0]}
-						alt=''
-						width={300}
-						height={300}
-						className='w-52 h-52 rounded-full object-cover absolute top-0 left-0 bottom-0 right-0'
-					/>
-				)}
-
-				<CldUploadWidget
-					onSuccess={onUpload}
-					uploadPreset={cloudinary_key}
-					options={{
-						styles: {
-							frame: {
-								background: '#FFFFFF',
-							},
+			<CldUploadWidget
+				onSuccess={onUpload}
+				uploadPreset={cloudinary_key}
+				options={{
+					styles: {
+						frame: {
+							background: '#FFFFFF',
 						},
-					}}
-				>
-					{({ open }) => {
-						const onClick = () => {
-							setTimeout(() => {
-								open();
-							}, 200);
-						};
+					},
+				}}
+			>
+				{({ open }) => {
+					const onClick = () => {
+						setTimeout(() => {
+							open();
+						}, 200);
+					};
 
-						return (
-							<>
-								<button
-									type='button'
-									className='z-20 absolute right-0 bottom-6 flex items-center font-medium text-[17px] h-14 w-14 justify-center  text-white bg-gradient-to-t from-blue-500 to-blue-300 border-none shadow-lg rounded-full hover:shadow-md active:shadow-sm'
-									disabled={disabled}
-									onClick={onClick}
+					return (
+						<div
+							className={cn(
+								'relative rounded-full w-52 h-52 bg-gray-200 dark:bg-gray-800 border-2 border-white dark:border-gray-700 shadow-2xl overflow-visible cursor-pointer group transition-transform duration-300 ease-bezier-1 ease-in-out hover:scale-105 will-change-transform',
+								{
+									'bg-red-100 dark:bg-red-900/30': error,
+									'animate-pulse': isBouncing,
+								},
+							)}
+							onClick={onClick}
+						>
+							{value.length > 0 ? (
+								<Image
+									src={value[0]}
+									alt='Variant image'
+									width={300}
+									height={300}
+									className='w-52 h-52 rounded-full object-cover absolute top-0 left-0 bottom-0 right-0'
+								/>
+							) : (
+								<div className='w-52 h-52 rounded-full flex flex-col items-center justify-center text-gray-400 dark:text-gray-500 gap-2 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-full'>
+									<ImageIcon className='w-12 h-12 stroke-[1.5] group-hover:scale-110 transition-transform duration-300 ease-bezier-1 ease-in-out' />
+									<span className='text-xs font-medium text-muted-foreground'>Upload Image</span>
+								</div>
+							)}
+
+							<button
+								type='button'
+								className='z-20 absolute right-0 bottom-6 flex items-center font-medium text-[17px] h-14 w-14 justify-center text-white bg-gradient-to-t from-blue-500 to-blue-300 border-none shadow-lg rounded-full hover:shadow-md active:shadow-sm cursor-pointer hover:scale-110 transition-transform duration-300 ease-bezier-1 ease-in-out will-change-transform'
+								disabled={disabled}
+								onClick={(e) => {
+									e.stopPropagation();
+									onClick();
+								}}
+							>
+								<svg
+									viewBox='0 0 640 512'
+									fill='white'
+									height='1em'
+									xmlns='http://www.w3.org/2000/svg'
 								>
-									<svg
-										viewBox='0 0 640 512'
-										fill='white'
-										height='1em'
-										xmlns='http://www.w3.org/2000/svg'
-									>
-										<path d='M144 480C64.5 480 0 415.5 0 336c0-62.8 40.2-116.2 96.2-135.9c-.1-2.7-.2-5.4-.2-8.1c0-88.4 71.6-160 160-160c59.3 0 111 32.2 138.7 80.2C409.9 102 428.3 96 448 96c53 0 96 43 96 96c0 12.2-2.3 23.8-6.4 34.6C596 238.4 640 290.1 640 352c0 70.7-57.3 128-128 128H144zm79-217c-9.4 9.4-9.4 24.6 0 33.9s24.6 9.4 33.9 0l39-39V392c0 13.3 10.7 24 24 24s24-10.7 24-24V257.9l39 39c9.4 9.4 24.6 9.4 33.9 0s9.4-24.6 0-33.9l-80-80c-9.4-9.4-24.6-9.4-33.9 0l-80 80z' />
-									</svg>
-								</button>
-							</>
-						);
-					}}
-				</CldUploadWidget>
-			</div>
+									<path d='M144 480C64.5 480 0 415.5 0 336c0-62.8 40.2-116.2 96.2-135.9c-.1-2.7-.2-5.4-.2-8.1c0-88.4 71.6-160 160-160c59.3 0 111 32.2 138.7 80.2C409.9 102 428.3 96 448 96c53 0 96 43 96 96c0 12.2-2.3 23.8-6.4 34.6C596 238.4 640 290.1 640 352c0 70.7-57.3 128-128 128H144zm79-217c-9.4 9.4-9.4 24.6 0 33.9s24.6 9.4 33.9 0l39-39V392c0 13.3 10.7 24 24 24s24-10.7 24-24V257.9l39 39c9.4 9.4 24.6 9.4 33.9 0s9.4-24.6 0-33.9l-80-80c-9.4-9.4-24.6-9.4-33.9 0l-80 80z' />
+								</svg>
+							</button>
+						</div>
+					);
+				}}
+			</CldUploadWidget>
 		);
 	} else if (type === 'cover') {
 		return (
@@ -205,7 +212,7 @@ const ImageUpload = ({
 						return (
 							<button
 								type='button'
-								className='absolute bottom-4 right-4 flex items-center font-medium text-[17px] py-3 px-6 text-white bg-gradient-to-t from-blue-500 to-blue-300 border-none shadow-lg rounded-full hover:shadow-md active:shadow-sm'
+								className='absolute bottom-4 right-4 flex items-center font-medium text-[17px] py-3 px-6 text-white bg-gradient-to-t from-blue-500 to-blue-300 border-none shadow-lg rounded-full hover:shadow-md active:shadow-sm cursor-pointer'
 								disabled={disabled}
 								onClick={onClick}
 							>
@@ -279,7 +286,7 @@ const ImageUpload = ({
 							<>
 								<button
 									type='button'
-									className='flex items-center font-medium text-[17px] py-3 px-6 text-white bg-gradient-to-t from-blue-500 to-blue-300 border-none shadow-lg rounded-full hover:shadow-md active:shadow-sm'
+									className='flex items-center font-medium text-[17px] py-3 px-6 text-white bg-gradient-to-t from-blue-500 to-blue-300 border-none shadow-lg rounded-full hover:shadow-md active:shadow-sm cursor-pointer'
 									disabled={disabled}
 									onClick={handleUploadClick}
 								>
