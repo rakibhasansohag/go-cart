@@ -1,6 +1,6 @@
 'use client';
 
-import { useQuery, useSuspenseQuery } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { Plus } from 'lucide-react';
 import DataTable from '@/components/ui/data-table';
 import { getAllSubCategories } from '@/queries/subCategory';
@@ -9,15 +9,25 @@ import SubCategoryDetails from '@/components/dashboard/forms/subCategory-details
 import { columns } from './columns';
 import { queryKeys } from '@/lib/query-keys';
 
-export default function SubCategoriesTable() {
-	const { data: subCategories } = useSuspenseQuery({
+interface SubCategoriesTableProps {
+	initialSubCategories?: any[];
+	initialCategories?: any[];
+}
+
+export default function SubCategoriesTable({
+	initialSubCategories,
+	initialCategories = [],
+}: SubCategoriesTableProps) {
+	const { data: subCategories = initialSubCategories } = useQuery({
 		queryKey: queryKeys.dashboard.subCategories(),
 		queryFn: () => getAllSubCategories(),
+		initialData: initialSubCategories,
 	});
 
-	const { data: categories = [] } = useQuery({
+	const { data: categories = initialCategories } = useQuery({
 		queryKey: queryKeys.dashboard.categories(),
 		queryFn: () => getAllCategories(),
+		initialData: initialCategories,
 		staleTime: 10 * 60 * 1000,
 	});
 

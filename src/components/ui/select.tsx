@@ -107,7 +107,7 @@ function SelectItem({
     <SelectPrimitive.Item
       data-slot="select-item"
       className={cn(
-        "relative flex w-full cursor-pointer items-center gap-2 rounded-sm py-1.5 pr-8 pl-2 text-sm outline-hidden select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 transition-colors duration-150 focus:bg-slate-700/60 focus:text-white hover:bg-slate-700/60 hover:text-white data-[highlighted]:bg-slate-700/60 data-[highlighted]:text-white dark:focus:bg-slate-700/60 dark:focus:text-white dark:hover:bg-slate-700/60 dark:hover:text-white dark:data-[highlighted]:bg-slate-700/60 dark:data-[highlighted]:text-white [&_svg:not([class*='text-'])]:text-muted-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2",
+        "relative flex w-full cursor-pointer items-center gap-2.5 rounded-md py-2 pr-8 pl-3 text-sm outline-none select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 transition-all duration-200 ease-out focus:bg-accent focus:text-accent-foreground hover:bg-accent/80 hover:text-accent-foreground hover:translate-x-1 data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground data-[highlighted]:translate-x-1 [&_svg:not([class*='text-'])]:text-muted-foreground [&_svg]:transition-transform [&_svg]:duration-200 hover:[&_svg]:scale-110 data-[highlighted]:[&_svg]:scale-110 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2",
         className
       )}
       {...props}

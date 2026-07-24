@@ -1,6 +1,6 @@
 'use client';
 
-import { useSuspenseQuery } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { Plus } from 'lucide-react';
 import DataTable from '@/components/ui/data-table';
 import { getStoreCoupons } from '@/queries/coupon';
@@ -10,12 +10,14 @@ import { queryKeys } from '@/lib/query-keys';
 
 interface CouponsTableProps {
 	storeUrl: string;
+	initialCoupons?: any[];
 }
 
-export default function CouponsTable({ storeUrl }: CouponsTableProps) {
-	const { data: coupons } = useSuspenseQuery({
+export default function CouponsTable({ storeUrl, initialCoupons }: CouponsTableProps) {
+	const { data: coupons = initialCoupons } = useQuery({
 		queryKey: queryKeys.dashboard.coupons(storeUrl),
 		queryFn: () => getStoreCoupons(storeUrl),
+		initialData: initialCoupons,
 	});
 
 	if (!coupons) return null;

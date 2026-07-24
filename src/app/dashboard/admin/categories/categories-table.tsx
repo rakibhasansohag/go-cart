@@ -1,6 +1,6 @@
 'use client';
 
-import { useSuspenseQuery } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { Plus } from 'lucide-react';
 import DataTable from '@/components/ui/data-table';
 import { getAllCategories } from '@/queries/category';
@@ -10,12 +10,17 @@ import { queryKeys } from '@/lib/query-keys';
 
 interface CategoriesTableProps {
 	cloudinary_key: string;
+	initialCategories?: any[];
 }
 
-export default function CategoriesTable({ cloudinary_key }: CategoriesTableProps) {
-	const { data: categories } = useSuspenseQuery({
+export default function CategoriesTable({
+	cloudinary_key,
+	initialCategories,
+}: CategoriesTableProps) {
+	const { data: categories = initialCategories } = useQuery({
 		queryKey: queryKeys.dashboard.categories(),
 		queryFn: () => getAllCategories(),
+		initialData: initialCategories,
 	});
 
 	if (!categories) return null;
