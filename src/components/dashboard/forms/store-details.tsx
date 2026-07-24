@@ -45,7 +45,8 @@ import { upsertStore } from '@/queries/store';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/query-keys';
 
-// Utils
+// Hooks & Utils
+import { useFormDirtyGuard } from '@/hooks/use-form-dirty-guard';
 import { v4 } from 'uuid';
 import { toast } from 'sonner';
 
@@ -76,6 +77,8 @@ const StoreDetails: FC<StoreDetailsProps> = ({ data }) => {
 		},
 	});
 
+	const isEditing = Boolean(data?.id);
+
 	const upsertMutation = useMutation({
 		mutationFn: upsertStore,
 		onSuccess: (response) => {
@@ -84,6 +87,7 @@ const StoreDetails: FC<StoreDetailsProps> = ({ data }) => {
 					? 'Store has been updated.'
 					: `Congratulations! ${response?.name} Store is now created.`,
 			);
+			resetDirtyState();
 			if (data?.url) {
 				queryClient.invalidateQueries({
 					queryKey: queryKeys.dashboard.storeSettings(data.url),
@@ -104,6 +108,12 @@ const StoreDetails: FC<StoreDetailsProps> = ({ data }) => {
 
 	// Loading status based on form submission or mutation pending
 	const isLoading = form.formState.isSubmitting || upsertMutation.isPending;
+
+	const { isSaveDisabled, resetDirtyState } = useFormDirtyGuard({
+		form,
+		isEditing,
+		isLoading,
+	});
 
 	// Reset form values when data changes
 	useEffect(() => {
@@ -322,7 +332,7 @@ const StoreDetails: FC<StoreDetailsProps> = ({ data }) => {
 									</FormItem>
 								)}
 							/>
-							<Button type='submit' disabled={isLoading}>
+							<Button type='submit' disabled={isSaveDisabled}>
 								{isLoading
 									? 'loading...'
 									: data?.id

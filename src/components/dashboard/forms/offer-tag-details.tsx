@@ -40,11 +40,11 @@ import { upsertOfferTag } from '@/queries/offer-tag';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/query-keys';
 
-// Utils
+// Hooks & Utils
+import { useFormDirtyGuard } from '@/hooks/use-form-dirty-guard';
 import { v4 } from 'uuid';
-
-import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
+import { useRouter } from 'next/navigation';
 
 interface OfferTagDetailsProps {
 	data?: OfferTag;
@@ -66,6 +66,8 @@ const OfferTagDetails: FC<OfferTagDetailsProps> = ({ data }) => {
 		},
 	});
 
+	const isEditing = Boolean(data?.id);
+
 	const upsertMutation = useMutation({
 		mutationFn: upsertOfferTag,
 		onSuccess: (response) => {
@@ -74,6 +76,7 @@ const OfferTagDetails: FC<OfferTagDetailsProps> = ({ data }) => {
 					? 'Offer tag has been updated.'
 					: `Congratulations! '${response?.name}' is now created.`,
 			);
+			resetDirtyState();
 			queryClient.invalidateQueries({
 				queryKey: queryKeys.dashboard.offerTags(),
 			});
@@ -90,6 +93,12 @@ const OfferTagDetails: FC<OfferTagDetailsProps> = ({ data }) => {
 
 	// Loading status based on form submission or mutation pending
 	const isLoading = form.formState.isSubmitting || upsertMutation.isPending;
+
+	const { isSaveDisabled, resetDirtyState } = useFormDirtyGuard({
+		form,
+		isEditing,
+		isLoading,
+	});
 
 	// Reset form values when data changes
 	useEffect(() => {
@@ -159,7 +168,7 @@ const OfferTagDetails: FC<OfferTagDetailsProps> = ({ data }) => {
 								)}
 							/>
 
-							<Button type='submit' disabled={isLoading}>
+							<Button type='submit' disabled={isSaveDisabled}>
 								{isLoading
 									? 'loading...'
 									: data?.id

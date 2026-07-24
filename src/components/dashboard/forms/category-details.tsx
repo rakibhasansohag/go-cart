@@ -42,11 +42,12 @@ import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/query-keys';
+import { useFormDirtyGuard } from '@/hooks/use-form-dirty-guard';
 
 
 interface CategoryDetailsProps {
 	data?: Category;
-	cloudinary_key: string;
+	cloudinary_key?: string;
 }
 
 const CategoryDetails = ({ data, cloudinary_key }: CategoryDetailsProps) => {
@@ -65,6 +66,8 @@ const CategoryDetails = ({ data, cloudinary_key }: CategoryDetailsProps) => {
 		},
 	});
 
+	const isEditing = Boolean(data?.id);
+
 	const upsertMutation = useMutation({
 		mutationFn: upsertCategory,
 		onSuccess: (response) => {
@@ -73,6 +76,7 @@ const CategoryDetails = ({ data, cloudinary_key }: CategoryDetailsProps) => {
 					? 'Category has been updated.'
 					: `Congratulations! '${response?.name}' is now created.`,
 			);
+			resetDirtyState();
 			queryClient.invalidateQueries({
 				queryKey: queryKeys.dashboard.categories(),
 			});
@@ -96,6 +100,12 @@ const CategoryDetails = ({ data, cloudinary_key }: CategoryDetailsProps) => {
 
 	// Loading status based on form submission or mutation pending
 	const isLoading = form.formState.isSubmitting || upsertMutation.isPending;
+
+	const { isSaveDisabled, resetDirtyState } = useFormDirtyGuard({
+		form,
+		isEditing,
+		isLoading,
+	});
 
 	// Rest form values on form submission
 	useEffect(() => {
@@ -216,7 +226,7 @@ const CategoryDetails = ({ data, cloudinary_key }: CategoryDetailsProps) => {
 										</FormItem>
 									)}
 								/>
-								<Button type='submit' disabled={isLoading}>
+								<Button type='submit' disabled={isSaveDisabled}>
 									{isLoading
 										? 'loading...'
 										: data?.id

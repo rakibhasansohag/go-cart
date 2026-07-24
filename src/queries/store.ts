@@ -122,6 +122,7 @@ export const getStoreDefaultShippingDetails = async (storeUrl: string) => {
 				url: storeUrl,
 			},
 			select: {
+				id: true,
 				defaultShippingService: true,
 				defaultShippingFeePerItem: true,
 				defaultShippingFeeForAdditionalItem: true,

@@ -56,7 +56,8 @@ import {
 // ReactTags
 import { WithOutContext as ReactTags } from 'react-tag-input';
 
-// Utils
+// Hooks & Utils
+import { useFormDirtyGuard } from '@/hooks/use-form-dirty-guard';
 import { v4 } from 'uuid';
 
 // Types
@@ -399,6 +400,13 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 
 	// Loading status based on form submission
 	const isLoading = form.formState.isSubmitting;
+
+	const isEditing = Boolean(data?.productId && data?.variantId);
+	const { isSaveDisabled, resetDirtyState } = useFormDirtyGuard({
+		form,
+		isEditing,
+		isLoading,
+	});
 
 	// DateTimePicker input wrap handling (12 -> 1, 1 -> 12, 59 -> 00, 00 -> 59)
 	const dateTimePickerRef = useRef<HTMLDivElement>(null);
@@ -1713,7 +1721,7 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 							</Button> */}
 							<Button
 								type='button'
-								disabled={isLoading}
+								disabled={isSaveDisabled}
 								onClick={() => {
 									console.log('button clicked - manual submit');
 									const submitFn = form.handleSubmit(

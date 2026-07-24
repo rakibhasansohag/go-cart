@@ -39,6 +39,7 @@ import { StoreDefaultShippingType } from '@/lib/types';
 
 // Toast
 import { toast } from 'sonner';
+import { useFormDirtyGuard } from '@/hooks/use-form-dirty-guard';
 
 interface StoreDefaultShippingDetailsProps {
 	data?: StoreDefaultShippingType;
@@ -71,11 +72,14 @@ const StoreDefaultShippingDetails: FC<StoreDefaultShippingDetailsProps> = ({
 		},
 	});
 
+	const isEditing = Boolean(data?.id);
+
 	const updateMutation = useMutation({
 		mutationFn: (values: any) => updateStoreDefaultShippingDetails(storeUrl, values),
 		onSuccess: (response) => {
 			if (response?.id) {
 				toast.success('Store Default shipping details has been updated.');
+				resetDirtyState();
 				queryClient.invalidateQueries({
 					queryKey: queryKeys.dashboard.shipping(storeUrl),
 				});
@@ -90,6 +94,12 @@ const StoreDefaultShippingDetails: FC<StoreDefaultShippingDetailsProps> = ({
 
 	// Loading status based on form submission or mutation pending
 	const isLoading = form.formState.isSubmitting || updateMutation.isPending;
+
+	const { isSaveDisabled, resetDirtyState } = useFormDirtyGuard({
+		form,
+		isEditing,
+		isLoading,
+	});
 
 	// Reset form values when data changes
 	useEffect(() => {
@@ -284,7 +294,7 @@ const StoreDefaultShippingDetails: FC<StoreDefaultShippingDetailsProps> = ({
 									</FormItem>
 								)}
 							/>
-							<Button type='submit' disabled={isLoading}>
+							<Button type='submit' disabled={isSaveDisabled}>
 								{isLoading ? 'loading...' : 'Save changes'}
 							</Button>
 						</form>

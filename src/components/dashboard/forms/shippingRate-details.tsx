@@ -45,6 +45,7 @@ import { CountryWithShippingRatesType } from '@/lib/types';
 import { NumberInput } from '@tremor/react';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
+import { useFormDirtyGuard } from '@/hooks/use-form-dirty-guard';
 
 interface ShippingRateDetailsProps {
 	data?: CountryWithShippingRatesType;
@@ -92,11 +93,14 @@ const ShippingRateDetails: FC<ShippingRateDetailsProps> = ({
 		},
 	});
 
+	const isEditing = Boolean(data?.shippingRate?.id);
+
 	const upsertMutation = useMutation({
 		mutationFn: (rateData: any) => upsertShippingRate(storeUrl, rateData),
 		onSuccess: (response) => {
 			if (response?.id) {
 				toast.success('Shipping rates updated successfully !');
+				resetDirtyState();
 				queryClient.invalidateQueries({
 					queryKey: queryKeys.dashboard.shipping(storeUrl),
 				});
@@ -109,6 +113,12 @@ const ShippingRateDetails: FC<ShippingRateDetailsProps> = ({
 
 	// Loading status based on form submission or mutation pending
 	const isLoading = form.formState.isSubmitting || upsertMutation.isPending;
+
+	const { isSaveDisabled, resetDirtyState } = useFormDirtyGuard({
+		form,
+		isEditing,
+		isLoading,
+	});
 
 	// Reset form values when data changes
 	useEffect(() => {
@@ -335,7 +345,7 @@ const ShippingRateDetails: FC<ShippingRateDetailsProps> = ({
 								/>
 							</div>
 							<div className='mt-4'>
-								<Button type='submit' disabled={isLoading}>
+								<Button type='submit' disabled={isSaveDisabled}>
 									{isLoading ? 'loading...' : 'Save changes'}
 								</Button>
 							</div>

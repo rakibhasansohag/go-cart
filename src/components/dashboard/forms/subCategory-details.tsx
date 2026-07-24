@@ -55,6 +55,7 @@ import {
 } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { ArrowLeft } from 'lucide-react';
+import { useFormDirtyGuard } from '@/hooks/use-form-dirty-guard';
 
 interface SubCategoryDetailsProps {
 	data?: SubCategory;
@@ -85,6 +86,8 @@ const SubCategoryDetails: FC<SubCategoryDetailsProps> = ({
 		},
 	});
 
+	const isEditing = Boolean(data?.id);
+
 	const upsertMutation = useMutation({
 		mutationFn: upsertSubCategory,
 		onSuccess: (response) => {
@@ -93,6 +96,7 @@ const SubCategoryDetails: FC<SubCategoryDetailsProps> = ({
 					? 'SubCategory has been updated.'
 					: `Congratulations! '${response?.name}' is now created.`,
 			);
+			resetDirtyState();
 			queryClient.invalidateQueries({
 				queryKey: queryKeys.dashboard.subCategories(),
 			});
@@ -107,6 +111,12 @@ const SubCategoryDetails: FC<SubCategoryDetailsProps> = ({
 
 	// Loading status based on form submission or mutation pending
 	const isLoading = form.formState.isSubmitting || upsertMutation.isPending;
+
+	const { isSaveDisabled, resetDirtyState } = useFormDirtyGuard({
+		form,
+		isEditing,
+		isLoading,
+	});
 
 	const formData = form.watch();
 
@@ -277,12 +287,12 @@ const SubCategoryDetails: FC<SubCategoryDetailsProps> = ({
 									)}
 								/>
 
-								<Button type='submit' disabled={isLoading}>
+								<Button type='submit' disabled={isSaveDisabled}>
 									{isLoading
 										? 'loading...'
 										: data?.id
-										? 'Save SubCategory information'
-										: 'Create SubCategory'}
+											? 'Save SubCategory information'
+											: 'Create SubCategory'}
 								</Button>
 							</form>
 						</Form>

@@ -40,7 +40,8 @@ import { upsertCoupon } from '@/queries/coupon';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/query-keys';
 
-// Utils
+// Hooks & Utils
+import { useFormDirtyGuard } from '@/hooks/use-form-dirty-guard';
 import { v4 } from 'uuid';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
@@ -60,8 +61,8 @@ interface CouponDetailsProps {
 
 const CouponDetails: FC<CouponDetailsProps> = ({ data, storeUrl }) => {
 	// Initializing necessary hooks
-	const router = useRouter(); // Hook for routing
 	const { setClose } = useModal();
+	const router = useRouter(); // Hook for routing
 	const queryClient = useQueryClient();
 
 	// Form hook for managing form state and validation
@@ -77,6 +78,8 @@ const CouponDetails: FC<CouponDetailsProps> = ({ data, storeUrl }) => {
 		},
 	});
 
+	const isEditing = Boolean(data?.id);
+
 	const upsertMutation = useMutation({
 		mutationFn: (couponData: any) => upsertCoupon(couponData, storeUrl),
 		onSuccess: (response) => {
@@ -85,6 +88,7 @@ const CouponDetails: FC<CouponDetailsProps> = ({ data, storeUrl }) => {
 					? 'Coupon has been updated.'
 					: `Congratulations! '${response?.code}' is now created.`,
 			);
+			resetDirtyState();
 			queryClient.invalidateQueries({
 				queryKey: queryKeys.dashboard.coupons(storeUrl),
 			});
@@ -100,6 +104,12 @@ const CouponDetails: FC<CouponDetailsProps> = ({ data, storeUrl }) => {
 
 	// Loading status based on form submission or mutation pending
 	const isLoading = form.formState.isSubmitting || upsertMutation.isPending;
+
+	const { isSaveDisabled, resetDirtyState } = useFormDirtyGuard({
+		form,
+		isEditing,
+		isLoading,
+	});
 
 	// Reset form values when data changes
 	useEffect(() => {
@@ -227,7 +237,7 @@ const CouponDetails: FC<CouponDetailsProps> = ({ data, storeUrl }) => {
 								/>
 							</div>
 
-							<Button type='submit' disabled={isLoading}>
+							<Button type='submit' disabled={isSaveDisabled}>
 								{isLoading
 									? 'loading...'
 									: data?.id
