@@ -1,6 +1,7 @@
 import { Suspense } from 'react';
 import StoreSettingsView from './store-settings-view';
 import FormSkeleton from '@/components/dashboard/shared/form-skeleton';
+import { getStoreByUrl } from '@/queries/store';
 
 type StoreParams = { storeUrl: string };
 
@@ -10,10 +11,11 @@ export default async function SellerStoreSettingsPage({
 	params: Promise<StoreParams>;
 }) {
 	const { storeUrl } = await params;
+	const store = await getStoreByUrl(storeUrl);
 
 	return (
 		<Suspense fallback={<FormSkeleton />}>
-			<StoreSettingsView storeUrl={storeUrl} />
+			<StoreSettingsView storeUrl={storeUrl} initialStore={store} />
 		</Suspense>
 	);
 }
