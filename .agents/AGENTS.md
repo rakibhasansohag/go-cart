@@ -87,5 +87,8 @@ Safe to do — the runtime value is correct; the error is purely a type-declarat
     - **Responsive Date Grid**: Wrapped `Start date` and `End date` fields in a responsive grid container (`grid grid-cols-1 md:grid-cols-2 gap-4`), rendering side-by-side on desktop/modals and stacked on mobile.
     - **Past Date Prevention**: Added `minDate={new Date(new Date().setHours(0, 0, 0, 0))}` to `startDate` and `saleEndDate`, and set `endDate`'s `minDate` dynamically to the selected `startDate` or today. This prevents selecting past dates before today or end dates before start dates.
     - **Hidden Input Steppers**: Enforced `display: none !important; opacity: 0 !important; -webkit-appearance: none !important; -moz-appearance: textfield !important;` on `::-webkit-inner-spin-button` and `::-webkit-outer-spin-button` for all `input[type="number"]` and `.react-datetime-picker__inputGroup__input`. This completely hides the browser's native up/down stepper arrows across both standalone pages and modal dialogs.
+19. In `src/app/dashboard/seller/stores/[storeUrl]/shipping/page.tsx` & `shipping-view.tsx`:
+    - **Server Data Prefetching**: Updated `page.tsx` (Server Component) to fetch `getStoreDefaultShippingDetails` and `getStoreShippingRates` on the server and pass them as `initialDetails` & `initialRates` to `ShippingView`.
+    - **Eliminated setState-during-render warning**: Replaced `useSuspenseQuery` with `useQuery` seeded with `initialData`. This resolved the React warning (`Cannot update a component ('Router') while rendering a different component ('ShippingView')`), while retaining client-side pagination speed in `@/components/ui/data-table`.
 
 
