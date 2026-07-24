@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useRef } from 'react';
 // Provider
 import { useModal } from '@/providers/modal-provider';
 
@@ -29,9 +30,24 @@ const CustomModal = ({
 	maxWidth,
 }: Props) => {
 	const { isOpen, setClose } = useModal();
+	const contentRef = useRef<HTMLDivElement>(null);
+
+	useEffect(() => {
+		if (isOpen || defaultOpen) {
+			const timer = setTimeout(() => {
+				if (contentRef.current) {
+					contentRef.current.scrollTop = 0;
+				}
+			}, 0);
+			return () => clearTimeout(timer);
+		}
+	}, [isOpen, defaultOpen]);
+
 	return (
 		<Dialog open={isOpen || defaultOpen} onOpenChange={setClose}>
 			<DialogContent
+				ref={contentRef}
+				onOpenAutoFocus={(e) => e.preventDefault()}
 				aria-description='Modal content'
 				className={cn(
 					'overflow-y-scroll md:max-h-[700px] md:h-fit h-screen bg-card z-[999]',

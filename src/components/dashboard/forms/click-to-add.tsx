@@ -145,33 +145,40 @@ const ClickToAddInputs = <T extends Detail>({
 							key={propIndex}
 							className={cn('flex items-center gap-x-4', containerClassName)}
 						>
-							{/* Color picker toggle */}
+							{/* Color picker toggle & floating popover */}
 							{property === 'color' && colorPicker && (
-								<div className='flex gap-x-4'>
+								<div className='relative flex items-center gap-x-3'>
 									<button
 										type='button'
-										className='cursor-pointer'
+										className='cursor-pointer p-1.5 rounded-md hover:bg-accent transition-colors'
 										onClick={() =>
 											setColorPickerIndex(
 												colorPickerIndex === index ? null : index,
 											)
 										}
+										title='Pick a color'
 									>
-										<PaintBucket />
+										<PaintBucket className='w-5 h-5 text-muted-foreground hover:text-foreground' />
 									</button>
 									<span
-										className='w-8 h-8 rounded-full'
-										style={{ backgroundColor: detail[property] as string }}
+										className='w-7 h-7 rounded-full border border-border shadow-xs shrink-0'
+										style={{ backgroundColor: (detail[property] as string) || '#ffffff' }}
 									/>
+									{colorPickerIndex === index && (
+										<div className='relative z-50'>
+											<div
+												className='fixed inset-0 z-40'
+												onClick={() => setColorPickerIndex(null)}
+											/>
+											<div className='absolute top-full left-0 mt-2 z-50 shadow-2xl rounded-lg bg-popover p-2 border border-border'>
+												<SketchPicker
+													color={(detail[property] as string) || '#000000'}
+													onChange={(e) => handleDetailsChange(index, property, e.hex)}
+												/>
+											</div>
+										</div>
+									)}
 								</div>
-							)}
-
-							{/* Color picker */}
-							{colorPickerIndex === index && property === 'color' && (
-								<SketchPicker
-									color={detail[property] as string}
-									onChange={(e) => handleDetailsChange(index, property, e.hex)}
-								/>
 							)}
 
 							{/* Input field for each property */}
