@@ -1448,23 +1448,23 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 												<Dot className='-me-1' />
 												When sale does end ?
 											</p>
-											<div className='flex items-center gap-x-5'>
+											<div className='flex flex-col sm:flex-row sm:items-center gap-3 flex-wrap'>
 												<FormField
 													control={form.control}
 													name='saleEndDate'
 													render={({ field }) => (
-														<FormItem className='ml-4'>
+														<FormItem className='ml-0 sm:ml-4 max-w-full'>
 															<FormControl>
-																<div ref={dateTimePickerRef} className='inline-block'>
+																<div ref={dateTimePickerRef} className='inline-block max-w-full'>
 																	<DateTimePicker
-																		className='inline-flex items-center gap-2 p-2 border rounded-md shadow-sm'
+																		className='inline-flex items-center gap-2 p-2 border rounded-md shadow-sm max-w-full'
 																		calendarIcon={
-																			<span className='text-gray-500 hover:text-gray-600'>
+																			<span className='text-gray-500 hover:text-gray-600 cursor-pointer'>
 																				📅
 																			</span>
 																		}
 																		clearIcon={
-																			<span className='text-gray-500 hover:text-gray-600'>
+																			<span className='text-gray-500 hover:text-gray-600 cursor-pointer'>
 																				✖️
 																			</span>
 																		}
@@ -1484,8 +1484,10 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 														</FormItem>
 													)}
 												/>
-												<ArrowRight className='w-4 text-[#1087ff]' />
-												<span>{formattedDate}</span>
+												<div className='flex items-center gap-2 text-xs sm:text-sm font-medium text-blue-500 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 px-3 py-2 rounded-md border border-blue-200 dark:border-blue-800/50 max-w-full'>
+													<ArrowRight className='w-4 h-4 shrink-0 text-[#1087ff]' />
+													<span className='break-words'>{formattedDate}</span>
+												</div>
 											</div>
 										</div>
 									)}

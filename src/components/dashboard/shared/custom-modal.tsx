@@ -50,8 +50,8 @@ const CustomModal = ({
 				onOpenAutoFocus={(e) => e.preventDefault()}
 				aria-description='Modal content'
 				className={cn(
-					'overflow-y-scroll md:max-h-[700px] md:h-fit h-screen bg-card z-[999]',
-					maxWidth,
+					'overflow-y-scroll md:max-h-[85vh] md:h-fit h-screen bg-card z-[999] p-4 sm:p-6',
+					maxWidth || 'w-[95vw] max-w-7xl sm:max-w-5xl lg:max-w-7xl',
 				)}
 			>
 				<DialogTitle className='text-2xl font-bold'>{heading}</DialogTitle>

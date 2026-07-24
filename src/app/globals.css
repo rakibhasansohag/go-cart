@@ -1038,7 +1038,22 @@ body[style*="pointer-events: none"] .jodit-ui-popup * {
   background-color: #111827 !important;
 }
 
-/* Focused input segment highlight */
+/* DateTimePicker Responsive Container Rules */
+.react-datetime-picker {
+  max-width: 100% !important;
+}
+
+.react-datetime-picker__wrapper {
+  max-width: 100% !important;
+  flex-wrap: wrap !important;
+  gap: 0.25rem !important;
+}
+
+.react-datetime-picker__inputGroup {
+  white-space: nowrap !important;
+  max-width: 100% !important;
+  overflow-x: auto !important;
+}
 .dark .react-datetime-picker__inputGroup__input:focus {
   background-color: #2563eb !important;
   color: #ffffff !important;

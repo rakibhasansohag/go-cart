@@ -83,7 +83,7 @@ export default function ProductsTable({
 			data={products}
 			columns={columns}
 			searchPlaceholder='Search product name...'
-			maxWidth='lg:max-w-6xl'
+			maxWidth='w-[95vw] max-w-7xl sm:max-w-5xl lg:max-w-7xl'
 		/>
 	);
 }
