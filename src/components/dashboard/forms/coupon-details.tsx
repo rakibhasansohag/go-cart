@@ -174,50 +174,58 @@ const CouponDetails: FC<CouponDetailsProps> = ({ data, storeUrl }) => {
 									</FormItem>
 								)}
 							/>
-							<FormField
-								disabled={isLoading}
-								control={form.control}
-								name='startDate'
-								render={({ field }) => (
-									<FormItem className='flex flex-col'>
-										<FormLabel>Start date</FormLabel>
-										<FormControl>
-											<DateTimePicker
-												calendarProps={{ showFixedNumberOfWeeks: true }}
-												onChange={(date) => {
-													field.onChange(
-														date ? format(date, "yyyy-MM-dd'T'HH:mm:ss") : '',
-													);
-												}}
-												value={field.value ? new Date(field.value) : null}
-											/>
-										</FormControl>
-										<FormMessage />
-									</FormItem>
-								)}
-							/>
-							<FormField
-								disabled={isLoading}
-								control={form.control}
-								name='endDate'
-								render={({ field }) => (
-									<FormItem className='flex flex-col'>
-										<FormLabel>End date</FormLabel>
-										<FormControl>
-											<DateTimePicker
-												calendarProps={{ showFixedNumberOfWeeks: true }}
-												onChange={(date) => {
-													field.onChange(
-														date ? format(date, "yyyy-MM-dd'T'HH:mm:ss") : '',
-													);
-												}}
-												value={field.value ? new Date(field.value) : null}
-											/>
-										</FormControl>
-										<FormMessage />
-									</FormItem>
-								)}
-							/>
+							<div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+								<FormField
+									disabled={isLoading}
+									control={form.control}
+									name='startDate'
+									render={({ field }) => (
+										<FormItem className='flex flex-col'>
+											<FormLabel>Start date</FormLabel>
+											<FormControl>
+												<DateTimePicker
+													minDate={new Date(new Date().setHours(0, 0, 0, 0))}
+													calendarProps={{ showFixedNumberOfWeeks: true }}
+													onChange={(date) => {
+														field.onChange(
+															date ? format(date, "yyyy-MM-dd'T'HH:mm:ss") : '',
+														);
+													}}
+													value={field.value ? new Date(field.value) : null}
+												/>
+											</FormControl>
+											<FormMessage />
+										</FormItem>
+									)}
+								/>
+								<FormField
+									disabled={isLoading}
+									control={form.control}
+									name='endDate'
+									render={({ field }) => (
+										<FormItem className='flex flex-col'>
+											<FormLabel>End date</FormLabel>
+											<FormControl>
+												<DateTimePicker
+													minDate={
+														form.watch('startDate')
+															? new Date(form.watch('startDate'))
+															: new Date(new Date().setHours(0, 0, 0, 0))
+													}
+													calendarProps={{ showFixedNumberOfWeeks: true }}
+													onChange={(date) => {
+														field.onChange(
+															date ? format(date, "yyyy-MM-dd'T'HH:mm:ss") : '',
+														);
+													}}
+													value={field.value ? new Date(field.value) : null}
+												/>
+											</FormControl>
+											<FormMessage />
+										</FormItem>
+									)}
+								/>
+							</div>
 
 							<Button type='submit' disabled={isLoading}>
 								{isLoading

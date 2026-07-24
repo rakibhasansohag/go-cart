@@ -1504,6 +1504,7 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 															<FormControl>
 																<div ref={dateTimePickerRef} className='inline-block max-w-full'>
 																	<DateTimePicker
+																		minDate={new Date(new Date().setHours(0, 0, 0, 0))}
 																		calendarProps={{ showFixedNumberOfWeeks: true }}
 																		className='inline-flex items-center gap-2 p-2 border rounded-md shadow-sm max-w-full'
 																		calendarIcon={
