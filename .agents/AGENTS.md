@@ -70,5 +70,6 @@ Safe to do — the runtime value is correct; the error is purely a type-declarat
 5. In `globals.css`, overhauled `.dark .react-calendar` navigation headers, label buttons, active tiles (`#2563eb`), today tile (`#1e293b`), hover states, `.react-datetime-picker__clock-button__clock` outer popup containers (`#111827`), `.react-clock` dial, AM/PM selector (`#1f2937`), input focus segment (`#2563eb`), and red clear button (`#f87171`) for dark theme styling.
 6. In `product-details.tsx`, added event listeners (`wheel` and `keydown`) on `react-datetime-picker` inputs so hours (`12 ↔ 1`) and minutes (`59 ↔ 00`) wrap around cyclically when scrolling or pressing ArrowUp/ArrowDown.
 7. In `custom-modal.tsx` & `products-table.tsx`, updated modal container `maxWidth` to `w-[95vw] max-w-7xl sm:max-w-5xl lg:max-w-7xl` to provide generous width across viewport sizes. Made `saleEndDate` DateTimePicker and formatted date label wrap cleanly on small screens and narrow modal widths without breaking UI layout.
+8. In `ai-product-assistant.tsx`, updated validation, step indicator (`(N/A)`), placeholder (`No sub-categories`), and generate readiness logic so categories with zero subcategories automatically bypass subcategory selection.
 
 

@@ -60,6 +60,9 @@ const AIProductAssistant: FC<AIProductAssistantProps> = ({
 		}
 	}, [selectedCategoryId, categories]);
 
+	const hasSubCategories = subCategories.length > 0;
+	const isSubCategoryValid = !hasSubCategories || Boolean(selectedSubCategoryId);
+
 	const handleGenerate = async () => {
 		// Validation
 		if (!selectedCategoryId) {
@@ -67,7 +70,7 @@ const AIProductAssistant: FC<AIProductAssistantProps> = ({
 			return;
 		}
 
-		if (!selectedSubCategoryId) {
+		if (hasSubCategories && !selectedSubCategoryId) {
 			toast.error('Please select a sub-category first');
 			return;
 		}
@@ -89,9 +92,9 @@ const AIProductAssistant: FC<AIProductAssistantProps> = ({
 		try {
 			// Get category and subcategory names
 			const category = categories.find((c) => c.id === selectedCategoryId);
-			const subCategory = subCategories.find(
-				(s) => s.id === selectedSubCategoryId,
-			);
+			const subCategory = hasSubCategories
+				? subCategories.find((s) => s.id === selectedSubCategoryId)
+				: undefined;
 
 			// Call API
 			const response = await fetch('/api/generate-product', {
@@ -102,9 +105,9 @@ const AIProductAssistant: FC<AIProductAssistantProps> = ({
 				body: JSON.stringify({
 					description: description.trim(),
 					categoryId: selectedCategoryId,
-					subCategoryId: selectedSubCategoryId,
+					subCategoryId: selectedSubCategoryId || '',
 					categoryName: category?.name,
-					subCategoryName: subCategory?.name,
+					subCategoryName: subCategory?.name || '',
 				}),
 			});
 
@@ -123,7 +126,7 @@ const AIProductAssistant: FC<AIProductAssistantProps> = ({
 			const enrichedData = {
 				...result.data,
 				categoryId: selectedCategoryId,
-				subCategoryId: selectedSubCategoryId,
+				subCategoryId: selectedSubCategoryId || '',
 			};
 
 			onGenerate(enrichedData);
@@ -143,7 +146,7 @@ const AIProductAssistant: FC<AIProductAssistantProps> = ({
 
 	const isReadyToGenerate =
 		selectedCategoryId &&
-		selectedSubCategoryId &&
+		isSubCategoryValid &&
 		description.trim().length >= 20;
 
 	return (
@@ -175,13 +178,15 @@ const AIProductAssistant: FC<AIProductAssistantProps> = ({
 						→
 						<span
 							className={
-								selectedSubCategoryId
+								!hasSubCategories && selectedCategoryId
+									? 'text-green-600 dark:text-green-400'
+									: selectedSubCategoryId
 									? 'text-green-600 dark:text-green-400'
 									: ''
 							}
 						>
 							{' '}
-							2. Select Sub-Category
+							2. Select Sub-Category {!hasSubCategories && selectedCategoryId ? '(N/A)' : ''}
 						</span>{' '}
 						→
 						<span
@@ -223,7 +228,7 @@ const AIProductAssistant: FC<AIProductAssistantProps> = ({
 
 					<div className='space-y-2'>
 						<Label htmlFor='ai-subcategory'>
-							Sub-Category <span className='text-red-500'>*</span>
+							Sub-Category {hasSubCategories && <span className='text-red-500'>*</span>}
 						</Label>
 						<Select
 							value={selectedSubCategoryId}
@@ -231,21 +236,35 @@ const AIProductAssistant: FC<AIProductAssistantProps> = ({
 							disabled={isGenerating || !selectedCategoryId}
 						>
 							<SelectTrigger id='ai-subcategory'>
-								<SelectValue placeholder='Select sub-category' />
+								<SelectValue
+									placeholder={
+										!selectedCategoryId
+											? 'Select category'
+											: !hasSubCategories
+											? 'No sub-categories'
+											: 'Select sub-category'
+									}
+								/>
 							</SelectTrigger>
 							<SelectContent>
-								{subCategories.map((sub) => (
-									<SelectItem key={sub.id} value={sub.id}>
-										{sub.name}
-									</SelectItem>
-								))}
+								{hasSubCategories ? (
+									subCategories.map((sub) => (
+										<SelectItem key={sub.id} value={sub.id}>
+											{sub.name}
+										</SelectItem>
+									))
+								) : (
+									<div className='py-3 px-2 text-center text-xs text-muted-foreground select-none'>
+										No sub-categories available
+									</div>
+								)}
 							</SelectContent>
 						</Select>
 					</div>
 				</div>
 
-				{/* Product Description Input - Only show if category selected */}
-				{selectedCategoryId && selectedSubCategoryId && (
+				{/* Product Description Input - Only show if category selected and subcategory condition met */}
+				{selectedCategoryId && isSubCategoryValid && (
 					<div className='space-y-2 animate-in fade-in slide-in-from-top-2 duration-300'>
 						<Label htmlFor='ai-description' className='text-base'>
 							Describe Your Product <span className='text-red-500'>*</span>
@@ -279,8 +298,8 @@ const AIProductAssistant: FC<AIProductAssistantProps> = ({
 					</div>
 				)}
 
-				{/* Example Prompts - Only show if categories selected */}
-				{selectedCategoryId && selectedSubCategoryId && (
+				{/* Example Prompts - Only show if ready */}
+				{selectedCategoryId && isSubCategoryValid && (
 					<div className='p-3 bg-muted/50 rounded-lg space-y-2 animate-in fade-in duration-300'>
 						<p className='text-xs font-medium text-muted-foreground'>
 							Example prompts:
@@ -351,7 +370,7 @@ const AIProductAssistant: FC<AIProductAssistantProps> = ({
 					<p className='text-xs text-center text-muted-foreground'>
 						{!selectedCategoryId
 							? '↑ Select a category to begin'
-							: !selectedSubCategoryId
+							: hasSubCategories && !selectedSubCategoryId
 							? '↑ Select a sub-category to continue'
 							: '↑ Add a detailed product description'}
 					</p>
