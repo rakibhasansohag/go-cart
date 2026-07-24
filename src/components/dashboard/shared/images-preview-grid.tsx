@@ -93,6 +93,7 @@ const ImagesPreviewGrid: FC<ImagesPreviewGridProps> = ({
 								alt=''
 								width={800}
 								height={800}
+								unoptimized
 								className='w-full h-full object-cover object-top'
 							/>
 							{/* Actions */}

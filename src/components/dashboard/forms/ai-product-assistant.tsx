@@ -347,6 +347,7 @@ const AIProductAssistant: FC<AIProductAssistantProps> = ({
 
 				{/* Generate Button */}
 				<Button
+					type='button'
 					onClick={handleGenerate}
 					disabled={!isReadyToGenerate || isGenerating}
 					className='w-full'

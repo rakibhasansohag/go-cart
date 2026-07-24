@@ -858,7 +858,8 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 						<form
 							// onSubmit={form.handleSubmit(handleSubmit)}
 							onSubmit={(e) => {
-								console.log('native submit event fired');
+								e.preventDefault();
+								console.log('native submit event prevented');
 								// call RHF submit with custom onError to log validation errors
 								const submitFn = form.handleSubmit(
 									async (values) => {

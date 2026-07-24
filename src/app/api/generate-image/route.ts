@@ -86,6 +86,20 @@ const makeFallbackImages = (prompt: string, count: number) => {
 	);
 };
 
+function generateWithPollinations(prompt: string, count: number) {
+	const images: string[] = [];
+	const cleanPrompt = prompt.replace(/[\r\n]+/g, ' ').trim().slice(0, 300);
+	for (let i = 0; i < count; i++) {
+		const seed = Math.floor(Math.random() * 999999);
+		images.push(
+			`https://image.pollinations.ai/prompt/${encodeURIComponent(
+				cleanPrompt,
+			)}?width=800&height=800&seed=${seed}&nologo=true&model=flux`,
+		);
+	}
+	return images;
+}
+
 export async function POST(req: NextRequest) {
 	try {
 		const body = await req.json().catch(() => ({}));
@@ -96,70 +110,38 @@ export async function POST(req: NextRequest) {
 		if (!prompt)
 			return NextResponse.json({ error: 'Prompt required' }, { status: 400 });
 
-		// Try Google first
+		// 1. Try Google Gemini if configured
 		if (ai) {
 			try {
-				const images = await generateWithGoogle(prompt, count, style);
-				if (images && images.length > 0) {
+				const googleImages = await generateWithGoogle(prompt, count, style);
+				if (googleImages && googleImages.length > 0) {
 					return NextResponse.json({
-						images,
+						images: googleImages,
 						provider: 'google',
 						fallback: false,
 					});
-				} else {
-					// no images returned (possible) — create fallback
-					const fallbackImages = makeFallbackImages(prompt, count);
-					return NextResponse.json({
-						images: fallbackImages,
-						provider: 'fallback',
-						fallback: true,
-						fallbackReason: 'Google returned no inline images',
-					});
 				}
 			} catch (err: any) {
-				// try to build a good fallbackReason with Google error details
-				let fallbackReason = `Google error: ${String(err?.message ?? err)}`;
-
-				// Attempt to extract retry info or status if available in nested error JSON
-				try {
-					// sometimes err.message contains JSON with error details. Try parse to pull retryDelay.
-					const maybeJson = err?.message?.match(/\{[\s\S]*\}/);
-					if (maybeJson) {
-						const parsed = JSON.parse(maybeJson[0]);
-						const gErr = parsed?.error;
-						if (gErr?.details) {
-							// try to extract retry info
-							const retryInfo = (gErr.details || []).find((d: any) =>
-								d['@type']?.includes('RetryInfo'),
-							);
-							if (retryInfo?.retryDelay) {
-								fallbackReason += `; retryDelay=${retryInfo.retryDelay}`;
-							}
-						}
-					}
-				} catch (e) {
-					// ignore parse errors, keep fallbackReason as-is
-				}
-
-				// produce randomized fallback images
-				const fallbackImages = makeFallbackImages(prompt, count);
-				return NextResponse.json({
-					images: fallbackImages,
-					provider: 'fallback',
-					fallback: true,
-					fallbackReason,
-				});
+				console.warn('Google Gemini image generation failed, falling back to Pollinations AI...', err?.message);
 			}
 		}
 
-		// If ai client not configured -> fallback
+		// 2. Pollinations AI (Instant free AI image generation using Flux / Stable Diffusion)
+		const pollinationsImages = generateWithPollinations(prompt, count);
+		if (pollinationsImages && pollinationsImages.length > 0) {
+			return NextResponse.json({
+				images: pollinationsImages,
+				provider: 'pollinations',
+				fallback: false,
+			});
+		}
+
+		// 3. Last fallback (picsum)
 		const fallbackImages = makeFallbackImages(prompt, count);
 		return NextResponse.json({
 			images: fallbackImages,
 			provider: 'fallback',
 			fallback: true,
-			fallbackReason:
-				'Google client not configured (no GEMINI_API_KEY or client not installed)',
 		});
 	} catch (err: any) {
 		console.error('generate-image internal error:', err);

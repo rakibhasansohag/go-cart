@@ -56,7 +56,7 @@ const ImagePromptSection: FC<Props> = ({
 	const [angleSet, setAngleSet] = useState<'varied' | 'angles'>('varied');
 	const [generationSource, setGenerationSource] = useState<
 		'frontend' | 'backend'
-	>('frontend');
+	>('backend');
 	const [imageVariant, setImageVariant] = useState<
 		'studio' | 'lifestyle' | 'detail'
 	>('studio');
@@ -221,14 +221,15 @@ const ImagePromptSection: FC<Props> = ({
 			toast.success(`${images.length} images generated!`);
 		} catch (err: any) {
 			clearTimeout(timeoutId);
-			console.error('Puter error:', err);
-			toast.error(err?.message || 'Failed to generate images');
+			console.warn('Puter error, falling back to AI generator:', err);
+			toast.info('Switching to AI image generator...');
+			await generateImagesWithBackend();
 		} finally {
 			setIsGeneratingImages(false);
 		}
 	}
 
-	// Backend generation (Gemini with fallback)
+	// Backend generation (Gemini + Pollinations AI)
 	async function generateImagesWithBackend() {
 		if (!prompt?.trim()) {
 			toast.error('Provide a prompt');
@@ -316,6 +317,7 @@ const ImagePromptSection: FC<Props> = ({
 
 			<div className='flex gap-2 items-center mb-3'>
 				<Button
+					type='button'
 					size='sm'
 					onClick={generatePromptFromServer}
 					disabled={isGeneratingPrompt}
@@ -324,6 +326,7 @@ const ImagePromptSection: FC<Props> = ({
 				</Button>
 
 				<Button
+					type='button'
 					variant='outline'
 					size='sm'
 					onClick={() => setPrompt(buildProductDetailsString())}
@@ -340,12 +343,12 @@ const ImagePromptSection: FC<Props> = ({
 								setGenerationSource(v as 'frontend' | 'backend')
 							}
 						>
-							<SelectTrigger className='w-32'>
+							<SelectTrigger className='w-44'>
 								<SelectValue />
 							</SelectTrigger>
 							<SelectContent>
+								<SelectItem value='backend'>AI (Pollinations / Gemini)</SelectItem>
 								<SelectItem value='frontend'>AI (Puter)</SelectItem>
-								<SelectItem value='backend'>Gemini + Fallback</SelectItem>
 							</SelectContent>
 						</Select>
 					</div>
@@ -415,6 +418,7 @@ const ImagePromptSection: FC<Props> = ({
 
 			<div className='flex gap-2 mb-3'>
 				<Button
+					type='button'
 					onClick={() =>
 						generationSource === 'frontend'
 							? generateImagesWithPuter()
@@ -432,6 +436,7 @@ const ImagePromptSection: FC<Props> = ({
 				</Button>
 
 				<Button
+					type='button'
 					variant='ghost'
 					onClick={() => {
 						setPrompt('');
@@ -455,6 +460,7 @@ const ImagePromptSection: FC<Props> = ({
 									src={img.url}
 									alt='generated'
 									fill
+									unoptimized
 									className='object-cover'
 									sizes='(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw'
 								/>
@@ -520,10 +526,10 @@ const ImagePromptSection: FC<Props> = ({
 					</div>
 
 					<div className='flex gap-2 mt-3'>
-						<Button onClick={addSelectedToProduct}>
+						<Button type='button' onClick={addSelectedToProduct}>
 							Add selected to product
 						</Button>
-						<Button variant='outline' onClick={addAllToProduct}>
+						<Button type='button' variant='outline' onClick={addAllToProduct}>
 							Add all
 						</Button>
 					</div>
