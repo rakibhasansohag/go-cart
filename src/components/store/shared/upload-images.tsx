@@ -81,6 +81,12 @@ const ImageUploadStore: FC<ImageUploadProps> = ({
 			</div>
 			<CldUploadWidget
 				onSuccess={onUpload}
+				onClose={() => {
+					if (typeof document !== 'undefined') {
+						document.body.style.pointerEvents = 'auto';
+						document.body.style.overflow = 'auto';
+					}
+				}}
 				uploadPreset='go-cart-ecommerce'
 				// uploadPreset='ufb48euh'
 			>

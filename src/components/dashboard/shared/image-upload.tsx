@@ -105,6 +105,14 @@ const ImageUpload = ({
 		return (
 			<CldUploadWidget
 				onSuccess={onUpload}
+				onClose={() => {
+					setIsUploading(false);
+					setHideModal(false);
+					if (typeof document !== 'undefined') {
+						document.body.style.pointerEvents = 'auto';
+						document.body.style.overflow = 'auto';
+					}
+				}}
 				uploadPreset={cloudinary_key}
 				options={{
 					styles: {
@@ -193,6 +201,14 @@ const ImageUpload = ({
 				)}
 				<CldUploadWidget
 					onSuccess={onUpload}
+					onClose={() => {
+						setIsUploading(false);
+						setHideModal(false);
+						if (typeof document !== 'undefined') {
+							document.body.style.pointerEvents = 'auto';
+							document.body.style.overflow = 'auto';
+						}
+					}}
 					uploadPreset={cloudinary_key}
 					options={{
 						styles: {
@@ -272,6 +288,14 @@ const ImageUpload = ({
 						setIsUploading(false); // done uploading
 						setHideModal(false); // hide modal
 						onUpload(result);
+					}}
+					onClose={() => {
+						setIsUploading(false);
+						setHideModal(false);
+						if (typeof document !== 'undefined') {
+							document.body.style.pointerEvents = 'auto';
+							document.body.style.overflow = 'auto';
+						}
 					}}
 					uploadPreset={cloudinary_key}
 				>

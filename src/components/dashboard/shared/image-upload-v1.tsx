@@ -112,6 +112,14 @@ const ImageUpload = ({
 
 				<CldUploadWidget
 					onSuccess={onUpload}
+					onClose={() => {
+						setIsUploading(false);
+						setHideModal(false);
+						if (typeof document !== 'undefined') {
+							document.body.style.pointerEvents = 'auto';
+							document.body.style.overflow = 'auto';
+						}
+					}}
 					uploadPreset={cloudinary_key}
 					options={{
 						styles: {
