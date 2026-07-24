@@ -1,15 +1,21 @@
 'use client';
 
-import { useSuspenseQuery } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import DataTable from '@/components/ui/data-table';
 import { getAllStores } from '@/queries/store';
 import { columns } from './columns';
 import { queryKeys } from '@/lib/query-keys';
+import { AdminStoreType } from '@/lib/types';
 
-export default function StoresTable() {
-	const { data: stores } = useSuspenseQuery({
+interface StoresTableProps {
+	initialStores?: AdminStoreType[];
+}
+
+export default function StoresTable({ initialStores }: StoresTableProps) {
+	const { data: stores } = useQuery({
 		queryKey: queryKeys.dashboard.stores(),
 		queryFn: () => getAllStores(),
+		initialData: initialStores,
 	});
 
 	if (!stores) return null;

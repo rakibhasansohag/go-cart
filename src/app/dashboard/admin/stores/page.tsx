@@ -1,11 +1,14 @@
 import { Suspense } from 'react';
 import StoresTable from './stores-table';
 import DataTableSkeleton from '@/components/dashboard/shared/table-skeleton';
+import { getAllStores } from '@/queries/store';
 
-export default function AdminStoresPage() {
+export default async function AdminStoresPage() {
+	const stores = await getAllStores();
+
 	return (
 		<Suspense fallback={<DataTableSkeleton />}>
-			<StoresTable />
+			<StoresTable initialStores={stores} />
 		</Suspense>
 	);
 }
