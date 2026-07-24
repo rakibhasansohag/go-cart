@@ -368,6 +368,119 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 	// Loading status based on form submission
 	const isLoading = form.formState.isSubmitting;
 
+	// DateTimePicker input wrap handling (12 -> 1, 1 -> 12, 59 -> 00, 00 -> 59)
+	const dateTimePickerRef = useRef<HTMLDivElement>(null);
+
+	const isSaleValue = form.watch('isSale');
+	useEffect(() => {
+		const container = dateTimePickerRef.current;
+		if (!container) return;
+
+		const handleWheel = (e: WheelEvent) => {
+			const target = e.target as HTMLInputElement;
+			if (!target || !target.classList.contains('react-datetime-picker__inputGroup__input')) return;
+
+			const name = target.name || '';
+			const val = parseInt(target.value, 10);
+			if (isNaN(val)) return;
+
+			const isUp = e.deltaY < 0;
+
+			if (name.includes('hour')) {
+				const max = target.max ? parseInt(target.max, 10) : 12;
+				const min = target.min ? parseInt(target.min, 10) : 1;
+
+				if (isUp && val >= max) {
+					e.preventDefault();
+					e.stopPropagation();
+					target.value = String(min);
+					target.dispatchEvent(new Event('input', { bubbles: true }));
+					target.dispatchEvent(new Event('change', { bubbles: true }));
+				} else if (!isUp && val <= min) {
+					e.preventDefault();
+					e.stopPropagation();
+					target.value = String(max);
+					target.dispatchEvent(new Event('input', { bubbles: true }));
+					target.dispatchEvent(new Event('change', { bubbles: true }));
+				}
+			} else if (name.includes('minute') || name.includes('second')) {
+				const max = 59;
+				const min = 0;
+
+				if (isUp && val >= max) {
+					e.preventDefault();
+					e.stopPropagation();
+					target.value = '00';
+					target.dispatchEvent(new Event('input', { bubbles: true }));
+					target.dispatchEvent(new Event('change', { bubbles: true }));
+				} else if (!isUp && val <= min) {
+					e.preventDefault();
+					e.stopPropagation();
+					target.value = '59';
+					target.dispatchEvent(new Event('input', { bubbles: true }));
+					target.dispatchEvent(new Event('change', { bubbles: true }));
+				}
+			}
+		};
+
+		const handleKeyDown = (e: KeyboardEvent) => {
+			const target = e.target as HTMLInputElement;
+			if (!target || !target.classList.contains('react-datetime-picker__inputGroup__input')) return;
+
+			if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
+
+			const name = target.name || '';
+			const val = parseInt(target.value, 10);
+			if (isNaN(val)) return;
+
+			const isUp = e.key === 'ArrowUp';
+
+			if (name.includes('hour')) {
+				const max = target.max ? parseInt(target.max, 10) : 12;
+				const min = target.min ? parseInt(target.min, 10) : 1;
+
+				if (isUp && val >= max) {
+					e.preventDefault();
+					e.stopPropagation();
+					target.value = String(min);
+					target.dispatchEvent(new Event('input', { bubbles: true }));
+					target.dispatchEvent(new Event('change', { bubbles: true }));
+				} else if (!isUp && val <= min) {
+					e.preventDefault();
+					e.stopPropagation();
+					target.value = String(max);
+					target.dispatchEvent(new Event('input', { bubbles: true }));
+					target.dispatchEvent(new Event('change', { bubbles: true }));
+				}
+			} else if (name.includes('minute') || name.includes('second')) {
+				const max = 59;
+				const min = 0;
+
+				if (isUp && val >= max) {
+					e.preventDefault();
+					e.stopPropagation();
+					target.value = '00';
+					target.dispatchEvent(new Event('input', { bubbles: true }));
+					target.dispatchEvent(new Event('change', { bubbles: true }));
+				} else if (!isUp && val <= min) {
+					e.preventDefault();
+					e.stopPropagation();
+					target.value = '59';
+					target.dispatchEvent(new Event('input', { bubbles: true }));
+					target.dispatchEvent(new Event('change', { bubbles: true }));
+				}
+			}
+		};
+
+		container.addEventListener('wheel', handleWheel, { passive: false });
+		container.addEventListener('keydown', handleKeyDown, { capture: true });
+
+		return () => {
+			container.removeEventListener('wheel', handleWheel);
+			container.removeEventListener('keydown', handleKeyDown, { capture: true });
+		};
+	}, [isSaleValue]);
+
 	if (isDataLoading) {
 		return <ProductDetailsFormSkeleton />;
 	}
@@ -1342,29 +1455,31 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 													render={({ field }) => (
 														<FormItem className='ml-4'>
 															<FormControl>
-																<DateTimePicker
-																	className='inline-flex items-center gap-2 p-2 border rounded-md shadow-sm'
-																	calendarIcon={
-																		<span className='text-gray-500 hover:text-gray-600'>
-																			📅
-																		</span>
-																	}
-																	clearIcon={
-																		<span className='text-gray-500 hover:text-gray-600'>
-																			✖️
-																		</span>
-																	}
-																	onChange={(date) => {
-																		field.onChange(
-																			date
-																				? format(date, "yyyy-MM-dd'T'HH:mm:ss")
-																				: '',
-																		);
-																	}}
-																	value={
-																		field.value ? new Date(field.value) : null
-																	}
-																/>
+																<div ref={dateTimePickerRef} className='inline-block'>
+																	<DateTimePicker
+																		className='inline-flex items-center gap-2 p-2 border rounded-md shadow-sm'
+																		calendarIcon={
+																			<span className='text-gray-500 hover:text-gray-600'>
+																				📅
+																			</span>
+																		}
+																		clearIcon={
+																			<span className='text-gray-500 hover:text-gray-600'>
+																				✖️
+																			</span>
+																		}
+																		onChange={(date) => {
+																			field.onChange(
+																				date
+																					? format(date, "yyyy-MM-dd'T'HH:mm:ss")
+																					: '',
+																			);
+																		}}
+																		value={
+																			field.value ? new Date(field.value) : null
+																		}
+																	/>
+																</div>
 															</FormControl>
 														</FormItem>
 													)}

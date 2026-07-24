@@ -68,5 +68,6 @@ Safe to do — the runtime value is correct; the error is purely a type-declarat
    - Use `ProductDetailsFormSkeleton` when data is loading.
 4. In `image-upload.tsx`, added `transition-transform duration-300 ease-bezier-1 ease-in-out will-change-transform` to profile upload container, icon, and button for smooth enter and exit hover scale animations.
 5. In `globals.css`, overhauled `.dark .react-calendar` navigation headers, label buttons, active tiles (`#2563eb`), today tile (`#1e293b`), hover states, `.react-datetime-picker__clock-button__clock` outer popup containers (`#111827`), `.react-clock` dial, AM/PM selector (`#1f2937`), input focus segment (`#2563eb`), and red clear button (`#f87171`) for dark theme styling.
+6. In `product-details.tsx`, added event listeners (`wheel` and `keydown`) on `react-datetime-picker` inputs so hours (`12 ↔ 1`) and minutes (`59 ↔ 00`) wrap around cyclically when scrolling or pressing ArrowUp/ArrowDown.
 
 
