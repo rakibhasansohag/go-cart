@@ -586,17 +586,19 @@
   transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out !important;
 }
 
-[data-slot="select-item"]:hover,
-[data-slot="select-item"][data-highlighted],
-[data-slot="select-item"][data-state="checked"] {
+/* Dark mode hover / highlight */
+.dark [data-slot="select-item"]:hover,
+.dark [data-slot="select-item"][data-highlighted],
+.dark [data-slot="select-item"][data-state="checked"] {
   background-color: #2a3447 !important;
   color: #ffffff !important;
 }
 
+/* Light mode hover / highlight */
 :root:not(.dark) [data-slot="select-item"]:hover,
 :root:not(.dark) [data-slot="select-item"][data-highlighted],
 :root:not(.dark) [data-slot="select-item"][data-state="checked"] {
-  background-color: #e5e7eb !important;
+  background-color: #f3f4f6 !important;
   color: #111827 !important;
 }
 

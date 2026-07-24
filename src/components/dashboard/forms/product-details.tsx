@@ -984,16 +984,28 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 															<SelectTrigger>
 																<SelectValue
 																	defaultValue={field.value}
-																	placeholder='Select a sub-category'
+																	placeholder={
+																		!selectedCategoryId
+																			? 'Select a category'
+																			: subCategories.length === 0
+																			? 'No sub-categories'
+																			: 'Select a sub-category'
+																	}
 																/>
 															</SelectTrigger>
 														</FormControl>
 														<SelectContent>
-															{subCategories.map((sub) => (
-																<SelectItem key={sub.id} value={sub.id}>
-																	{sub.name}
-																</SelectItem>
-															))}
+															{subCategories.length > 0 ? (
+																subCategories.map((sub) => (
+																	<SelectItem key={sub.id} value={sub.id}>
+																		{sub.name}
+																	</SelectItem>
+																))
+															) : (
+																<div className='py-3 px-2 text-center text-xs text-muted-foreground select-none'>
+																	No sub-categories available
+																</div>
+															)}
 														</SelectContent>
 													</Select>
 													<FormMessage />

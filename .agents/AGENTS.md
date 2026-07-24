@@ -64,6 +64,7 @@ Safe to do — the runtime value is correct; the error is purely a type-declarat
    - Watch `selectedCategoryId = form.watch('categoryId')`.
    - Return early `setSubCategories([])` if `!selectedCategoryId`.
    - Populate `subCategories` directly from `categories` prop (`CategoryWithSubs[]`) if available for instant zero-latency subcategory updates.
+   - Handle empty subcategory state gracefully when a selected category has no subcategories (`No sub-categories available` placeholder & fallback menu item).
    - Use `ProductDetailsFormSkeleton` when data is loading.
 
 
