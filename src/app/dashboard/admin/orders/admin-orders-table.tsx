@@ -1,6 +1,7 @@
 'use client';
 
-import { useSuspenseQuery } from '@tanstack/react-query';
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import DataTable from '@/components/ui/data-table';
 import { getAllAdminOrders } from '@/queries/analytics';
 import { queryKeys } from '@/lib/query-keys';
@@ -93,13 +94,30 @@ const adminOrderColumns: ColumnDef<any>[] = [
 	},
 ];
 
-export default function AdminOrdersTable() {
-	const { data: orders } = useSuspenseQuery({
-		queryKey: queryKeys.dashboard.adminOrders(),
-		queryFn: () => getAllAdminOrders(),
+interface AdminOrdersTableProps {
+	initialData?: {
+		orders: any[];
+		totalCount: number;
+		totalPages: number;
+		page: number;
+		limit: number;
+	};
+}
+
+export default function AdminOrdersTable({ initialData }: AdminOrdersTableProps) {
+	const [page, setPage] = useState(initialData?.page ?? 1);
+	const [pageSize, setPageSize] = useState(initialData?.limit ?? 10);
+	const [search, setSearch] = useState('');
+
+	const { data, isFetching } = useQuery({
+		queryKey: queryKeys.dashboard.adminOrders(page, pageSize, search),
+		queryFn: () => getAllAdminOrders({ page, limit: pageSize, search }),
+		initialData: page === 1 && pageSize === 10 && !search ? initialData : undefined,
 	});
 
-	if (!orders) return null;
+	const orders = data?.orders ?? [];
+	const totalCount = data?.totalCount ?? 0;
+	const totalPages = data?.totalPages ?? 1;
 
 	return (
 		<div className='space-y-4'>
@@ -113,7 +131,22 @@ export default function AdminOrdersTable() {
 				filterValue='id'
 				data={orders}
 				columns={adminOrderColumns}
-				searchPlaceholder='Search order by ID...'
+				searchPlaceholder='Search by Order ID, store or customer...'
+				totalCount={totalCount}
+				pageCount={totalPages}
+				pageIndex={page - 1}
+				pageSize={pageSize}
+				onPageChange={(newPage) => setPage(newPage)}
+				onPageSizeChange={(newSize) => {
+					setPageSize(newSize);
+					setPage(1);
+				}}
+				onSearchChange={(newSearch) => {
+					setSearch(newSearch);
+					setPage(1);
+				}}
+				searchValue={search}
+				isLoading={isFetching}
 			/>
 		</div>
 	);

@@ -42,14 +42,18 @@ export const queryKeys = {
 		categories: () => ['dashboard', 'categories'] as const,
 		subCategories: () => ['dashboard', 'subCategories'] as const,
 		offerTags: () => ['dashboard', 'offerTags'] as const,
-		stores: () => ['dashboard', 'stores'] as const,
-		products: (storeUrl: string) => ['dashboard', 'products', storeUrl] as const,
+		stores: (page?: number, limit?: number, search?: string) =>
+			['dashboard', 'stores', { page, limit, search }] as const,
+		products: (storeUrl: string, page?: number, limit?: number, search?: string) =>
+			['dashboard', 'products', storeUrl, { page, limit, search }] as const,
 		coupons: (storeUrl: string) => ['dashboard', 'coupons', storeUrl] as const,
-		orders: (storeUrl: string) => ['dashboard', 'orders', storeUrl] as const,
+		orders: (storeUrl: string, page?: number, limit?: number, search?: string) =>
+			['dashboard', 'orders', storeUrl, { page, limit, search }] as const,
 		shipping: (storeUrl: string) => ['dashboard', 'shipping', storeUrl] as const,
 		storeSettings: (storeUrl: string) => ['dashboard', 'settings', storeUrl] as const,
 		adminAnalytics: () => ['dashboard', 'adminAnalytics'] as const,
 		sellerAnalytics: (storeUrl: string) => ['dashboard', 'sellerAnalytics', storeUrl] as const,
-		adminOrders: () => ['dashboard', 'adminOrders'] as const,
+		adminOrders: (page?: number, limit?: number, search?: string) =>
+			['dashboard', 'adminOrders', { page, limit, search }] as const,
 	},
 } as const;

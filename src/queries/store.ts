@@ -357,7 +357,18 @@ export const upsertShippingRate = async (
  * @param storeUrl - The url of the store whose order groups are being retrieved.
  * @returns {Array} - Array of order groups, including items.
  */
-export const getStoreOrders = async (storeUrl: string) => {
+export const getStoreOrders = async (
+	storeUrl: string,
+	{
+		page = 1,
+		limit = 10,
+		search = '',
+	}: {
+		page?: number;
+		limit?: number;
+		search?: string;
+	} = {},
+) => {
 	try {
 		// Retrieve current user
 		const user = await currentUser();
@@ -386,38 +397,69 @@ export const getStoreOrders = async (storeUrl: string) => {
 			throw new Error("You don't have permission to access this store.");
 		}
 
-		// Retrieve order groups for the specified store and user
-		const orders = await db.orderGroup.findMany({
-			where: {
-				storeId: store.id,
-			},
-			include: {
-				items: true,
-				coupon: true,
-				order: {
-					select: {
-						paymentStatus: true,
+		const skip = Math.max(0, (page - 1) * limit);
 
-						shippingAddress: {
-							include: {
-								country: true,
-								user: {
-									select: {
-										email: true,
+		const where = {
+			storeId: store.id,
+			...(search.trim()
+				? {
+						OR: [
+							{ id: { contains: search.trim(), mode: 'insensitive' as const } },
+							{
+								order: {
+									shippingAddress: {
+										user: {
+											email: { contains: search.trim(), mode: 'insensitive' as const },
+										},
 									},
 								},
 							},
+						],
+				  }
+				: {}),
+		};
+
+		// Retrieve order groups for the specified store and user
+		const [orders, totalCount] = await Promise.all([
+			db.orderGroup.findMany({
+				where,
+				include: {
+					items: true,
+					coupon: true,
+					order: {
+						select: {
+							paymentStatus: true,
+
+							shippingAddress: {
+								include: {
+									country: true,
+									user: {
+										select: {
+											email: true,
+										},
+									},
+								},
+							},
+							paymentDetails: true,
 						},
-						paymentDetails: true,
 					},
 				},
-			},
-			orderBy: {
-				updatedAt: 'desc',
-			},
-		});
+				orderBy: {
+					updatedAt: 'desc',
+				},
+				skip,
+				take: limit,
+			}),
+			db.orderGroup.count({ where }),
+		]);
 
-		return orders;
+		return {
+			orders,
+			totalCount,
+			totalPages: Math.ceil(totalCount / limit) || 1,
+			page,
+			limit,
+		};
 	} catch (error) {
 		throw error;
 	}
@@ -487,7 +529,15 @@ export const applySeller = async (store: StoreType) => {
 // Permission Level: Admin only
 // Parameters: None
 // Returns: An array of store details.
-export const getAllStores = async () => {
+export const getAllStores = async ({
+	page = 1,
+	limit = 10,
+	search = '',
+}: {
+	page?: number;
+	limit?: number;
+	search?: string;
+} = {}) => {
 	try {
 		// Get current user
 		const user = await currentUser();
@@ -502,16 +552,41 @@ export const getAllStores = async () => {
 			);
 		}
 
-		// Fetch all stores from the database
-		const stores = await db.store.findMany({
-			include: {
-				user: true,
-			},
-			orderBy: {
-				createdAt: 'desc',
-			},
-		});
-		return stores;
+		const skip = Math.max(0, (page - 1) * limit);
+
+		const where = search.trim()
+			? {
+					OR: [
+						{ name: { contains: search.trim(), mode: 'insensitive' as const } },
+						{ url: { contains: search.trim(), mode: 'insensitive' as const } },
+						{ email: { contains: search.trim(), mode: 'insensitive' as const } },
+					],
+			  }
+			: {};
+
+		// Fetch stores and count in parallel
+		const [stores, totalCount] = await Promise.all([
+			db.store.findMany({
+				where,
+				include: {
+					user: true,
+				},
+				orderBy: {
+					createdAt: 'desc',
+				},
+				skip,
+				take: limit,
+			}),
+			db.store.count({ where }),
+		]);
+
+		return {
+			stores,
+			totalCount,
+			totalPages: Math.ceil(totalCount / limit) || 1,
+			page,
+			limit,
+		};
 	} catch (error) {
 		// Log and re-throw any errors
 		throw error;

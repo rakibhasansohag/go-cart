@@ -1,5 +1,8 @@
 'use client';
 
+// React imports
+import { useEffect, useState } from 'react';
+
 // Custom components
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -25,7 +28,7 @@ import {
 } from '@tanstack/react-table';
 
 // Lucide icons
-import { ChevronLeft, ChevronRight, FilePlus2, Search } from 'lucide-react';
+import { ChevronLeft, ChevronRight, FilePlus2, Search, Loader2 } from 'lucide-react';
 
 // Modal provider hook
 import { useModal } from '@/providers/modal-provider';
@@ -46,6 +49,15 @@ interface DataTableProps<TData, TValue> {
 	noHeader?: true;
 	maxWidth?: string;
 	pageSize?: number;
+	// Server-side pagination props (optional)
+	totalCount?: number;
+	pageCount?: number;
+	pageIndex?: number; // 0-based
+	onPageChange?: (page: number) => void; // 1-based page
+	onPageSizeChange?: (pageSize: number) => void;
+	onSearchChange?: (search: string) => void;
+	searchValue?: string;
+	isLoading?: boolean;
 }
 
 export default function DataTable<TData, TValue>({
@@ -61,45 +73,89 @@ export default function DataTable<TData, TValue>({
 	newTabLink,
 	maxWidth,
 	pageSize = 10,
+	totalCount,
+	pageCount: serverPageCount,
+	pageIndex: serverPageIndex,
+	onPageChange,
+	onPageSizeChange,
+	onSearchChange,
+	searchValue = '',
+	isLoading = false,
 }: DataTableProps<TData, TValue>) {
 	// Modal state
 	const { setOpen } = useModal();
+
+	const isServerMode = Boolean(onPageChange);
+	const [searchInput, setSearchInput] = useState(searchValue);
+
+	// Synchronize search input if external searchValue changes
+	useEffect(() => {
+		setSearchInput(searchValue);
+	}, [searchValue]);
+
+	// Debounce search input for server-side search
+	useEffect(() => {
+		if (!isServerMode || !onSearchChange) return;
+		const timer = setTimeout(() => {
+			if (searchInput !== searchValue) {
+				onSearchChange(searchInput);
+			}
+		}, 300);
+		return () => clearTimeout(timer);
+	}, [searchInput, isServerMode, onSearchChange, searchValue]);
 
 	// React table instance
 	const table = useReactTable({
 		data,
 		columns,
 		getCoreRowModel: getCoreRowModel(),
-		getFilteredRowModel: getFilteredRowModel(),
-		getPaginationRowModel: getPaginationRowModel(),
+		getFilteredRowModel: isServerMode ? undefined : getFilteredRowModel(),
+		getPaginationRowModel: isServerMode ? undefined : getPaginationRowModel(),
 		initialState: {
 			pagination: {
 				pageSize,
 			},
 		},
+		manualPagination: isServerMode,
+		pageCount: isServerMode ? serverPageCount : undefined,
 	});
+
+	const currentPageIndex = isServerMode ? (serverPageIndex ?? 0) : table.getState().pagination.pageIndex;
+	const totalPages = isServerMode ? (serverPageCount ?? 1) : (table.getPageCount() || 1);
+	const canPrevious = isServerMode ? currentPageIndex > 0 : table.getCanPreviousPage();
+	const canNext = isServerMode ? currentPageIndex + 1 < totalPages : table.getCanNextPage();
+	const itemsShown = isServerMode ? data.length : table.getRowModel().rows.length;
+	const totalItems = isServerMode ? (totalCount ?? data.length) : table.getFilteredRowModel().rows.length;
 
 	return (
 		<>
 			{/* Search input and action button */}
 			<div className='flex items-center justify-between'>
-				<div className='flex items-center py-4 gap-2'>
-					<Search />
+				<div className='flex items-center py-4 gap-2 relative'>
+					<Search className='text-muted-foreground' />
 					<Input
 						placeholder={searchPlaceholder}
 						value={
-							(table.getColumn(filterValue)?.getFilterValue() as string) ?? ''
+							isServerMode
+								? searchInput
+								: ((table.getColumn(filterValue)?.getFilterValue() as string) ?? '')
 						}
-						onChange={(event) =>
-							table.getColumn(filterValue)?.setFilterValue(event.target.value)
-						}
-						className='h-12'
+						onChange={(event) => {
+							const val = event.target.value;
+							if (isServerMode) {
+								setSearchInput(val);
+							} else {
+								table.getColumn(filterValue)?.setFilterValue(val);
+							}
+						}}
+						className='h-12 w-72'
 					/>
+					{isLoading && <Loader2 className='h-4 w-4 animate-spin text-muted-foreground ml-2' />}
 				</div>
 				<div className='flex gap-x-2'>
 					{modalChildren && (
 						<Button
-							className='flex- gap-2'
+							className='flex gap-2'
 							onClick={() => {
 								if (modalChildren)
 									setOpen(
@@ -127,7 +183,7 @@ export default function DataTable<TData, TValue>({
 			</div>
 
 			{/* Table */}
-			<div className=' border bg-background rounded-lg'>
+			<div className='border bg-background rounded-lg relative'>
 				<Table className=''>
 					{/* Table header */}
 					{!noHeader && (
@@ -153,12 +209,13 @@ export default function DataTable<TData, TValue>({
 
 					{/* Table body */}
 					<TableBody>
-						{table.getRowModel().rows.length ? (
+						{data.length ? (
 							table.getRowModel().rows.map((row) => {
 								return (
 									<TableRow
 										key={row.id}
 										data-state={row.getIsSelected() && 'selected'}
+										className='group/row transition-colors duration-200 hover:bg-muted/40'
 									>
 										{row.getVisibleCells().map((cell) => (
 											<TableCell
@@ -181,7 +238,7 @@ export default function DataTable<TData, TValue>({
 									colSpan={columns.length}
 									className='h-24 text-center'
 								>
-									No Results.
+									{isLoading ? 'Loading...' : 'No Results.'}
 								</TableCell>
 							</TableRow>
 						)}
@@ -192,16 +249,20 @@ export default function DataTable<TData, TValue>({
 			{/* Table Pagination Controls */}
 			<div className='flex items-center justify-between py-4 px-2'>
 				<div className='text-sm text-muted-foreground'>
-					Showing {table.getRowModel().rows.length} of{' '}
-					{table.getFilteredRowModel().rows.length} item(s)
+					Showing {itemsShown} of {totalItems} item(s)
 				</div>
 				<div className='flex items-center gap-6'>
 					<div className='flex items-center gap-2'>
 						<span className='text-sm font-medium'>Rows per page</span>
 						<select
-							value={table.getState().pagination.pageSize}
+							value={isServerMode ? pageSize : table.getState().pagination.pageSize}
 							onChange={(e) => {
-								table.setPageSize(Number(e.target.value));
+								const newSize = Number(e.target.value);
+								if (isServerMode) {
+									onPageSizeChange?.(newSize);
+								} else {
+									table.setPageSize(newSize);
+								}
 							}}
 							className='h-9 w-[70px] rounded-md border border-input bg-background px-2 text-xs focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer'
 						>
@@ -214,16 +275,21 @@ export default function DataTable<TData, TValue>({
 					</div>
 
 					<div className='text-sm font-medium'>
-						Page {table.getState().pagination.pageIndex + 1} of{' '}
-						{table.getPageCount() || 1}
+						Page {currentPageIndex + 1} of {totalPages}
 					</div>
 
 					<div className='flex items-center gap-2'>
 						<Button
 							variant='outline'
 							size='sm'
-							onClick={() => table.previousPage()}
-							disabled={!table.getCanPreviousPage()}
+							onClick={() => {
+								if (isServerMode) {
+									onPageChange?.(currentPageIndex); // 1-based previous page
+								} else {
+									table.previousPage();
+								}
+							}}
+							disabled={!canPrevious || isLoading}
 							className='h-9 px-3'
 						>
 							<ChevronLeft className='h-4 w-4 me-1' /> Previous
@@ -231,8 +297,14 @@ export default function DataTable<TData, TValue>({
 						<Button
 							variant='outline'
 							size='sm'
-							onClick={() => table.nextPage()}
-							disabled={!table.getCanNextPage()}
+							onClick={() => {
+								if (isServerMode) {
+									onPageChange?.(currentPageIndex + 2); // 1-based next page
+								} else {
+									table.nextPage();
+								}
+							}}
+							disabled={!canNext || isLoading}
 							className='h-9 px-3'
 						>
 							Next <ChevronRight className='h-4 w-4 ms-1' />

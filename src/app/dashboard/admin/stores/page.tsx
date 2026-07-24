@@ -4,11 +4,11 @@ import DataTableSkeleton from '@/components/dashboard/shared/table-skeleton';
 import { getAllStores } from '@/queries/store';
 
 export default async function AdminStoresPage() {
-	const stores = await getAllStores();
+	const initialData = await getAllStores({ page: 1, limit: 10 });
 
 	return (
 		<Suspense fallback={<DataTableSkeleton />}>
-			<StoresTable initialStores={stores} />
+			<StoresTable initialData={initialData} />
 		</Suspense>
 	);
 }

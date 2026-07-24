@@ -302,30 +302,63 @@ export const getSellerStoreAnalyticsData = async (
 /**
  * Retrieves all global orders across stores for platform Admin
  */
-export const getAllAdminOrders = async () => {
+export const getAllAdminOrders = async ({
+	page = 1,
+	limit = 10,
+	search = '',
+}: {
+	page?: number;
+	limit?: number;
+	search?: string;
+} = {}) => {
 	const user = await currentUser();
 	if (!user || user.privateMetadata.role !== 'ADMIN') {
 		throw new Error('Unauthorized Access: Admin privileges required.');
 	}
 
-	const orderGroups = await db.orderGroup.findMany({
-		orderBy: { createdAt: 'desc' },
-		include: {
-			store: true,
-			coupon: true,
-			items: true,
-			order: {
-				include: {
-					user: true,
-					shippingAddress: {
-						include: {
-							country: true,
+	const skip = Math.max(0, (page - 1) * limit);
+
+	const where = search.trim()
+		? {
+				OR: [
+					{ id: { contains: search.trim(), mode: 'insensitive' as const } },
+					{ store: { name: { contains: search.trim(), mode: 'insensitive' as const } } },
+					{ order: { user: { name: { contains: search.trim(), mode: 'insensitive' as const } } } },
+					{ order: { user: { email: { contains: search.trim(), mode: 'insensitive' as const } } } },
+				],
+		  }
+		: {};
+
+	const [orders, totalCount] = await Promise.all([
+		db.orderGroup.findMany({
+			where,
+			orderBy: { createdAt: 'desc' },
+			skip,
+			take: limit,
+			include: {
+				store: true,
+				coupon: true,
+				items: true,
+				order: {
+					include: {
+						user: true,
+						shippingAddress: {
+							include: {
+								country: true,
+							},
 						},
 					},
 				},
 			},
-		},
-	});
+		}),
+		db.orderGroup.count({ where }),
+	]);
 
-	return orderGroups;
+	return {
+		orders,
+		totalCount,
+		totalPages: Math.ceil(totalCount / limit) || 1,
+		page,
+		limit,
+	};
 };

@@ -377,7 +377,9 @@ export type ProductWishlistType = Prisma.PromiseReturnType<
 	typeof getUserWishlist
 >['wishlist'][0];
 
-export type StoreOrderType = Prisma.PromiseReturnType<typeof getStoreOrders>[0];
+export type StoreOrderType = Prisma.PromiseReturnType<
+	typeof getStoreOrders
+>['orders'][0];
 
 export type ProductSimpleVariantType = {
 	variantId: string;
@@ -443,7 +445,9 @@ export type StoreType = {
 	returnPolicy?: string;
 };
 
-export type AdminStoreType = Prisma.PromiseReturnType<typeof getAllStores>[0];
+export type AdminStoreType = Prisma.PromiseReturnType<
+	typeof getAllStores
+>['stores'][0];
 
 export enum StoreStatus {
 	PENDING = 'PENDING',

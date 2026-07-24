@@ -68,14 +68,14 @@ export const columns: ColumnDef<AdminStoreType>[] = [
 						alt=''
 						width={500}
 						height={300}
-						className='w-96 h-40 rounded-md object-cover shadow-sm'
+						className='w-96 h-40 rounded-md object-cover shadow-sm transition-transform duration-500 ease-out group-hover/row:scale-105'
 					/>
 					<Image
 						src={row.original.logo}
 						alt=''
 						width={200}
 						height={200}
-						className='w-24 h-24  rounded-full object-cover shadow-2xl absolute top-1/2 -translate-y-1/2 left-4'
+						className='w-24 h-24 rounded-full object-cover shadow-2xl absolute top-1/2 -translate-y-1/2 left-4 transition-transform duration-300 ease-out group-hover/row:scale-105'
 					/>
 				</div>
 			);
@@ -86,7 +86,7 @@ export const columns: ColumnDef<AdminStoreType>[] = [
 		header: 'Name',
 		cell: ({ row }) => {
 			return (
-				<span className='font-extrabold text-lg capitalize'>
+				<span className='font-extrabold text-lg capitalize transition-colors duration-200 group-hover/row:text-primary'>
 					{row.original.name}
 				</span>
 			);
@@ -111,7 +111,11 @@ export const columns: ColumnDef<AdminStoreType>[] = [
 		accessorKey: 'url',
 		header: 'URL',
 		cell: ({ row }) => {
-			return <span>/{row.original.url}</span>;
+			return (
+				<span className='transition-colors duration-200 group-hover/row:text-primary'>
+					/{row.original.url}
+				</span>
+			);
 		},
 	},
 	{
