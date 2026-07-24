@@ -85,7 +85,7 @@ import JoditEditor from 'jodit-react';
 import type { IJodit } from 'jodit/esm/types/jodit';
 import { NumberInput } from '@tremor/react';
 import InputFieldset from '../shared/input-fieldset';
-import { ArrowRight, Dot, Sparkles } from 'lucide-react';
+import { ArrowRight, Dot, Loader2, Sparkles } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import ImagesPreviewGrid from '../shared/images-preview-grid';
 import { toast } from 'sonner';
@@ -94,6 +94,8 @@ import { toast } from 'sonner';
 import AIProductAssistant from './ai-product-assistant';
 import AIToggle from '../../ai-toggle';
 import ImagePromptSection from '../../image-prompt-section';
+import { cn } from '@/lib/utils';
+import { useModal } from '@/providers/modal-provider';
 // import { getAllCategoriesForCategory } from '@/queries/category';
 
 const shippingFeeMethods = [
@@ -340,7 +342,37 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 		hour12: false, // 12-hour format (change to false for 24-hour format)
 	});
 
+	const { setClose, setIsDirty } = useModal();
+
 	const selectedCategoryId = form.watch('categoryId');
+
+	// Watch specific primitive fields to prevent re-render memory leak
+	const watchName = form.watch('name');
+	const watchDesc = form.watch('description');
+	const watchVariantName = form.watch('variantName');
+	const watchBrand = form.watch('brand');
+	const isFormDirtyRHF = form.formState.isDirty;
+	const imagesLength = images?.length || 0;
+
+	useEffect(() => {
+		const dirty =
+			isFormDirtyRHF ||
+			Boolean(watchName?.trim()) ||
+			Boolean(watchDesc?.trim()) ||
+			Boolean(watchVariantName?.trim()) ||
+			Boolean(watchBrand?.trim()) ||
+			imagesLength > 0;
+
+		setIsDirty(dirty);
+	}, [
+		watchName,
+		watchDesc,
+		watchVariantName,
+		watchBrand,
+		isFormDirtyRHF,
+		imagesLength,
+		setIsDirty,
+	]);
 
 	// UseEffect to get subCategories when user pick/change a category
 	useEffect(() => {
@@ -651,12 +683,13 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 				queryKey: queryKeys.dashboard.products(storeUrl),
 			});
 
-			// Redirect or Refresh data
-			if (data?.productId && data?.variantId) {
-				router.refresh();
-			} else {
-				router.push(`/dashboard/seller/stores/${storeUrl}/products`);
-			}
+			// Reset dirty state and force close modal if open
+			setIsDirty(false);
+			setClose(true);
+
+			// Redirect to products list page
+			router.push(`/dashboard/seller/stores/${storeUrl}/products`);
+			router.refresh();
 		} catch (error: any) {
 			// Handling form submission errors
 			toast.error(error.toString());
@@ -792,7 +825,20 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 
 	return (
 		<AlertDialog>
-			<Card className='w-full'>
+			<Card
+				className={cn(
+					'w-full transition-all duration-300 relative',
+					isLoading && 'pointer-events-none opacity-60 select-none cursor-not-allowed',
+				)}
+			>
+				{isLoading && (
+					<div className='absolute inset-0 bg-background/50 backdrop-blur-[1px] z-[50] flex items-center justify-center rounded-lg'>
+						<div className='flex items-center gap-2 px-4 py-2 bg-card border shadow-lg rounded-md text-sm font-medium text-foreground'>
+							<Loader2 className='w-4 h-4 animate-spin text-blue-500' />
+							Saving product...
+						</div>
+					</div>
+				)}
 				<CardHeader>
 					<CardTitle>
 						{isNewVariantPage
@@ -1102,8 +1148,8 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 																		!selectedCategoryId
 																			? 'Select a category'
 																			: subCategories.length === 0
-																			? 'No sub-categories'
-																			: 'Select a sub-category'
+																				? 'No sub-categories'
+																				: 'Select a sub-category'
 																	}
 																/>
 															</SelectTrigger>

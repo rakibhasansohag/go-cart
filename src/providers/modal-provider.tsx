@@ -2,7 +2,7 @@
 'use client';
 
 // React, Next.js
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react';
 
 // Prisma models
 import { User } from '@prisma/client';
@@ -14,6 +14,7 @@ interface ModalProviderProps {
 export type ModalData = {
 	user?: User;
 };
+
 type ModalContextType = {
 	data: ModalData;
 	isOpen: boolean;
@@ -21,7 +22,10 @@ type ModalContextType = {
 		modal: React.ReactNode,
 		fetchData?: () => Promise<Record<string, unknown>>,
 	) => void;
-	setClose: () => void;
+	setClose: (force?: boolean) => void;
+	isDirty: boolean;
+	getIsDirty: () => boolean;
+	setIsDirty: (dirty: boolean) => void;
 };
 
 export const ModalContext = createContext<ModalContextType>({
@@ -29,10 +33,14 @@ export const ModalContext = createContext<ModalContextType>({
 	isOpen: false,
 	setOpen: () => {},
 	setClose: () => {},
+	isDirty: false,
+	getIsDirty: () => false,
+	setIsDirty: () => {},
 });
 
 const ModalProvider: React.FC<ModalProviderProps> = ({ children }) => {
 	const [isOpen, setIsOpen] = useState(false);
+	const isDirtyRef = useRef(false);
 	const [data, setData] = useState<ModalData>({});
 	const [showingModal, setShowingModal] = useState<React.ReactNode>(null);
 	const [isMounted, setIsMounted] = useState(false);
@@ -41,43 +49,59 @@ const ModalProvider: React.FC<ModalProviderProps> = ({ children }) => {
 		setIsMounted(true);
 	}, []);
 
-	/**
-	 *
-	 * @param modal
-	 * @param fetchData
-	 * @returns
-	 *
-	 * const setOpen = async ( modal: React.ReactNode, fetchData?: () => Promise<any>, ) => { if (modal) { if (fetchData) { setData({ ...data, ...(await fetchData()) } || {}); } setShowingModal(modal); setIsOpen(true); } }; const setClose = () => { setIsOpen(false); setData({}); };
-	 */
+	const setIsDirty = useCallback((dirty: boolean) => {
+		isDirtyRef.current = dirty;
+	}, []);
 
-	const setOpen = async (
-		modal: React.ReactNode,
-		fetchData?: () => Promise<Record<string, unknown>>,
-	) => {
-		if (!modal) return;
+	const getIsDirty = useCallback(() => {
+		return isDirtyRef.current;
+	}, []);
 
-		if (fetchData) {
-			try {
-				const fetched = await fetchData();
-				// use functional update to avoid stale `data` closure
-				setData((prev) => ({ ...prev, ...(fetched ?? {}) }));
-			} catch (err) {
-				console.error('Modal fetchData failed:', err);
-				setData((prev) => ({ ...prev }));
+	const setOpen = useCallback(
+		async (
+			modal: React.ReactNode,
+			fetchData?: () => Promise<Record<string, unknown>>,
+		) => {
+			if (!modal) return;
+
+			if (fetchData) {
+				try {
+					const fetched = await fetchData();
+					setData((prev) => ({ ...prev, ...(fetched ?? {}) }));
+				} catch (err) {
+					console.error('Modal fetchData failed:', err);
+					setData((prev) => ({ ...prev }));
+				}
 			}
+
+			isDirtyRef.current = false;
+			setShowingModal(modal);
+			setIsOpen(true);
+		},
+		[],
+	);
+
+	const setClose = useCallback((force?: boolean) => {
+		if (!force && isDirtyRef.current) {
+			return;
 		}
-
-		setShowingModal(modal);
-		setIsOpen(true);
-	};
-
-	const setClose = () => {
+		isDirtyRef.current = false;
 		setIsOpen(false);
 		setData({});
-	};
+	}, []);
 
 	return (
-		<ModalContext.Provider value={{ data, setOpen, setClose, isOpen }}>
+		<ModalContext.Provider
+			value={{
+				data,
+				setOpen,
+				setClose,
+				isOpen,
+				isDirty: isDirtyRef.current,
+				getIsDirty,
+				setIsDirty,
+			}}
+		>
 			{children}
 			{isMounted && showingModal}
 		</ModalContext.Provider>
