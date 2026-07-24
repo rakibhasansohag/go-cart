@@ -71,5 +71,6 @@ Safe to do — the runtime value is correct; the error is purely a type-declarat
 6. In `product-details.tsx`, added event listeners (`wheel` and `keydown`) on `react-datetime-picker` inputs so hours (`12 ↔ 1`) and minutes (`59 ↔ 00`) wrap around cyclically when scrolling or pressing ArrowUp/ArrowDown.
 7. In `custom-modal.tsx` & `products-table.tsx`, updated modal container `maxWidth` to `w-[95vw] max-w-7xl sm:max-w-5xl lg:max-w-7xl` to provide generous width across viewport sizes. Made `saleEndDate` DateTimePicker and formatted date label wrap cleanly on small screens and narrow modal widths without breaking UI layout.
 8. In `ai-product-assistant.tsx`, updated validation, step indicator (`(N/A)`), placeholder (`No sub-categories`), and generate readiness logic so categories with zero subcategories automatically bypass subcategory selection.
+9. In `src/app/api/generate-product/route.ts`, implemented a resilient model fallback chain (`gemini-2.5-flash` → `gemini-1.5-flash` → `gemini-2.0-flash-lite` → `gemini-2.0-flash`) so API generation automatically switches models if one encounters HTTP 429 rate limit / quota exhaustion. Made `subCategoryName` optional in API validation.
 
 
