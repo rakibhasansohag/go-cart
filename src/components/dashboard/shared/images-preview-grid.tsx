@@ -62,7 +62,7 @@ const ImagesPreviewGrid: FC<ImagesPreviewGridProps> = ({
 					alt='No images available'
 					width={500}
 					height={600}
-					className='rounded-md'
+					className='rounded-md w-auto h-auto object-cover'
 				/>
 			</div>
 		);

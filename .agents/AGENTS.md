@@ -45,25 +45,25 @@ Safe to do — the runtime value is correct; the error is purely a type-declarat
 
 ---
 
-### [CSS/React] JoditEditor toolbar dropdowns not scrollable inside Radix Dialog
+### [CSS/React] Radix Select Dropdowns & Jodit Editor inside Dialog
 
-**Files**: `src/components/dashboard/shared/custom-modal.tsx`, `src/app/globals.css`
+**Files**: `src/components/ui/select.tsx`, `src/components/dashboard/shared/custom-modal.tsx`, `src/components/dashboard/forms/product-details.tsx`
 
-**Symptom**: Jodit toolbar dropdowns (e.g. font-size picker) open correctly but cannot be scrolled by mouse-wheel or hover — only by clicking the scrollbar track directly.
+**Symptom**:
+1. Radix Select dropdown options (Category, Subcategory, Offer) could not be clicked or selected inside `CustomModal` dialog.
+2. `getAllCategoriesForCategory(undefined)` triggered unnecessary ~900ms server queries on mount when no category was selected.
 
-**Root cause**: Radix Dialog with `modal={true}` (the default) sets `pointer-events: none` on `document.body` while open. Even CSS overrides like `pointer-events: auto !important` on popup child elements don't fully work because Radix applies the lock at the body level, and wheel scroll events dispatched to children are suppressed by the browser before CSS can override them.
+**Root cause**:
+1. `SelectContent` in `@/components/ui/select.tsx` had `z-50`. When portaled to `document.body`, it rendered **below** `CustomModal`'s `DialogContent` (`z-[999]`).
+2. `product-details.tsx` watched `form.watch().categoryId` directly inside `useEffect`, causing `getAllCategoriesForCategory(undefined)` to execute on initial render before a category was selected.
 
-**Real fix** — set `modal={false}` on the `<Dialog>` in `custom-modal.tsx`:
+**Fix**:
+1. Set `z-[99999]` on `SelectContent` in `select.tsx` so portaled select menus render above the dialog.
+2. In `globals.css` & `select.tsx`, added explicit `[data-slot="select-item"]:hover` and `[data-highlighted]` styling with `cursor-pointer` so hovering options shows a high-contrast highlight background effect.
+3. In `product-details.tsx`:
+   - Watch `selectedCategoryId = form.watch('categoryId')`.
+   - Return early `setSubCategories([])` if `!selectedCategoryId`.
+   - Populate `subCategories` directly from `categories` prop (`CategoryWithSubs[]`) if available for instant zero-latency subcategory updates.
+   - Use `ProductDetailsFormSkeleton` when data is loading.
 
-    <Dialog open={isOpen || defaultOpen} onOpenChange={setClose} modal={false}>
-
-This completely removes Radix's body `pointer-events: none` locking. The visual overlay (`DialogOverlay`) still renders because it is hardcoded inside `DialogContent`, so there is no visual regression.
-
-**Supporting fix (product-details.tsx)** — mount Jodit popups on body, not the dialog ancestor:
-
-    popupRoot: typeof document !== 'undefined' ? document.body : null,
-
-Without this, Jodit mounts popups inside the dialog's `position:fixed` ancestor, causing position offset miscalculation and misaligned dropdown positions.
-
-**Note**: CSS-only fixes (adding `pointer-events: auto !important` to `.jodit-popup *`) do NOT fully solve this — they restore click events but wheel scroll events are blocked at a lower level by the browser when the nearest scrollable ancestor's pointer-events is none.
 

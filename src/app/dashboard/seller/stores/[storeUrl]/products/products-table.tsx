@@ -55,6 +55,10 @@ export default function ProductsTable({
 
 	const products = productsData?.products || initialProducts || [];
 
+	const isDataLoading =
+		(!categories || categories.length === 0) &&
+		(!offerTags || offerTags.length === 0);
+
 	if (!products) return null;
 
 	return (
@@ -71,6 +75,7 @@ export default function ProductsTable({
 					offerTags={offerTags}
 					storeUrl={storeUrl}
 					countries={countries}
+					isDataLoading={isDataLoading}
 				/>
 			}
 			newTabLink={`/dashboard/seller/stores/${storeUrl}/products/new`}

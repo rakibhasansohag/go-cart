@@ -576,6 +576,30 @@
 
 }
 
+/* Custom smooth hover animation & pointer cursor for Radix Select triggers and items */
+[data-slot="select-trigger"] {
+  cursor: pointer !important;
+}
+
+[data-slot="select-item"] {
+  cursor: pointer !important;
+  transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out !important;
+}
+
+[data-slot="select-item"]:hover,
+[data-slot="select-item"][data-highlighted],
+[data-slot="select-item"][data-state="checked"] {
+  background-color: #2a3447 !important;
+  color: #ffffff !important;
+}
+
+:root:not(.dark) [data-slot="select-item"]:hover,
+:root:not(.dark) [data-slot="select-item"][data-highlighted],
+:root:not(.dark) [data-slot="select-item"][data-state="checked"] {
+  background-color: #e5e7eb !important;
+  color: #111827 !important;
+}
+
 /* Ensure Cloudinary widget & Jodit editor popups appear above all modals and are clickable */
 .cloudinary-widget-overlay,
 .cloudinary_upload_widget,

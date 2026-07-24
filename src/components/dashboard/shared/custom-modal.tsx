@@ -44,7 +44,7 @@ const CustomModal = ({
 	}, [isOpen, defaultOpen]);
 
 	return (
-		<Dialog open={isOpen || defaultOpen} onOpenChange={setClose} modal={false}>
+		<Dialog open={isOpen || defaultOpen} onOpenChange={setClose}>
 			<DialogContent
 				ref={contentRef}
 				onOpenAutoFocus={(e) => e.preventDefault()}

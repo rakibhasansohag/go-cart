@@ -44,6 +44,7 @@ import { Input } from '@/components/ui/input';
 import ImageUpload from '../shared/image-upload';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { MultiSelect } from 'react-multi-select-component';
+import { Skeleton } from '@/components/ui/skeleton';
 
 // Queries
 import { upsertProduct } from '@/queries/product';
@@ -116,7 +117,62 @@ interface ProductDetailsProps {
 	offerTags: OfferTag[];
 	storeUrl: string;
 	countries: Country[];
+	isDataLoading?: boolean;
 }
+
+const ProductDetailsFormSkeleton = () => {
+	return (
+		<div className='space-y-6 p-4 animate-pulse'>
+			<div className='flex items-center justify-between border-b pb-4'>
+				<Skeleton className='h-8 w-48 rounded-md' />
+				<Skeleton className='h-9 w-32 rounded-full' />
+			</div>
+
+			<div className='space-y-4'>
+				<div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+					<div className='space-y-2'>
+						<Skeleton className='h-4 w-24' />
+						<Skeleton className='h-10 w-full rounded-md' />
+					</div>
+					<div className='space-y-2'>
+						<Skeleton className='h-4 w-24' />
+						<Skeleton className='h-10 w-full rounded-md' />
+					</div>
+				</div>
+
+				<div className='space-y-2 pt-2'>
+					<Skeleton className='h-4 w-32' />
+					<Skeleton className='h-64 w-full rounded-md' />
+				</div>
+
+				<div className='grid grid-cols-1 md:grid-cols-3 gap-4 pt-4'>
+					<div className='space-y-2'>
+						<Skeleton className='h-4 w-20' />
+						<Skeleton className='h-10 w-full rounded-md' />
+					</div>
+					<div className='space-y-2'>
+						<Skeleton className='h-4 w-28' />
+						<Skeleton className='h-10 w-full rounded-md' />
+					</div>
+					<div className='space-y-2'>
+						<Skeleton className='h-4 w-20' />
+						<Skeleton className='h-10 w-full rounded-md' />
+					</div>
+				</div>
+
+				<div className='space-y-2 pt-4'>
+					<Skeleton className='h-4 w-28' />
+					<Skeleton className='h-40 w-full rounded-md' />
+				</div>
+
+				<div className='flex justify-end gap-3 pt-6'>
+					<Skeleton className='h-10 w-24 rounded-md' />
+					<Skeleton className='h-10 w-36 rounded-md' />
+				</div>
+			</div>
+		</div>
+	);
+};
 
 const ProductDetails: FC<ProductDetailsProps> = ({
 	data,
@@ -124,6 +180,7 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 	offerTags,
 	storeUrl,
 	countries,
+	isDataLoading = false,
 }) => {
 	// Initializing necessary hooks
 	const router = useRouter(); // Hook for routing
@@ -283,20 +340,37 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 		hour12: false, // 12-hour format (change to false for 24-hour format)
 	});
 
+	const selectedCategoryId = form.watch('categoryId');
+
 	// UseEffect to get subCategories when user pick/change a category
 	useEffect(() => {
+		if (!selectedCategoryId) {
+			setSubCategories([]);
+			return;
+		}
+
+		const categoryObj = categories?.find((c) => c.id === selectedCategoryId);
+		if (categoryObj && categoryObj.subCategories && categoryObj.subCategories.length > 0) {
+			setSubCategories(categoryObj.subCategories);
+			return;
+		}
+
 		const getSubCategories = async () => {
-			const res = await getAllCategoriesForCategory(form.watch().categoryId);
-			setSubCategories(res);
+			const res = await getAllCategoriesForCategory(selectedCategoryId);
+			setSubCategories(res || []);
 		};
 		getSubCategories();
-	}, [form.watch().categoryId]);
+	}, [selectedCategoryId, categories]);
 
 	// Extract errors state from form
 	const errors = form.formState.errors;
 
 	// Loading status based on form submission
 	const isLoading = form.formState.isSubmitting;
+
+	if (isDataLoading) {
+		return <ProductDetailsFormSkeleton />;
+	}
 
 	// Reset form values when data changes
 	useEffect(() => {
@@ -900,7 +974,7 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 														disabled={
 															isLoading ||
 															categories.length == 0 ||
-															!form.getValues().categoryId
+															!selectedCategoryId
 														}
 														onValueChange={field.onChange}
 														value={field.value}
