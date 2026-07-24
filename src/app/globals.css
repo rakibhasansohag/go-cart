@@ -576,23 +576,25 @@
 
 }
 
-/* Ensure Cloudinary widget appears above all modals */
+/* Ensure Cloudinary widget appears above all modals and is clickable */
 .cloudinary-widget-overlay,
 .cloudinary_upload_widget,
-.cloudinary-widget {
-  z-index: 10000 !important;
-}
-
-/* Fix for Cloudinary widget iframe */
-iframe[src*="cloudinary"] {
-  z-index: 10000 !important;
-}
-
-/* Alternative approach: Target the widget by its container */
+.cloudinary-widget,
 #cloudinary-widget,
 [id*="cloudinary"],
-.cloudinary-upload-widget {
-  z-index: 10000 !important;
+.cloudinary-upload-widget,
+iframe[src*="cloudinary"] {
+  z-index: 999999 !important;
+  pointer-events: auto !important;
+}
+
+/* Ensure body pointer-events: none set by Radix dialog does not block Cloudinary widget */
+body[style*="pointer-events: none"] iframe[src*="cloudinary"],
+body[style*="pointer-events: none"] #cloudinary-widget,
+body[style*="pointer-events: none"] [id*="cloudinary"],
+body[style*="pointer-events: none"] .cloudinary-widget-overlay,
+body[style*="pointer-events: none"] .cloudinary-widget {
+  pointer-events: auto !important;
 }
 
 /* Ensure widget overlay covers everything */
@@ -602,7 +604,8 @@ iframe[src*="cloudinary"] {
   left: 0 !important;
   width: 100vw !important;
   height: 100vh !important;
-  z-index: 10000 !important;
+  z-index: 999999 !important;
+  pointer-events: auto !important;
 }
 
 /* Fix for potential backdrop issues */

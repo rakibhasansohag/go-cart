@@ -37,9 +37,6 @@ const CustomModal = ({
 					'overflow-y-scroll md:max-h-[700px] md:h-fit h-screen bg-card z-[999]',
 					maxWidth,
 				)}
-				style={{
-					isolation: 'isolate',
-				}}
 			>
 				<DialogTitle className='text-2xl font-bold'>{heading}</DialogTitle>
 
