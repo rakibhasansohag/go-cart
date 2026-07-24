@@ -10,6 +10,9 @@ import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/pagination';
 
+// Clerk
+import { ClerkProvider } from '@clerk/nextjs';
+
 // Theme Provider
 import ClientProviders from '@/components/ClientProviders';
 
@@ -74,15 +77,17 @@ export default function RootLayout({
 	children: React.ReactNode;
 }>) {
 	return (
-		<html lang='en' suppressHydrationWarning>
-			<head>
-				<link rel='icon' type='image/svg+xml' href='/goCart.svg' />
-			</head>
-			<body
-				className={`${geistSans.variable} ${geistMono.variable} ${barlowFont.variable} antialiased scroll-smooth`}
-			>
-				<ClientProviders>{children}</ClientProviders>
-			</body>
-		</html>
+		<ClerkProvider>
+			<html lang='en' suppressHydrationWarning>
+				<head>
+					<link rel='icon' type='image/svg+xml' href='/goCart.svg' />
+				</head>
+				<body
+					className={`${geistSans.variable} ${geistMono.variable} ${barlowFont.variable} antialiased scroll-smooth`}
+				>
+					<ClientProviders>{children}</ClientProviders>
+				</body>
+			</html>
+		</ClerkProvider>
 	);
 }
