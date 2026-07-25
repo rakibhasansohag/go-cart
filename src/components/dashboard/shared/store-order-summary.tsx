@@ -5,17 +5,14 @@ import {
 	ProductStatus,
 	StoreOrderType,
 } from '@/lib/types';
-import { getShippingDatesRange } from '@/lib/utils';
+import { formatOrderId, getShippingDatesRange } from '@/lib/utils';
 import { FC } from 'react';
-import OrderStatusSelect from '../forms/order-status-select';
-
 import Image from 'next/image';
-import ProductStatusTag from '@/components/shared/product-status';
-import ProductStatusSelect from '../forms/product-status-select';
-
-import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { ExternalLink, Printer } from 'lucide-react';
+import OrderStatusSelect from '../forms/order-status-select';
+import ProductStatusTag from '@/components/shared/product-status';
+import { Button } from '@/components/ui/button';
 
 interface Props {
 	group: StoreOrderType;
@@ -66,8 +63,8 @@ const StoreOrderSummary: FC<Props> = ({ group }) => {
 							<h2 className='font-bold text-2xl leading-8'>
 								Order Details
 							</h2>
-							<span className='font-mono font-semibold text-sm text-muted-foreground'>
-								#{group.id}
+							<span className='font-mono font-bold text-sm bg-muted/60 text-foreground px-2 py-0.5 rounded-md border border-border/50'>
+								{formatOrderId(group.id)}
 							</span>
 						</div>
 						<div className='flex items-center gap-x-2 print:hidden'>

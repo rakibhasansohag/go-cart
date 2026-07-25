@@ -16,13 +16,18 @@ import CustomModal from '@/components/dashboard/shared/custom-modal';
 import StoreOrderSummary from '@/components/dashboard/shared/store-order-summary';
 
 import Link from 'next/link';
+import { formatOrderId } from '@/lib/utils';
 
 export const columns: ColumnDef<StoreOrderType>[] = [
 	{
 		accessorKey: 'id',
-		header: 'Order',
+		header: 'Order ID',
 		cell: ({ row }) => {
-			return <span className='font-mono text-xs font-semibold'>#{row.original.id.slice(0, 8)}...</span>;
+			return (
+				<span className='font-mono text-xs font-bold text-foreground bg-muted/60 px-2 py-1 rounded-md border border-border/50'>
+					{formatOrderId(row.original.id)}
+				</span>
+			);
 		},
 	},
 	{

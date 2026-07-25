@@ -11,6 +11,13 @@ export function cn(...inputs: ClassValue[]) {
 	return twMerge(clsx(inputs));
 }
 
+// Helper: format UUID into clean order serial number e.g. #ORD-94139F7
+export const formatOrderId = (id: string) => {
+	if (!id) return '';
+	const clean = id.replace(/-/g, '').toUpperCase();
+	return `#ORD-${clean.slice(-7)}`;
+};
+
 // Point :  Helper function to generate a unique slug
 export const generateUniqueSlug = async (
 	baseSlug: string,
