@@ -3,6 +3,7 @@
 // React, Next.js imports
 import { useState } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
 // UI components
@@ -30,7 +31,7 @@ import {
 import { useModal } from '@/providers/modal-provider';
 
 // Lucide icons
-import { CopyPlus, FilePenLine, MoreHorizontal, Trash } from 'lucide-react';
+import { CopyPlus, FilePenLine, Layers, MoreHorizontal, Trash } from 'lucide-react';
 
 // Queries
 import { deleteProduct } from '@/queries/product';
@@ -43,7 +44,6 @@ import { queryKeys } from '@/lib/query-keys';
 
 // Types
 import { StoreProductType } from '@/lib/types';
-import Link from 'next/link';
 import { toast } from 'sonner';
 
 export const columns: ColumnDef<StoreProductType>[] = [
@@ -57,94 +57,95 @@ export const columns: ColumnDef<StoreProductType>[] = [
 					<h1 className='font-bold truncate pb-3 border-b capitalize'>
 						{row.original.name}
 					</h1>
-					{/* Product variants */}
-					<div className='relative flex flex-wrap gap-3 items-start'>
-						{row.original.variants.slice(0, 3).map((variant) => (
-							<div key={variant.id} className='flex flex-col gap-y-2 group w-64 shrink-0'>
-								<div className='relative cursor-pointer border border-border/70 rounded-xl p-2.5 bg-card/50 hover:bg-card transition-all shadow-xs overflow-hidden'>
-									<div className='relative w-full h-40 rounded-lg overflow-hidden border border-border/40 bg-muted/20'>
-										<Image
-											src={variant.images[0]?.url || '/placeholder.png'}
-											alt={`${variant.variantName} image`}
-											fill
-											sizes='250px'
-											className='object-cover transition-transform duration-200 group-hover:scale-105'
-										/>
-										<Link
-											href={`/dashboard/seller/stores/${row.original.store.url}/products/${row.original.id}/variants/${variant.id}`}
-										>
-											<div className='absolute inset-0 z-10 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white gap-1.5 text-xs font-medium'>
-												<FilePenLine className='w-4 h-4' /> Edit Variant
-											</div>
-										</Link>
-									</div>
-									{/* Info */}
-									<div className='flex mt-2.5 gap-2 p-0.5 items-start min-w-0'>
-										{/* Colors */}
-										{variant.colors.length > 0 && (
-											<div className='flex flex-col gap-1 rounded-md shrink-0 mt-0.5'>
-												{variant.colors.map((color) => (
-													<span
-														key={color.name}
-														className='w-3.5 h-3.5 rounded-full border border-black/20 shadow-xs'
-														style={{ backgroundColor: color.name }}
-													/>
-												))}
-											</div>
-										)}
-										<div className='min-w-0 flex-1 space-y-1.5'>
-											{/* Name of variant */}
-											<h1 className='capitalize text-xs font-bold truncate text-foreground'>
-												{variant.variantName}
-											</h1>
-											{/* Sizes */}
-											<div className='flex flex-col gap-1 w-full overflow-hidden'>
-												{variant.sizes.map((size) => {
-													const isOut = size.quantity === 0;
-													const isLow = size.quantity > 0 && size.quantity < 5;
-													return (
+					{/* Product variants — show first 2, then a prominent link to all */}
+					<div className='flex flex-col gap-3'>
+						<div className='flex flex-wrap gap-3 items-start'>
+							{row.original.variants.slice(0, 2).map((variant) => (
+								<div key={variant.id} className='flex flex-col gap-y-2 group w-64 shrink-0'>
+									<div className='relative cursor-pointer border border-border/70 rounded-xl p-2.5 bg-card/50 hover:bg-card transition-all shadow-xs overflow-hidden'>
+										<div className='relative w-full h-40 rounded-lg overflow-hidden border border-border/40 bg-muted/20'>
+											<Image
+												src={variant.images[0]?.url || '/placeholder.png'}
+												alt={`${variant.variantName} image`}
+												fill
+												sizes='250px'
+												className='object-cover transition-transform duration-200 group-hover:scale-105'
+											/>
+											<Link
+												href={`/dashboard/seller/stores/${row.original.store.url}/products/${row.original.id}/variants/${variant.id}`}
+											>
+												<div className='absolute inset-0 z-10 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white gap-1.5 text-xs font-medium'>
+													<FilePenLine className='w-4 h-4' /> Edit Variant
+												</div>
+											</Link>
+										</div>
+										{/* Info */}
+										<div className='flex mt-2.5 gap-2 p-0.5 items-start min-w-0'>
+											{/* Colors */}
+											{variant.colors.length > 0 && (
+												<div className='flex flex-col gap-1 rounded-md shrink-0 mt-0.5'>
+													{variant.colors.map((color) => (
 														<span
-															key={size.size}
-															className={`w-full max-w-full px-2 py-0.5 rounded-md text-[11px] font-medium border flex items-center gap-1.5 truncate ${
-																isOut
-																	? 'bg-destructive/10 text-destructive border-destructive/30'
-																	: isLow
-																	? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30'
-																	: 'bg-muted/30 text-foreground border-border/80'
-															}`}
-															title={`${size.size} · ${size.quantity} in stock · $${size.price}`}
-														>
+															key={color.name}
+															className='w-3.5 h-3.5 rounded-full border border-black/20 shadow-xs'
+															style={{ backgroundColor: color.name }}
+														/>
+													))}
+												</div>
+											)}
+											<div className='min-w-0 flex-1 space-y-1.5'>
+												{/* Name of variant */}
+												<h1 className='capitalize text-xs font-bold truncate text-foreground'>
+													{variant.variantName}
+												</h1>
+												{/* Sizes */}
+												<div className='flex flex-col gap-1 w-full overflow-hidden'>
+													{variant.sizes.map((size) => {
+														const isOut = size.quantity === 0;
+														const isLow = size.quantity > 0 && size.quantity < 5;
+														return (
 															<span
-																className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+																key={size.size}
+																className={`w-full max-w-full px-2 py-0.5 rounded-md text-[11px] font-medium border flex items-center gap-1.5 truncate ${
 																	isOut
-																		? 'bg-destructive'
+																		? 'bg-destructive/10 text-destructive border-destructive/30'
 																		: isLow
-																		? 'bg-amber-500'
-																		: 'bg-emerald-500'
+																		? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30'
+																		: 'bg-muted/30 text-foreground border-border/80'
 																}`}
-															/>
-															<span className='truncate'>
-																{size.size} · {size.quantity} stock · ${size.price}
+																title={`${size.size} · ${size.quantity} in stock · $${size.price}`}
+															>
+																<span
+																	className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+																		isOut
+																			? 'bg-destructive'
+																			: isLow
+																			? 'bg-amber-500'
+																			: 'bg-emerald-500'
+																	}`}
+																/>
+																<span className='truncate'>
+																	{size.size} · {size.quantity} stock · ${size.price}
+																</span>
 															</span>
-														</span>
-													);
-												})}
+														);
+													})}
+												</div>
 											</div>
 										</div>
 									</div>
 								</div>
-							</div>
-						))}
+							))}
+						</div>
 
-						{row.original.variants.length > 3 && (
+						{/* View all variants link — always shown when more than 2 variants exist */}
+						{row.original.variants.length > 2 && (
 							<Link
 								href={`/dashboard/seller/stores/${row.original.store.url}/products/${row.original.id}/variants`}
-								className='flex flex-col items-center justify-center w-40 h-52 rounded-xl border border-dashed border-border/80 bg-muted/20 hover:bg-muted/40 transition-colors text-muted-foreground hover:text-foreground text-xs font-semibold gap-1 p-2 self-start shrink-0'
+								className='inline-flex items-center gap-2 self-start px-3 py-1.5 rounded-lg border border-primary/30 bg-primary/10 hover:bg-primary/20 text-primary text-xs font-semibold transition-colors'
 							>
-								<span className='text-sm font-bold text-primary'>
-									+{row.original.variants.length - 3} more
-								</span>
-								<span>variants</span>
+								<Layers className='w-3.5 h-3.5' />
+								View all {row.original.variants.length} variants
 							</Link>
 						)}
 					</div>
