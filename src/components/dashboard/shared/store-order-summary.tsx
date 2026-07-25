@@ -10,6 +10,7 @@ import { FC } from 'react';
 import OrderStatusSelect from '../forms/order-status-select';
 
 import Image from 'next/image';
+import ProductStatusTag from '@/components/shared/product-status';
 import ProductStatusSelect from '../forms/product-status-select';
 
 import { Button } from '@/components/ui/button';
@@ -208,11 +209,7 @@ const StoreOrderSummary: FC<Props> = ({ group }) => {
 							</div>
 							{/* Product status & total */}
 							<div className='flex flex-col items-end justify-center gap-2'>
-								<ProductStatusSelect
-									orderItemId={product.id}
-									storeId={group.storeId}
-									status={product.status as ProductStatus}
-								/>
+								<ProductStatusTag status={product.status as ProductStatus} />
 								<h5 className='font-bold text-lg text-foreground'>
 									${product.totalPrice.toFixed(2)}
 								</h5>

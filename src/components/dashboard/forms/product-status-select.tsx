@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
 import ProductStatusTag from '@/components/shared/product-status';
@@ -8,6 +7,12 @@ import { FC, useState } from 'react';
 import { toast } from 'sonner';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/query-keys';
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 interface Props {
 	storeId: string;
@@ -18,7 +23,6 @@ interface Props {
 
 const ProductStatusSelect: FC<Props> = ({ orderItemId, status, storeId, storeUrl }) => {
 	const [newStatus, setNewStatus] = useState<ProductStatus>(status);
-	const [isOpen, setIsOpen] = useState<boolean>(false);
 	const queryClient = useQueryClient();
 
 	const statusMutation = useMutation({
@@ -27,8 +31,7 @@ const ProductStatusSelect: FC<Props> = ({ orderItemId, status, storeId, storeUrl
 		onSuccess: (response, selectedStatus) => {
 			if (response) {
 				setNewStatus(selectedStatus);
-				toast.success(`Product status ${selectedStatus} has been updated.`);
-				setIsOpen(false);
+				toast.success(`Product status ${selectedStatus} updated.`);
 				if (storeUrl) {
 					queryClient.invalidateQueries({
 						queryKey: queryKeys.dashboard.orders(storeUrl),
@@ -36,12 +39,11 @@ const ProductStatusSelect: FC<Props> = ({ orderItemId, status, storeId, storeUrl
 				}
 			}
 		},
-		onError: (error: any) => {
-			toast.error(error.toString());
+		onError: (error: unknown) => {
+			toast.error(error instanceof Error ? error.message : String(error));
 		},
 	});
 
-	// Options
 	const options = Object.values(ProductStatus).filter((s) => s !== newStatus);
 
 	const handleClick = (selectedStatus: ProductStatus) => {
@@ -49,30 +51,25 @@ const ProductStatusSelect: FC<Props> = ({ orderItemId, status, storeId, storeUrl
 	};
 
 	return (
-		<div className='relative'>
-			{/* Current status */}
-			<div
-				className='cursor-pointer'
-				onClick={() => setIsOpen((prev) => !prev)}
-			>
-				<ProductStatusTag status={newStatus} />
-			</div>
-			{/* Dropdown */}
-			{isOpen && (
-				<div className='absolute z-50 bg-background border border-gray-200 dark:border-gray-700 rounded-md shadow-md mt-2 w-[170px]'>
-					{options.map((option) => (
-						<button
-							key={option}
-							disabled={statusMutation.isPending}
-							className='w-full flex items-center p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md'
-							onClick={() => handleClick(option)}
-						>
-							<ProductStatusTag status={option} />
-						</button>
-					))}
-				</div>
-			)}
-		</div>
+		<DropdownMenu>
+			<DropdownMenuTrigger asChild>
+				<button className='cursor-pointer outline-none border-none p-0 bg-transparent flex items-center gap-1 rounded-lg transition-transform hover:scale-105 active:scale-95'>
+					<ProductStatusTag status={newStatus} />
+				</button>
+			</DropdownMenuTrigger>
+			<DropdownMenuContent align='end' className='w-48 p-1 max-h-56 overflow-y-auto space-y-1 z-50'>
+				{options.map((option) => (
+					<DropdownMenuItem
+						key={option}
+						disabled={statusMutation.isPending}
+						onClick={() => handleClick(option)}
+						className='cursor-pointer p-1 rounded-md flex items-center justify-start hover:bg-muted focus:bg-muted transition-colors'
+					>
+						<ProductStatusTag status={option} />
+					</DropdownMenuItem>
+				))}
+			</DropdownMenuContent>
+		</DropdownMenu>
 	);
 };
 
