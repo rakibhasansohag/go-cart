@@ -94,6 +94,7 @@ export type ProductWithVariantType = {
 	freeShippingForAllCountries: boolean;
 	freeShippingCountriesIds: { id?: string; label: string; value: string }[];
 	shippingFeeMethod: ShippingFeeMethod;
+	isNewVariant?: boolean;
 	createdAt: Date;
 	updatedAt: Date;
 };

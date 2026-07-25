@@ -190,7 +190,7 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 	const queryClient = useQueryClient();
 
 	// Is new variant page
-	const isNewVariantPage = data?.productId && !data?.variantId;
+	const isNewVariantPage = Boolean((data)?.isNewVariant);
 
 	// Jodit editor refs
 	const productDescEditor = useRef<IJodit | null>(null);
@@ -850,13 +850,17 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 				<CardHeader>
 					<CardTitle>
 						{isNewVariantPage
-							? `Add a new variant to ${data.name}`
-							: 'Create a new product'}
+							? `Add a new variant to ${data?.name}`
+							: data?.productId && data?.variantId
+								? `Edit Product: ${data?.name}`
+								: 'Create a new product'}
 					</CardTitle>
 					<CardDescription>
-						{data?.productId && data.variantId
-							? `Update ${data?.name} product information.`
-							: ' Lets create a product. You can edit product later from the product page.'}
+						{isNewVariantPage
+							? 'Add another color, size, or style variant to this product.'
+							: data?.productId && data?.variantId
+								? `Update ${data?.name} product and variant information.`
+								: 'Lets create a product. You can edit product later from the product page.'}
 					</CardDescription>
 				</CardHeader>
 				<CardContent>

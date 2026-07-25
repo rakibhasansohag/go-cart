@@ -30,7 +30,7 @@ export default async function SellerNewProductVariantPage({
 			<ProductDetails
 				categories={categories}
 				storeUrl={storeUrl}
-				data={product}
+				data={{ ...product, isNewVariant: true }}
 				offerTags={offerTags}
 				countries={countries}
 			/>

@@ -230,8 +230,17 @@ const CellActions: React.FC<CellActionsProps> = ({ productId }) => {
 				</DropdownMenuTrigger>
 				<DropdownMenuContent align='end'>
 					<DropdownMenuLabel>Actions</DropdownMenuLabel>
+					{params?.storeUrl && (
+						<Link
+							href={`/dashboard/seller/stores/${params.storeUrl}/products/${productId}`}
+						>
+							<DropdownMenuItem className='flex gap-2 cursor-pointer'>
+								<FilePenLine size={15} /> Edit product info
+							</DropdownMenuItem>
+						</Link>
+					)}
 					<AlertDialogTrigger asChild>
-						<DropdownMenuItem className='flex gap-2' onClick={() => {}}>
+						<DropdownMenuItem className='flex gap-2 text-destructive focus:text-destructive cursor-pointer' onClick={() => {}}>
 							<Trash size={15} /> Delete product
 						</DropdownMenuItem>
 					</AlertDialogTrigger>

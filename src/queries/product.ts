@@ -335,12 +335,15 @@ export const getProductVariant = async (
 		include: {
 			category: true,
 			subCategory: true,
+			questions: true,
+			specs: true,
 			variants: {
 				where: {
 					id: variantId,
 				},
 				include: {
 					images: true,
+					specs: true,
 					colors: {
 						select: {
 							name: true,
@@ -358,24 +361,56 @@ export const getProductVariant = async (
 			},
 		},
 	});
-	if (!product) return;
+	if (!product || !product.variants || product.variants.length === 0) return null;
+
+	const variant = product.variants[0];
+
 	return {
-		productId: product?.id,
-		variantId: product?.variants[0].id,
+		productId: product.id,
+		variantId: variant.id,
 		name: product.name,
-		description: product?.description,
-		variantName: product.variants[0].variantName,
-		variantDescription: product.variants[0].variantDescription,
-		images: product.variants[0].images,
+		description: product.description,
+		variantName: variant.variantName,
+		variantDescription: variant.variantDescription || '',
+		images: variant.images.map((img) => ({ url: img.url })),
+		variantImage: variant.variantImage || (variant.images[0]?.url ?? ''),
 		categoryId: product.categoryId,
 		subCategoryId: product.subCategoryId,
-		isSale: product.variants[0].isSale,
+		offerTagId: product.offerTagId || undefined,
+		isSale: variant.isSale,
+		saleEndDate: variant.saleEndDate || new Date().toISOString(),
 		brand: product.brand,
-		sku: product.variants[0].sku,
-		colors: product.variants[0].colors,
-		sizes: product.variants[0].sizes,
-		keywords: product.variants[0].keywords.split(','),
+		sku: variant.sku,
+		weight: variant.weight || 0.1,
+		colors: variant.colors.map((c) => ({ color: c.name })),
+		sizes: variant.sizes.map((s) => ({
+			size: s.size,
+			price: s.price,
+			quantity: s.quantity,
+			discount: s.discount,
+		})),
+		keywords: variant.keywords ? variant.keywords.split(',').filter(Boolean) : [],
+		product_specs: product.specs.map((s) => ({ name: s.name, value: s.value })),
+		variant_specs: variant.specs.map((s) => ({ name: s.name, value: s.value })),
+		questions: product.questions.map((q) => ({ question: q.question, answer: q.answer })),
 	};
+};
+
+export const getProductWithFirstVariant = async (productId: string) => {
+	const product = await db.product.findUnique({
+		where: { id: productId },
+		select: {
+			variants: {
+				select: { id: true },
+				orderBy: { createdAt: 'asc' },
+				take: 1,
+			},
+		},
+	});
+	if (!product || !product.variants || product.variants.length === 0) {
+		return null;
+	}
+	return getProductVariant(productId, product.variants[0].id);
 };
 
 // Function: getProductMainInfo
