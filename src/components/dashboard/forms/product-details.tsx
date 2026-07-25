@@ -525,15 +525,19 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 		return <ProductDetailsFormSkeleton />;
 	}
 
-	// Reset form values when data changes
+	// Reset form values when data changes — guarded by a ref so it only fires
+	// when the underlying data identity actually changes (not on every render).
+	const prevDataRef = useRef<typeof data | null>(null);
 	useEffect(() => {
-		if (data) {
+		if (data && data !== prevDataRef.current) {
+			prevDataRef.current = data;
 			form.reset({
 				...data,
 				variantImage: data.variantImage ? [{ url: data.variantImage }] : [],
 			});
 		}
-	}, [data, form]);
+	// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [data]);
 
 	// Submit handler for form submission
 	const handleSubmit = async () => {
@@ -695,9 +699,8 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 			setIsDirty(false);
 			setClose(true);
 
-			// Redirect to products list page
+			// Redirect to products list page (no refresh — push is enough)
 			router.push(`/dashboard/seller/stores/${storeUrl}/products`);
-			router.refresh();
 		} catch (error: any) {
 			// Handling form submission errors
 			toast.error(error.toString());
