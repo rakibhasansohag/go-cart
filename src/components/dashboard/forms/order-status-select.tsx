@@ -29,7 +29,7 @@ const OrderStatusSelect: FC<Props> = ({ groupId, status, storeId, storeUrl }) =>
 		setMounted(true);
 	}, []);
 
-	// Outside click & scroll handling via capture phase listeners
+	// Capture phase outside-click & window scroll handler
 	useEffect(() => {
 		if (!isOpen) return;
 
@@ -62,6 +62,23 @@ const OrderStatusSelect: FC<Props> = ({ groupId, status, storeId, storeUrl }) =>
 			window.removeEventListener('scroll', handleScroll, true);
 		};
 	}, [isOpen]);
+
+	// Native wheel listener on the dropdown container to bypass Radix Dialog body scroll lock
+	useEffect(() => {
+		if (!isOpen || !dropdownRef.current) return;
+		const el = dropdownRef.current;
+
+		const handleWheel = (e: WheelEvent) => {
+			e.stopPropagation();
+			e.preventDefault();
+			el.scrollTop += e.deltaY;
+		};
+
+		el.addEventListener('wheel', handleWheel, { passive: false });
+		return () => {
+			el.removeEventListener('wheel', handleWheel);
+		};
+	}, [isOpen, coords]);
 
 	const statusMutation = useMutation({
 		mutationFn: (selectedStatus: OrderStatus) =>
@@ -132,7 +149,7 @@ const OrderStatusSelect: FC<Props> = ({ groupId, status, storeId, storeUrl }) =>
 						top: `${coords.top}px`,
 						left: `${coords.left}px`,
 					}}
-					className='z-[99999] w-48 max-h-56 overflow-y-auto bg-popover/95 border border-border/80 shadow-2xl rounded-xl p-1.5 space-y-1 backdrop-blur-md animate-in fade-in-50 zoom-in-95 pointer-events-auto touch-pan-y'
+					className='z-[99999] w-48 max-h-56 overflow-y-auto bg-popover border border-border/80 shadow-2xl rounded-xl p-1.5 space-y-1 backdrop-blur-md animate-in fade-in-50 zoom-in-95 pointer-events-auto touch-pan-y'
 				>
 					{options.map((option) => (
 						<button
