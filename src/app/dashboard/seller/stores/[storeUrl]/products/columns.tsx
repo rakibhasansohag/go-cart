@@ -58,59 +58,64 @@ export const columns: ColumnDef<StoreProductType>[] = [
 						{row.original.name}
 					</h1>
 					{/* Product variants */}
-					<div className='relative flex flex-wrap gap-2'>
-						{row.original.variants.map((variant) => (
-							<div key={variant.id} className='flex flex-col gap-y-2 group'>
-								<div className='relative cursor-pointer p-2'>
-									<Image
-										src={variant.images[0].url}
-										alt={`${variant.variantName} image`}
-										width={1000}
-										height={1000}
-										className='max-w-72 h-72 rounded-md object-cover shadow-sm'
-									/>
-									<Link
-										href={`/dashboard/seller/stores/${row.original.store.url}/products/${row.original.id}/variants/${variant.id}`}
-									>
-										<div className='w-[304px] h-full absolute top-0 left-0 bottom-0 right-0 z-0 rounded-sm bg-black/50 transition-all duration-150 hidden group-hover:block'>
-											<FilePenLine className='absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-white' />
-										</div>
-									</Link>
+					<div className='relative flex flex-wrap gap-3 items-start'>
+						{row.original.variants.slice(0, 3).map((variant) => (
+							<div key={variant.id} className='flex flex-col gap-y-2 group w-64 shrink-0'>
+								<div className='relative cursor-pointer border border-border/70 rounded-xl p-2.5 bg-card/50 hover:bg-card transition-all shadow-xs overflow-hidden'>
+									<div className='relative w-full h-40 rounded-lg overflow-hidden border border-border/40 bg-muted/20'>
+										<Image
+											src={variant.images[0]?.url || '/placeholder.png'}
+											alt={`${variant.variantName} image`}
+											fill
+											sizes='250px'
+											className='object-cover transition-transform duration-200 group-hover:scale-105'
+										/>
+										<Link
+											href={`/dashboard/seller/stores/${row.original.store.url}/products/${row.original.id}/variants/${variant.id}`}
+										>
+											<div className='absolute inset-0 z-10 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white gap-1.5 text-xs font-medium'>
+												<FilePenLine className='w-4 h-4' /> Edit Variant
+											</div>
+										</Link>
+									</div>
 									{/* Info */}
-									<div className='flex mt-2 gap-2 p-1'>
+									<div className='flex mt-2.5 gap-2 p-0.5 items-start min-w-0'>
 										{/* Colors */}
-										<div className='w-7 flex flex-col gap-2 rounded-md'>
-											{variant.colors.map((color) => (
-												<span
-													key={color.name}
-													className='w-5 h-5 rounded-full shadow-2xl'
-													style={{ backgroundColor: color.name }}
-												/>
-											))}
-										</div>
-										<div>
+										{variant.colors.length > 0 && (
+											<div className='flex flex-col gap-1 rounded-md shrink-0 mt-0.5'>
+												{variant.colors.map((color) => (
+													<span
+														key={color.name}
+														className='w-3.5 h-3.5 rounded-full border border-black/20 shadow-xs'
+														style={{ backgroundColor: color.name }}
+													/>
+												))}
+											</div>
+										)}
+										<div className='min-w-0 flex-1 space-y-1.5'>
 											{/* Name of variant */}
-											<h1 className='max-w-40 capitalize text-sm'>
+											<h1 className='capitalize text-xs font-bold truncate text-foreground'>
 												{variant.variantName}
 											</h1>
 											{/* Sizes */}
-											<div className='flex flex-wrap gap-1.5 max-w-72 mt-1.5'>
+											<div className='flex flex-col gap-1 w-full overflow-hidden'>
 												{variant.sizes.map((size) => {
 													const isOut = size.quantity === 0;
 													const isLow = size.quantity > 0 && size.quantity < 5;
 													return (
 														<span
 															key={size.size}
-															className={`w-fit px-2 py-0.5 rounded-md text-[11px] font-medium border flex items-center gap-1 ${
+															className={`w-full max-w-full px-2 py-0.5 rounded-md text-[11px] font-medium border flex items-center gap-1.5 truncate ${
 																isOut
 																	? 'bg-destructive/10 text-destructive border-destructive/30'
 																	: isLow
 																	? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30'
 																	: 'bg-muted/30 text-foreground border-border/80'
 															}`}
+															title={`${size.size} · ${size.quantity} in stock · $${size.price}`}
 														>
 															<span
-																className={`w-1.5 h-1.5 rounded-full ${
+																className={`w-1.5 h-1.5 rounded-full shrink-0 ${
 																	isOut
 																		? 'bg-destructive'
 																		: isLow
@@ -118,7 +123,9 @@ export const columns: ColumnDef<StoreProductType>[] = [
 																		: 'bg-emerald-500'
 																}`}
 															/>
-															{size.size} · {size.quantity} in stock · ${size.price}
+															<span className='truncate'>
+																{size.size} · {size.quantity} stock · ${size.price}
+															</span>
 														</span>
 													);
 												})}
@@ -128,6 +135,18 @@ export const columns: ColumnDef<StoreProductType>[] = [
 								</div>
 							</div>
 						))}
+
+						{row.original.variants.length > 3 && (
+							<Link
+								href={`/dashboard/seller/stores/${row.original.store.url}/products/${row.original.id}/variants`}
+								className='flex flex-col items-center justify-center w-40 h-52 rounded-xl border border-dashed border-border/80 bg-muted/20 hover:bg-muted/40 transition-colors text-muted-foreground hover:text-foreground text-xs font-semibold gap-1 p-2 self-start shrink-0'
+							>
+								<span className='text-sm font-bold text-primary'>
+									+{row.original.variants.length - 3} more
+								</span>
+								<span>variants</span>
+							</Link>
+						)}
 					</div>
 				</div>
 			);
@@ -219,6 +238,8 @@ const CellActions: React.FC<CellActionsProps> = ({ productId }) => {
 	// Return null if rowData or rowData.id don't exist
 	if (!productId) return null;
 
+	const editHref = `/dashboard/seller/stores/${params.storeUrl}/products/${productId}`;
+
 	return (
 		<AlertDialog>
 			<DropdownMenu>
@@ -231,9 +252,7 @@ const CellActions: React.FC<CellActionsProps> = ({ productId }) => {
 				<DropdownMenuContent align='end'>
 					<DropdownMenuLabel>Actions</DropdownMenuLabel>
 					{params?.storeUrl && (
-						<Link
-							href={`/dashboard/seller/stores/${params.storeUrl}/products/${productId}`}
-						>
+						<Link href={editHref}>
 							<DropdownMenuItem className='flex gap-2 cursor-pointer'>
 								<FilePenLine size={15} /> Edit product info
 							</DropdownMenuItem>
