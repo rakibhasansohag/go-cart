@@ -76,9 +76,10 @@ export const upsertProduct = async (
 
 		if (existingProduct) {
 			if (existingVariant) {
-				// Update existing variant and product
+				// Update existing product and variant
+				await handleProductUpdate(product);
 			} else {
-				// Create new variant
+				// Create new variant for existing product
 				await handleCreateVariant(product);
 			}
 		} else {
@@ -98,6 +99,150 @@ export const upsertProduct = async (
 			);
 		}
 	}
+};
+
+const handleProductUpdate = async (product: ProductWithVariantType) => {
+	const offerTagConnection = product.offerTagId
+		? { offerTag: { connect: { id: product.offerTagId } } }
+		: { offerTag: { disconnect: true } };
+
+	// Update product-level fields
+	await db.product.update({
+		where: { id: product.productId },
+		data: {
+			name: product.name,
+			description: product.description,
+			category: { connect: { id: product.categoryId } },
+			subCategory: { connect: { id: product.subCategoryId } },
+			...offerTagConnection,
+			brand: product.brand,
+			shippingFeeMethod: product.shippingFeeMethod,
+			freeShippingForAllCountries: product.freeShippingForAllCountries,
+			// Rebuild product specs
+			specs: {
+				deleteMany: {},
+				create: product.product_specs.map((spec) => ({
+					name: spec.name,
+					value: spec.value,
+				})),
+			},
+			// Rebuild questions
+			questions: {
+				deleteMany: {},
+				create: product.questions.map((q) => ({
+					question: q.question,
+					answer: q.answer,
+				})),
+			},
+		},
+	});
+
+	// Update free shipping countries — delete existing and recreate
+	const existingFreeShipping = await db.freeShipping.findUnique({
+		where: { productId: product.productId },
+	});
+
+	if (product.freeShippingForAllCountries) {
+		// No per-country record needed when all countries are free
+		if (existingFreeShipping) {
+			await db.freeShipping.delete({ where: { productId: product.productId } });
+		}
+	} else if (
+		product.freeShippingCountriesIds &&
+		product.freeShippingCountriesIds.length > 0
+	) {
+		if (existingFreeShipping) {
+			// Delete old eligible countries and recreate
+			await db.freeShippingCountry.deleteMany({
+				where: { freeShippingId: existingFreeShipping.id },
+			});
+			await db.freeShippingCountry.createMany({
+				data: product.freeShippingCountriesIds.map((c) => ({
+					freeShippingId: existingFreeShipping.id,
+					countryId: c.value,
+				})),
+			});
+		} else {
+			await db.freeShipping.create({
+				data: {
+					productId: product.productId,
+					eligibaleCountries: {
+						create: product.freeShippingCountriesIds.map((c) => ({
+							country: { connect: { id: c.value } },
+						})),
+					},
+				},
+			});
+		}
+	} else {
+		// No free shipping at all — clean up if it exists
+		if (existingFreeShipping) {
+			await db.freeShipping.delete({ where: { productId: product.productId } });
+		}
+	}
+
+	// Update variant-level fields
+	const extractUrlFromImg = (img: any): string | undefined => {
+		if (!img) return undefined;
+		if (typeof img === 'string' && /^data:image\/|^https?:\/\//.test(img)) return img;
+		if (typeof img.url === 'string' && img.url) return img.url;
+		if (typeof img.secure_url === 'string' && img.secure_url) return img.secure_url;
+		if (typeof img.path === 'string' && img.path) return img.path;
+		if (typeof img.src === 'string' && img.src) return img.src;
+		const keys = Object.keys(img || {});
+		for (const k of keys) {
+			const v = img[k];
+			if (typeof v === 'string' && /^data:image\/|^https?:\/\//.test(v)) return v;
+		}
+		return undefined;
+	};
+
+	const variantImageUrl = extractUrlFromImg(product.variantImage) ?? '';
+	const imageCreateArray = (product.images || [])
+		.map((img: any) => { const url = extractUrlFromImg(img); return url ? { url } : undefined; })
+		.filter((x): x is { url: string } => Boolean(x && (x as any).url));
+
+	await db.productVariant.update({
+		where: { id: product.variantId },
+		data: {
+			variantName: product.variantName,
+			variantDescription: product.variantDescription,
+			variantImage: variantImageUrl,
+			sku: product.sku,
+			weight: product.weight,
+			isSale: product.isSale,
+			saleEndDate: product.saleEndDate,
+			keywords: product.keywords.join(','),
+			// Rebuild images
+			images: {
+				deleteMany: {},
+				create: imageCreateArray,
+			},
+			// Rebuild colors
+			colors: {
+				deleteMany: {},
+				create: product.colors.map((c) => ({ name: c.color })),
+			},
+			// Rebuild sizes
+			sizes: {
+				deleteMany: {},
+				create: product.sizes.map((s) => ({
+					size: s.size,
+					price: s.price,
+					quantity: s.quantity,
+					discount: s.discount,
+				})),
+			},
+			// Rebuild variant specs
+			specs: {
+				deleteMany: {},
+				create: product.variant_specs.map((s) => ({
+					name: s.name,
+					value: s.value,
+				})),
+			},
+		},
+	});
 };
 
 const handleProductCreate = async (
@@ -337,6 +482,15 @@ export const getProductVariant = async (
 			subCategory: true,
 			questions: true,
 			specs: true,
+			freeShipping: {
+				include: {
+					eligibaleCountries: {
+						include: {
+							country: true,
+						},
+					},
+				},
+			},
 			variants: {
 				where: {
 					id: variantId,
@@ -364,6 +518,13 @@ export const getProductVariant = async (
 	if (!product || !product.variants || product.variants.length === 0) return null;
 
 	const variant = product.variants[0];
+
+	// Build freeShippingCountriesIds from the related freeShipping record
+	const freeShippingCountriesIds =
+		product.freeShipping?.eligibaleCountries?.map((ec: any) => ({
+			value: ec.country.id,
+			label: ec.country.name,
+		})) ?? [];
 
 	return {
 		productId: product.id,
@@ -393,6 +554,11 @@ export const getProductVariant = async (
 		product_specs: product.specs.map((s) => ({ name: s.name, value: s.value })),
 		variant_specs: variant.specs.map((s) => ({ name: s.name, value: s.value })),
 		questions: product.questions.map((q) => ({ question: q.question, answer: q.answer })),
+		shippingFeeMethod: product.shippingFeeMethod,
+		freeShippingForAllCountries: product.freeShippingForAllCountries,
+		freeShippingCountriesIds,
+		createdAt: product.createdAt,
+		updatedAt: product.updatedAt,
 	};
 };
 
