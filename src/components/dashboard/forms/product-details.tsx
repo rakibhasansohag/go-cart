@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
 // React, Next.js
@@ -286,6 +285,7 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 	// Form hook for managing form state and validation
 	const form = useForm<z.infer<typeof ProductFormSchema>>({
 		mode: 'onChange', // Form validation mode
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		resolver: zodResolver(ProductFormSchema as any), // Resolver for form validation
 		defaultValues: {
 			// Setting default form values from data (if available)
@@ -552,15 +552,15 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 			console.log(values);
 
 			// helper: find first URL/data:image string anywhere inside an object (BFS)
-			const findUrlInObject = (obj: any): string | null => {
+			const findUrlInObject = (obj: unknown): string | null => {
 				if (!obj) return null;
 				if (typeof obj === 'string') {
 					return /^data:image\/|^https?:\/\//.test(obj) ? obj : null;
 				}
 				if (obj instanceof File) return null; // File must be uploaded first
 
-				const queue = [obj];
-				const seen = new WeakSet();
+				const queue: object[] = typeof obj === 'object' ? [obj] : [];
+				const seen = new WeakSet<object>();
 
 				while (queue.length) {
 					const cur = queue.shift();
@@ -568,7 +568,7 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 					seen.add(cur);
 
 					for (const key of Object.keys(cur)) {
-						const val = cur[key];
+						const val = (cur as Record<string, unknown>)[key];
 						if (
 							typeof val === 'string' &&
 							/^data:image\/|^https?:\/\//.test(val)
@@ -594,7 +594,7 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 				return null;
 			};
 
-			const normalizeImages = (images: any[] | undefined): string[] => {
+			const normalizeImages = (images: unknown[] | undefined): string[] => {
 				return (images || [])
 					.map((img) => findUrlInObject(img))
 					.filter(Boolean) as string[];
@@ -604,9 +604,9 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 			const normalizedImages = normalizeImages(values.images);
 			console.log(
 				'images keys summary:',
-				(values.images || []).map((img: any, i: number) => ({
+				(values.images || []).map((img: unknown, i: number) => ({
 					index: i,
-					keys: Object.keys(img || {}),
+					keys: Object.keys((img as object) || {}),
 					foundUrl: findUrlInObject(img) || null,
 				})),
 			);
@@ -701,16 +701,16 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 
 			// Redirect to products list page (no refresh — push is enough)
 			router.push(`/dashboard/seller/stores/${storeUrl}/products`);
-		} catch (error: any) {
+		} catch (error: unknown) {
 			// Handling form submission errors
-			toast.error(error.toString());
+			toast.error(String(error));
 			console.error('[handleSubmit] error ->', error);
 		}
 	};
 
 	// Handle Ai Generated content
 
-	const handleAIGenerate = async (generatedData: any) => {
+	const handleAIGenerate = async (generatedData: Record<string, any>) => {
 		setIsAIGenerated(true);
 		// set categories
 		if (generatedData.categoryId) {
@@ -743,7 +743,7 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 		const promptParts = [
 			generatedData.name,
 			generatedData.variantName || '',
-			(generatedData.colors || []).map((c: any) => c.color).join(', '),
+			(generatedData.colors || []).map((c: { color: string }) => c.color).join(', '),
 			generatedData.brand,
 			'High resolution product photography, white background, 45° angle, studio lighting, realistic texture',
 		].filter(Boolean);
@@ -888,7 +888,7 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 							>
 								{/* You already have an AIProductAssistant component - we render it inside the toggle */}
 								<AIProductAssistant
-									categories={categories as any}
+									categories={categories}
 									onGenerate={handleAIGenerate}
 									selectedCategoryId={aiCategoryId}
 									selectedSubCategoryId={aiSubCategoryId}

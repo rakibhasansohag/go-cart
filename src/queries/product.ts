@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 'use server';
 
 // DB
@@ -16,7 +15,7 @@ import {
 	VariantImageType,
 	VariantSimplified,
 } from '@/lib/types';
-import { ProductVariant, Size, Store } from '@prisma/client';
+import { Prisma, ProductVariant, Size, Store } from '@prisma/client';
 
 // Clerk
 import { currentUser } from '@clerk/nextjs/server';
@@ -28,6 +27,36 @@ import { generateUniqueSlug } from '@/lib/utils';
 // Cookies
 import { getCookie } from 'cookies-next';
 import { cookies } from 'next/headers';
+
+// Helper: extract string URL from an image input (string or object)
+const extractUrlFromImg = (img: unknown): string | undefined => {
+	if (!img) return undefined;
+	if (typeof img === 'string' && /^data:image\/|^https?:\/\//.test(img))
+		return img;
+	if (typeof img === 'object' && img !== null) {
+		const rec = img as Record<string, unknown>;
+		if (typeof rec.url === 'string' && rec.url) return rec.url;
+		if (typeof rec.secure_url === 'string' && rec.secure_url) return rec.secure_url;
+		if (typeof rec.path === 'string' && rec.path) return rec.path;
+		if (typeof rec.src === 'string' && rec.src) return rec.src;
+		for (const k of Object.keys(rec)) {
+			const v = rec[k];
+			if (typeof v === 'string' && /^data:image\/|^https?:\/\//.test(v))
+				return v;
+		}
+	}
+	return undefined;
+};
+
+// Helper: build Prisma images create array
+const buildImageCreateArray = (images: unknown[]) => {
+	return (images || [])
+		.map((img) => {
+			const url = extractUrlFromImg(img);
+			return url ? { url } : undefined;
+		})
+		.filter((x): x is { url: string } => Boolean(x && x.url));
+};
 
 // Function: upsertProduct
 // Description: Upserts a product and its variant into the database, ensuring proper association with the store.
@@ -182,25 +211,8 @@ const handleProductUpdate = async (product: ProductWithVariantType) => {
 	}
 
 	// Update variant-level fields
-	const extractUrlFromImg = (img: any): string | undefined => {
-		if (!img) return undefined;
-		if (typeof img === 'string' && /^data:image\/|^https?:\/\//.test(img)) return img;
-		if (typeof img.url === 'string' && img.url) return img.url;
-		if (typeof img.secure_url === 'string' && img.secure_url) return img.secure_url;
-		if (typeof img.path === 'string' && img.path) return img.path;
-		if (typeof img.src === 'string' && img.src) return img.src;
-		const keys = Object.keys(img || {});
-		for (const k of keys) {
-			const v = img[k];
-			if (typeof v === 'string' && /^data:image\/|^https?:\/\//.test(v)) return v;
-		}
-		return undefined;
-	};
-
 	const variantImageUrl = extractUrlFromImg(product.variantImage) ?? '';
-	const imageCreateArray = (product.images || [])
-		.map((img: any) => { const url = extractUrlFromImg(img); return url ? { url } : undefined; })
-		.filter((x): x is { url: string } => Boolean(x && (x as any).url));
+	const imageCreateArray = buildImageCreateArray(product.images || []);
 
 	await db.productVariant.update({
 		where: { id: product.variantId },
@@ -265,35 +277,7 @@ const handleProductCreate = async (
 		: {};
 
 	// helper: accept string URLs or objects (url, secure_url, path, src) and return valid url string
-	const extractUrlFromImg = (img: any): string | undefined => {
-		if (!img) return undefined;
-		if (typeof img === 'string' && /^data:image\/|^https?:\/\//.test(img))
-			return img;
-		if (typeof img.url === 'string' && img.url) return img.url;
-		if (typeof img.secure_url === 'string' && img.secure_url)
-			return img.secure_url;
-		if (typeof img.path === 'string' && img.path) return img.path;
-		if (typeof img.src === 'string' && img.src) return img.src;
-		// shallow fallback: return the first string value that looks like a url
-		const keys = Object.keys(img || {});
-		for (const k of keys) {
-			const v = img[k];
-			if (typeof v === 'string' && /^data:image\/|^https?:\/\//.test(v))
-				return v;
-		}
-		return undefined;
-	};
-
-	// build images array for Prisma: [{ url }] typed properly
-	const imageCreateArray = (product.images || [])
-		.map((img: any) => {
-			const url = extractUrlFromImg(img);
-			return url ? { url } : undefined;
-		})
-		// type guard: tell TS this filters out undefined
-		.filter((x): x is { url: string } => Boolean(x && (x as any).url));
-
-	// ensure variantImage is a plain string url
+	const imageCreateArray = buildImageCreateArray(product.images || []);
 	const variantImageUrl = extractUrlFromImg(product.variantImage) ?? '';
 
 	const productData = {
@@ -389,33 +373,7 @@ const handleCreateVariant = async (product: ProductWithVariantType) => {
 		'productVariant',
 	);
 
-	const extractUrlFromImg = (img: any): string | undefined => {
-		if (!img) return undefined;
-		if (typeof img === 'string' && /^data:image\/|^https?:\/\//.test(img))
-			return img;
-		if (typeof img.url === 'string' && img.url) return img.url;
-		if (typeof img.secure_url === 'string' && img.secure_url)
-			return img.secure_url;
-		if (typeof img.path === 'string' && img.path) return img.path;
-		if (typeof img.src === 'string' && img.src) return img.src;
-		const keys = Object.keys(img || {});
-		for (const k of keys) {
-			const v = img[k];
-			if (typeof v === 'string' && /^data:image\/|^https?:\/\//.test(v))
-				return v;
-		}
-		return undefined;
-	};
-
-	// typed images array for Prisma
-	const imageCreateArray = (product.images || [])
-		.map((img: any) => {
-			const url = extractUrlFromImg(img);
-			return url ? { url } : undefined;
-		})
-		.filter((x): x is { url: string } => Boolean(x && (x as any).url));
-
-	// ensure variantImage is a string url
+	const imageCreateArray = buildImageCreateArray(product.images || []);
 	const variantImageUrl = extractUrlFromImg(product.variantImage) ?? '';
 
 	const variantData = {
@@ -521,7 +479,7 @@ export const getProductVariant = async (
 
 	// Build freeShippingCountriesIds from the related freeShipping record
 	const freeShippingCountriesIds =
-		product.freeShipping?.eligibaleCountries?.map((ec: any) => ({
+		product.freeShipping?.eligibaleCountries?.map((ec) => ({
 			value: ec.country.id,
 			label: ec.country.name,
 		})) ?? [];
@@ -709,17 +667,31 @@ export const deleteProduct = async (productId: string) => {
 	return response;
 };
 
+export interface ProductFilterParams {
+	store?: string;
+	productId?: string;
+	category?: string;
+	subCategory?: string;
+	size?: string[];
+	offer?: string;
+	search?: string;
+	minPrice?: number;
+	maxPrice?: number;
+	color?: string[];
+	[key: string]: unknown;
+}
+
 // Function: getProducts
-// Description: Retrieves products based on various filters and returns only variants that match the filters. Supports pagination.
+// Description: Retrieves products from the database based on filters, sorting, and pagination options.
 // Access Level: Public
 // Parameters:
-//   - filters: An object containing filter options (category, subCategory, offerTag, size, onSale, onDiscount, brand, color).
+//   - filters: Filters to apply to the products query (store, category, subCategory, offer, size...).
 //   - sortBy: Sort the filtered results (Most popular, New Arivals, Top Rated...).
 //   - page: The current page number for pagination (default = 1).
 //   - pageSize: The number of products per page (default = 10).
 // Returns: An object containing paginated products, filtered variants, and pagination metadata (totalPages, currentPage, pageSize, totalCount).
 export const getProducts = async (
-	filters: any = {},
+	filters: ProductFilterParams = {},
 	sortBy = '',
 	cursor?: string | null,
 	pageSize: number = 10,
@@ -727,8 +699,9 @@ export const getProducts = async (
 	const limit = pageSize;
 
 	// Construct the base query
-	const wherClause: any = {
-		AND: [],
+	const andConditions: Prisma.ProductWhereInput[] = [];
+	const wherClause: Prisma.ProductWhereInput = {
+		AND: andConditions,
 	};
 
 	// Apply store filter (using store URL)
@@ -740,13 +713,13 @@ export const getProducts = async (
 			select: { id: true },
 		});
 		if (store) {
-			wherClause.AND.push({ storeId: store.id });
+			andConditions.push({ storeId: store.id });
 		}
 	}
 
 	// Exclude product if sent
 	if (filters.productId) {
-		wherClause.AND.push({
+		andConditions.push({
 			id: {
 				not: filters.productId,
 			},
@@ -762,7 +735,7 @@ export const getProducts = async (
 			select: { id: true },
 		});
 		if (category) {
-			wherClause.AND.push({ categoryId: category.id });
+			andConditions.push({ categoryId: category.id });
 		}
 	}
 
@@ -775,13 +748,13 @@ export const getProducts = async (
 			select: { id: true },
 		});
 		if (subCategory) {
-			wherClause.AND.push({ subCategoryId: subCategory.id });
+			andConditions.push({ subCategoryId: subCategory.id });
 		}
 	}
 
 	// Apply size filter (using array of sizes)
 	if (filters.size && Array.isArray(filters.size)) {
-		wherClause.AND.push({
+		andConditions.push({
 			variants: {
 				some: {
 					sizes: {
@@ -805,13 +778,13 @@ export const getProducts = async (
 			select: { id: true },
 		});
 		if (offer) {
-			wherClause.AND.push({ offerTagId: offer.id });
+			andConditions.push({ offerTagId: offer.id });
 		}
 	}
 
 	// Apply search filter (search term in product name or description)
 	if (filters.search) {
-		wherClause.AND.push({
+		andConditions.push({
 			OR: [
 				{
 					name: { contains: filters.search },
@@ -833,7 +806,7 @@ export const getProducts = async (
 
 	// Apply price filters (min and max price)
 	if (filters.minPrice || filters.maxPrice) {
-		wherClause.AND.push({
+		andConditions.push({
 			variants: {
 				some: {
 					sizes: {
@@ -850,7 +823,7 @@ export const getProducts = async (
 	}
 
 	if (filters.color && filters.color.length > 0) {
-		wherClause.AND.push({
+		andConditions.push({
 			variants: {
 				some: {
 					colors: {
@@ -915,7 +888,7 @@ export const getProducts = async (
 	// Product price sorting
 	products.sort((a, b) => {
 		// Helper function to get the minimum price from a product's variants
-		const getMinPrice = (product: any) =>
+		const getMinPrice = (product: { variants: VariantWithSizes[] }) =>
 			Math.min(
 				...product.variants.flatMap((variant: VariantWithSizes) =>
 					variant.sizes.map((size) => {
@@ -1403,7 +1376,7 @@ export const getProductFilteredReviews = async (
 	page: number = 1,
 	pageSize: number = 4,
 ) => {
-	const reviewFilter: any = {
+	const reviewFilter: Prisma.ReviewWhereInput = {
 		productId,
 	};
 
@@ -1586,7 +1559,7 @@ export const getProductsByIds = async (
 	ids: string[],
 	page: number = 1,
 	pageSize: number = 10,
-): Promise<{ products: any; totalPages: number }> => {
+) => {
 	// Check if ids array is empty
 	if (!ids || ids.length === 0) {
 		throw new Error('Ids are undefined');

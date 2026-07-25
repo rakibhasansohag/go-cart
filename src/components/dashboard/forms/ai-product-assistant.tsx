@@ -26,8 +26,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface AIProductAssistantProps {
 	categories: CategoryWithSubs[];
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	onGenerate: (data: any) => void;
+	onGenerate: (data: Record<string, unknown>) => void;
 	selectedCategoryId?: string;
 	selectedSubCategoryId?: string;
 	onCategoryChange: (categoryId: string) => void;
@@ -133,11 +132,11 @@ const AIProductAssistant: FC<AIProductAssistantProps> = ({
 
 			// Clear description after successful generation
 			setDescription('');
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		} catch (error: any) {
+		} catch (error: unknown) {
 			console.error('Generation error:', error);
+			const errMessage = error instanceof Error ? error.message : 'Please try again';
 			toast.error('Failed to generate product', {
-				description: error.message || 'Please try again',
+				description: errMessage,
 			});
 		} finally {
 			setIsGenerating(false);

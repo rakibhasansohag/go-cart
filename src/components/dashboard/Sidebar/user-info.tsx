@@ -1,9 +1,16 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { User } from '@clerk/nextjs/server';
-import React from 'react';
+interface UserType {
+	firstName?: string | null;
+	lastName?: string | null;
+	imageUrl?: string;
+	emailAddresses?: Array<{ emailAddress: string }>;
+	privateMetadata?: Record<string, unknown>;
+	publicMetadata?: Record<string, unknown>;
+	unsafeMetadata?: Record<string, unknown>;
+}
 
-export default function UserInfo({ user }: { user: any }) {
+export default function UserInfo({ user }: { user: UserType | null }) {
 	const role = (
 		user?.privateMetadata?.role ||
 		user?.publicMetadata?.role ||
@@ -13,7 +20,7 @@ export default function UserInfo({ user }: { user: any }) {
 	const firstName = user?.firstName || '';
 	const lastName = user?.lastName || '';
 	const userName = `${firstName} ${lastName}`.trim() || 'User';
-	const email = user?.emailAddresses[0]?.emailAddress || '';
+	const email = user?.emailAddresses?.[0]?.emailAddress || '';
 	const initials = `${firstName[0] || ''}${lastName[0] || ''}`.toUpperCase() || 'U';
 
 	return (

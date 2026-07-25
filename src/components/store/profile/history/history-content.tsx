@@ -1,5 +1,4 @@
 'use client';
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import Pagination from '@/components/store/shared/pagination';
 import ProductList from '@/components/store/shared/product-list';
 import { getProductsByIds } from '@/queries/product';
@@ -42,8 +41,9 @@ const HistoryContent: FC<HistoryContentProps> = ({ initialPage }) => {
 	const totalPages = res ? res.totalPages : 0;
 
 	// Remove duplicates
-	const seenIds = new Set();
-	const uniqueProducts = products.filter((product: any) => {
+	const seenIds = new Set<string>();
+	const uniqueProducts = (products || []).filter((product: any) => {
+		if (!product) return false;
 		const isDuplicate = seenIds.has(product.id);
 		seenIds.add(product.id);
 		return !isDuplicate;
@@ -74,7 +74,7 @@ const HistoryContent: FC<HistoryContentProps> = ({ initialPage }) => {
 				</div>
 			) : uniqueProducts.length > 0 ? (
 				<div className='pb-16'>
-					<ProductList products={uniqueProducts} />
+					<ProductList products={uniqueProducts as any} />
 					<div className='mt-2'>
 						<Pagination
 							page={currentPage}

@@ -104,8 +104,8 @@ const SubCategoryDetails: FC<SubCategoryDetailsProps> = ({
 				router.push('/dashboard/admin/subCategories');
 			}
 		},
-		onError: (error: any) => {
-			toast.error(error.toString());
+		onError: (error: Error) => {
+			toast.error(error.message);
 		},
 	});
 

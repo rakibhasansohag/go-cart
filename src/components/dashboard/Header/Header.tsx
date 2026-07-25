@@ -68,7 +68,7 @@ export default function Header({ isAdmin: propIsAdmin, stores }: HeaderProps) {
 						>
 							<Logo width='100%' height='160px' />
 						</Link>
-						{user && <UserInfo user={user as any} />}
+						{user && <UserInfo user={user} />}
 						{!isAdmin && stores && stores.length > 0 && (
 							<StoreSwitcher stores={stores} />
 						)}

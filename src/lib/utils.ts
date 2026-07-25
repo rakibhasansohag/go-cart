@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { PrismaClient } from '@prisma/client';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -23,7 +22,10 @@ export const generateUniqueSlug = async (
 	let suffix = 1;
 
 	while (true) {
-		const existingRecord = await (db[model] as any).findFirst({
+		const modelDelegate = db[model] as unknown as {
+			findFirst: (args: { where: Record<string, unknown> }) => Promise<unknown>;
+		};
+		const existingRecord = await modelDelegate.findFirst({
 			where: {
 				[field]: slug,
 			},
@@ -100,7 +102,7 @@ export async function getUserCountry(req: Request): Promise<Country> {
 	let userCountry: Country = DEFAULT_COUNTRY;
 
 	// If geo data is available (in production on Vercel as an edge function)
-	const geo = (req as any).geo; // For edge functions in Vercel
+	const geo = (req as unknown as { geo?: { country?: string; city?: string; region?: string } }).geo;
 	if (geo) {
 		userCountry = {
 			name: geo.country || DEFAULT_COUNTRY.name,
