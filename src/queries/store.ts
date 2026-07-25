@@ -1,7 +1,7 @@
 'use server';
 
 import { currentUser } from '@clerk/nextjs/server';
-import { ShippingRate, Store } from '@prisma/client';
+import { OrderStatus, ShippingRate, Store } from '@prisma/client';
 import { db } from '@/lib/db';
 import { StoreDefaultShippingType, StoreStatus, StoreType } from '@/lib/types';
 import { checkIfUserFollowingStore } from './product';
@@ -363,10 +363,12 @@ export const getStoreOrders = async (
 		page = 1,
 		limit = 10,
 		search = '',
+		status = 'ALL',
 	}: {
 		page?: number;
 		limit?: number;
 		search?: string;
+		status?: string;
 	} = {},
 ) => {
 	try {
@@ -399,8 +401,9 @@ export const getStoreOrders = async (
 
 		const skip = Math.max(0, (page - 1) * limit);
 
-		const where = {
+		const where: any = {
 			storeId: store.id,
+			...(status && status !== 'ALL' ? { status: status as OrderStatus } : {}),
 			...(search.trim()
 				? {
 						OR: [

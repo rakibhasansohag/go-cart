@@ -15,31 +15,60 @@ import { useModal } from '@/providers/modal-provider';
 import CustomModal from '@/components/dashboard/shared/custom-modal';
 import StoreOrderSummary from '@/components/dashboard/shared/store-order-summary';
 
+import Link from 'next/link';
+
 export const columns: ColumnDef<StoreOrderType>[] = [
 	{
 		accessorKey: 'id',
 		header: 'Order',
 		cell: ({ row }) => {
-			return <span>{row.original.id}</span>;
+			return <span className='font-mono text-xs font-semibold'>#{row.original.id.slice(0, 8)}...</span>;
+		},
+	},
+	{
+		accessorKey: 'customer',
+		header: 'Customer',
+		cell: ({ row }) => {
+			const address = row.original.order.shippingAddress;
+			const fullName = `${address.firstName} ${address.lastName}`.trim() || 'Customer';
+			const email = address.user?.email || '';
+			return (
+				<div className='flex flex-col min-w-0 max-w-[180px]'>
+					<span className='font-semibold text-xs text-foreground truncate'>
+						{fullName}
+					</span>
+					<span className='text-[11px] text-muted-foreground truncate' title={email}>
+						{email}
+					</span>
+				</div>
+			);
 		},
 	},
 	{
 		accessorKey: 'products',
 		header: 'Products',
 		cell: ({ row }) => {
-			const images = row.original.items.map((product) => product.image);
+			const items = row.original.items;
 			return (
-				<div className='flex flex-wrap gap-1'>
-					{images.map((img, i) => (
-						<Image
-							key={`${img}-${i}`}
-							src={img}
-							alt=''
-							width={100}
-							height={100}
-							className='w-7 h-7 object-cover rounded-full'
-							style={{ transform: `translateX(-${i * 15}px)` }}
-						/>
+				<div className='flex flex-wrap gap-1 items-center'>
+					{items.map((item, i) => (
+						<Link
+							key={`${item.id}-${i}`}
+							href={`/product/${item.productSlug}/${item.variantSlug}`}
+							target='_blank'
+							rel='noopener noreferrer'
+							title={`View ${item.name} in new tab`}
+							className='hover:opacity-80 transition-opacity'
+						>
+							<Image
+								src={item.image}
+								alt={item.name}
+								width={100}
+								height={100}
+								className='w-7 h-7 object-cover rounded-full border border-border shadow-2xs'
+								style={{ transform: `translateX(-${i * 10}px)` }}
+							/>
+						</Link>
 					))}
 				</div>
 			);
