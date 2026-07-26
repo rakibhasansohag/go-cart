@@ -73,6 +73,37 @@ export const upsertCoupon = async (coupon: Coupon, storeUrl: string) => {
 	}
 };
 
+export const validateCouponCode = async (code: string) => {
+	try {
+		const coupon = await db.coupon.findUnique({
+			where: { code: code.toUpperCase().trim() },
+			include: { store: true },
+		});
+
+		if (!coupon) {
+			throw new Error('Invalid coupon code.');
+		}
+
+		const currentDate = new Date();
+		const startDate = new Date(coupon.startDate);
+		const endDate = new Date(coupon.endDate);
+
+		if (currentDate < startDate || currentDate > endDate) {
+			throw new Error('This coupon code is expired or not yet active.');
+		}
+
+		return {
+			id: coupon.id,
+			code: coupon.code,
+			discount: coupon.discount,
+			storeId: coupon.storeId,
+			storeName: coupon.store.name,
+		};
+	} catch (error: any) {
+		throw new Error(error.message || 'Failed to validate coupon code.');
+	}
+};
+
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * Applies a coupon to a cart for items belonging to the coupon's store.

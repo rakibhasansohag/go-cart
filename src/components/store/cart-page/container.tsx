@@ -91,6 +91,7 @@ export default function CartContainer({
 								{/* Cart summary */}
 								<CartSummary
 									cartItems={cartItems}
+									selectedItems={selectedItems}
 									shippingFees={totalShipping}
 								/>
 								<div className='mt-2 p-4 bg-background px-6'>
