@@ -7,8 +7,9 @@ import StatCard from '@/components/dashboard/analytics/stat-card';
 import OverviewChart from '@/components/dashboard/analytics/overview-chart';
 import StatusDistribution from '@/components/dashboard/analytics/status-distribution';
 import RecentTransactions from '@/components/dashboard/analytics/recent-transactions';
+import TopProducts from '@/components/dashboard/analytics/top-products';
 import OverviewSkeleton from '@/components/dashboard/shared/overview-skeleton';
-import { DollarSign, Package, ShoppingBag, Users } from 'lucide-react';
+import { DollarSign, Package, ShoppingBag, TrendingUp, Users } from 'lucide-react';
 
 interface SellerOverviewProps {
 	storeUrl: string;
@@ -37,16 +38,23 @@ export default function SellerOverview({ storeUrl }: SellerOverviewProps) {
 			</div>
 
 			{/* Stat Cards Grid */}
-			<div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4'>
+			<div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-4'>
 				<StatCard
-					title='Store Gross Revenue'
-					value={`$${data.totalRevenue.toLocaleString()}`}
+					title='Gross Revenue'
+					value={`$${data.totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
 					change={15.3}
 					icon={DollarSign}
 					iconBgColor='bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
 				/>
 				<StatCard
-					title='Store Orders'
+					title='Avg Order Value'
+					value={`$${(data.averageOrderValue || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+					change={4.2}
+					icon={TrendingUp}
+					iconBgColor='bg-indigo-500/10 text-indigo-600 dark:text-indigo-400'
+				/>
+				<StatCard
+					title='Total Orders'
 					value={data.totalOrders.toLocaleString()}
 					change={9.1}
 					icon={ShoppingBag}
@@ -55,7 +63,7 @@ export default function SellerOverview({ storeUrl }: SellerOverviewProps) {
 				<StatCard
 					title='Active Products'
 					value={data.activeProducts.toLocaleString()}
-					description='Total items in inventory'
+					description='Items in inventory'
 					icon={Package}
 					iconBgColor='bg-purple-500/10 text-purple-600 dark:text-purple-400'
 				/>
@@ -70,7 +78,7 @@ export default function SellerOverview({ storeUrl }: SellerOverviewProps) {
 
 			{/* Analytics Grid */}
 			<div className='grid grid-cols-1 lg:grid-cols-3 gap-6'>
-				<div className='lg:col-span-2'>
+				<div className='lg:col-span-2 space-y-6'>
 					<OverviewChart
 						data={data.monthlyRevenue}
 						title='Monthly Store Revenue'
@@ -82,6 +90,11 @@ export default function SellerOverview({ storeUrl }: SellerOverviewProps) {
 						data={data.statusDistribution}
 						title='Order Fulfillment Status'
 						description='Breakdown by order delivery state'
+					/>
+					<TopProducts
+						products={data.topProducts || []}
+						title='Top Selling Products'
+						description='Leaderboard of best-performing items'
 					/>
 				</div>
 			</div>

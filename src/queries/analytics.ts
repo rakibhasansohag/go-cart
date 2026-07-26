@@ -41,16 +41,27 @@ export type AdminAnalyticsData = {
 	recentOrders: RecentOrderSummary[];
 };
 
+export type TopSellingProductSummary = {
+	id: string;
+	name: string;
+	slug: string;
+	sales: number;
+	price: number;
+	image: string;
+};
+
 export type SellerAnalyticsData = {
 	storeId: string;
 	storeName: string;
 	totalRevenue: number;
 	totalOrders: number;
+	averageOrderValue: number;
 	activeProducts: number;
 	totalCustomers: number;
 	monthlyRevenue: MonthlyRevenueData[];
 	statusDistribution: OrderStatusDistributionData[];
 	recentOrders: RecentOrderSummary[];
+	topProducts: TopSellingProductSummary[];
 };
 
 /**
@@ -177,11 +188,13 @@ const getFallbackSellerAnalytics = (storeUrl: string): SellerAnalyticsData => ({
 	storeName: storeUrl ? storeUrl.replace(/-/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase()) : 'Store',
 	totalRevenue: 0,
 	totalOrders: 0,
+	averageOrderValue: 0,
 	activeProducts: 0,
 	totalCustomers: 0,
 	monthlyRevenue: [],
 	statusDistribution: [],
 	recentOrders: [],
+	topProducts: [],
 });
 
 /**
@@ -204,7 +217,7 @@ export const getSellerStoreAnalyticsData = async (
 			return getFallbackSellerAnalytics(storeUrl);
 		}
 
-	const [activeProductsCount, orderGroups, recentOrderGroups] =
+	const [activeProductsCount, orderGroups, recentOrderGroups, rawTopProducts] =
 		await Promise.all([
 			db.product.count({
 				where: { storeId: store.id },
@@ -215,6 +228,7 @@ export const getSellerStoreAnalyticsData = async (
 					order: {
 						select: { userId: true },
 					},
+					items: true,
 				},
 			}),
 			db.orderGroup.findMany({
@@ -232,6 +246,24 @@ export const getSellerStoreAnalyticsData = async (
 									picture: true,
 								},
 							},
+						},
+					},
+				},
+			}),
+			db.product.findMany({
+				where: { storeId: store.id },
+				take: 5,
+				orderBy: { sales: 'desc' },
+				select: {
+					id: true,
+					name: true,
+					slug: true,
+					sales: true,
+					variants: {
+						take: 1,
+						select: {
+							images: { take: 1, select: { url: true } },
+							sizes: { take: 1, select: { price: true } },
 						},
 					},
 				},
@@ -299,16 +331,74 @@ export const getSellerStoreAnalyticsData = async (
 		createdAt: g.createdAt,
 	}));
 
+	const averageOrderValue = totalOrders > 0 ? Math.round((totalRevenue / totalOrders) * 100) / 100 : 0;
+
+	// Calculate real product sales from order items
+	const salesByProductMap = new Map<
+		string,
+		{ name: string; slug: string; sales: number; price: number; image: string }
+	>();
+
+	orderGroups.forEach((g) => {
+		g.items?.forEach((item) => {
+			const existing = salesByProductMap.get(item.productId);
+			if (existing) {
+				existing.sales += item.quantity || 1;
+			} else {
+				salesByProductMap.set(item.productId, {
+					name: item.name,
+					slug: item.productSlug,
+					sales: item.quantity || 1,
+					price: item.price,
+					image: item.image,
+				});
+			}
+		});
+	});
+
+	let topProducts: TopSellingProductSummary[] = Array.from(
+		salesByProductMap.entries(),
+	)
+		.map(([id, p]) => ({
+			id,
+			name: p.name,
+			slug: p.slug,
+			sales: p.sales,
+			price: p.price,
+			image: p.image,
+		}))
+		.sort((a, b) => b.sales - a.sales)
+		.slice(0, 5);
+
+	// Fallback to raw catalog products if no items ordered yet
+	if (topProducts.length === 0 && rawTopProducts.length > 0) {
+		topProducts = rawTopProducts.map((p) => {
+			const firstVariant = p.variants[0];
+			const firstImage = firstVariant?.images[0]?.url || '';
+			const firstPrice = firstVariant?.sizes[0]?.price || 0;
+			return {
+				id: p.id,
+				name: p.name,
+				slug: p.slug,
+				sales: p.sales || 0,
+				price: firstPrice,
+				image: firstImage,
+			};
+		});
+	}
+
 	return {
 		storeId: store.id,
 		storeName: store.name,
 		totalRevenue: Math.round(totalRevenue * 100) / 100,
 		totalOrders,
+		averageOrderValue,
 		activeProducts: activeProductsCount,
 		totalCustomers: uniqueCustomers,
 		monthlyRevenue,
 		statusDistribution,
 		recentOrders,
+		topProducts,
 	};
 	} catch (error) {
 		console.error('Error in getSellerStoreAnalyticsData:', error);
