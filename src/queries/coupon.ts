@@ -92,6 +92,22 @@ export const validateCouponCode = async (code: string) => {
 			throw new Error('This coupon code is expired or not yet active.');
 		}
 
+		// Verify single-use per customer
+		const user = await currentUser();
+		if (user) {
+			const hasUsed = await db.coupon.findFirst({
+				where: {
+					id: coupon.id,
+					users: {
+						some: { id: user.id },
+					},
+				},
+			});
+			if (hasUsed) {
+				throw new Error('You have already redeemed this single-use coupon.');
+			}
+		}
+
 		return {
 			id: coupon.id,
 			code: coupon.code,
@@ -277,21 +293,21 @@ export const getStoreCoupons = async (storeUrl: string) => {
 //   - couponId: The ID of the coupon to be retrieved.
 // Returns: Details of the requested coupon.
 export const getCoupon = async (couponId: string) => {
-  try {
-    // Ensure coupon ID is provided
-    if (!couponId) throw new Error("Please provide coupon ID.");
+	try {
+		// Ensure coupon ID is provided
+		if (!couponId) throw new Error("Please provide coupon ID.");
 
-    // Retrieve coupon
-    const coupon = await db.coupon.findUnique({
-      where: {
-        id: couponId,
-      },
-    });
+		// Retrieve coupon
+		const coupon = await db.coupon.findUnique({
+			where: {
+				id: couponId,
+			},
+		});
 
-    return coupon;
-  } catch (error) {
-    throw error;
-  }
+		return coupon;
+	} catch (error) {
+		throw error;
+	}
 };
 
 // Function: deleteCoupon
@@ -303,50 +319,50 @@ export const getCoupon = async (couponId: string) => {
 // Returns: Response indicating success or failure of the deletion operation.
 
 export const deleteCoupon = async (couponId: string, storeUrl: string) => {
-  try {
-    // Get current user
-    const user = await currentUser();
+	try {
+		// Get current user
+		const user = await currentUser();
 
-    // Check if user is authenticated
-    if (!user) throw new Error("Unauthenticated.");
+		// Check if user is authenticated
+		if (!user) throw new Error("Unauthenticated.");
 
-    // Verify seller permission
-    if (user.privateMetadata.role !== "SELLER")
-      throw new Error("Unauthorized Access: Seller Privileges Required.");
+		// Verify seller permission
+		if (user.privateMetadata.role !== "SELLER")
+			throw new Error("Unauthorized Access: Seller Privileges Required.");
 
-    // Ensure coupon ID and store URL are provided
-    if (!couponId || !storeUrl)
-      throw new Error("Please provide coupon ID and store URL.");
+		// Ensure coupon ID and store URL are provided
+		if (!couponId || !storeUrl)
+			throw new Error("Please provide coupon ID and store URL.");
 
-    // Get the store associated with the provided store URL
-    const store = await db.store.findUnique({
-      where: {
-        url: storeUrl,
-      },
-    });
+		// Get the store associated with the provided store URL
+		const store = await db.store.findUnique({
+			where: {
+				url: storeUrl,
+			},
+		});
 
-    // Verify store exists
-    if (!store) throw new Error("Store not found.");
+		// Verify store exists
+		if (!store) throw new Error("Store not found.");
 
-    // Verify that the logged-in user is the owner of the store
-    if (store.userId !== user.id) {
-      throw new Error(
-        "You are not the owner of this store. Only the store owner can delete coupons."
-      );
-    }
+		// Verify that the logged-in user is the owner of the store
+		if (store.userId !== user.id) {
+			throw new Error(
+				"You are not the owner of this store. Only the store owner can delete coupons."
+			);
+		}
 
-    // Delete the coupon from the database
-    const response = await db.coupon.delete({
-      where: {
-        id: couponId,
-        storeId: store.id,
-      },
-    });
+		// Delete the coupon from the database
+		const response = await db.coupon.delete({
+			where: {
+				id: couponId,
+				storeId: store.id,
+			},
+		});
 
-    return response;
-  } catch (error) {
-    throw error;
-  }
+		return response;
+	} catch (error) {
+		throw error;
+	}
 };
 
 export const getAllAdminCoupons = async ({
@@ -368,11 +384,11 @@ export const getAllAdminCoupons = async ({
 
 		const where = search.trim()
 			? {
-					OR: [
-						{ code: { contains: search.trim(), mode: 'insensitive' as const } },
-						{ store: { name: { contains: search.trim(), mode: 'insensitive' as const } } },
-					],
-			  }
+				OR: [
+					{ code: { contains: search.trim(), mode: 'insensitive' as const } },
+					{ store: { name: { contains: search.trim(), mode: 'insensitive' as const } } },
+				],
+			}
 			: {};
 
 		const [coupons, totalCount] = await Promise.all([
