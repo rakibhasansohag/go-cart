@@ -33,7 +33,7 @@ export default function ClientProviders({ children }: Props) {
 				<ModalProvider>
 					<main>{children}</main>
 				</ModalProvider>
-				<Toaster position='top-right' />
+				<Toaster position='top-right' expand richColors />
 				<UploadPreloader
 					key={process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_PRESET}
 				/>
