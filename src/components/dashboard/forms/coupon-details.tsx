@@ -65,14 +65,14 @@ const CouponDetails: FC<CouponDetailsProps> = ({ data, storeUrl }) => {
 	const router = useRouter(); // Hook for routing
 	const queryClient = useQueryClient();
 
-	// Form hook for managing form state and validation
-	const form = useForm<z.infer<typeof CouponFormSchema>>({
-		mode: 'onChange', // Form validation mode
-		resolver: zodResolver(CouponFormSchema), // Resolver for form validation
+	const form = useForm({
+		mode: 'onChange',
+		resolver: zodResolver(CouponFormSchema),
 		defaultValues: {
 			// Setting default form values from data (if available)
 			code: data?.code || '',
 			discount: data?.discount,
+			maxUses: data?.maxUses ?? 0,
 			startDate: data?.startDate || format(new Date(), "yyyy-MM-dd'T'HH:mm:ss"),
 			endDate: data?.endDate || format(new Date(), "yyyy-MM-dd'T'HH:mm:ss"),
 		},
@@ -121,16 +121,21 @@ const CouponDetails: FC<CouponDetailsProps> = ({ data, storeUrl }) => {
 	// Submit handler for form submission
 	const handleSubmit = async () => {
 		const values = form.getValues();
-		await upsertMutation.mutateAsync({
-			id: data?.id ? data.id : v4(),
-			code: values.code,
-			discount: values.discount,
-			startDate: values.startDate,
-			endDate: values.endDate,
-			storeId: '',
-			createdAt: new Date(),
-			updatedAt: new Date(),
-		});
+		try {
+			await upsertMutation.mutateAsync({
+				id: data?.id ? data.id : v4(),
+				code: values.code,
+				discount: values.discount,
+				maxUses: values.maxUses ?? 0,
+				startDate: values.startDate,
+				endDate: values.endDate,
+				storeId: '',
+				createdAt: new Date(),
+				updatedAt: new Date(),
+			});
+		} catch {
+			// Error Toast handled in upsertMutation onError callback
+		}
 	};
 
 	return (
@@ -147,7 +152,10 @@ const CouponDetails: FC<CouponDetailsProps> = ({ data, storeUrl }) => {
 				<CardContent>
 					<Form {...form}>
 						<form
-							onSubmit={form.handleSubmit(handleSubmit)}
+							onSubmit={(e) => {
+								e.preventDefault();
+								form.handleSubmit(handleSubmit)(e);
+							}}
 							className='space-y-4'
 						>
 							<FormField
@@ -164,26 +172,50 @@ const CouponDetails: FC<CouponDetailsProps> = ({ data, storeUrl }) => {
 									</FormItem>
 								)}
 							/>
-							<FormField
-								disabled={isLoading}
-								control={form.control}
-								name='discount'
-								render={({ field }) => (
-									<FormItem className='flex-1'>
-										<FormLabel>Coupon discount</FormLabel>
-										<FormControl>
-											<NumberInput
-												defaultValue={field.value}
-												onValueChange={field.onChange}
-												placeholder='%'
-												min={1}
-												className='!shadow-none rounded-md !text-sm'
-											/>
-										</FormControl>
-										<FormMessage />
-									</FormItem>
-								)}
-							/>
+
+							<div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+								<FormField
+									disabled={isLoading}
+									control={form.control}
+									name='discount'
+									render={({ field }) => (
+										<FormItem className='flex-1'>
+											<FormLabel>Coupon discount (%)</FormLabel>
+											<FormControl>
+												<NumberInput
+													defaultValue={field.value}
+													onValueChange={field.onChange}
+													placeholder='%'
+													min={1}
+													className='!shadow-none rounded-md !text-sm'
+												/>
+											</FormControl>
+											<FormMessage />
+										</FormItem>
+									)}
+								/>
+
+								<FormField
+									disabled={isLoading}
+									control={form.control}
+									name='maxUses'
+									render={({ field }) => (
+										<FormItem className='flex-1'>
+											<FormLabel>Usage Limit / Max Tries (0 = Unlimited)</FormLabel>
+											<FormControl>
+												<NumberInput
+													defaultValue={field.value ?? 0}
+													onValueChange={field.onChange}
+													placeholder='0 (Unlimited)'
+													min={0}
+													className='!shadow-none rounded-md !text-sm'
+												/>
+											</FormControl>
+											<FormMessage />
+										</FormItem>
+									)}
+								/>
+							</div>
 							<div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
 								<FormField
 									disabled={isLoading}
@@ -241,8 +273,8 @@ const CouponDetails: FC<CouponDetailsProps> = ({ data, storeUrl }) => {
 								{isLoading
 									? 'loading...'
 									: data?.id
-									? 'Save coupon information'
-									: 'Create coupon'}
+										? 'Save coupon information'
+										: 'Create coupon'}
 							</Button>
 						</form>
 					</Form>

@@ -1,9 +1,9 @@
 import { CartProductType } from '@/lib/types';
-import { FC, useState } from 'react';
+import { FC, useEffect, useState } from 'react';
 import { Button } from '../ui/button';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
-import { saveUserCart } from '@/queries/user';
+import { getUserCartCoupon, saveUserCart } from '@/queries/user';
 import { validateCouponCode } from '@/queries/coupon';
 import { PulseLoader } from 'react-spinners';
 import { useMutation } from '@tanstack/react-query';
@@ -24,8 +24,24 @@ const CartSummary: FC<Props> = ({ cartItems, selectedItems = [], shippingFees })
 		storeName: string;
 	} | null>(null);
 
+	useEffect(() => {
+		let isMounted = true;
+		getUserCartCoupon().then((coupon) => {
+			if (isMounted && coupon) {
+				setAppliedCoupon(coupon);
+			}
+		});
+		return () => {
+			isMounted = false;
+		};
+	}, []);
+
 	const saveCartMutation = useMutation({
-		mutationFn: () => saveUserCart(selectedItems.length > 0 ? selectedItems : cartItems),
+		mutationFn: () =>
+			saveUserCart(
+				selectedItems.length > 0 ? selectedItems : cartItems,
+				appliedCoupon?.code,
+			),
 		onSuccess: () => {
 			router.push('/checkout');
 		},
@@ -95,9 +111,12 @@ const CartSummary: FC<Props> = ({ cartItems, selectedItems = [], shippingFees })
 						<button
 							type='button'
 							onClick={() => {
+								const activeItems =
+									selectedItems.length > 0 ? selectedItems : cartItems;
 								setAppliedCoupon(null);
 								setCouponCode('');
 								toast.info('Coupon code removed');
+								saveUserCart(activeItems, '').catch(() => {});
 							}}
 							className='hover:opacity-75 transition-opacity'
 							title='Remove coupon'

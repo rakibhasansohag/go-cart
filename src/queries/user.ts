@@ -247,6 +247,7 @@ export const followStore = async (storeId: string): Promise<boolean> => {
  */
 export const saveUserCart = async (
 	cartProducts: CartProductType[],
+	couponCode?: string,
 ): Promise<boolean> => {
 	// Get current user
 	const user = await currentUser();
@@ -259,7 +260,13 @@ export const saveUserCart = async (
 	// Search for existing user cart
 	const userCart = await db.cart.findFirst({
 		where: { userId },
+		include: { coupon: true },
 	});
+
+	const effectiveCouponCode =
+		couponCode !== undefined
+			? couponCode.trim()
+			: userCart?.coupon?.code || null;
 
 	// Delete any existing user cart
 	if (userCart) {
@@ -388,7 +395,41 @@ export const saveUserCart = async (
 		0,
 	);
 
-	const total = subTotal + shippingFees;
+	let total = subTotal + shippingFees;
+	let validCouponId: string | null = null;
+
+	if (effectiveCouponCode) {
+		const coupon = await db.coupon.findUnique({
+			where: { code: effectiveCouponCode.toUpperCase() },
+			include: { store: true },
+		});
+
+		if (coupon) {
+			const currentDate = new Date();
+			const startDate = new Date(coupon.startDate);
+			const endDate = new Date(coupon.endDate);
+
+			if (currentDate >= startDate && currentDate <= endDate) {
+				const storeItems = validatedCartItems.filter(
+					(item) => item.storeId === coupon.storeId,
+				);
+				if (storeItems.length > 0) {
+					const storeSubTotal = storeItems.reduce(
+						(acc, item) => acc + item.price * item.quantity,
+						0,
+					);
+					const storeShippingTotal = storeItems.reduce(
+						(acc, item) => acc + item.shippingFee,
+						0,
+					);
+					const storeTotal = storeSubTotal + storeShippingTotal;
+					const discountedAmount = (storeTotal * coupon.discount) / 100;
+					total = Math.max(0, total - discountedAmount);
+					validCouponId = coupon.id;
+				}
+			}
+		}
+	}
 
 	// Save the validated items to the cart in the database
 	const cart = await db.cart.create({
@@ -414,11 +455,41 @@ export const saveUserCart = async (
 			shippingFees,
 			subTotal,
 			total,
+			couponId: validCouponId,
 			userId,
 		},
 	});
 	if (cart) return true;
 	return false;
+};
+
+export const getUserCartCoupon = async () => {
+	try {
+		const user = await currentUser();
+		if (!user) return null;
+
+		const userCart = await db.cart.findFirst({
+			where: { userId: user.id },
+			include: {
+				coupon: {
+					include: {
+						store: true,
+					},
+				},
+			},
+		});
+
+		if (userCart?.coupon) {
+			return {
+				code: userCart.coupon.code,
+				discount: userCart.coupon.discount,
+				storeName: userCart.coupon.store.name,
+			};
+		}
+		return null;
+	} catch {
+		return null;
+	}
 };
 
 /*

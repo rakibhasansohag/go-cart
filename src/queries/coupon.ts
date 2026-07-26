@@ -63,8 +63,23 @@ export const upsertCoupon = async (coupon: Coupon, storeUrl: string) => {
 			where: {
 				id: coupon.id,
 			},
-			update: { ...coupon, storeId: store.id },
-			create: { ...coupon, id: coupon.id, storeId: store.id },
+			update: {
+				code: coupon.code,
+				startDate: coupon.startDate,
+				endDate: coupon.endDate,
+				discount: coupon.discount,
+				maxUses: coupon.maxUses ?? 0,
+				storeId: store.id,
+			},
+			create: {
+				id: coupon.id,
+				code: coupon.code,
+				startDate: coupon.startDate,
+				endDate: coupon.endDate,
+				discount: coupon.discount,
+				maxUses: coupon.maxUses ?? 0,
+				storeId: store.id,
+			},
 		});
 
 		return couponDetails;
@@ -81,15 +96,31 @@ export const validateCouponCode = async (code: string) => {
 		});
 
 		if (!coupon) {
-			throw new Error('Invalid coupon code.');
+			throw new Error('Coupon code not found.');
 		}
 
 		const currentDate = new Date();
 		const startDate = new Date(coupon.startDate);
 		const endDate = new Date(coupon.endDate);
 
-		if (currentDate < startDate || currentDate > endDate) {
-			throw new Error('This coupon code is expired or not yet active.');
+		if (currentDate > endDate) {
+			throw new Error(`This coupon expired on ${endDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}.`);
+		}
+
+		if (currentDate < startDate) {
+			throw new Error(`This coupon is inactive until ${startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}.`);
+		}
+
+		// Calculate successful redemptions (Paid orders only)
+		const successfulRedemptions = await db.orderGroup.count({
+			where: {
+				couponId: coupon.id,
+				order: { paymentStatus: 'Paid' },
+			},
+		});
+
+		if (coupon.maxUses > 0 && successfulRedemptions >= coupon.maxUses) {
+			throw new Error(`This coupon is inactive (limit of ${coupon.maxUses} uses reached).`);
 		}
 
 		// Verify single-use per customer
@@ -114,9 +145,63 @@ export const validateCouponCode = async (code: string) => {
 			discount: coupon.discount,
 			storeId: coupon.storeId,
 			storeName: coupon.store.name,
+			maxUses: coupon.maxUses,
+			usedCount: successfulRedemptions,
 		};
 	} catch (error: any) {
 		throw new Error(error.message || 'Failed to validate coupon code.');
+	}
+};
+
+/**
+ * Retrieves redemption trace history for a coupon (Paid orders only).
+ */
+export const getCouponRedemptions = async (couponId: string) => {
+	try {
+		const user = await currentUser();
+		if (!user) throw new Error('Unauthenticated.');
+
+		const redemptions = await db.orderGroup.findMany({
+			where: {
+				couponId: couponId,
+				order: {
+					paymentStatus: 'Paid',
+				},
+			},
+			orderBy: { createdAt: 'desc' },
+			include: {
+				order: {
+					include: {
+						user: {
+							select: {
+								name: true,
+								email: true,
+								picture: true,
+							},
+						},
+						shippingAddress: {
+							include: {
+								user: true,
+							},
+						},
+					},
+				},
+			},
+		});
+
+		return redemptions.map((g) => ({
+			id: g.id,
+			orderId: g.orderId,
+			total: g.total,
+			createdAt: g.createdAt,
+			customerName: g.order?.shippingAddress
+				? `${g.order.shippingAddress.firstName || ''} ${g.order.shippingAddress.lastName || ''}`.trim()
+				: g.order?.user?.name || 'Customer',
+			customerEmail: g.order?.shippingAddress?.user?.email || g.order?.user?.email || 'N/A',
+			userPicture: g.order?.user?.picture || null,
+		}));
+	} catch (error) {
+		throw error;
 	}
 };
 
@@ -272,14 +357,41 @@ export const getStoreCoupons = async (storeUrl: string) => {
 		if (store.userId !== user.id)
 			throw new Error('Unauthorized Access: You do not own this store.');
 
-		// Retrieve and return all coupons for the specified store
+		// Retrieve and return all coupons for the specified store with usage stats
 		const coupons = await db.coupon.findMany({
 			where: {
 				storeId: store.id,
 			},
+			include: {
+				orders: {
+					where: {
+						order: { paymentStatus: 'Paid' },
+					},
+					select: { id: true },
+				},
+			},
+			orderBy: { createdAt: 'desc' },
 		});
 
-		return coupons;
+		const now = new Date();
+		return coupons.map((c) => {
+			const usedCount = c.orders.length;
+			const startDate = new Date(c.startDate);
+			const endDate = new Date(c.endDate);
+
+			let status: 'Active' | 'Expired' | 'Inactive' = 'Active';
+			if (now > endDate) {
+				status = 'Expired';
+			} else if (now < startDate || (c.maxUses > 0 && usedCount >= c.maxUses)) {
+				status = 'Inactive';
+			}
+
+			return {
+				...c,
+				usedCount,
+				status,
+			};
+		});
 	} catch (error) {
 		// Log and re-throw any errors
 		throw error;

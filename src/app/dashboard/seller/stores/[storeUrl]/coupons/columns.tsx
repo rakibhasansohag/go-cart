@@ -47,19 +47,61 @@ import CouponDetails from '@/components/dashboard/forms/coupon-details';
 import { deleteCoupon, getCoupon } from '@/queries/coupon';
 import { toast } from 'sonner';
 
-export const columns: ColumnDef<Coupon>[] = [
+import { Badge } from '@/components/ui/badge';
+import { History, Eye } from 'lucide-react';
+import { getCouponRedemptions } from '@/queries/coupon';
+import { useQuery } from '@tanstack/react-query';
+import { PulseLoader } from 'react-spinners';
+
+export type SellerCouponTableRow = Coupon & {
+	usedCount?: number;
+	status?: 'Active' | 'Expired' | 'Inactive';
+};
+
+export const columns: ColumnDef<SellerCouponTableRow>[] = [
 	{
 		accessorKey: 'code',
 		header: 'Code',
 		cell: ({ row }) => {
-			return <span>{row.original.code}</span>;
+			return <span className='font-bold uppercase tracking-wider'>{row.original.code}</span>;
 		},
 	},
 	{
 		accessorKey: 'discount',
 		header: 'Discount',
 		cell: ({ row }) => {
-			return <span>{row.original.discount}</span>;
+			return <span className='font-semibold'>{row.original.discount}%</span>;
+		},
+	},
+	{
+		accessorKey: 'status',
+		header: 'Status',
+		cell: ({ row }) => {
+			const status = row.original.status || 'Active';
+			const variants = {
+				Active: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30',
+				Expired: 'bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/30',
+				Inactive: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30',
+			};
+
+			return (
+				<Badge className={`px-2.5 py-0.5 text-xs font-semibold rounded-full border ${variants[status]}`}>
+					{status}
+				</Badge>
+			);
+		},
+	},
+	{
+		accessorKey: 'usage',
+		header: 'Usage (Paid)',
+		cell: ({ row }) => {
+			const used = row.original.usedCount ?? 0;
+			const max = row.original.maxUses ?? 0;
+			return (
+				<span className='font-medium text-xs'>
+					{used} / {max > 0 ? max : 'Unlimited'}
+				</span>
+			);
 		},
 	},
 	{
@@ -81,9 +123,12 @@ export const columns: ColumnDef<Coupon>[] = [
 		header: 'Time Left',
 		cell: ({ row }) => {
 			const { days, hours } = getTimeUntil(row.original.endDate);
+			if (days < 0 || hours < 0) {
+				return <span className='text-muted-foreground italic text-xs'>Ended</span>;
+			}
 			return (
-				<span>
-					{days} days and {hours} hours
+				<span className='text-xs font-medium'>
+					{days}d {hours}h
 				</span>
 			);
 		},
@@ -92,20 +137,74 @@ export const columns: ColumnDef<Coupon>[] = [
 		id: 'actions',
 		cell: ({ row }) => {
 			const rowData = row.original;
-
 			return <CellActions coupon={rowData} />;
 		},
 	},
 ];
 
-// Define props interface for CellActions component
+// Coupon Redemptions Trace Modal
+const CouponTraceModal = ({ couponId, code }: { couponId: string; code: string }) => {
+	const { data: redemptions, isLoading } = useQuery({
+		queryKey: ['couponRedemptions', couponId],
+		queryFn: () => getCouponRedemptions(couponId),
+	});
+
+	return (
+		<div className='p-4 space-y-4 max-w-2xl w-full'>
+			<div className='border-b border-border pb-3'>
+				<h2 className='text-lg font-bold flex items-center gap-2'>
+					<History className='w-5 h-5 text-primary' />
+					Redemption History — Code: <span className='text-primary uppercase'>{code}</span>
+				</h2>
+				<p className='text-xs text-muted-foreground mt-0.5'>
+					Track customer checkouts and timestamps for successfully placed orders using this discount code.
+				</p>
+			</div>
+
+			{isLoading ? (
+				<div className='py-8 flex justify-center'>
+					<PulseLoader size={8} color='#f97316' />
+				</div>
+			) : !redemptions || redemptions.length === 0 ? (
+				<div className='py-8 text-center text-sm text-muted-foreground border border-dashed border-border rounded-xl'>
+					No successful checkouts recorded for this coupon code yet.
+				</div>
+			) : (
+				<div className='max-h-[350px] overflow-y-auto space-y-2.5 pr-1'>
+					{redemptions.map((item) => (
+						<div
+							key={item.id}
+							className='p-3 bg-muted/30 rounded-xl border border-border/60 flex items-center justify-between gap-3 text-xs'
+						>
+							<div className='space-y-0.5'>
+								<div className='font-bold text-foreground'>{item.customerName}</div>
+								<div className='text-muted-foreground text-[11px]'>{item.customerEmail}</div>
+							</div>
+							<div className='text-right space-y-0.5 shrink-0'>
+								<div className='font-semibold text-primary'>${item.total.toFixed(2)}</div>
+								<div className='text-muted-foreground text-[10px]'>
+									{new Date(item.createdAt).toLocaleString('en-US', {
+										month: 'short',
+										day: 'numeric',
+										year: 'numeric',
+										hour: '2-digit',
+										minute: '2-digit',
+									})}
+								</div>
+							</div>
+						</div>
+					))}
+				</div>
+			)}
+		</div>
+	);
+};
+
 interface CellActionsProps {
-	coupon: Coupon;
+	coupon: SellerCouponTableRow;
 }
 
-// CellActions component definition
 const CellActions: React.FC<CellActionsProps> = ({ coupon }) => {
-	// Hooks
 	const { setOpen, setClose } = useModal();
 	const queryClient = useQueryClient();
 
@@ -125,7 +224,6 @@ const CellActions: React.FC<CellActionsProps> = ({ coupon }) => {
 		},
 	});
 
-	// Return null if rowData or rowData.id don't exist
 	if (!coupon || !coupon.id) return null;
 
 	return (
@@ -143,9 +241,20 @@ const CellActions: React.FC<CellActionsProps> = ({ coupon }) => {
 						className='flex gap-2'
 						onClick={() => {
 							setOpen(
-								// Custom modal component
 								<CustomModal>
-									{/* Store details component */}
+									<CouponTraceModal couponId={coupon.id} code={coupon.code} />
+								</CustomModal>,
+							);
+						}}
+					>
+						<Eye size={15} />
+						Trace Usage
+					</DropdownMenuItem>
+					<DropdownMenuItem
+						className='flex gap-2'
+						onClick={() => {
+							setOpen(
+								<CustomModal>
 									<CouponDetails
 										data={{ ...coupon }}
 										storeUrl={params.storeUrl}
@@ -165,7 +274,7 @@ const CellActions: React.FC<CellActionsProps> = ({ coupon }) => {
 					<DropdownMenuSeparator />
 					<AlertDialogTrigger asChild>
 						<DropdownMenuItem
-							className='flex gap-2 !cursor-pointer'
+							className='flex gap-2 !cursor-pointer text-destructive focus:text-destructive'
 							onClick={() => {}}
 						>
 							<Trash size={15} /> Delete coupon

@@ -509,6 +509,11 @@ export const CouponFormSchema = z
 			.min(1, 'Discount must be at least 1%.')
 			.max(99, 'Discount cannot exceed 99%.'),
 
+		maxUses: z
+			.number()
+			.min(0, 'Max uses must be 0 or greater.')
+			.default(0),
+
 		storeId: z.string().optional(),
 	})
 	.refine((data) => new Date(data.endDate) > new Date(data.startDate), {
