@@ -7,6 +7,9 @@ import { getStoreOrders } from '@/queries/store';
 import { columns } from './columns';
 import { queryKeys } from '@/lib/query-keys';
 import { StoreOrderType } from '@/lib/types';
+import { exportOrdersToCSV } from '@/lib/export-utils';
+import { Download } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface OrdersTableProps {
 	storeUrl: string;
@@ -46,27 +49,40 @@ export default function OrdersTable({ storeUrl, initialData }: OrdersTableProps)
 
 	return (
 		<div className='space-y-4'>
-			{/* Status Filter Tabs */}
-			<div className='flex flex-wrap gap-2 items-center border-b border-border pb-3'>
-				{STATUS_TABS.map((tab) => {
-					const isActive = status === tab.value;
-					return (
-						<button
-							key={tab.value}
-							onClick={() => {
-								setStatus(tab.value);
-								setPage(1);
-							}}
-							className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer border ${
-								isActive
-									? 'bg-primary text-primary-foreground border-primary shadow-xs'
-									: 'bg-muted/40 text-muted-foreground hover:text-foreground hover:bg-muted border-border/60'
-							}`}
-						>
-							{tab.label}
-						</button>
-					);
-				})}
+			{/* Status Filter Tabs & Actions */}
+			<div className='flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-border pb-3'>
+				<div className='flex flex-wrap gap-2 items-center'>
+					{STATUS_TABS.map((tab) => {
+						const isActive = status === tab.value;
+						return (
+							<button
+								key={tab.value}
+								onClick={() => {
+									setStatus(tab.value);
+									setPage(1);
+								}}
+								className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer border ${
+									isActive
+										? 'bg-primary text-primary-foreground border-primary shadow-xs'
+										: 'bg-muted/40 text-muted-foreground hover:text-foreground hover:bg-muted border-border/60'
+								}`}
+							>
+								{tab.label}
+							</button>
+						);
+					})}
+				</div>
+
+				<Button
+					variant='outline'
+					size='sm'
+					onClick={() => exportOrdersToCSV(orders, `orders-${storeUrl}`)}
+					disabled={orders.length === 0}
+					className='h-8 px-3 text-xs font-medium gap-1.5 shrink-0 border-border/80 hover:bg-accent'
+				>
+					<Download className='w-3.5 h-3.5' />
+					Export CSV ({orders.length})
+				</Button>
 			</div>
 
 			<DataTable

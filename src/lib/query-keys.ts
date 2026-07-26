@@ -52,7 +52,8 @@ export const queryKeys = {
 		shipping: (storeUrl: string) => ['dashboard', 'shipping', storeUrl] as const,
 		storeSettings: (storeUrl: string) => ['dashboard', 'settings', storeUrl] as const,
 		adminAnalytics: () => ['dashboard', 'adminAnalytics'] as const,
-		sellerAnalytics: (storeUrl: string) => ['dashboard', 'sellerAnalytics', storeUrl] as const,
+		sellerAnalytics: (storeUrl: string, timeframe?: string) =>
+			['dashboard', 'sellerAnalytics', storeUrl, timeframe || 'all'] as const,
 		adminOrders: (page?: number, limit?: number, search?: string) =>
 			['dashboard', 'adminOrders', { page, limit, search }] as const,
 		adminCoupons: (page?: number, limit?: number, search?: string) =>

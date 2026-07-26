@@ -202,6 +202,7 @@ const getFallbackSellerAnalytics = (storeUrl: string): SellerAnalyticsData => ({
  */
 export const getSellerStoreAnalyticsData = async (
 	storeUrl: string,
+	timeframe: string = 'all',
 ): Promise<SellerAnalyticsData> => {
 	try {
 		const user = await currentUser();
@@ -217,58 +218,73 @@ export const getSellerStoreAnalyticsData = async (
 			return getFallbackSellerAnalytics(storeUrl);
 		}
 
-	const [activeProductsCount, orderGroups, recentOrderGroups, rawTopProducts] =
-		await Promise.all([
-			db.product.count({
-				where: { storeId: store.id },
-			}),
-			db.orderGroup.findMany({
-				where: { storeId: store.id },
-				include: {
-					order: {
-						select: { userId: true },
+		const now = new Date();
+		let dateFilter: Date | undefined = undefined;
+		if (timeframe === '7d') {
+			dateFilter = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+		} else if (timeframe === '30d') {
+			dateFilter = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+		} else if (timeframe === 'this_month') {
+			dateFilter = new Date(now.getFullYear(), now.getMonth(), 1);
+		}
+
+		const orderWhere = {
+			storeId: store.id,
+			...(dateFilter ? { createdAt: { gte: dateFilter } } : {}),
+		};
+
+		const [activeProductsCount, orderGroups, recentOrderGroups, rawTopProducts] =
+			await Promise.all([
+				db.product.count({
+					where: { storeId: store.id },
+				}),
+				db.orderGroup.findMany({
+					where: orderWhere,
+					include: {
+						order: {
+							select: { userId: true },
+						},
+						items: true,
 					},
-					items: true,
-				},
-			}),
-			db.orderGroup.findMany({
-				where: { storeId: store.id },
-				take: 6,
-				orderBy: { createdAt: 'desc' },
-				include: {
-					store: { select: { name: true } },
-					order: {
-						include: {
-							user: {
-								select: {
-									name: true,
-									email: true,
-									picture: true,
+				}),
+				db.orderGroup.findMany({
+					where: orderWhere,
+					take: 6,
+					orderBy: { createdAt: 'desc' },
+					include: {
+						store: { select: { name: true } },
+						order: {
+							include: {
+								user: {
+									select: {
+										name: true,
+										email: true,
+										picture: true,
+									},
 								},
 							},
 						},
 					},
-				},
-			}),
-			db.product.findMany({
-				where: { storeId: store.id },
-				take: 5,
-				orderBy: { sales: 'desc' },
-				select: {
-					id: true,
-					name: true,
-					slug: true,
-					sales: true,
-					variants: {
-						take: 1,
-						select: {
-							images: { take: 1, select: { url: true } },
-							sizes: { take: 1, select: { price: true } },
+				}),
+				db.product.findMany({
+					where: { storeId: store.id },
+					take: 5,
+					orderBy: { sales: 'desc' },
+					select: {
+						id: true,
+						name: true,
+						slug: true,
+						sales: true,
+						variants: {
+							take: 1,
+							select: {
+								images: { take: 1, select: { url: true } },
+								sizes: { take: 1, select: { price: true } },
+							},
 						},
 					},
-				},
-			}),
-		]);
+				}),
+			]);
 
 	const totalRevenue = orderGroups.reduce((sum, g) => sum + (g.total || 0), 0);
 	const totalOrders = orderGroups.length;
@@ -278,7 +294,6 @@ export const getSellerStoreAnalyticsData = async (
 
 	// Monthly revenue trend
 	const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-	const now = new Date();
 	const monthlyRevenueMap = new Map<string, { revenue: number; orders: number }>();
 
 	for (let i = 5; i >= 0; i--) {

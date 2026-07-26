@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { getSellerStoreAnalyticsData } from '@/queries/analytics';
 import { queryKeys } from '@/lib/query-keys';
@@ -15,10 +16,19 @@ interface SellerOverviewProps {
 	storeUrl: string;
 }
 
+const TIMEFRAMES = [
+	{ label: 'All Time', value: 'all' },
+	{ label: 'This Month', value: 'this_month' },
+	{ label: 'Last 30 Days', value: '30d' },
+	{ label: 'Last 7 Days', value: '7d' },
+];
+
 export default function SellerOverview({ storeUrl }: SellerOverviewProps) {
+	const [timeframe, setTimeframe] = useState<string>('all');
+
 	const { data, isLoading } = useQuery({
-		queryKey: queryKeys.dashboard.sellerAnalytics(storeUrl),
-		queryFn: () => getSellerStoreAnalyticsData(storeUrl),
+		queryKey: queryKeys.dashboard.sellerAnalytics(storeUrl, timeframe),
+		queryFn: () => getSellerStoreAnalyticsData(storeUrl, timeframe),
 	});
 
 	if (isLoading || !data) return <OverviewSkeleton />;
@@ -34,6 +44,25 @@ export default function SellerOverview({ storeUrl }: SellerOverviewProps) {
 					<p className='text-sm text-muted-foreground'>
 						Monitor your store's sales, product inventory, and customer activity.
 					</p>
+				</div>
+
+				<div className='flex flex-wrap items-center gap-1 p-1 bg-muted/40 rounded-xl border border-border/60 shrink-0'>
+					{TIMEFRAMES.map((tf) => {
+						const isActive = timeframe === tf.value;
+						return (
+							<button
+								key={tf.value}
+								onClick={() => setTimeframe(tf.value)}
+								className={`px-3 py-1 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
+									isActive
+										? 'bg-background text-foreground shadow-xs border border-border/80'
+										: 'text-muted-foreground hover:text-foreground'
+								}`}
+							>
+								{tf.label}
+							</button>
+						);
+					})}
 				</div>
 			</div>
 
