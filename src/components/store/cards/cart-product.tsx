@@ -3,7 +3,7 @@ import { Button } from '@/components/store/ui/button';
 import { useCartStore } from '@/cart-store/useCartStore';
 import { CartProductType, Country } from '@/lib/types';
 import { cn } from '@/lib/utils';
-import { addToWishlist } from '@/queries/user';
+import { addToWishlist, removeFromWishlist } from '@/queries/user';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/query-keys';
 import {
@@ -170,10 +170,13 @@ const CartProduct: FC<Props> = ({
 
 	const queryClient = useQueryClient();
 
+	const [isInWishlist, setIsInWishlist] = useState(false);
+
 	const addToWishlistMutation = useMutation({
 		mutationFn: () => addToWishlist(productId, variantId, sizeId),
 		onSuccess: () => {
 			toast.success('Product successfully added to wishlist.');
+			setIsInWishlist(true);
 			queryClient.invalidateQueries({ queryKey: queryKeys.profile.wishlist(1) });
 		},
 		onError: (error: any) => {
@@ -181,12 +184,25 @@ const CartProduct: FC<Props> = ({
 		},
 	});
 
-	// Handle add product to wishlist
-	const handleaddToWishlist = () => {
-		addToWishlistMutation.mutate();
-	};
+	const removeFromWishlistMutation = useMutation({
+		mutationFn: () => removeFromWishlist(productId, variantId),
+		onSuccess: () => {
+			toast.success('Product removed from wishlist.');
+			setIsInWishlist(false);
+			queryClient.invalidateQueries({ queryKey: queryKeys.profile.wishlist(1) });
+		},
+		onError: (error: any) => {
+			toast.error(error.toString());
+		},
+	});
 
-	// TODO : Handle remove product from wishlist
+	const handleWishlistToggle = () => {
+		if (isInWishlist) {
+			removeFromWishlistMutation.mutate();
+		} else {
+			addToWishlistMutation.mutate();
+		}
+	};
 	return (
 		<div
 			className={cn(
@@ -254,9 +270,13 @@ const CartProduct: FC<Props> = ({
 							<div className='absolute top-0 right-0'>
 								<span
 									className='mr-2.5 cursor-pointer inline-block'
-									onClick={() => handleaddToWishlist()}
+									onClick={handleWishlistToggle}
 								>
-									<Heart className='w-4 hover:stroke-amber-700' />
+									<Heart
+										className={cn('w-4 hover:stroke-amber-700 transition-colors', {
+											'fill-red-500 stroke-red-500': isInWishlist,
+										})}
+									/>
 								</span>
 								<span
 									className='cursor-pointer inline-block'

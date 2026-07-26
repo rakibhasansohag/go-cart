@@ -98,6 +98,8 @@ import { cn } from '@/lib/utils';
 import { useModal } from '@/providers/modal-provider';
 // import { getAllCategoriesForCategory } from '@/queries/category';
 
+
+
 const shippingFeeMethods = [
 	{
 		value: ShippingFeeMethod.ITEM,
@@ -851,20 +853,31 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 					</div>
 				)}
 				<CardHeader>
-					<CardTitle>
-						{isNewVariantPage
-							? `Add a new variant to ${data?.name}`
-							: data?.productId && data?.variantId
-								? `Edit Product: ${data?.name}`
-								: 'Create a new product'}
-					</CardTitle>
-					<CardDescription>
-						{isNewVariantPage
-							? 'Add another color, size, or style variant to this product.'
-							: data?.productId && data?.variantId
-								? `Update ${data?.name} product and variant information.`
-								: 'Lets create a product. You can edit product later from the product page.'}
-					</CardDescription>
+					<div className='flex flex-col sm:flex-row sm:items-center justify-between gap-4'>
+						<div>
+							<CardTitle>
+								{isNewVariantPage
+									? `Add a new variant to ${data?.name}`
+									: data?.productId && data?.variantId
+										? `Edit Product: ${data?.name}`
+										: 'Create a new product'}
+							</CardTitle>
+							<CardDescription>
+								{isNewVariantPage
+									? 'Add another color, size, or style variant to this product.'
+									: data?.productId && data?.variantId
+										? `Update ${data?.name} product and variant information.`
+										: 'Lets create a product. You can edit product later from the product page.'}
+							</CardDescription>
+						</div>
+
+						{isAiGenerated && (
+							<div className='inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 text-xs font-semibold border border-purple-500/20 shadow-xs'>
+								<Sparkles className='w-4 h-4 text-purple-500 animate-pulse' />
+								<span>AI Assisted Content Active</span>
+							</div>
+						)}
+					</div>
 				</CardHeader>
 				<CardContent>
 					{/* AI Product Assistant - Only show when creating new product */}

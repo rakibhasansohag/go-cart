@@ -65,6 +65,38 @@ export const addToWishlist = async (
 	}
 };
 
+export const removeFromWishlist = async (
+	productId: string,
+	variantId: string,
+) => {
+	const user = await currentUser();
+	if (!user) throw new Error('Unauthenticated.');
+
+	const userId = user.id;
+
+	try {
+		const existingItem = await db.wishlist.findFirst({
+			where: {
+				userId,
+				productId,
+				variantId,
+			},
+		});
+
+		if (!existingItem) {
+			throw new Error('Item not found in wishlist.');
+		}
+
+		return await db.wishlist.delete({
+			where: {
+				id: existingItem.id,
+			},
+		});
+	} catch (error) {
+		throw error;
+	}
+};
+
 /**
  * @name followStore
  * @description - Toggle follow status for a store by the current user.

@@ -172,24 +172,37 @@ export const getAdminAnalyticsData = async (): Promise<AdminAnalyticsData> => {
 	};
 };
 
+const getFallbackSellerAnalytics = (storeUrl: string): SellerAnalyticsData => ({
+	storeId: '',
+	storeName: storeUrl ? storeUrl.replace(/-/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase()) : 'Store',
+	totalRevenue: 0,
+	totalOrders: 0,
+	activeProducts: 0,
+	totalCustomers: 0,
+	monthlyRevenue: [],
+	statusDistribution: [],
+	recentOrders: [],
+});
+
 /**
  * Retrieves store-specific analytics for Seller Dashboard
  */
 export const getSellerStoreAnalyticsData = async (
 	storeUrl: string,
 ): Promise<SellerAnalyticsData> => {
-	const user = await currentUser();
-	if (!user) {
-		throw new Error('Unauthenticated.');
-	}
+	try {
+		const user = await currentUser();
+		if (!user) {
+			return getFallbackSellerAnalytics(storeUrl);
+		}
 
-	const store = await db.store.findUnique({
-		where: { url: storeUrl },
-	});
+		const store = await db.store.findUnique({
+			where: { url: storeUrl },
+		});
 
-	if (!store) {
-		throw new Error('Store not found.');
-	}
+		if (!store) {
+			return getFallbackSellerAnalytics(storeUrl);
+		}
 
 	const [activeProductsCount, orderGroups, recentOrderGroups] =
 		await Promise.all([
@@ -297,6 +310,10 @@ export const getSellerStoreAnalyticsData = async (
 		statusDistribution,
 		recentOrders,
 	};
+	} catch (error) {
+		console.error('Error in getSellerStoreAnalyticsData:', error);
+		return getFallbackSellerAnalytics(storeUrl);
+	}
 };
 
 /**

@@ -13,6 +13,7 @@ import {
 	LayoutDashboard,
 	HelpCircle,
 	PackageSearch,
+	RefreshCw,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -113,6 +114,16 @@ export default function NotFound() {
 					transition={{ duration: 0.4, delay: 0.35 }}
 					className='grid grid-cols-2 sm:grid-cols-3 gap-3 w-full max-w-md pt-2'
 				>
+					<Button
+						type='button'
+						onClick={() => window.location.reload()}
+						variant='default'
+						className='flex items-center justify-center gap-2 h-10 px-3 rounded-xl text-xs font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs'
+					>
+						<RefreshCw className='w-3.5 h-3.5 animate-spin-slow' />
+						Force Reload
+					</Button>
+
 					<Button
 						type='button'
 						onClick={() => router.back()}
