@@ -23,37 +23,19 @@ export default function OrderGroupsContainer({
 	});
 
 	return (
-		<div>
-			<section className='p-2 relative'>
-				<div className='w-full space-y-4'>
-					{groups.map((group, index) => {
-						const deliveryInfo = deliveryDetails[index];
-						{
-							group.items.map((item, i) => {
-								console.log('mapping group.item', {
-									groupId: group.id,
-									itemId: item.id,
-									i,
-								});
-								return (
-									<div key={item.id ?? `item-${group.id}-${i}`}>
-										{item.name}
-									</div>
-								);
-							});
-						}
+		<div className='w-full space-y-6'>
+			{groups.map((group, index) => {
+				const deliveryInfo = deliveryDetails[index];
 
-						return (
-							<OrderGroupTable
-								key={`${group.id || 'group'}-${index}`}
-								group={group}
-								deliveryInfo={deliveryInfo}
-								check={check}
-							/>
-						);
-					})}
-				</div>
-			</section>
+				return (
+					<OrderGroupTable
+						key={`${group.id || 'group'}-${index}`}
+						group={group}
+						deliveryInfo={deliveryInfo}
+						check={check}
+					/>
+				);
+			})}
 		</div>
 	);
 }

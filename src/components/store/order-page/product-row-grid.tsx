@@ -4,66 +4,52 @@ import { OrderItem } from '@prisma/client';
 import Image from 'next/image';
 
 export default function ProductRowGrid({ product }: { product: OrderItem }) {
+	const nameParts = product.name.split('·');
+	const mainName = nameParts[0]?.trim();
+	const variantName = nameParts[1]?.trim();
+
 	return (
-		<div className='flex flex-col lg:flex-row items-center py-6 gap-6 w-full'>
-			<div className='max-lg:w-full'>
-				<Image
-					src={product.image}
-					alt=''
-					width={200}
-					height={200}
-					className='w-40 h-36 rounded-xl object-cover aspect-square'
-				/>
-			</div>
-			<div className='flex items-center w-full'>
-				<div className='grid grid-cols-1 lg:grid-cols-2 w-full'>
-					<div className='flex items-center'>
-						<div>
-							<h2 className='font-semibold text-xl leading-8 text-main-primary mb-1 line-clamp-2 pr-2'>
-								{product.name.split('·')[0]}
-							</h2>
-							<p className='font-normal text-lg leading-8 text-main-secondary mb-1'>
-								{product.name.split('·')[1]}
-							</p>
-							<p className='font-normal text-sm leading-8 text-main-secondary mb-1'>
-								#{product.sku}
-							</p>
-							<div className='flex items-center'>
-								<p className='font-medium text-base leading-7 text-main-primary pr-4 mr-4 border-r '>
-									Size:{' '}
-									<span className='text-main-secondary'>{product.size}</span>
-								</p>
-								<p className='font-medium text-base leading-7 text-main-primary '>
-									Qty:{' '}
-									<span className='text-main-secondary'>
-										{product.quantity}
-									</span>
-								</p>
-							</div>
-						</div>
+		<div className='flex items-start gap-4 py-4 w-full border-b border-border/30 last:border-0'>
+			<Image
+				src={product.image || '/assets/images/placeholder.png'}
+				alt={mainName || 'Product'}
+				width={96}
+				height={96}
+				className='w-20 h-20 rounded-xl object-cover ring-1 ring-border/40 shrink-0'
+			/>
+
+			<div className='flex-1 min-w-0 flex flex-col justify-between self-stretch'>
+				<div>
+					<div className='flex items-start justify-between gap-2'>
+						<h2 className='font-bold text-sm text-foreground line-clamp-2 leading-snug'>
+							{mainName}
+						</h2>
+						<span className='font-extrabold text-sm text-primary shrink-0'>
+							${product.price.toFixed(2)}
+						</span>
 					</div>
-					<div className='pl-5 grid grid-cols-4'>
-						<div className='col-span-4 lg:col-span-1 flex items-center'>
-							<div className='flex gap-3 lg:block'>
-								<p className='font-medium text-sm leading-7 text-main-primary'>
-									Price
-								</p>
-								<p className='lg:mt-4 font-medium text-sm leading-7 text-blue-primary'>
-									${product.price.toFixed(2)}
-								</p>
-							</div>
-						</div>
-						<div className='col-span-4 lg:col-span-2 ml-2 flex items-center'>
-							<div className='flex gap-3 lg:block'>
-								<p className='font-medium text-sm leading-7 text-main-primary'>
-									Status
-								</p>
-								<div className='leading-6 py-0.5 mt-3 flex'>
-									<ProductStatusTag status={product.status as ProductStatus} />
-								</div>
-							</div>
-						</div>
+
+					{variantName && (
+						<p className='text-xs text-muted-foreground font-medium mt-0.5'>
+							{variantName}
+						</p>
+					)}
+					<p className='text-[11px] font-mono text-muted-foreground/70 mt-0.5'>
+						SKU: #{product.sku}
+					</p>
+				</div>
+
+				<div className='flex items-center justify-between gap-2 mt-2 pt-2 border-t border-border/20 text-xs flex-wrap'>
+					<div className='flex items-center gap-2'>
+						<span className='px-2 py-0.5 rounded-md bg-muted/60 border border-border/40 font-medium text-foreground text-[11px]'>
+							Size: <strong className='text-foreground'>{product.size}</strong>
+						</span>
+						<span className='px-2 py-0.5 rounded-md bg-muted/60 border border-border/40 font-medium text-foreground text-[11px]'>
+							Qty: <strong className='text-foreground'>{product.quantity}</strong>
+						</span>
 					</div>
+
+					<ProductStatusTag status={product.status as ProductStatus} />
 				</div>
 			</div>
 		</div>
