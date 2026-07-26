@@ -34,9 +34,9 @@ export default function OrderGroupTable({
 	const formattedGroupId = formatOrderId(group.id);
 
 	const handleCopyGroupId = () => {
-		navigator.clipboard.writeText(group.id);
+		navigator.clipboard.writeText(formattedGroupId);
 		setCopiedGroupRef(true);
-		toast.success('Package ID copied');
+		toast.success(`Package ID ${formattedGroupId} copied`);
 		setTimeout(() => setCopiedGroupRef(false), 2000);
 	};
 
@@ -45,14 +45,21 @@ export default function OrderGroupTable({
 			{/* Group Header */}
 			<div className='flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-border/40 gap-3'>
 				<div className='flex items-center flex-wrap gap-3'>
-					<div className='flex items-center gap-2 bg-muted/40 px-3 py-1.5 rounded-xl border border-border/30'>
+					<div
+						onClick={handleCopyGroupId}
+						className='flex items-center gap-2 bg-muted/40 px-3 py-1.5 rounded-xl border border-border/30 cursor-pointer hover:bg-muted/80 transition-all'
+						title='Click to copy Package ID'
+					>
 						<Store className='w-3.5 h-3.5 text-primary' />
 						<span className='text-xs font-bold text-foreground font-mono'>
 							{formattedGroupId}
 						</span>
 						<button
-							onClick={handleCopyGroupId}
-							className='p-0.5 hover:bg-background rounded text-muted-foreground hover:text-foreground transition-all'
+							onClick={(e) => {
+								e.stopPropagation();
+								handleCopyGroupId();
+							}}
+							className='p-0.5 hover:bg-background rounded text-muted-foreground hover:text-foreground transition-all cursor-pointer'
 							title='Copy Package ID'
 						>
 							{copiedGroupRef ? (

@@ -100,7 +100,13 @@ export default function OrderInfoCard({
 					<span className='font-medium text-foreground capitalize'>{methodLabel}</span>
 				</div>
 
-				<div className='flex items-center justify-between p-2.5 rounded-xl bg-muted/40 border border-border/30'>
+				<div
+					onClick={handleCopyRef}
+					className={`flex items-center justify-between p-2.5 rounded-xl bg-muted/40 border border-border/30 ${
+						refId !== '-' ? 'cursor-pointer hover:bg-muted/60 transition-all' : ''
+					}`}
+					title={refId !== '-' ? 'Click to copy Payment Ref' : undefined}
+				>
 					<span className='flex items-center gap-2 text-muted-foreground font-medium'>
 						<Hash className='w-3.5 h-3.5 text-primary' />
 						Payment Ref
@@ -109,8 +115,11 @@ export default function OrderInfoCard({
 						<span className='truncate'>{refId}</span>
 						{refId !== '-' && (
 							<button
-								onClick={handleCopyRef}
-								className='p-1 hover:bg-background rounded-md transition-all text-muted-foreground'
+								onClick={(e) => {
+									e.stopPropagation();
+									handleCopyRef();
+								}}
+								className='p-1 hover:bg-background rounded-md transition-all text-muted-foreground cursor-pointer'
 								title='Copy Ref ID'
 							>
 								{copiedRef ? (

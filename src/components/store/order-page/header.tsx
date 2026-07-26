@@ -22,16 +22,16 @@ export default function OrderHeader({ order }: { order: OrderFulltType }) {
 	const handleGoBack = () => router.back();
 
 	const handleCopyId = () => {
-		navigator.clipboard.writeText(order.id);
+		navigator.clipboard.writeText(formattedId);
 		setCopied(true);
-		toast.success('Order ID copied to clipboard');
+		toast.success(`Order ID ${formattedId} copied to clipboard`);
 		setTimeout(() => setCopied(false), 2000);
 	};
 
 	const handleDownload = async () => {
 		try {
 			const pdfBlob = await generateOrderPDFBlob(order);
-			downloadBlobAsFile(pdfBlob, `Order_${order.id}.pdf`);
+			downloadBlobAsFile(pdfBlob, `Order_${formattedId}.pdf`);
 		} catch {
 			toast.error('Failed to export PDF');
 		}
@@ -52,7 +52,7 @@ export default function OrderHeader({ order }: { order: OrderFulltType }) {
 				{/* Left: Breadcrumb & Order Title */}
 				<div className='flex items-center flex-wrap gap-2.5'>
 					<button
-						className='w-9 h-9 border border-border/80 rounded-xl flex items-center justify-center bg-background hover:bg-muted text-muted-foreground hover:text-foreground transition-all'
+						className='w-9 h-9 border border-border/80 rounded-xl flex items-center justify-center bg-background hover:bg-muted text-muted-foreground hover:text-foreground transition-all cursor-pointer'
 						onClick={handleGoBack}
 						title='Go Back'
 					>
@@ -62,14 +62,21 @@ export default function OrderHeader({ order }: { order: OrderFulltType }) {
 					<span className='text-sm font-medium text-muted-foreground'>Order Details</span>
 					<ChevronRight className='w-4 h-4 text-muted-foreground/60' />
 
-					<div className='flex items-center gap-2 bg-muted/60 px-3 py-1.5 rounded-xl border border-border/40'>
+					<div
+						onClick={handleCopyId}
+						className='flex items-center gap-2 bg-muted/60 px-3 py-1.5 rounded-xl border border-border/40 cursor-pointer hover:bg-muted/80 transition-all'
+						title='Click to copy Order ID'
+					>
 						<h1 className='text-sm font-bold text-foreground font-mono tracking-tight'>
 							{formattedId}
 						</h1>
 						<button
-							onClick={handleCopyId}
-							className='p-1 rounded-md hover:bg-background/80 text-muted-foreground hover:text-foreground transition-all'
-							title='Copy full Order ID'
+							onClick={(e) => {
+								e.stopPropagation();
+								handleCopyId();
+							}}
+							className='p-1 rounded-md hover:bg-background/80 text-muted-foreground hover:text-foreground transition-all cursor-pointer'
+							title='Copy Order ID'
 						>
 							{copied ? (
 								<Check className='w-3.5 h-3.5 text-emerald-500' />
@@ -92,7 +99,7 @@ export default function OrderHeader({ order }: { order: OrderFulltType }) {
 							variant='outline'
 							size='sm'
 							onClick={handleDownload}
-							className='h-9 text-xs font-semibold rounded-xl border-border/80 gap-1.5 shadow-xs'
+							className='h-9 text-xs font-semibold rounded-xl border-border/80 gap-1.5 shadow-xs cursor-pointer'
 						>
 							<Download className='w-3.5 h-3.5' />
 							Export
@@ -101,7 +108,7 @@ export default function OrderHeader({ order }: { order: OrderFulltType }) {
 							variant='outline'
 							size='sm'
 							onClick={handlePrint}
-							className='h-9 text-xs font-semibold rounded-xl border-border/80 gap-1.5 shadow-xs'
+							className='h-9 text-xs font-semibold rounded-xl border-border/80 gap-1.5 shadow-xs cursor-pointer'
 						>
 							<Printer className='w-3.5 h-3.5' />
 							Print

@@ -33,6 +33,15 @@ export default async function OrderPage({
 			return total;
 		}, 0) || 0;
 
+	// Calculate raw subtotal and shipping fees across all store groups
+	const rawSubTotal =
+		order.groups.reduce((sum, group) => sum + group.subTotal, 0) ||
+		order.subTotal;
+
+	const totalShippingFees =
+		order.groups.reduce((sum, group) => sum + group.shippingFees, 0) ||
+		order.shippingFees;
+
 	const isPendingPayment =
 		order.paymentStatus === 'Pending' || order.paymentStatus === 'Failed';
 
@@ -68,8 +77,8 @@ export default async function OrderPage({
 
 							<OrderTotalDetailsCard
 								details={{
-									subTotal: order.subTotal,
-									shippingFees: order.shippingFees,
+									subTotal: rawSubTotal,
+									shippingFees: totalShippingFees,
 									total: order.total,
 								}}
 								orderId={order.id}
