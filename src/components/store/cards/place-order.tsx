@@ -60,17 +60,8 @@ const PlaceOrderCard: FC<Props> = ({
 	};
 
 	let discountedAmount = 0;
-	const applicableStoreItems = cartData.cartItems.filter(
-		(item) => item.storeId === coupon?.storeId,
-	);
-
-	const storeSubTotal = applicableStoreItems.reduce(
-		(acc, item) => acc + item.price * item.quantity + item.shippingFee,
-		0,
-	);
-
 	if (coupon) {
-		discountedAmount = (storeSubTotal * coupon.discount) / 100;
+		discountedAmount = Math.max(0, subTotal + shippingFees - total);
 	}
 
 	return (
