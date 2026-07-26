@@ -322,6 +322,145 @@ export const applyCoupon = async (
 	}
 };
 
+/**
+ * Applies a coupon to an existing unpaid order and recalculates the order group totals.
+ */
+export const applyCouponToOrder = async (
+	couponCode: string,
+	orderId: string,
+) => {
+	try {
+		const user = await currentUser();
+		if (!user) throw new Error('Unauthenticated.');
+
+		if (!couponCode || !couponCode.trim()) {
+			throw new Error('Please enter a valid coupon code.');
+		}
+
+		// 1. Fetch Order with groups and items
+		const order = await db.order.findUnique({
+			where: {
+				id: orderId,
+				userId: user.id,
+			},
+			include: {
+				groups: {
+					include: {
+						items: true,
+						coupon: true,
+					},
+				},
+			},
+		});
+
+		if (!order) throw new Error('Order not found.');
+
+		if (order.paymentStatus === 'Paid') {
+			throw new Error('Cannot apply coupon to an already paid order.');
+		}
+
+		// 2. Fetch & Validate Coupon
+		const coupon = await db.coupon.findUnique({
+			where: {
+				code: couponCode.trim().toUpperCase(),
+			},
+			include: {
+				store: true,
+			},
+		});
+
+		if (!coupon) {
+			throw new Error('Invalid coupon code.');
+		}
+
+		const currentDate = new Date();
+		const startDate = new Date(coupon.startDate);
+		const endDate = new Date(coupon.endDate);
+
+		if (currentDate < startDate || currentDate > endDate) {
+			throw new Error('Coupon is expired or not yet active.');
+		}
+
+		// Check Max Uses
+		if (coupon.maxUses > 0) {
+			const successfulRedemptions = await db.orderGroup.count({
+				where: {
+					couponId: coupon.id,
+					order: { paymentStatus: 'Paid' },
+				},
+			});
+
+			if (successfulRedemptions >= coupon.maxUses) {
+				throw new Error(
+					`The coupon "${coupon.code}" has reached its maximum limit of ${coupon.maxUses} uses.`,
+				);
+			}
+		}
+
+		// 3. Find matching OrderGroup by storeId
+		const matchingGroup = order.groups.find(
+			(g) => g.storeId === coupon.storeId,
+		);
+
+		if (!matchingGroup) {
+			throw new Error(
+				`This coupon is issued by "${coupon.store.name}", but this order contains no items from that store.`,
+			);
+		}
+
+		if (matchingGroup.couponId === coupon.id) {
+			throw new Error('This coupon is already applied to this order.');
+		}
+
+		// 4. Recalculate group total with coupon discount
+		const storeSubTotal = matchingGroup.subTotal + matchingGroup.shippingFees;
+		const discountedAmount = (storeSubTotal * coupon.discount) / 100;
+		const newGroupTotal = Math.max(0, storeSubTotal - discountedAmount);
+
+		await db.orderGroup.update({
+			where: { id: matchingGroup.id },
+			data: {
+				couponId: coupon.id,
+				total: newGroupTotal,
+			},
+		});
+
+		// 5. Recalculate main Order total
+		const allGroups = await db.orderGroup.findMany({
+			where: { orderId: order.id },
+		});
+
+		const newOrderTotal = allGroups.reduce((acc, g) => acc + g.total, 0);
+
+		const updatedOrder = await db.order.update({
+			where: { id: order.id },
+			data: {
+				subTotal: order.subTotal,
+				shippingFees: order.shippingFees,
+				total: newOrderTotal,
+			},
+			include: {
+				groups: {
+					include: {
+						items: true,
+						store: true,
+						coupon: true,
+					},
+				},
+				shippingAddress: true,
+				paymentDetails: true,
+			},
+		});
+
+		return {
+			message: `Coupon "${coupon.code}" (${coupon.discount}% OFF) applied successfully!`,
+			order: updatedOrder,
+		};
+	} catch (error: any) {
+		throw new Error(error.message || 'Failed to apply coupon to order.');
+	}
+};
+
 // Function: getStoreCoupons
 // Description: Retrieves all coupons for a specific store based on the provided store URL.
 // Permission Level: Seller only

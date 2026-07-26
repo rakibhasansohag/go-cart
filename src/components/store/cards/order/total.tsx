@@ -1,21 +1,26 @@
 import { Calculator, Tag } from 'lucide-react';
+import ApplyOrderCouponForm from '../../forms/apply-order-coupon';
 
 export default function OrderTotalDetailsCard({
 	details,
+	orderId,
+	allowCouponInput = false,
 }: {
 	details: {
 		subTotal: number;
 		shippingFees: number;
 		total: number;
 	};
+	orderId?: string;
+	allowCouponInput?: boolean;
 }) {
 	const { subTotal, shippingFees, total } = details;
 
 	const discount = Math.max(0, subTotal + shippingFees - total);
 
 	return (
-		<div className='w-full bg-card/90 backdrop-blur-md rounded-2xl border border-border/60 p-5 shadow-sm hover:shadow-md transition-all'>
-			<div className='flex items-center gap-2 mb-4 pb-3 border-b border-border/40'>
+		<div className='w-full bg-card/90 backdrop-blur-md rounded-2xl border border-border/60 p-5 shadow-sm hover:shadow-md transition-all space-y-4'>
+			<div className='flex items-center gap-2 pb-3 border-b border-border/40'>
 				<Calculator className='w-4 h-4 text-primary' />
 				<h3 className='text-xs font-bold uppercase tracking-wider text-muted-foreground'>
 					Order Summary
@@ -55,6 +60,12 @@ export default function OrderTotalDetailsCard({
 					</span>
 				</div>
 			</div>
+
+			{allowCouponInput && orderId && (
+				<div className='pt-2 border-t border-border/40'>
+					<ApplyOrderCouponForm orderId={orderId} />
+				</div>
+			)}
 		</div>
 	);
 }

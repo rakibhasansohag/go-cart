@@ -72,6 +72,8 @@ export default async function OrderPage({
 									shippingFees: order.shippingFees,
 									total: order.total,
 								}}
+								orderId={order.id}
+								allowCouponInput={isPendingPayment}
 							/>
 						</div>
 

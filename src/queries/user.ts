@@ -996,6 +996,33 @@ export const placeOrder = async (
 	const cartItems = cart.cartItems;
 	const cartCoupon = cart.coupon; // The coupon, if it exists
 
+	if (cartCoupon) {
+		const currentDate = new Date();
+		const startDate = new Date(cartCoupon.startDate);
+		const endDate = new Date(cartCoupon.endDate);
+
+		if (currentDate < startDate || currentDate > endDate) {
+			throw new Error(
+				`The coupon "${cartCoupon.code}" is expired or not yet active.`,
+			);
+		}
+
+		if (cartCoupon.maxUses > 0) {
+			const successfulRedemptions = await db.orderGroup.count({
+				where: {
+					couponId: cartCoupon.id,
+					order: { paymentStatus: 'Paid' },
+				},
+			});
+
+			if (successfulRedemptions >= cartCoupon.maxUses) {
+				throw new Error(
+					`The coupon "${cartCoupon.code}" has reached its maximum limit of ${cartCoupon.maxUses} uses.`,
+				);
+			}
+		}
+	}
+
 	// Fetch product, variant, and size data from the database for validation
 	const validatedCartItems = await Promise.all(
 		cartItems.map(async (cartProduct) => {
