@@ -206,88 +206,111 @@ const CartProduct: FC<Props> = ({
 	return (
 		<div
 			className={cn(
-				'bg-background px-6 border-t border-t-[#ebebeb] select-none',
+				'bg-background px-3 sm:px-6 border-t border-t-[#ebebeb] select-none transition-colors',
 				{
-					'bg-red-100': stock === 0,
+					'bg-red-100/50 dark:bg-red-950/20': stock === 0,
 				},
 			)}
 		>
 			<div className='py-4'>
-				<div className='relative flex self-start'>
-					{/* Image */}
-					<div className='flex items-center'>
-						{stock > 0 && (
-							<label
-								htmlFor={unique_id}
-								className='p-0 text-gray-900 text-sm leading-6 inline-flex items-center mr-2 cursor-pointer align-middle'
-							>
-								<span className='leading-8 inline-flex p-0.5 cursor-pointer '>
-									<span
-										className={cn(
-											'leading-8 w-5 h-5 rounded-full bg-background border border-gray-300 flex items-center justify-center hover:border-orange-background',
-											{
-												'border-orange-background': selected,
-											},
-										)}
-									>
-										{selected && (
-											<span className='bg-orange-background  w-5 h-5 rounded-full flex items-center justify-center'>
-												<Check className='w-3.5 text-white mt-0.5' />
-											</span>
-										)}
+				<div className='relative flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4'>
+					{/* Checkbox and Image */}
+					<div className='flex items-center shrink-0 gap-2 sm:gap-3 w-full sm:w-auto justify-between sm:justify-start'>
+						<div className='flex items-center gap-2'>
+							{stock > 0 && (
+								<label
+									htmlFor={unique_id}
+									className='p-0 text-gray-900 text-sm leading-6 inline-flex items-center cursor-pointer align-middle shrink-0'
+								>
+									<span className='leading-8 inline-flex p-0.5 cursor-pointer'>
+										<span
+											className={cn(
+												'leading-8 w-5 h-5 rounded-full bg-background border border-gray-300 flex items-center justify-center hover:border-orange-background transition-colors',
+												{
+													'border-orange-background': selected,
+												},
+											)}
+										>
+											{selected && (
+												<span className='bg-orange-background w-5 h-5 rounded-full flex items-center justify-center'>
+													<Check className='w-3.5 text-white' />
+												</span>
+											)}
+										</span>
 									</span>
-								</span>
-								<input
-									type='checkbox'
-									id={unique_id}
-									hidden
-									onChange={() => handleSelectProduct()}
+									<input
+										type='checkbox'
+										id={unique_id}
+										hidden
+										onChange={() => handleSelectProduct()}
+									/>
+								</label>
+							)}
+							<Link href={`/product/${productSlug}?variant=${variantSlug}`}>
+								<div className='w-20 h-20 sm:w-28 sm:h-28 bg-gray-200 relative rounded-lg overflow-hidden shrink-0 border border-border/60'>
+									<Image
+										src={image}
+										alt={name}
+										fill
+										className='object-cover'
+									/>
+								</div>
+							</Link>
+						</div>
+
+						{/* Action icons on small screens */}
+						<div className='flex sm:hidden items-center gap-3 text-muted-foreground'>
+							<span
+								className='cursor-pointer p-1 hover:text-red-500 transition-colors'
+								onClick={handleWishlistToggle}
+							>
+								<Heart
+									className={cn('w-4 h-4 transition-colors', {
+										'fill-red-500 stroke-red-500': isInWishlist,
+									})}
 								/>
-							</label>
-						)}
-						<Link href={`/product/${productSlug}?variant=${variantSlug}`}>
-							<div className='m-0 mr-4 ml-2 w-28 h-28 bg-gray-200 relative rounded-lg'>
-								<Image
-									src={image}
-									alt={name}
-									height={200}
-									width={200}
-									className='w-full h-full object-cover rounded-md'
-								/>
-							</div>
-						</Link>
+							</span>
+							<span
+								className='cursor-pointer p-1 hover:text-red-500 transition-colors'
+								onClick={() => removeFromCart(product)}
+							>
+								<Trash className='w-4 h-4' />
+							</span>
+						</div>
 					</div>
-					{/* Info */}
-					<div className='w-0 min-w-0 flex-1'>
-						{/* Title - Actions */}
-						<div className='w-[calc(100%-48px)] flex items-start overflow-hidden whitespace-nowrap'>
+
+					{/* Product Details & Controls */}
+					<div className='w-full min-w-0 flex-1 space-y-1.5'>
+						{/* Title & Desktop Actions */}
+						<div className='flex items-start justify-between gap-2'>
 							<Link
 								href={`/product/${productSlug}?variant=${variantSlug}`}
-								className='inline-block overflow-hidden text-sm whitespace-nowrap overflow-ellipsis'
+								className='font-bold text-sm sm:text-base text-foreground hover:text-primary transition-colors line-clamp-2 break-words'
 							>
-								{name} · {variantName}
+								{name} {variantName && `· ${variantName}`}
 							</Link>
-							<div className='absolute top-0 right-0'>
+							<div className='hidden sm:flex items-center gap-3 shrink-0 text-muted-foreground'>
 								<span
-									className='mr-2.5 cursor-pointer inline-block'
+									className='cursor-pointer p-1 hover:text-red-500 transition-colors'
 									onClick={handleWishlistToggle}
 								>
 									<Heart
-										className={cn('w-4 hover:stroke-amber-700 transition-colors', {
+										className={cn('w-4 h-4 transition-colors', {
 											'fill-red-500 stroke-red-500': isInWishlist,
 										})}
 									/>
 								</span>
 								<span
-									className='cursor-pointer inline-block'
+									className='cursor-pointer p-1 hover:text-red-500 transition-colors'
 									onClick={() => removeFromCart(product)}
 								>
-									<Trash className='w-4 hover:stroke-amber-700' />
+									<Trash className='w-4 h-4' />
 								</span>
 							</div>
 						</div>
-						{/* Style - size */}
-						<div className='my-1'>
+
+						{/* Style / Size Badge */}
+						<div>
 							<Button
 								variant='unstyled'
 								className='text-main-primary relative h-[24px] bg-gray-100 dark:bg-gray-700 whitespace-normal px-2.5 py-0 max-w-full text-xs leading-4 rounded-xl font-bold cursor-pointer outline-0'
@@ -302,85 +325,73 @@ const CartProduct: FC<Props> = ({
 								</span>
 							</Button>
 						</div>
-						{/* Price - Delivery */}
-						<div className='flex flex-col gap-y-2 sm:flex-row sm:items-center sm:justify-between mt-2 relative'>
+
+						{/* Price & Quantity Controls */}
+						<div className='flex flex-wrap items-center justify-between gap-3 pt-1'>
 							{stock > 0 ? (
-								<div>
-									<span className='inline-block break-all'>
-										${price.toFixed(2)} x {quantity} = ${totalPrice.toFixed(2)}
-									</span>
+								<div className='text-xs sm:text-sm font-semibold text-foreground'>
+									${price.toFixed(2)} x {quantity} = <span className='text-primary font-bold'>${totalPrice.toFixed(2)}</span>
 								</div>
 							) : (
 								<div>
-									<span className='inline-block break-all text-sm text-red-500'>
+									<span className='text-xs font-semibold text-destructive'>
 										Out of stock
 									</span>
 								</div>
 							)}
-							{/* Quantity changer */}
-							<div className='text-xs'>
-								<div className='text-sm leading-6 list-none inline-flex items-center text-gray-900 dark:text-gray-100'>
-									{/* Minus Button */}
-									<div
-										className='w-6 h-6 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 grid place-items-center rounded-full cursor-pointer transition-colors'
-										onClick={() => updateProductQuantityHandler('remove')}
-									>
-										<Minus className='w-3 stroke-gray-700 dark:stroke-gray-200' />
-									</div>
 
-									{/* Quantity Input */}
-									<input
-										type='text'
-										value={quantity}
-										min={1}
-										max={stock}
-										readOnly
-										className='m-1 h-6 w-[32px] bg-transparent border-none text-center font-bold outline-none text-gray-900 dark:text-gray-100'
-									/>
+							{/* Quantity Changer */}
+							<div className='inline-flex items-center gap-1 bg-muted/40 p-1 rounded-full border border-border/60 shrink-0'>
+								<div
+									className='w-7 h-7 bg-background hover:bg-accent grid place-items-center rounded-full cursor-pointer transition-colors border border-border/40'
+									onClick={() => updateProductQuantityHandler('remove')}
+								>
+									<Minus className='w-3 h-3 text-foreground' />
+								</div>
 
-									{/* Plus Button */}
-									<div
-										className='w-6 h-6 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 grid place-items-center rounded-full cursor-pointer transition-colors'
-										onClick={() => updateProductQuantityHandler('add')}
-									>
-										<Plus className='w-3 stroke-gray-700 dark:stroke-gray-200' />
-									</div>
+								<input
+									type='text'
+									value={quantity}
+									min={1}
+									max={stock}
+									readOnly
+									className='w-8 h-7 bg-transparent border-none text-center font-bold text-xs outline-none text-foreground'
+								/>
+
+								<div
+									className='w-7 h-7 bg-background hover:bg-accent grid place-items-center rounded-full cursor-pointer transition-colors border border-border/40'
+									onClick={() => updateProductQuantityHandler('add')}
+								>
+									<Plus className='w-3 h-3 text-foreground' />
 								</div>
 							</div>
 						</div>
-						{/* Shipping info */}
+
+						{/* Shipping Info */}
 						{stock > 0 && (
-							<div className='mt-1 text-xs text-neutral-400 cursor-pointer'>
-								<div className='flex items-center mb-1'>
-									<span>
-										<Truck className='w-4 inline-block text-emerald-600' />
-										{shippingInfo.totalFee > 0 ? (
-											<span className='text-emerald-600 ml-1'>
-												{shippingMethod === 'ITEM' ? (
-													<>
-														${shippingInfo.initialFee} (first item)
-														{quantity > 1
-															? `+ 
-														${quantity - 1} item(s) x $${extraShippingFee} 
-														(additional items)`
-															: ' x 1'}
-														= ${shippingInfo.totalFee.toFixed(2)}
-													</>
-												) : shippingMethod === 'WEIGHT' ? (
-													<>
-														${shippingFee} x {shippingInfo.weight}kg x&nbsp;
-														{quantity} {quantity > 1 ? 'items' : 'item'} = $
-														{shippingInfo.totalFee.toFixed(2)}
-													</>
-												) : (
-													<>Fixed Fee : ${shippingInfo.totalFee.toFixed(2)}</>
-												)}
-											</span>
+							<div className='pt-1 text-xs text-muted-foreground flex items-center flex-wrap gap-1'>
+								<Truck className='w-4 h-4 text-emerald-600 inline-block shrink-0' />
+								{shippingInfo.totalFee > 0 ? (
+									<span className='text-emerald-600 font-medium'>
+										{shippingMethod === 'ITEM' ? (
+											<>
+												${shippingInfo.initialFee} (1st item)
+												{quantity > 1
+													? ` + ${quantity - 1} x $${extraShippingFee}`
+													: ''}
+												 = ${shippingInfo.totalFee.toFixed(2)}
+											</>
+										) : shippingMethod === 'WEIGHT' ? (
+											<>
+												${shippingFee} x {shippingInfo.weight}kg x {quantity} = ${shippingInfo.totalFee.toFixed(2)}
+											</>
 										) : (
-											<span className='text-emerald-600 ml-1'>Free Delivery</span>
+											<>Fixed Shipping: ${shippingInfo.totalFee.toFixed(2)}</>
 										)}
 									</span>
-								</div>
+								) : (
+									<span className='text-emerald-600 font-medium'>Free Delivery</span>
+								)}
 							</div>
 						)}
 					</div>
