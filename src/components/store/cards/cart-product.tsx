@@ -3,7 +3,7 @@ import { Button } from '@/components/store/ui/button';
 import { useCartStore } from '@/cart-store/useCartStore';
 import { CartProductType, Country } from '@/lib/types';
 import { cn } from '@/lib/utils';
-import { addToWishlist, removeFromWishlist } from '@/queries/user';
+import { toggleWishlist, checkIsWishlisted } from '@/queries/user';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/query-keys';
 import {
@@ -172,37 +172,32 @@ const CartProduct: FC<Props> = ({
 
 	const [isInWishlist, setIsInWishlist] = useState(false);
 
-	const addToWishlistMutation = useMutation({
-		mutationFn: () => addToWishlist(productId, variantId, sizeId),
-		onSuccess: () => {
-			toast.success('Product successfully added to wishlist.');
-			setIsInWishlist(true);
-			queryClient.invalidateQueries({ queryKey: queryKeys.profile.wishlist(1) });
-		},
-		onError: (error: any) => {
-			toast.error(error.toString());
-		},
-	});
+	useEffect(() => {
+		let isMounted = true;
+		checkIsWishlisted(productId, variantId).then((res: boolean) => {
+			if (isMounted) setIsInWishlist(res);
+		});
+		return () => {
+			isMounted = false;
+		};
+	}, [productId, variantId]);
 
-	const removeFromWishlistMutation = useMutation({
-		mutationFn: () => removeFromWishlist(productId, variantId),
-		onSuccess: () => {
-			toast.success('Product removed from wishlist.');
-			setIsInWishlist(false);
+	const wishlistToggleMutation = useMutation({
+		mutationFn: () => toggleWishlist(productId, variantId, sizeId),
+		onSuccess: (data: { isWishlisted: boolean; message: string }) => {
+			setIsInWishlist(data.isWishlisted);
+			toast.success(data.message);
 			queryClient.invalidateQueries({ queryKey: queryKeys.profile.wishlist(1) });
 		},
 		onError: (error: any) => {
-			toast.error(error.toString());
+			toast.error(error.message || error.toString());
 		},
 	});
 
 	const handleWishlistToggle = () => {
-		if (isInWishlist) {
-			removeFromWishlistMutation.mutate();
-		} else {
-			addToWishlistMutation.mutate();
-		}
+		wishlistToggleMutation.mutate();
 	};
+
 	return (
 		<div
 			className={cn(

@@ -10,10 +10,11 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/store/ui/button';
 import { Heart } from 'lucide-react';
 import ProductPrice from '../../product-page/product-info/product-price';
-import { addToWishlist } from '@/queries/user';
+import { toggleWishlist, checkIsWishlisted } from '@/queries/user';
 import { toast } from 'sonner';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/query-keys';
+import { useEffect } from 'react';
 
 export default function ProductCard({
 	product,
@@ -26,29 +27,43 @@ export default function ProductCard({
 	const [variant, setVariant] = useState<VariantSimplified>(variants[0]);
 	const { variantSlug, variantName, images, sizes } = variant;
 	const [isHovered, setIsHovered] = useState(false);
+	const [isInWishlist, setIsInWishlist] = useState(false);
 
 	const queryClient = useQueryClient();
 
-	const addToWishlistMutation = useMutation({
-		mutationFn: () => addToWishlist(id, variant.variantId),
-		onSuccess: () => {
-			toast.success('Product successfully added to wishlist.');
+	useEffect(() => {
+		let isMounted = true;
+		checkIsWishlisted(id, variant.variantId).then((res) => {
+			if (isMounted) setIsInWishlist(res);
+		});
+		return () => {
+			isMounted = false;
+		};
+	}, [id, variant.variantId]);
+
+	const wishlistToggleMutation = useMutation({
+		mutationFn: () => toggleWishlist(id, variant.variantId),
+		onSuccess: (data) => {
+			setIsInWishlist(data.isWishlisted);
+			toast.success(data.message);
 			queryClient.invalidateQueries({ queryKey: queryKeys.profile.wishlist(1) });
 		},
 		onError: (error: any) => {
-			toast.error(error.toString());
+			toast.error(error.message || error.toString());
 		},
 	});
 
-	const handleaddToWishlist = () => {
-		addToWishlistMutation.mutate();
+	const handleWishlistToggle = (e?: React.MouseEvent) => {
+		e?.preventDefault();
+		e?.stopPropagation();
+		wishlistToggleMutation.mutate();
 	};
 
 	return (
 		<div
 			onMouseEnter={() => setIsHovered(true)}
 			onMouseLeave={() => setIsHovered(false)}
-			className={cn(className || 'w-[190px] min-[480px]:w-[225px] min-[1530px]:w-full', 'relative')}
+			className={cn(className || 'w-[190px] min-[480px]:w-[225px] min-[1530px]:w-full', 'relative group')}
 		>
 			<div
 				className={cn(
@@ -58,6 +73,21 @@ export default function ProductCard({
 						: 'rounded-3xl',
 				)}
 			>
+				{/* Top-Right Floating Wishlist Toggle Button */}
+				<button
+					type='button'
+					onClick={handleWishlistToggle}
+					className='absolute top-3 right-3 z-20 w-8 h-8 rounded-full bg-background/80 backdrop-blur-xs border border-border/60 shadow-xs flex items-center justify-center hover:scale-110 transition-all cursor-pointer'
+					title={isInWishlist ? 'Remove from wishlist' : 'Add to wishlist'}
+				>
+					<Heart
+						className={cn('w-4 h-4 transition-colors', {
+							'fill-red-500 stroke-red-500': isInWishlist,
+							'text-muted-foreground hover:text-foreground': !isInWishlist,
+						})}
+					/>
+				</button>
+
 				<div className='relative w-full h-full'>
 					<Link
 						href={`/product/${slug}?variant=${variantSlug}`}
@@ -105,21 +135,14 @@ export default function ProductCard({
 								selectedVariant={variant}
 							/>
 							{/* Action buttons */}
-							<div className='flex items-center gap-x-1'>
-								<Button asChild>
+							<div className='flex items-center w-full'>
+								<Button asChild className='w-full'>
 									<Link
-										className='text-main-primary'
+										className='text-main-primary w-full text-center'
 										href={`/product/${slug}?variant=${variantSlug}`}
 									>
 										Add to cart
 									</Link>
-								</Button>
-								<Button
-									variant='black'
-									size='icon'
-									onClick={() => handleaddToWishlist()}
-								>
-									<Heart className='w-5 text-pink-300' />
 								</Button>
 							</div>
 						</motion.div>

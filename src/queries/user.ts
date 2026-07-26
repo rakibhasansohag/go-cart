@@ -97,6 +97,64 @@ export const removeFromWishlist = async (
 	}
 };
 
+export const toggleWishlist = async (
+	productId: string,
+	variantId: string,
+	sizeId?: string,
+) => {
+	const user = await currentUser();
+	if (!user) throw new Error('Unauthenticated.');
+
+	const userId = user.id;
+
+	try {
+		const existingItem = await db.wishlist.findFirst({
+			where: {
+				userId,
+				productId,
+				variantId,
+			},
+		});
+
+		if (existingItem) {
+			await db.wishlist.delete({
+				where: { id: existingItem.id },
+			});
+			return { isWishlisted: false, message: 'Product removed from wishlist.' };
+		} else {
+			await db.wishlist.create({
+				data: {
+					userId,
+					productId,
+					variantId,
+					sizeId,
+				},
+			});
+			return { isWishlisted: true, message: 'Product added to wishlist.' };
+		}
+	} catch (error) {
+		throw error;
+	}
+};
+
+export const checkIsWishlisted = async (
+	productId: string,
+	variantId?: string,
+) => {
+	const user = await currentUser();
+	if (!user) return false;
+
+	const count = await db.wishlist.count({
+		where: {
+			userId: user.id,
+			productId,
+			...(variantId ? { variantId } : {}),
+		},
+	});
+
+	return count > 0;
+};
+
 /**
  * @name followStore
  * @description - Toggle follow status for a store by the current user.
