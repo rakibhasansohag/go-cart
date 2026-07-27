@@ -32,11 +32,11 @@ export default async function HomePage() {
 		  }
 		: null;
 
-	// Prefetch all home data in parallel on the server
-	await Promise.all([
+	// Initiate parallel non-blocking prefetching on the server so sections can stream independently via React Suspense
+	const prefetchPromises = [
 		queryClient.prefetchQuery({
-			queryKey: queryKeys.products.list({}, '', null),
-			queryFn: () => getProducts({}, '', null, 100),
+			queryKey: queryKeys.products.list({ sort: 'most-popular' }, 'most-popular', null),
+			queryFn: () => getProducts({}, 'most-popular', null, 12),
 		}),
 		queryClient.prefetchQuery({
 			queryKey: queryKeys.home.featuredCategories(),
@@ -52,7 +52,10 @@ export default async function HomePage() {
 					{ property: 'offer', value: 'featured', type: 'simple' },
 				]),
 		}),
-	]);
+	];
+
+	// Non-blocking parallel execution: await settlement without holding back page HTML streaming
+	await Promise.allSettled(prefetchPromises);
 
 	return (
 		<>
@@ -73,7 +76,7 @@ export default async function HomePage() {
 								<FeaturedCategories />
 							</Suspense>
 
-							{/* More to Love products */}
+							{/* More to Love products (Max 2 rows / Top popular) */}
 							<Suspense fallback={<ProductsGridSkeleton />}>
 								<MoreToLoveSection />
 							</Suspense>
@@ -85,4 +88,3 @@ export default async function HomePage() {
 		</>
 	);
 }
-

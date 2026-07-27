@@ -1,7 +1,9 @@
 'use client';
+
 import { ProductVariantImage } from '@prisma/client';
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
+import { Image as ImageIcon } from 'lucide-react';
 
 const CYCLE_INTERVAL = 1200; // ms between slides
 
@@ -11,10 +13,28 @@ export default function ProductCardImageSwiper({
 	images: ProductVariantImage[];
 }) {
 	const [index, setIndex] = useState(0);
+	const [isLoaded, setIsLoaded] = useState(false);
+	const loadedUrlsRef = useRef<Set<string>>(new Set());
 	const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 	const currentIndexRef = useRef(0);
 
-	// advance uses ref so interval closure is never stale
+	const currentUrl = images[index]?.url;
+
+	useEffect(() => {
+		if (currentUrl && loadedUrlsRef.current.has(currentUrl)) {
+			setIsLoaded(true);
+		} else {
+			setIsLoaded(false);
+		}
+	}, [currentUrl]);
+
+	const handleImageLoad = () => {
+		if (currentUrl) {
+			loadedUrlsRef.current.add(currentUrl);
+		}
+		setIsLoaded(true);
+	};
+
 	const advance = () => {
 		const to = (currentIndexRef.current + 1) % images.length;
 		currentIndexRef.current = to;
@@ -41,41 +61,24 @@ export default function ProductCardImageSwiper({
 		<div
 			onMouseEnter={startCycle}
 			onMouseLeave={stopCycle}
-			style={{
-				position: 'relative',
-				width: '100%',
-				height: '240px',
-				overflow: 'hidden',
-				borderRadius: '1rem',
-				marginBottom: '0.5rem',
-				background: '#f5f5f5',
-				cursor: 'pointer',
-			}}
+			className='relative w-full h-[240px] overflow-hidden rounded-2xl mb-2 bg-muted/40 dark:bg-slate-800/40 cursor-pointer select-none'
 		>
+			{/* Skeleton loader overlay while image is loading */}
+			{!isLoaded && (
+				<div className='absolute inset-0 z-10 bg-muted/70 dark:bg-slate-800/70 animate-pulse flex items-center justify-center rounded-2xl'>
+					<ImageIcon className='w-7 h-7 text-muted-foreground/30 animate-pulse' />
+				</div>
+			)}
+
 			{/* Dot indicators */}
 			{images.length > 1 && (
-				<div
-					style={{
-						position: 'absolute',
-						bottom: '8px',
-						left: '50%',
-						transform: 'translateX(-50%)',
-						display: 'flex',
-						gap: '4px',
-						zIndex: 20,
-					}}
-				>
+				<div className='absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1 z-20'>
 					{images.map((_, i) => (
 						<span
 							key={i}
-							style={{
-								width: '6px',
-								height: '6px',
-								borderRadius: '50%',
-								background: i === index ? '#fff' : 'rgba(255,255,255,0.4)',
-								display: 'block',
-								transition: 'background 0.3s',
-							}}
+							className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${
+								i === index ? 'bg-white scale-110 shadow-xs' : 'bg-white/40'
+							}`}
 						/>
 					))}
 				</div>
@@ -84,27 +87,22 @@ export default function ProductCardImageSwiper({
 			{/* Framer-motion slide animation */}
 			<AnimatePresence initial={false} mode='popLayout'>
 				<motion.img
-					key={index}
-					src={images[index].url}
+					key={currentUrl || index}
+					src={currentUrl}
 					alt=''
-					initial={{ x: '100%' }}
-					animate={{ x: 0 }}
-					exit={{ x: '-100%' }}
+					onLoad={handleImageLoad}
+					initial={{ opacity: 0, x: '50%' }}
+					animate={{ opacity: isLoaded ? 1 : 0, x: 0 }}
+					exit={{ opacity: 0, x: '-50%' }}
 					transition={{
 						x: {
 							type: 'tween',
-							duration: 0.42,
+							duration: 0.35,
 							ease: [0.25, 0.46, 0.45, 0.94],
 						},
+						opacity: { duration: 0.2 },
 					}}
-					style={{
-						position: 'absolute',
-						inset: 0,
-						width: '100%',
-						height: '100%',
-						objectFit: 'cover',
-						display: 'block',
-					}}
+					className='absolute inset-0 w-full h-full object-cover block'
 				/>
 			</AnimatePresence>
 		</div>

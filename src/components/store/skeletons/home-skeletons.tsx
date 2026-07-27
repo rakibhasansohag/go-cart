@@ -4,12 +4,12 @@ import React from 'react';
 export function ProductsGridSkeleton() {
 	return (
 		<div className='w-full'>
-			{/* Grid corresponding to our 7-column layout or flex wrap */}
-			<div className='mt-7 bg-background justify-center flex flex-wrap gap-4 min-[1530px]:grid min-[1530px]:grid-cols-7 min-[1530px]:gap-4 p-4 pb-16 rounded-md animate-pulse'>
-				{Array.from({ length: 14 }).map((_, i) => (
+			{/* Grid matching MoreToLoveSection responsive grid */}
+			<div className='mt-7 bg-background p-4 pb-16 rounded-md w-full grid grid-cols-1 min-[380px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4 animate-pulse'>
+				{Array.from({ length: 12 }).map((_, i) => (
 					<div
 						key={i}
-						className='w-[190px] min-[480px]:w-[225px] min-[1530px]:w-full bg-secondary/50 rounded-3xl p-4 space-y-4'
+						className='w-full bg-secondary/50 rounded-3xl p-4 space-y-4'
 					>
 						{/* Image placeholder */}
 						<div className='w-full aspect-square rounded-2xl bg-neutral-300 dark:bg-neutral-800' />

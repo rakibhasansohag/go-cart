@@ -8,11 +8,13 @@ import ProductCard from '@/components/store/cards/product/product-card';
 
 export default function MoreToLoveSection() {
 	const { data: productsData } = useSuspenseQuery({
-		queryKey: queryKeys.products.list({}, '', null),
-		queryFn: () => getProducts({}, '', null, 100),
+		queryKey: queryKeys.products.list({ sort: 'most-popular' }, 'most-popular', null),
+		queryFn: () => getProducts({}, 'most-popular', null, 12),
 	});
 
 	const { products } = productsData;
+	// Limit to max 2 rows of products (12 products max across responsive grid)
+	const topPopularProducts = (products || []).slice(0, 12);
 
 	return (
 		<div>
@@ -22,9 +24,9 @@ export default function MoreToLoveSection() {
 				<span>More to love</span>
 				<div className='h-[1px] flex-1 border-t-[2px] border-t-[hsla(0,0%,59.2%,.3)] my-4 mx-[14px]' />
 			</div>
-			{/* Products grid */}
+			{/* Products grid (Max 2 rows across grid breakpoints) */}
 			<div className='mt-7 bg-background p-4 pb-16 rounded-md w-full grid grid-cols-1 min-[380px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4'>
-				{products.map((product) => (
+				{topPopularProducts.map((product) => (
 					<ProductCard key={product.id + product.slug} product={product} className='w-full' />
 				))}
 			</div>
