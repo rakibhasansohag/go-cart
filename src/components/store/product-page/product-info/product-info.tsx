@@ -109,8 +109,8 @@ const ProductInfo: FC<Props> = ({
 						{numReviews === 0
 							? 'No review yet'
 							: numReviews === 1
-							? '1 review'
-							: `${numReviews} reviews`}
+								? '1 review'
+								: `${numReviews} reviews`}
 						)
 					</Link>
 				</div>
@@ -174,11 +174,11 @@ const ProductInfo: FC<Props> = ({
 			<Separator className='mt-2' />
 			<ProductAssurancePolicy />
 			<Separator className='mt-2' />
-			<div className='mt-2 flex flex-wrap gap-2'>
+			<div className='mt-3 flex flex-wrap gap-2'>
 				{Array.from(new Set(variant.keywords.split(','))).map((k) => (
 					<span
 						key={k}
-						className='bg-gray-50 rounded-full px-3 py-1 text-sm text-main-secondary'
+						className='bg-muted/60 dark:bg-slate-800/60 border border-border/50 text-foreground/80 hover:text-foreground text-sm font-medium rounded-full px-3.5 py-1.5 transition-all'
 					>
 						{k}
 					</span>

@@ -8,6 +8,7 @@ import { Country } from '@/lib/types';
 import CountryLanguageCurrencySelector from './country-lang-curr-selector';
 import Cart from './cart';
 import { DEFAULT_COUNTRY } from '@/lib/utils';
+import ThemeToggle from '@/components/shared/theme-toggle';
 
 export default async function Header() {
 	// Get cookies from the store
@@ -29,19 +30,21 @@ export default async function Header() {
 						<Link href='/'>
 							<h1 className='font-extrabold text-3xl font-mono'>GoCart</h1>
 						</Link>
-						<div className='flex lg:hidden'>
+						<div className='flex items-center gap-2 lg:hidden'>
+							<ThemeToggle />
 							<UserMenu />
 							<Cart />
 						</div>
 					</div>
 					<Search />
 				</div>
-				<div className='hidden lg:flex w-full lg:w-fit lg:mt-2 justify-end mt-1.5 pl-6'>
+				<div className='hidden lg:flex w-full lg:w-fit lg:mt-2 justify-end mt-1.5 pl-6 items-center gap-2'>
 					<div className='lg:flex'>
 						<DownloadApp />
 					</div>
 					<CountryLanguageCurrencySelector userCountry={userCountry} />
 					<UserMenu />
+					<ThemeToggle />
 					<Cart />
 				</div>
 			</div>
