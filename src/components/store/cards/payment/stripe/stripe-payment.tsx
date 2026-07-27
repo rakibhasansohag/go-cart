@@ -11,6 +11,8 @@ import {
 	createStripePayment,
 	createStripePaymentIntent,
 } from '@/queries/stripe';
+import { toast } from 'sonner';
+
 export default function StripePayment({ orderId }: { orderId: string }) {
 	const router = useRouter();
 	const stripe = useStripe();
@@ -25,9 +27,13 @@ export default function StripePayment({ orderId }: { orderId: string }) {
 	}, [orderId]);
 
 	const getClientSecret = async () => {
-		const res = await createStripePaymentIntent(orderId);
-		if (res.clientSecret) setClientSecret(res.clientSecret);
-		if (res.userId) setUserId(res.userId);
+		try {
+			const res = await createStripePaymentIntent(orderId);
+			if (res.clientSecret) setClientSecret(res.clientSecret);
+			if (res.userId) setUserId(res.userId);
+		} catch (err: any) {
+			setErrorMessage(err.message || 'Failed to initialize payment.');
+		}
 	};
 
 	const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -48,11 +54,12 @@ export default function StripePayment({ orderId }: { orderId: string }) {
 		}
 
 		if (clientSecret) {
+			const origin = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000';
 			const { error, paymentIntent } = await stripe.confirmPayment({
 				elements,
 				clientSecret,
 				confirmParams: {
-					return_url: 'http://localhost:3000',
+					return_url: origin,
 				},
 				redirect: 'if_required',
 			});
@@ -60,12 +67,18 @@ export default function StripePayment({ orderId }: { orderId: string }) {
 			if (!error && paymentIntent) {
 				try {
 					const res = await createStripePayment(orderId, paymentIntent, userId);
-					if (!res.paymentDetails?.paymentInetntId) throw new Error('Failed');
+					if (!res.paymentDetails?.paymentInetntId) throw new Error('Payment confirmation failed.');
+					toast.success('Payment completed successfully!');
 					router.refresh();
-					// eslint-disable-next-line @typescript-eslint/no-explicit-any
 				} catch (error: any) {
-					setErrorMessage(error.toString());
+					const msg = error.message || error.toString();
+					setErrorMessage(msg);
+					toast.error(msg);
 				}
+			} else if (error) {
+				const msg = error.message || 'Payment processing error.';
+				setErrorMessage(msg);
+				toast.error(msg);
 			}
 		}
 		setLoading(false);
@@ -73,8 +86,8 @@ export default function StripePayment({ orderId }: { orderId: string }) {
 
 	if (!clientSecret || !stripe || !elements) {
 		return (
-			<div className='flex items-center justify-center'>
-				<div className='inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-e-transparent align-[-0.125em] text-surface motion-reduce:animate-[spin_1.5s_linear_infinite] dark:text-white'>
+			<div className='flex items-center justify-center p-6'>
+				<div className='inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary border-e-transparent align-[-0.125em] text-surface motion-reduce:animate-[spin_1.5s_linear_infinite]'>
 					<span className='!absolute !-m-px !h-px !w-px !overflow-hidden !whitespace-nowrap !border-0 !p-0 ![clip:rect(0,0,0,0)]'>
 						Loading...
 					</span>
@@ -82,18 +95,21 @@ export default function StripePayment({ orderId }: { orderId: string }) {
 			</div>
 		);
 	}
+
 	return (
-		<form onSubmit={handleSubmit} className='bg-white p-2 rounded-md'>
+		<form onSubmit={handleSubmit} className='bg-card p-4 rounded-xl border border-border/60 space-y-3'>
 			{clientSecret && <PaymentElement />}
 			{errorMessage && (
-				<div className='text-sm text-red-500'>{errorMessage}</div>
+				<div className='text-xs font-semibold text-red-500 bg-red-500/10 p-2.5 rounded-lg border border-red-500/20'>
+					{errorMessage}
+				</div>
 			)}
 			<Button
 				variant='black'
 				disabled={!stripe || loading}
-				className='text-white w-full p-5 mt-2 rounded-md font-bold disabled:opacity-50 disabled:animate-pulse'
+				className='w-full h-11 text-xs font-bold rounded-xl disabled:opacity-50 cursor-pointer'
 			>
-				{loading ? 'Processing' : 'Pay'}
+				{loading ? 'Processing Payment...' : 'Pay Now'}
 			</Button>
 		</form>
 	);

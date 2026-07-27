@@ -123,7 +123,7 @@ const PlaceOrderCard: FC<Props> = ({
 				)}
 			</div>
 			<div className='mt-2 p-4 bg-background'>
-				<Button onClick={() => handlePlaceOrder()}>
+				<Button onClick={() => handlePlaceOrder()} disabled={loading} className='w-full cursor-pointer disabled:opacity-50'>
 					{loading ? (
 						<PulseLoader size={5} color='#fff' />
 					) : (

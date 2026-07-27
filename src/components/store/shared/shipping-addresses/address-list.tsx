@@ -17,18 +17,21 @@ const AddressList: FC<Props> = ({
 	setSelectedAddress,
 }) => {
 	useEffect(() => {
-		// Find the default address if it exists and set it as selected
-		const defaultAddress = addresses.find((address) => address.default);
+		if (selectedAddress) return;
+		// Auto-select default address if set, otherwise select first available address
+		const defaultAddress =
+			addresses.find((address) => address.default) || addresses[0];
 		if (defaultAddress) {
 			setSelectedAddress(defaultAddress);
 		}
-	}, [addresses]);
+	}, [addresses, selectedAddress, setSelectedAddress]);
 
 	const haneldeAddressSelect = (address: ShippingAddress) => {
 		setSelectedAddress(address);
 	};
+
 	return (
-		<div className='space-y-5 max-h-80 overflow-y-auto'>
+		<div className='space-y-4 max-h-80 overflow-y-auto pr-1'>
 			{addresses.map((address) => (
 				<ShippingAddressCard
 					key={address.id}
