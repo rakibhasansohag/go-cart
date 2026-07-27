@@ -1,80 +1,97 @@
 'use client';
 import { Eye } from 'lucide-react';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
+
+const MAX_RETRIES = 3;
+const RETRY_BASE_MS = 3000;
 
 export default function ProductWatch({ productId }: { productId: string }) {
 	const [watcherCount, setWatcherCount] = useState(0);
-	const [status, setStatus] = useState<
-		'idle' | 'connecting' | 'open' | 'closed' | 'error'
-	>('idle');
-	const [lastRaw, setLastRaw] = useState<string | null>(null);
-
-	// keep socket in ref so re-renders won't recreate it
 	const wsRef = useRef<WebSocket | null>(null);
+	const retriesRef = useRef(0);
+	const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+	const unmountedRef = useRef(false);
 
-	useEffect(() => {
+	const connect = useCallback(() => {
+		if (unmountedRef.current) return;
+
 		const host =
 			process.env.NEXT_PUBLIC_WATCHER_SERVER ||
 			'wss://go-cart-websocket-server.onrender.com';
 		const url = `${host}/${productId}`;
-		console.log('Connecting to', url);
 
-		// if there's already a socket and it's CONNECTING(0) or OPEN(1), don't create another
+		// Guard: don't reconnect if already connecting/open
 		if (
 			wsRef.current &&
 			(wsRef.current.readyState === WebSocket.CONNECTING ||
 				wsRef.current.readyState === WebSocket.OPEN)
 		) {
-			console.log('WebSocket already active, skipping create');
 			return;
 		}
 
-		setStatus('connecting');
-		const ws = new WebSocket(url);
+		let ws: WebSocket;
+		try {
+			ws = new WebSocket(url);
+		} catch {
+			// If WebSocket constructor itself throws (invalid URL etc.), bail out silently
+			return;
+		}
+
 		wsRef.current = ws;
 
 		ws.onopen = () => {
-			console.log(' WebSocket OPENED for product', productId);
-			setStatus('open');
-			// optional subscribe ping
+			if (unmountedRef.current) return ws.close();
+			retriesRef.current = 0;
 			try {
 				ws.send(JSON.stringify({ type: 'subscribe', productId }));
-			} catch {}
+			} catch { /* ignore send errors */ }
 		};
 
 		ws.onmessage = (e) => {
-			setLastRaw(String(e.data));
+			if (unmountedRef.current) return;
 			try {
 				const d = JSON.parse(e.data);
-				if (d.productId === productId && typeof d.count === 'number')
+				if (d.productId === productId && typeof d.count === 'number') {
 					setWatcherCount(d.count);
-			} catch (err) {
-				console.warn('ws parse error', err);
-			}
-		};
-
-		ws.onerror = (err) => {
-			console.error(' WebSocket ERROR', err);
-			setStatus('error');
-		};
-
-		ws.onclose = (ev) => {
-			console.log('🚪 WebSocket CLOSED', ev);
-			setStatus('closed');
-			// keep wsRef nullified so next effect run can reconnect
-			if (wsRef.current === ws) wsRef.current = null;
-		};
-
-		return () => {
-			// cleanup: close only the socket we created here
-			try {
-				if (wsRef.current === ws) {
-					ws.close();
-					wsRef.current = null;
 				}
-			} catch {}
+			} catch { /* ignore parse errors */ }
+		};
+
+		ws.onerror = () => {
+			// Silently swallow — onerror fires before onclose, onclose handles retry
+		};
+
+		ws.onclose = () => {
+			if (unmountedRef.current) return;
+			wsRef.current = null;
+
+			// Exponential-backoff retry up to MAX_RETRIES
+			if (retriesRef.current < MAX_RETRIES) {
+				const delay = RETRY_BASE_MS * Math.pow(2, retriesRef.current);
+				retriesRef.current += 1;
+				retryTimerRef.current = setTimeout(connect, delay);
+			}
+			// After MAX_RETRIES: give up silently — watcherCount stays at last known value
 		};
 	}, [productId]);
+
+	useEffect(() => {
+		unmountedRef.current = false;
+		retriesRef.current = 0;
+		connect();
+
+		return () => {
+			unmountedRef.current = true;
+			if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
+			try {
+				wsRef.current?.close();
+				wsRef.current = null;
+			} catch { /* ignore */ }
+		};
+	}, [connect]);
+
+	// Don't render anything if we never got a count (server unreachable)
+	if (watcherCount === 0) return null;
 
 	return (
 		<div className='mb-2 text-sm'>
@@ -85,16 +102,6 @@ export default function ProductWatch({ productId }: { productId: string }) {
 					watching this product
 				</span>
 			</p>
-
-			{/* <div style={{ fontSize: 12, marginTop: 8 }}>
-				<div>
-					<strong>WS status:</strong> {status}
-				</div>
-				<div>
-					<strong>Last raw message:</strong>
-					<pre style={{ whiteSpace: 'pre-wrap' }}>{lastRaw ?? '—'}</pre>
-				</div>
-			</div> */}
 		</div>
 	);
 }

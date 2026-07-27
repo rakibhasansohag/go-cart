@@ -91,9 +91,9 @@ export default function CategoriesMenu({
 								<Image
 									src={category.image}
 									alt={category.name}
-									width={100}
-									height={100}
-									className='w-[18px] h-[18px]'
+									width={18}
+									height={18}
+									style={{ width: 18, height: 18 }}
 								/>
 								<span className='text-sm font-normal ml-2 overflow-hidden line-clamp-2 break-words text-main-primary'>
 									{category.name}

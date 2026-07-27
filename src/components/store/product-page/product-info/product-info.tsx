@@ -9,7 +9,7 @@ import Link from 'next/link';
 import { Dispatch, FC, SetStateAction } from 'react';
 import { CopyIcon } from '@/components/store/icons';
 import { toast } from 'sonner';
-import ReactStars from 'react-rating-stars-component';
+import StarRating from '@/components/StarRating';
 import ProductPrice from './product-price';
 import Countdown from '../../shared/countdown';
 import { Separator } from '@/components/ui/separator';
@@ -95,9 +95,9 @@ const ProductInfo: FC<Props> = ({
 					</span>
 				</div>
 				<div className='md:ml-4 flex items-center gap-x-2 flex-1 whitespace-nowrap'>
-					<ReactStars
+					<StarRating
 						count={5}
-						size={24}
+						size={16}
 						color='#F5F5F5'
 						activeColor='#FFD804'
 						value={rating}

@@ -1,7 +1,6 @@
 'use client';
 
 import React from 'react';
-import ReactStars from 'react-rating-stars-component';
 
 type StarRatingProps = {
 	count?: number;
@@ -26,8 +25,6 @@ function StarSVG({
 	filled?: boolean;
 	strokeWidth?: number;
 }) {
-	const fill = filled ? color : 'none';
-	const stroke = filled ? color : color;
 	return (
 		<svg
 			xmlns='http://www.w3.org/2000/svg'
@@ -35,16 +32,12 @@ function StarSVG({
 			height={size}
 			viewBox='0 0 24 24'
 			aria-hidden
-			style={{
-				display: 'inline-block',
-				verticalAlign: 'middle',
-				lineHeight: 0,
-			}}
+			style={{ display: 'inline-block', verticalAlign: 'middle', lineHeight: 0 }}
 		>
 			<path
 				d='M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.62L12 2 9.19 8.62 2 9.24l5.46 4.73L5.82 21z'
-				fill={fill}
-				stroke={stroke}
+				fill={filled ? color : 'none'}
+				stroke={color}
 				strokeWidth={strokeWidth}
 				strokeLinejoin='round'
 				strokeLinecap='round'
@@ -62,42 +55,32 @@ function HalfStar({
 	color: string;
 	activeColor: string;
 }) {
-	const wrapperStyle: React.CSSProperties = {
-		position: 'relative',
-		display: 'inline-block',
-		width: size,
-		height: size,
-		lineHeight: 0,
-		verticalAlign: 'middle',
-	};
-
-	const filledStyle: React.CSSProperties = {
-		position: 'absolute',
-		inset: 0,
-		overflow: 'hidden',
-
-		clipPath: 'inset(0 50% 0 0)',
-		WebkitClipPath: 'inset(0 50% 0 0)',
-	};
-
-	const emptyStyle: React.CSSProperties = {
-		position: 'absolute',
-		inset: 0,
-		pointerEvents: 'none',
-	};
-
 	return (
-		<span style={wrapperStyle} aria-hidden>
-			<span style={emptyStyle}>
+		<span
+			aria-hidden
+			style={{
+				position: 'relative',
+				display: 'inline-block',
+				width: size,
+				height: size,
+				lineHeight: 0,
+				verticalAlign: 'middle',
+			}}
+		>
+			{/* empty bg */}
+			<span style={{ position: 'absolute', inset: 0 }}>
 				<StarSVG size={size} color={color} filled={false} strokeWidth={1.2} />
 			</span>
-			<span style={filledStyle}>
-				<StarSVG
-					size={size}
-					color={activeColor}
-					filled={true}
-					strokeWidth={0}
-				/>
+			{/* filled left half */}
+			<span
+				style={{
+					position: 'absolute',
+					inset: 0,
+					overflow: 'hidden',
+					clipPath: 'inset(0 50% 0 0)',
+				}}
+			>
+				<StarSVG size={size} color={activeColor} filled strokeWidth={0} />
 			</span>
 		</span>
 	);
@@ -114,37 +97,38 @@ export default function StarRating({
 	onChange,
 	className,
 }: StarRatingProps) {
-	const emptyIcon = (
-		<span aria-hidden style={{ display: 'inline-block', lineHeight: 0 }}>
-			<StarSVG size={size} color={color} filled={false} strokeWidth={1.2} />
-		</span>
-	);
+	const stars = Array.from({ length: count }, (_, i) => {
+		const starNumber = i + 1;
+		const filled = value >= starNumber;
+		const half = !filled && isHalf && value >= starNumber - 0.5;
 
-	const filledIcon = (
-		<span aria-hidden style={{ display: 'inline-block', lineHeight: 0 }}>
-			<StarSVG size={size} color={activeColor} filled={true} strokeWidth={0} />
-		</span>
-	);
+		const handleClick = () => {
+			if (edit && onChange) onChange(starNumber);
+		};
 
-	const halfIcon = (
-		<HalfStar size={size} color={color} activeColor={activeColor} />
-	);
+		return (
+			<span
+				key={i}
+				onClick={handleClick}
+				style={{
+					cursor: edit ? 'pointer' : 'default',
+					display: 'inline-block',
+					lineHeight: 0,
+				}}
+				aria-label={`${starNumber} star`}
+			>
+				{half ? (
+					<HalfStar size={size} color={color} activeColor={activeColor} />
+				) : (
+					<StarSVG size={size} color={filled ? activeColor : color} filled={filled} strokeWidth={filled ? 0 : 1.2} />
+				)}
+			</span>
+		);
+	});
 
 	return (
-		<div className={className}>
-			<ReactStars
-				count={count}
-				value={value}
-				size={size}
-				color={color}
-				activeColor={activeColor}
-				isHalf={isHalf}
-				edit={edit}
-				onChange={onChange}
-				emptyIcon={emptyIcon}
-				halfIcon={halfIcon}
-				filledIcon={filledIcon}
-			/>
+		<div className={className} style={{ display: 'inline-flex', alignItems: 'center', gap: 1 }}>
+			{stars}
 		</div>
 	);
 }

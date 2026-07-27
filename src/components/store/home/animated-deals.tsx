@@ -32,13 +32,14 @@ export default function AnimatedDeals({
 			<span className='inline-block w-full font-semibold text-center text-4xl text-white outline-none absolute top-[53%]'>
 				Up to 90%
 			</span>
-			<Image
-				src={AnimatedImg}
-				alt=''
-				width={2000}
-				height={330}
-				className='w-full h-[330px]'
-			/>
+			<div style={{ position: 'relative', width: '100%', height: '330px' }}>
+				<Image
+					src={AnimatedImg}
+					alt=''
+					fill
+					className='object-cover'
+				/>
+			</div>
 			<Link
 				href='/browse'
 				className=' bg-amber-500 absolute top-[25%] left-[7%] min-[1070px]:left-[10%] rounded-[24px] w-[140px] h-[181px] z-10 flex justify-center'

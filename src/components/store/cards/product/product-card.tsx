@@ -1,8 +1,8 @@
 'use client';
 import { ProductType, VariantSimplified } from '@/lib/types';
 import Link from 'next/link';
-import { useState } from 'react';
-import ReactStars from 'react-rating-stars-component';
+import { useState, useRef } from 'react';
+import StarRating from '@/components/StarRating';
 import { AnimatePresence, motion } from 'framer-motion';
 import ProductCardImageSwiper from './swiper';
 import VariantSwitcher from './variant-switcher';
@@ -14,7 +14,6 @@ import { toggleWishlist, checkIsWishlisted } from '@/queries/user';
 import { toast } from 'sonner';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/query-keys';
-import { useEffect } from 'react';
 
 export default function ProductCard({
 	product,
@@ -28,18 +27,18 @@ export default function ProductCard({
 	const { variantSlug, variantName, images, sizes } = variant;
 	const [isHovered, setIsHovered] = useState(false);
 	const [isInWishlist, setIsInWishlist] = useState(false);
-
+	const checkedRef = useRef(false);
 	const queryClient = useQueryClient();
 
-	useEffect(() => {
-		let isMounted = true;
+	// Lazy-check: only hits the server on the first hover, not on every card mount
+	const handleMouseEnter = () => {
+		setIsHovered(true);
+		if (checkedRef.current) return;
+		checkedRef.current = true;
 		checkIsWishlisted(id, variant.variantId).then((res) => {
-			if (isMounted) setIsInWishlist(res);
+			setIsInWishlist(res);
 		});
-		return () => {
-			isMounted = false;
-		};
-	}, [id, variant.variantId]);
+	};
 
 	const wishlistToggleMutation = useMutation({
 		mutationFn: () => toggleWishlist(id, variant.variantId),
@@ -61,7 +60,7 @@ export default function ProductCard({
 
 	return (
 		<div
-			onMouseEnter={() => setIsHovered(true)}
+			onMouseEnter={handleMouseEnter}
 			onMouseLeave={() => setIsHovered(false)}
 			className={cn(className || 'w-[190px] min-[480px]:w-[225px] min-[1530px]:w-full', 'relative group')}
 		>
@@ -102,9 +101,9 @@ export default function ProductCard({
 						{/* Rating - Sales */}
 						{product.rating > 0 && product.sales > 0 && (
 							<div className='flex items-center gap-x-1 h-5'>
-								<ReactStars
+								<StarRating
 									count={5}
-									size={24}
+									size={14}
 									color='#F5F5F5'
 									activeColor='#FFD804'
 									value={rating}

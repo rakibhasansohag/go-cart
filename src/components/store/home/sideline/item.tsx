@@ -23,7 +23,7 @@ const SidelineItem: FC<Props> = ({
 	return (
 		<Link href={link}>
 			<div className='relative group mt-4 w-10 h-10  flex items-center justify-center hover:bg-red-500'>
-				<Image src={image} width={35} height={35} alt='' />
+				<Image src={image} width={28} height={28} alt='' style={{ width: 28, height: 28 }} />
 				<div
 					className={cn(
 						'hidden group-hover:flex absolute -left-28 ',
