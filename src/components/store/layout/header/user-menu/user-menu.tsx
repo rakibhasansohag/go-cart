@@ -9,8 +9,14 @@ import Image from 'next/image';
 import Link from 'next/link';
 
 export default async function UserMenu() {
-	// Get the current user
-	const user = await currentUser();
+	// Safely fetch the current user with try/catch to prevent Clerk API 500 errors from crashing the page
+	let user = null;
+	try {
+		user = await currentUser();
+	} catch (error) {
+		console.warn('Clerk currentUser API error fallback to guest view:', error);
+	}
+
 	return (
 		<div className='relative group px-2 '>
 			{/* Trigger */}
