@@ -93,7 +93,7 @@ export const getHomeDataDynamic = async (
 
 				// Extract variant images for the product
 				const variantImages: VariantImageType[] = variants.map((variant) => ({
-					url: `/product/${product.slug}/${variant.variantSlug}`,
+					url: `/product/${product.slug}?variant=${variant.variantSlug}`,
 					image: variant.variantImage
 						? variant.variantImage
 						: variant.images[0].url,

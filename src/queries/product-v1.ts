@@ -664,7 +664,7 @@ export const getProducts = async (
 		// Extract variant images for the product
 		const variantImages: VariantImageType[] = filteredVariants.map(
 			(variant) => ({
-				url: `/product/${product.slug}/${variant.slug}`,
+				url: `/product/${product.slug}?variant=${variant.slug}`,
 				image: variant.variantImage
 					? variant.variantImage
 					: variant.images[0].url,

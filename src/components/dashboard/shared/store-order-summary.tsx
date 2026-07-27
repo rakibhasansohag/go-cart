@@ -166,7 +166,7 @@ const StoreOrderSummary: FC<Props> = ({ group }) => {
 						>
 							{/* Product image link */}
 							<Link
-								href={`/product/${product.productSlug}/${product.variantSlug}`}
+								href={`/product/${product.productSlug}?variant=${product.variantSlug}`}
 								target='_blank'
 								rel='noopener noreferrer'
 								className='relative group overflow-hidden rounded-lg border border-border/40 shrink-0 block w-24 h-24'
@@ -185,7 +185,7 @@ const StoreOrderSummary: FC<Props> = ({ group }) => {
 							{/* Product info */}
 							<div className='flex flex-col gap-y-1 text-xs min-w-0'>
 								<Link
-									href={`/product/${product.productSlug}/${product.variantSlug}`}
+									href={`/product/${product.productSlug}?variant=${product.variantSlug}`}
 									target='_blank'
 									rel='noopener noreferrer'
 									className='font-bold text-xs text-foreground hover:text-primary transition-colors line-clamp-2 inline-flex items-center gap-1'

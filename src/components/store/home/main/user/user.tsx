@@ -1,6 +1,5 @@
 import { SimpleProduct } from '@/lib/types';
 import Image from 'next/image';
-import UserImg from '@/public/assets/images/default-user.avif';
 import Link from 'next/link';
 import { Button } from '../../../ui/button';
 import UserCardProducts from './products';
@@ -30,7 +29,7 @@ export default function HomeUserCard({
 				<div className='w-full h-[76px]'>
 					<div className='mx-auto cursor-pointer'>
 						<Image
-							src={user ? user.imageUrl : UserImg}
+							src={user ? user.imageUrl : '/assets/images/default-user.avif'}
 							alt=''
 							width={48}
 							height={48}

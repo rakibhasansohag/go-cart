@@ -59,7 +59,7 @@ export const columns: ColumnDef<StoreOrderType>[] = [
 					{items.map((item, i) => (
 						<Link
 							key={`${item.id}-${i}`}
-							href={`/product/${item.productSlug}/${item.variantSlug}`}
+							href={`/product/${item.productSlug}?variant=${item.variantSlug}`}
 							target='_blank'
 							rel='noopener noreferrer'
 							title={`View ${item.name} in new tab`}

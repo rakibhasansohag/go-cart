@@ -19,7 +19,7 @@ export default function CheckoutProductCard({
 					{/* Image */}
 					<div className='flex items-center'>
 						<Link
-							href={`/product/${productSlug}/${variantSlug}?size=${sizeId}`}
+							href={`/product/${productSlug}?variant=${variantSlug}&size=${sizeId}`}
 						>
 							<div className='m-0 mr-4 ml-2 w-28 h-28 bg-gray-200 dark:bg-gray-700 relative rounded-lg'>
 								<Image
@@ -37,7 +37,7 @@ export default function CheckoutProductCard({
 						{/* Title - Actions */}
 						<div className='w-[calc(100%-48px)] flex items-start overflow-hidden whitespace-nowrap'>
 							<Link
-								href={`/product/${productSlug}/?variant=${variantSlug}?size=${sizeId}`}
+								href={`/product/${productSlug}?variant=${variantSlug}&size=${sizeId}`}
 								className='inline-block overflow-hidden text-sm whitespace-nowrap overflow-ellipsis'
 							>
 								{product.name}

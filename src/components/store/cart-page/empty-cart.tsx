@@ -1,4 +1,3 @@
-import CartImg from '@/public/assets/images/cart.avif';
 
 import Image from 'next/image';
 import Link from 'next/link';
@@ -8,7 +7,7 @@ export default function EmptyCart() {
 		<div className='bg-f5 w-full mx-auto px-4 text-center'>
 			<div className='min-h-[calc(100vh-65px)] pb-14 flex flex-col justify-center items-center'>
 				<Image
-					src={CartImg}
+					src='/assets/images/cart.avif'
 					alt='Cart image'
 					width={300}
 					height={300}

@@ -1,8 +1,5 @@
 import Link from 'next/link';
 import { AppealIcon, ArrowIcon, DollarIcon } from '@/components/store/icons';
-import UnpaidImg from '@/public/assets/images/unpaid.avif';
-import ToBeShippedImg from '@/public/assets/images/to-be-shipped.avif';
-import ShippedImg from '@/public/assets/images/shipped.avif';
 import ToBeReviewedImg from '@/public/assets/images/to-de-reviewed.webp';
 import Image from 'next/image';
 
@@ -62,17 +59,17 @@ export default function OrdersOverview() {
 const menu = [
 	{
 		title: 'Unpaid',
-		img: UnpaidImg,
+		img: '/assets/images/unpaid.avif',
 		link: '/profile/orders/unpaid',
 	},
 	{
 		title: 'To be shipped',
-		img: ToBeShippedImg,
+		img: '/assets/images/to-be-shipped.avif',
 		link: '/profile/orders/toShip',
 	},
 	{
 		title: 'Shipped',
-		img: ShippedImg,
+		img: '/assets/images/shipped.avif',
 		link: '/profile/orders/shipped',
 	},
 	{

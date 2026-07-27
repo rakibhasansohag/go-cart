@@ -1,7 +1,6 @@
 'use client';
 import { SimpleProduct } from '@/lib/types';
 import AnimatedImg from '@/public/assets/images/ads/animated-deals.gif';
-import TopSellerImg from '@/public/assets/images/featured/most-popular.avif';
 import TopRatedImg from '@/public/assets/images/featured/top-rated.jpg';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -45,7 +44,7 @@ export default function AnimatedDeals({
 				className=' bg-amber-500 absolute top-[25%] left-[7%] min-[1070px]:left-[10%] rounded-[24px] w-[140px] h-[181px] z-10 flex justify-center'
 			>
 				<Image
-					src={TopSellerImg}
+					src='/assets/images/featured/most-popular.avif'
 					alt=''
 					width={150}
 					height={200}

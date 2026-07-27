@@ -11,7 +11,6 @@ import Featured from './main/featured';
 import HomeUserCard from './main/user/user';
 import AnimatedDeals from './animated-deals';
 import MainSwiper from '../shared/swiper';
-import SuperDealsImg from '@/public/assets/images/ads/super-deals.avif';
 
 export function HomeMainAndDeals({
 	user,
@@ -82,7 +81,7 @@ export function HomeMainAndDeals({
 			<div className='mt-10 bg-background rounded-md'>
 				<MainSwiper products={products_super_deals} type='curved'>
 					<div className='mb-4 pl-4 flex items-center justify-between'>
-						<Image src={SuperDealsImg} alt='Super deals' width={200} height={50} />
+						<Image src='/assets/images/ads/super-deals.avif' alt='Super deals' width={200} height={50} />
 					</div>
 				</MainSwiper>
 			</div>
