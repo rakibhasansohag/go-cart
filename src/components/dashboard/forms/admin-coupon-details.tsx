@@ -29,6 +29,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/query-keys';
 import { v4 } from 'uuid';
 import { toast } from 'sonner';
+import { useRouter } from 'next/navigation';
 import { format } from 'date-fns';
 import DateTimePicker from 'react-datetime-picker';
 import 'react-datetime-picker/dist/DateTimePicker.css';
@@ -51,6 +52,7 @@ interface AdminCouponDetailsProps {
 export const AdminCouponDetails: FC<AdminCouponDetailsProps> = ({ data }) => {
 	const { setClose } = useModal();
 	const queryClient = useQueryClient();
+	const router = useRouter();
 
 	const form = useForm({
 		mode: 'onChange',
@@ -76,8 +78,9 @@ export const AdminCouponDetails: FC<AdminCouponDetailsProps> = ({ data }) => {
 					: `Global Coupon '${response?.code}' created successfully!`,
 			);
 			queryClient.invalidateQueries({
-				queryKey: queryKeys.dashboard.adminCoupons(),
+				queryKey: ['dashboard', 'adminCoupons'],
 			});
+			router.refresh();
 			setClose();
 		},
 		onError: (error: any) => {

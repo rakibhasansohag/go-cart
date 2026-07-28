@@ -26,7 +26,7 @@ export default function AdminCouponsTable({ initialData }: AdminCouponsTableProp
 	const [search, setSearch] = useState('');
 
 	const { data, isFetching } = useQuery({
-		queryKey: queryKeys.dashboard.adminCoupons(page, pageSize, search),
+		queryKey: ['dashboard', 'adminCoupons', page, pageSize, search],
 		queryFn: () => getAllAdminCoupons({ page, limit: pageSize, search }),
 		initialData: page === 1 && pageSize === 10 && !search ? initialData : undefined,
 	});
