@@ -34,7 +34,7 @@ const MainSwiper: FC<Props> = ({
 	spaceBetween = 30,
 }) => {
 	return (
-		<div className='p-4 rounded-md cursor-pointer'>
+		<div className='p-4 rounded-md'>
 			<div>{children}</div>
 			<Swiper
 				modules={[Navigation, Pagination]}

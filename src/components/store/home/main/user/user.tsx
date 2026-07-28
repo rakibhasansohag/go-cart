@@ -36,7 +36,7 @@ export default function HomeUserCard({
 							className='h-12 w-12 rounded-full object-cover absolute left-1/2 -translate-x-1/2 top-2'
 						/>
 					</div>
-					<div className='absolute top-16 w-full h-5 font-bold text-main-primary text-center cursor-pointer capitalize'>
+					<div className='absolute top-16 w-full h-5 font-bold text-slate-800 dark:text-slate-900 text-center cursor-pointer capitalize'>
 						{user ? user.fullName?.toLowerCase() : 'Welcome to GoCart'}
 					</div>
 				</div>
