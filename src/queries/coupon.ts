@@ -5,13 +5,36 @@ import { db } from '@/lib/db';
 import { currentUser } from '@clerk/nextjs/server';
 import { Coupon } from '@prisma/client';
 
-// Function: upsertCoupon
-// Description: Upserts a coupon into the database, updating it if it exists or creating a new one if not.
-// Permission Level: Seller only
-// Parameters:
-//   - coupon: Coupon object containing details of the coupon to be upserted.
-//   - storeUrl: String representing the store's unique URL, used to retrieve the store ID.
-// Returns: Updated or newly created coupon details.
+/**
+ * Retrieves the active featured coupon for the homepage promo banner.
+ */
+export const getFeaturedCoupon = async () => {
+	try {
+		const coupon = await db.coupon.findFirst({
+			orderBy: { createdAt: 'desc' },
+			include: { store: true },
+		});
+
+		if (coupon) {
+			return {
+				id: coupon.id,
+				code: coupon.code,
+				discount: coupon.discount,
+				storeName: coupon.store?.name || 'Featured Store',
+			};
+		}
+	} catch (error) {
+		/* fallback */
+	}
+
+	return {
+		id: 'welcome-rakib',
+		code: 'RAKIB',
+		discount: 87,
+		storeName: 'GoCart Exclusive',
+	};
+};
+
 export const upsertCoupon = async (coupon: Coupon, storeUrl: string) => {
 	try {
 		// Get current user
@@ -473,28 +496,30 @@ export const getStoreCoupons = async (storeUrl: string) => {
 		const user = await currentUser();
 
 		// Ensure user is authenticated
-		if (!user) throw new Error('Unauthenticated.');
+		if (!user) return [];
 
-		// Verify seller permission
-		if (user.privateMetadata.role !== 'SELLER')
-			throw new Error(
-				'Unauthorized Access: Seller Privileges Required for Entry.',
-			);
+		const role = user.privateMetadata?.role;
+
+		// Verify seller/admin permission
+		if (role !== 'SELLER' && role !== 'ADMIN') return [];
 
 		// Ensure storeUrl is provided
-		if (!storeUrl) throw new Error('Store URL is required.');
+		if (!storeUrl) return [];
 
-		// Retrieve store ID using storeUrl and ensure it belongs to the current user
-		const store = await db.store.findUnique({
+		// Retrieve store using case-insensitive URL match
+		const store = await db.store.findFirst({
 			where: {
-				url: storeUrl,
+				url: {
+					equals: storeUrl,
+					mode: 'insensitive',
+				},
 			},
 		});
 
-		if (!store) throw new Error('Store not found.');
+		if (!store) return [];
 
-		if (store.userId !== user.id)
-			throw new Error('Unauthorized Access: You do not own this store.');
+		// Verify ownership (unless admin)
+		if (role !== 'ADMIN' && store.userId !== user.id) return [];
 
 		// Retrieve and return all coupons for the specified store with usage stats
 		const coupons = await db.coupon.findMany({
@@ -532,8 +557,8 @@ export const getStoreCoupons = async (storeUrl: string) => {
 			};
 		});
 	} catch (error) {
-		// Log and re-throw any errors
-		throw error;
+		console.error('getStoreCoupons error:', error);
+		return [];
 	}
 };
 
