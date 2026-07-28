@@ -483,7 +483,7 @@ export const getUserCartCoupon = async () => {
 			return {
 				code: userCart.coupon.code,
 				discount: userCart.coupon.discount,
-				storeName: userCart.coupon.store.name,
+				storeName: userCart.coupon.store?.name || 'Global Platform',
 			};
 		}
 		return null;

@@ -186,7 +186,7 @@ const CellActions = ({ coupon }: CellActionsProps) => {
 								const res = await getCoupon(coupon.id);
 								setOpen(
 									<CustomModal heading='Edit Coupon Details' subheading='Update coupon code or dates'>
-										<CouponDetails data={res} storeUrl={coupon.store.url} />
+										<CouponDetails data={res} storeUrl={coupon.store?.url || ''} />
 									</CustomModal>
 								);
 							} catch {

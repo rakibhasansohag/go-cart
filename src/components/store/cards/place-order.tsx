@@ -112,7 +112,7 @@ const PlaceOrderCard: FC<Props> = ({
 								({coupon.code}) ({coupon.discount}%) discount
 							</p>
 							<p className='overflow-hidden text-sm leading-5 break-words text-zinc-400'>
-								Coupon applied only to items from {coupon.store.name}
+								Coupon applied to {coupon.store?.name ? `items from ${coupon.store.name}` : 'your entire order'}
 							</p>
 						</div>
 					</div>

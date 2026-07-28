@@ -652,8 +652,8 @@ model Coupon {
   discount  Int
   maxUses   Int    @default(0)
 
-  storeId String
-  store   Store  @relation("CouponToStore", fields: [storeId], references: [id], onDelete: Cascade)
+  storeId String?
+  store   Store?  @relation("CouponToStore", fields: [storeId], references: [id], onDelete: Cascade)
 
   orders OrderGroup[] @relation("CouponToOrderGroup")
   users  User[]       @relation("CouponToUser")

@@ -5,35 +5,7 @@ import { db } from '@/lib/db';
 import { currentUser } from '@clerk/nextjs/server';
 import { Coupon } from '@prisma/client';
 
-/**
- * Retrieves the active featured coupon for the homepage promo banner.
- */
-export const getFeaturedCoupon = async () => {
-	try {
-		const coupon = await db.coupon.findFirst({
-			orderBy: { createdAt: 'desc' },
-			include: { store: true },
-		});
 
-		if (coupon) {
-			return {
-				id: coupon.id,
-				code: coupon.code,
-				discount: coupon.discount,
-				storeName: coupon.store?.name || 'Featured Store',
-			};
-		}
-	} catch (error) {
-		/* fallback */
-	}
-
-	return {
-		id: 'welcome-rakib',
-		code: 'RAKIB',
-		discount: 87,
-		storeName: 'GoCart Exclusive',
-	};
-};
 
 export const upsertCoupon = async (coupon: Coupon, storeUrl: string) => {
 	try {
@@ -167,7 +139,7 @@ export const validateCouponCode = async (code: string) => {
 			code: coupon.code,
 			discount: coupon.discount,
 			storeId: coupon.storeId,
-			storeName: coupon.store.name,
+			storeName: coupon.store?.name || 'Global Platform',
 			maxUses: coupon.maxUses,
 			usedCount: successfulRedemptions,
 		};
@@ -242,10 +214,12 @@ export const applyCoupon = async (
 	cartId: string,
 ): Promise<{ message: string; cart: CartWithCartItemsType }> => {
 	try {
+		const cleanCode = couponCode.trim().toUpperCase();
+
 		// Step 1: Fetch the coupon details
 		const coupon = await db.coupon.findUnique({
 			where: {
-				code: couponCode,
+				code: cleanCode,
 			},
 			include: {
 				store: true,
@@ -285,35 +259,34 @@ export const applyCoupon = async (
 			throw new Error('A coupon is already applied to this cart.');
 		}
 
-		// Step 5: Filter items from the store associated with the coupon
-		const storeId = coupon.storeId;
-
-		const storeItems = cart.cartItems.filter(
-			(item) => item.storeId === storeId,
-		);
-
-		if (storeItems.length === 0) {
-			throw new Error(
-				'No items in the cart belong to the store associated with this coupon.',
+		// Step 5: Check if Global Platform Coupon or Store-specific Coupon
+		let targetItems = cart.cartItems;
+		if (coupon.storeId) {
+			targetItems = cart.cartItems.filter(
+				(item) => item.storeId === coupon.storeId,
 			);
+
+			if (targetItems.length === 0) {
+				throw new Error(
+					`This coupon is issued by "${coupon.store?.name || 'a specific store'}", but your cart contains no items from this store.`,
+				);
+			}
 		}
 
-		// Step 6: Calculate the discount on the store's items
-		const storeSubTotal = storeItems.reduce(
+		// Step 6: Calculate the discount
+		const targetSubTotal = targetItems.reduce(
 			(acc, item) => acc + item.price * item.quantity,
 			0,
 		);
 
-		const storeShippingTotal = storeItems.reduce(
+		const targetShippingTotal = targetItems.reduce(
 			(acc, item) => acc + item.shippingFee,
 			0,
 		);
 
-		const storeTotal = storeSubTotal + storeShippingTotal;
-
-		const discountedAmount = (storeTotal * coupon.discount) / 100;
-
-		const newTotal = cart.total - discountedAmount;
+		const targetTotal = targetSubTotal + targetShippingTotal;
+		const discountedAmount = (targetTotal * coupon.discount) / 100;
+		const newTotal = Math.max(0, cart.total - discountedAmount);
 
 		// Step 7: Update the cart with the applied coupon and new total
 		const updatedCart = await db.cart.update({
@@ -334,10 +307,12 @@ export const applyCoupon = async (
 			},
 		});
 
+		const scopeLabel = coupon.store
+			? `items from ${coupon.store.name}`
+			: 'your entire order';
+
 		return {
-			message: `Coupon applied successfully. Discount: -$${discountedAmount.toFixed(
-				2,
-			)} applied to items from ${coupon.store.name}.`,
+			message: `Coupon "${coupon.code}" (${coupon.discount}% OFF) applied successfully to ${scopeLabel}!`,
 			cart: updatedCart,
 		};
 	} catch (error: any) {
@@ -420,33 +395,30 @@ export const applyCouponToOrder = async (
 			}
 		}
 
-		// 3. Find matching OrderGroup by storeId
-		const matchingGroup = order.groups.find(
-			(g) => g.storeId === coupon.storeId,
-		);
-
-		if (!matchingGroup) {
-			throw new Error(
-				`This coupon is issued by "${coupon.store.name}", but this order contains no items from that store.`,
-			);
+		// 3. Apply discount to target order groups (all groups if global coupon, store-specific group if store coupon)
+		let targetGroups = order.groups;
+		if (coupon.storeId) {
+			targetGroups = order.groups.filter((g) => g.storeId === coupon.storeId);
+			if (targetGroups.length === 0) {
+				throw new Error(
+					`This coupon is issued by "${coupon.store?.name || 'a specific store'}", but this order contains no items from that store.`,
+				);
+			}
 		}
 
-		if (matchingGroup.couponId === coupon.id) {
-			throw new Error('This coupon is already applied to this order.');
+		for (const matchingGroup of targetGroups) {
+			const storeSubTotal = matchingGroup.subTotal + matchingGroup.shippingFees;
+			const discountedAmount = (storeSubTotal * coupon.discount) / 100;
+			const newGroupTotal = Math.max(0, storeSubTotal - discountedAmount);
+
+			await db.orderGroup.update({
+				where: { id: matchingGroup.id },
+				data: {
+					couponId: coupon.id,
+					total: newGroupTotal,
+				},
+			});
 		}
-
-		// 4. Recalculate group total with coupon discount
-		const storeSubTotal = matchingGroup.subTotal + matchingGroup.shippingFees;
-		const discountedAmount = (storeSubTotal * coupon.discount) / 100;
-		const newGroupTotal = Math.max(0, storeSubTotal - discountedAmount);
-
-		await db.orderGroup.update({
-			where: { id: matchingGroup.id },
-			data: {
-				couponId: coupon.id,
-				total: newGroupTotal,
-			},
-		});
 
 		// 5. Recalculate main Order total
 		const allGroups = await db.orderGroup.findMany({
@@ -729,5 +701,29 @@ export const deleteAdminCoupon = async (couponId: string) => {
 		});
 	} catch (error) {
 		throw error;
+	}
+};
+
+export const getFeaturedCoupon = async () => {
+	try {
+		// Priority 1: Global Platform Coupon (storeId is null)
+		const globalCoupon = await db.coupon.findFirst({
+			where: {
+				storeId: null,
+			},
+			orderBy: { discount: 'desc' },
+		});
+
+		if (globalCoupon) return globalCoupon;
+
+		// Priority 2: Highest discount Store Coupon
+		const storeCoupon = await db.coupon.findFirst({
+			orderBy: { discount: 'desc' },
+		});
+
+		return storeCoupon || null;
+	} catch (error) {
+		console.error('getFeaturedCoupon error:', error);
+		return null;
 	}
 };

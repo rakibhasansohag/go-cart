@@ -5,6 +5,8 @@ import { SimpleProduct } from '@/lib/types';
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { Check } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { getFeaturedCoupon } from '@/queries/coupon';
 
 interface Props {
 	products: SimpleProduct[];
@@ -14,9 +16,17 @@ interface Props {
 
 export default function Featured({
 	products,
-	couponCode = 'RAKIB',
-	discount = 87,
+	couponCode: initialCouponCode,
+	discount: initialDiscount,
 }: Props) {
+	const { data: featuredCoupon } = useQuery({
+		queryKey: ['featured-coupon'],
+		queryFn: () => getFeaturedCoupon(),
+	});
+
+	const couponCode = featuredCoupon?.code || initialCouponCode || 'RAKIB';
+	const discount = featuredCoupon?.discount ?? initialDiscount ?? 87;
+
 	const [isCollected, setIsCollected] = useState(false);
 
 	useEffect(() => {

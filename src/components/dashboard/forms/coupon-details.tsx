@@ -114,7 +114,13 @@ const CouponDetails: FC<CouponDetailsProps> = ({ data, storeUrl }) => {
 	// Reset form values when data changes
 	useEffect(() => {
 		if (data) {
-			form.reset(data);
+			form.reset({
+				code: data.code,
+				discount: data.discount,
+				maxUses: data.maxUses,
+				startDate: data.startDate,
+				endDate: data.endDate,
+			});
 		}
 	}, [data, form]);
 
