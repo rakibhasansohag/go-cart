@@ -124,10 +124,10 @@ export const getHomeDataDynamic = async (
 				dbField === 'offerTag.url'
 					? { offerTag: { url: value } }
 					: dbField === 'category.url'
-					? { category: { url: value } }
-					: dbField === 'subCategory.url'
-					? { subCategory: { url: value } }
-					: {};
+						? { category: { url: value } }
+						: dbField === 'subCategory.url'
+							? { subCategory: { url: value } }
+							: {};
 
 			// Query products based on the constructed where clause
 			const products = await db.product.findMany({
