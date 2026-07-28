@@ -100,4 +100,16 @@ Safe to do — the runtime value is correct; the error is purely a type-declarat
 23. In `src/hooks/use-form-dirty-guard.ts` & Dashboard Forms (`store-details.tsx`, `product-details.tsx`, `coupon-details.tsx`, `category-details.tsx`, `subCategory-details.tsx`, `offer-tag-details.tsx`, `shippingRate-details.tsx`, `store-default-shipping-details.tsx`):
     - **Reusable Dirty State Guard**: Created `useFormDirtyGuard` custom hook that tracks form dirty state (`isDirty`) and computes `isSaveDisabled = isLoading || (isEditing && !isDirty)`. Connected `isSaveDisabled` to the submit button disabled prop across all dashboard edit forms and modals, preventing unnecessary repeat saves when no fields have been modified. Provided `resetDirtyState()` to automatically reset the baseline after successful save.
 
+---
 
+## Feature Development & Integration Wiring Rule
+
+**CRITICAL MANDATE**:
+Before implementing any new feature, bug fix, or schema change:
+1. **End-to-End Dependency & Wiring Inspection**: Trace the entire data pipeline across all connected layers before modifying code:
+   - **Database Schema**: Prisma models, relations, default values, and migration constraints.
+   - **Backend / Queries**: Server queries, mutations, filtering parameters, and database calculations (`saveUserCart`, `updateCheckoutProductstWithLatest`, `validateCouponCode`, `createOrderGroup`, `getAllAdminCoupons`, etc.).
+   - **State / React Query**: Query keys, prefix invalidations (`queryClient.invalidateQueries({ queryKey: [...] })`), and cache refresh handlers (`router.refresh()`).
+   - **Forms / Inputs**: React Hook Form schemas, `z.preprocess` type coercions, number input empty state handling, and modal triggers.
+   - **UI Views / Display Components**: Customer cart summary, checkout totals, order details modal, admin tables, seller dashboard analytics.
+2. **Atomic Simultaneous Updates**: When creating or modifying a feature, ALWAYS update all connected components, queries, models, and calculation handlers in the same step. Never leave disconnected wiring, missing properties, or broken calculations across connected modules.

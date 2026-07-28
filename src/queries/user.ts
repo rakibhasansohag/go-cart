@@ -141,18 +141,22 @@ export const checkIsWishlisted = async (
 	productId: string,
 	variantId?: string,
 ) => {
-	const user = await currentUser();
-	if (!user) return false;
+	try {
+		const user = await currentUser();
+		if (!user) return false;
 
-	const count = await db.wishlist.count({
-		where: {
-			userId: user.id,
-			productId,
-			...(variantId ? { variantId } : {}),
-		},
-	});
+		const count = await db.wishlist.count({
+			where: {
+				userId: user.id,
+				productId,
+				...(variantId ? { variantId } : {}),
+			},
+		});
 
-	return count > 0;
+		return count > 0;
+	} catch {
+		return false;
+	}
 };
 
 /**
@@ -1190,8 +1194,10 @@ export const placeOrder = async (
 				shippingAddress.countryId,
 			);
 
-		// Check coupon store
-		const check = storeId === cartCoupon?.storeId;
+		// Check coupon store (Global Platform Coupon applies to all stores)
+		const check = Boolean(
+			cartCoupon && (!cartCoupon.storeId || storeId === cartCoupon.storeId),
+		);
 
 		// Calculate discount based on coupon
 		let discountedAmount = 0;
