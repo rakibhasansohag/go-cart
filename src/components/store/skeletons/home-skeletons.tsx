@@ -5,7 +5,7 @@ export function ProductsGridSkeleton() {
 	return (
 		<div className='w-full'>
 			{/* Grid matching MoreToLoveSection responsive grid */}
-			<div className='mt-7 bg-background p-4 pb-16 rounded-md w-full grid grid-cols-1 min-[380px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4 animate-pulse'>
+			<div className='mt-7 bg-background p-4 pb-16 rounded-md w-full grid grid-cols-1 min-[576px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4 animate-pulse'>
 				{Array.from({ length: 12 }).map((_, i) => (
 					<div
 						key={i}
