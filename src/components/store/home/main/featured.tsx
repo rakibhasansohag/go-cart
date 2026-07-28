@@ -13,67 +13,54 @@ export default function Featured({ products }: { products: SimpleProduct[] }) {
 	const [screenWidth, setScreenWidth] = useState<number>(window.innerWidth);
 
 	useEffect(() => {
-		// Function to handle resize event and update screen width
 		const handleResize = () => {
 			setScreenWidth(window.innerWidth);
 		};
 
-		// Add the resize event listener when the component mounts
 		window.addEventListener('resize', handleResize);
-
-		// Cleanup the event listener when the component unmounts
 		return () => {
 			window.removeEventListener('resize', handleResize);
 		};
 	}, []);
 
 	return (
-		<div className='relative rounded-md overflow-hidden'>
+		<div className='relative rounded-2xl overflow-hidden border border-border/40 shadow-xs'>
 			<div
-				className='w-full flex items-center bg-cover bg-center bg-no-repeat'
+				className='w-full flex items-center bg-cover bg-center bg-no-repeat min-h-[190px]'
 				style={{ backgroundImage: 'url(/assets/images/ads/featured.webp)' }}
 			>
-				{/* Coupon */}
-				<Link href='/'>
-					<div className='w-52 px-3 float-left relative h-[190px]'>
-						<div className='flex flex-col justify-center items-center h-[103px]'>
-							<h3 className='leading-5 font-bold my-1 text-main-primary w-full'>
-								Welcome Newcomers!
-							</h3>
-							<p className='text-sm w-full text-main-primary'>
-								Enjoy shopping made easy like nothing before
-							</p>
-						</div>
+				{/* Coupon Column */}
+				<Link href='/browse' className='shrink-0'>
+					<div className='w-56 px-4 py-3 relative h-47.5 flex flex-col justify-between select-none'>
+						{/* Reserved top header space for background image graphic */}
+						<div className='h-23.75' />
+
+						{/* Animated Coupon Badge */}
 						<div
-							className='absolute w-[192px] h-[55px] pl-[14px] text-main-primary overflow-hidden pr-[45px] bottom-[35px] 
-              text-left bg-contain bg-no-repeat'
+							className='w-48 h-13 pl-3.5 pr-11 text-left bg-contain bg-no-repeat flex flex-col justify-center shrink-0 mb-1'
 							style={{ backgroundImage: 'url(/assets/images/ads/coupon.gif)' }}
 						>
-							<h3 className='text-[20px] leading-6 mt-[11px] mb-1 text-main-primary w-full'>
+							<span className='text-[16px] font-extrabold leading-tight text-slate-900'>
 								use &#39;rakib&#39;
-							</h3>
-
-							<p className='overflow-hidden overflow-ellipsis w-full text-xs -translate-y-1'>
+							</span>
+							<span className='text-[11px] font-bold text-slate-800'>
 								for 87% off
-							</p>
+							</span>
 						</div>
 					</div>
 				</Link>
-				{/* Product swiper */}
+
+				{/* Product Swiper */}
 				<div
-					className={is1700px ? 'ml-10' : ''}
+					className={is1700px ? 'ml-6' : ''}
 					style={{
 						width: !is1170px
-							? `${screenWidth - 300}px` // Less than 1170px
+							? `${screenWidth - 320}px`
 							: is1700px
-							? '750px' // More than 1700px
-							: `calc(500px + 5vw)`, // Between 1170-1700px
+								? '750px'
+								: `calc(500px + 5vw)`,
 					}}
 				>
-					{/*
-            
-            1170-1700===>
-            */}
 					<MainSwiper
 						products={products}
 						type='simple'
