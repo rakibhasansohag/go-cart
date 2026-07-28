@@ -498,11 +498,6 @@ export const getStoreCoupons = async (storeUrl: string) => {
 		// Ensure user is authenticated
 		if (!user) return [];
 
-		const role = user.privateMetadata?.role;
-
-		// Verify seller/admin permission
-		if (role !== 'SELLER' && role !== 'ADMIN') return [];
-
 		// Ensure storeUrl is provided
 		if (!storeUrl) return [];
 
@@ -518,8 +513,23 @@ export const getStoreCoupons = async (storeUrl: string) => {
 
 		if (!store) return [];
 
-		// Verify ownership (unless admin)
-		if (role !== 'ADMIN' && store.userId !== user.id) return [];
+		// Check if user is store owner or admin
+		const dbUser = await db.user.findUnique({
+			where: { id: user.id },
+			select: { role: true },
+		});
+
+		const isAdmin =
+			user.privateMetadata?.role === 'ADMIN' ||
+			user.publicMetadata?.role === 'ADMIN' ||
+			dbUser?.role === 'ADMIN';
+
+		const isOwner = store.userId === user.id;
+
+		if (!isAdmin && !isOwner) {
+			console.warn(`User ${user.id} unauthorized for store coupons: ${storeUrl}`);
+			return [];
+		}
 
 		// Retrieve and return all coupons for the specified store with usage stats
 		const coupons = await db.coupon.findMany({

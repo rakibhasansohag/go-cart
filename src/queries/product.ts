@@ -591,53 +591,77 @@ export const getAllStoreProducts = async (
 	cursor?: string | null,
 	limit: number = 20,
 ) => {
-	// Retrieve store details from the database using the store URL
-	const store = await db.store.findUnique({ where: { url: storeUrl } });
-	if (!store) throw new Error('Please provide a valid store URL.');
-
-	// Retrieve products associated with the store using cursor pagination
-	const rawProducts = await db.product.findMany({
-		where: {
-			storeId: store.id,
-		},
-		take: limit + 1,
-		...(cursor
-			? {
-					cursor: { id: cursor },
-					skip: 1,
-			  }
-			: {}),
-		orderBy: { createdAt: 'desc' },
-		include: {
-			category: true,
-			subCategory: true,
-			offerTag: true,
-			variants: {
-				include: {
-					images: { orderBy: { order: 'asc' } },
-					colors: true,
-					sizes: true,
+	try {
+		// Retrieve store details using case-insensitive URL matching
+		let store = await db.store.findFirst({
+			where: {
+				url: {
+					equals: storeUrl,
+					mode: 'insensitive',
 				},
 			},
-			store: {
-				select: {
-					id: true,
-					url: true,
+		});
+
+		if (!store) {
+			const user = await currentUser();
+			if (user) {
+				store = await db.store.findFirst({
+					where: { userId: user.id },
+				});
+			}
+		}
+
+		if (!store) {
+			return { products: [], nextCursor: null, hasNextPage: false };
+		}
+
+		// Retrieve products associated with the store using cursor pagination
+		const rawProducts = await db.product.findMany({
+			where: {
+				storeId: store.id,
+			},
+			take: limit + 1,
+			...(cursor
+				? {
+						cursor: { id: cursor },
+						skip: 1,
+				  }
+				: {}),
+			orderBy: { createdAt: 'desc' },
+			include: {
+				category: true,
+				subCategory: true,
+				offerTag: true,
+				variants: {
+					include: {
+						images: { orderBy: { order: 'asc' } },
+						colors: true,
+						sizes: true,
+					},
+				},
+				store: {
+					select: {
+						id: true,
+						url: true,
+					},
 				},
 			},
-		},
-	});
+		});
 
-	const hasNextPage = rawProducts.length > limit;
-	const products = hasNextPage ? rawProducts.slice(0, limit) : rawProducts;
-	const nextCursor =
-		hasNextPage && products.length > 0 ? products[products.length - 1].id : null;
+		const hasNextPage = rawProducts.length > limit;
+		const products = hasNextPage ? rawProducts.slice(0, limit) : rawProducts;
+		const nextCursor =
+			hasNextPage && products.length > 0 ? products[products.length - 1].id : null;
 
-	return {
-		products,
-		nextCursor,
-		hasNextPage,
-	};
+		return {
+			products,
+			nextCursor,
+			hasNextPage,
+		};
+	} catch (error) {
+		console.error('getAllStoreProducts error:', error);
+		return { products: [], nextCursor: null, hasNextPage: false };
+	}
 };
 
 // Function: deleteProduct

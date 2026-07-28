@@ -721,12 +721,30 @@ export const getStorePageDetails = async (storeUrl: string) => {
 
 export const getStoreByUrl = async (storeUrl: string) => {
 	try {
-		return await db.store.findUnique({
-			where: { url: storeUrl },
+		if (!storeUrl) return null;
+
+		let store = await db.store.findFirst({
+			where: {
+				url: {
+					equals: storeUrl.trim(),
+					mode: 'insensitive',
+				},
+			},
 		});
+
+		if (!store) {
+			const user = await currentUser();
+			if (user) {
+				store = await db.store.findFirst({
+					where: { userId: user.id },
+				});
+			}
+		}
+
+		return store;
 	} catch (error) {
-		console.error(error);
-		throw error;
+		console.error('getStoreByUrl error:', error);
+		return null;
 	}
 };
 
