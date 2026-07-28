@@ -410,9 +410,9 @@ export const saveUserCart = async (
 			const endDate = new Date(coupon.endDate);
 
 			if (currentDate >= startDate && currentDate <= endDate) {
-				const storeItems = validatedCartItems.filter(
-					(item) => item.storeId === coupon.storeId,
-				);
+				const storeItems = coupon.storeId
+					? validatedCartItems.filter((item) => item.storeId === coupon.storeId)
+					: validatedCartItems;
 				if (storeItems.length > 0) {
 					const storeSubTotal = storeItems.reduce(
 						(acc, item) => acc + item.price * item.quantity,
@@ -708,8 +708,8 @@ export const updateCheckoutProductstWithLatest = async (
 			const country = address
 				? address
 				: countryCookie
-				? JSON.parse(countryCookie)
-				: null;
+					? JSON.parse(countryCookie)
+					: null;
 
 			if (!country) {
 				throw new Error("Couldn't retrieve country data");
@@ -795,11 +795,11 @@ export const updateCheckoutProductstWithLatest = async (
 		const startDate = new Date(coupon.startDate);
 		const endDate = new Date(coupon.endDate);
 
-		if (currentDate > startDate && currentDate < endDate) {
-			// Check if the coupon applies to any store in the cart
-			const applicableStoreItems = validatedCartItems.filter(
-				(item) => item.storeId === coupon.storeId,
-			);
+		if (currentDate >= startDate && currentDate <= endDate) {
+			// Check if the coupon applies to any store in the cart (or is global platform coupon)
+			const applicableStoreItems = coupon.storeId
+				? validatedCartItems.filter((item) => item.storeId === coupon.storeId)
+				: validatedCartItems;
 
 			if (applicableStoreItems.length > 0) {
 				// Calculate subtotal for the coupon's store (including shipping fees)
@@ -809,7 +809,7 @@ export const updateCheckoutProductstWithLatest = async (
 				);
 				// Apply coupon discount to the store's subtotal
 				const discountedAmount = (storeSubTotal * coupon.discount) / 100;
-				total -= discountedAmount;
+				total = Math.max(0, total - discountedAmount);
 			}
 		}
 	}
@@ -910,53 +910,53 @@ export const upsertShippingAddress = async (
  * 
  * export const upsertShippingAddress = async (address: ShippingAddressPayload) => {
   try {
-    const user = await currentUser();
-    if (!user) throw new Error('Unauthenticated.');
-    if (!address) throw new Error('Please provide address data.');
+	const user = await currentUser();
+	if (!user) throw new Error('Unauthenticated.');
+	if (!address) throw new Error('Please provide address data.');
 
-    console.log('Server upsertShippingAddress received:', address);
+	console.log('Server upsertShippingAddress received:', address);
 
-    if (!address.firstName) throw new Error('firstName missing in payload');
-    if (!address.countryId) throw new Error('countryId missing in payload');
+	if (!address.firstName) throw new Error('firstName missing in payload');
+	if (!address.countryId) throw new Error('countryId missing in payload');
 
-    // If new default: reset other defaults
-    if (address.default) {
-      // only clear existing defaults for this user
-      await db.shippingAddress.updateMany({
-        where: { userId: user.id, default: true },
-        data: { default: false },
-      });
-    }
+	// If new default: reset other defaults
+	if (address.default) {
+	  // only clear existing defaults for this user
+	  await db.shippingAddress.updateMany({
+		where: { userId: user.id, default: true },
+		data: { default: false },
+	  });
+	}
 
-    // Normalize optional address2 -> null (if your Prisma field is String?)
-    const address2ForDb = address.address2 ?? null;
+	// Normalize optional address2 -> null (if your Prisma field is String?)
+	const address2ForDb = address.address2 ?? null;
 
-    // Build the data object for Prisma (no createdAt/updatedAt)
-    const dataForDb = {
-      firstName: address.firstName,
-      lastName: address.lastName,
-      phone: address.phone,
-      address1: address.address1,
-      address2: address2ForDb,
-      state: address.state,
-      city: address.city,
-      zip_code: address.zip_code,
-      default: !!address.default,
-      userId: user.id, // set server-side
-      countryId: address.countryId,
-    };
+	// Build the data object for Prisma (no createdAt/updatedAt)
+	const dataForDb = {
+	  firstName: address.firstName,
+	  lastName: address.lastName,
+	  phone: address.phone,
+	  address1: address.address1,
+	  address2: address2ForDb,
+	  state: address.state,
+	  city: address.city,
+	  zip_code: address.zip_code,
+	  default: !!address.default,
+	  userId: user.id, // set server-side
+	  countryId: address.countryId,
+	};
 
-    // Upsert
-    const upsertedAddress = await db.shippingAddress.upsert({
-      where: { id: address.id },
-      update: dataForDb,
-      create: { id: address.id, ...dataForDb },
-    });
+	// Upsert
+	const upsertedAddress = await db.shippingAddress.upsert({
+	  where: { id: address.id },
+	  update: dataForDb,
+	  create: { id: address.id, ...dataForDb },
+	});
 
-    return upsertedAddress;
+	return upsertedAddress;
   } catch (error) {
-    console.error('upsertShippingAddress error:', error);
-    throw error;
+	console.error('upsertShippingAddress error:', error);
+	throw error;
   }
 };
  * 
@@ -1259,9 +1259,9 @@ export const placeOrder = async (
 	// Delete cart
 	/*
   await db.cart.delete({
-    where: {
-      id: cartId,
-    },
+	where: {
+	  id: cartId,
+	},
   });
   */
 
