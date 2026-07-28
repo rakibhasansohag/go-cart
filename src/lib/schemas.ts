@@ -504,15 +504,20 @@ export const CouponFormSchema = z
 				'End date must be a valid date.',
 			),
 
-		discount: z
-			.number()
-			.min(1, 'Discount must be at least 1%.')
-			.max(99, 'Discount cannot exceed 99%.'),
+		discount: z.preprocess(
+			(val) => (val === '' || val === undefined || isNaN(Number(val)) ? undefined : Number(val)),
+			z.number().min(1, 'Discount must be at least 1%.').max(99, 'Discount cannot exceed 99%.'),
+		),
 
-		maxUses: z
-			.number()
-			.min(0, 'Max uses must be 0 or greater.')
-			.default(0),
+		maxUses: z.preprocess(
+			(val) => (val === '' || val === undefined || isNaN(Number(val)) ? 0 : Number(val)),
+			z.number().min(0, 'Max uses must be 0 or greater.'),
+		),
+
+		maxUsesPerUser: z.preprocess(
+			(val) => (val === '' || val === undefined || isNaN(Number(val)) ? 1 : Number(val)),
+			z.number().min(0, 'Max uses per customer must be 0 or greater.'),
+		),
 
 		storeId: z.string().optional(),
 	})

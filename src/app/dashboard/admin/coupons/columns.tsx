@@ -33,7 +33,7 @@ import { queryKeys } from '@/lib/query-keys';
 import { AdminCouponType } from '@/lib/types';
 import { getTimeUntil } from '@/lib/utils';
 import CustomModal from '@/components/dashboard/shared/custom-modal';
-import CouponDetails from '@/components/dashboard/forms/coupon-details';
+import AdminCouponDetails from '@/components/dashboard/forms/admin-coupon-details';
 import { deleteAdminCoupon, getCoupon } from '@/queries/coupon';
 import { toast } from 'sonner';
 
@@ -68,13 +68,20 @@ export const columns: ColumnDef<AdminCouponType>[] = [
 		header: 'Store',
 		cell: ({ row }) => {
 			const store = row.original.store;
+			if (!store) {
+				return (
+					<Badge variant='outline' className='bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20 font-semibold text-[11px]'>
+						Global Platform
+					</Badge>
+				);
+			}
 			return (
 				<Link
 					href={`/dashboard/admin/stores`}
 					className='flex items-center gap-1.5 text-xs font-medium hover:text-primary transition-colors'
 				>
 					<StoreIcon className='w-3.5 h-3.5 text-muted-foreground' />
-					<span>{store?.name ?? 'Unknown Store'}</span>
+					<span>{store.name}</span>
 				</Link>
 			);
 		},
@@ -186,7 +193,7 @@ const CellActions = ({ coupon }: CellActionsProps) => {
 								const res = await getCoupon(coupon.id);
 								setOpen(
 									<CustomModal heading='Edit Coupon Details' subheading='Update coupon code or dates'>
-										<CouponDetails data={res} storeUrl={coupon.store?.url || ''} />
+										<AdminCouponDetails data={res} />
 									</CustomModal>
 								);
 							} catch {

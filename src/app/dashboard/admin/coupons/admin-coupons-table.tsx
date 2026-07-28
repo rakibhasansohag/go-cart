@@ -2,11 +2,13 @@
 
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { Plus } from 'lucide-react';
 import DataTable from '@/components/ui/data-table';
 import { getAllAdminCoupons } from '@/queries/coupon';
 import { columns } from './columns';
 import { queryKeys } from '@/lib/query-keys';
 import { AdminCouponType } from '@/lib/types';
+import AdminCouponDetails from '@/components/dashboard/forms/admin-coupon-details';
 
 interface AdminCouponsTableProps {
 	initialData?: {
@@ -35,6 +37,13 @@ export default function AdminCouponsTable({ initialData }: AdminCouponsTableProp
 
 	return (
 		<DataTable
+			actionButtonText={
+				<>
+					<Plus size={15} />
+					Create Global Coupon
+				</>
+			}
+			modalChildren={<AdminCouponDetails />}
 			filterValue='code'
 			data={coupons}
 			columns={columns}

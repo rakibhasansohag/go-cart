@@ -1,20 +1,9 @@
 'use client';
 
-// React
 import { FC, useEffect } from 'react';
-
-// Prisma model
-import { Coupon } from '@prisma/client';
-
-// Form handling utilities
-import * as z from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-
-// Schema
 import { CouponFormSchema } from '@/lib/schemas';
-
-// UI Components
 import { AlertDialog } from '@/components/ui/alert-dialog';
 import {
 	Card,
@@ -30,101 +19,85 @@ import {
 	FormItem,
 	FormLabel,
 	FormMessage,
+	FormDescription,
 } from '@/components/ui/form';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useModal } from '@/providers/modal-provider';
-
-// Queries
-import { upsertCoupon } from '@/queries/coupon';
+import { upsertAdminCoupon } from '@/queries/coupon';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/query-keys';
-
-// Hooks & Utils
-import { useFormDirtyGuard } from '@/hooks/use-form-dirty-guard';
 import { v4 } from 'uuid';
 import { toast } from 'sonner';
-import { useRouter } from 'next/navigation';
 import { format } from 'date-fns';
-import { NumberInput } from '@tremor/react';
-
-// Date time picker
 import DateTimePicker from 'react-datetime-picker';
 import 'react-datetime-picker/dist/DateTimePicker.css';
 import 'react-calendar/dist/Calendar.css';
 import 'react-clock/dist/Clock.css';
 
-interface CouponDetailsProps {
-	data?: Coupon | null;
-	storeUrl: string;
+interface AdminCouponDetailsProps {
+	data?: {
+		id: string;
+		code: string;
+		discount: number;
+		maxUses: number;
+		maxUsesPerUser?: number;
+		startDate: string;
+		endDate: string;
+		storeId?: string | null;
+	} | null;
 }
 
-const CouponDetails: FC<CouponDetailsProps> = ({ data, storeUrl }) => {
-	// Initializing necessary hooks
+export const AdminCouponDetails: FC<AdminCouponDetailsProps> = ({ data }) => {
 	const { setClose } = useModal();
-	const router = useRouter(); // Hook for routing
 	const queryClient = useQueryClient();
 
 	const form = useForm({
 		mode: 'onChange',
 		resolver: zodResolver(CouponFormSchema),
 		defaultValues: {
-			// Setting default form values from data (if available)
 			code: data?.code || '',
-			discount: data?.discount,
+			discount: data?.discount ?? 10,
 			maxUses: data?.maxUses ?? 0,
+			maxUsesPerUser: data?.maxUsesPerUser ?? 1,
 			startDate: data?.startDate || format(new Date(), "yyyy-MM-dd'T'HH:mm:ss"),
-			endDate: data?.endDate || format(new Date(), "yyyy-MM-dd'T'HH:mm:ss"),
+			endDate: data?.endDate || format(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), "yyyy-MM-dd'T'HH:mm:ss"),
 		},
 	});
 
 	const isEditing = Boolean(data?.id);
 
 	const upsertMutation = useMutation({
-		mutationFn: (couponData: any) => upsertCoupon(couponData, storeUrl),
+		mutationFn: (couponData: any) => upsertAdminCoupon(couponData),
 		onSuccess: (response) => {
 			toast.success(
 				data?.id
-					? 'Coupon has been updated.'
-					: `Congratulations! '${response?.code}' is now created.`,
+					? 'Platform coupon updated successfully.'
+					: `Global Coupon '${response?.code}' created successfully!`,
 			);
-			resetDirtyState();
 			queryClient.invalidateQueries({
-				queryKey: queryKeys.dashboard.coupons(storeUrl),
+				queryKey: queryKeys.dashboard.adminCoupons(),
 			});
 			setClose();
-			if (!data?.id) {
-				router.push(`/dashboard/seller/stores/${storeUrl}/coupons`);
-			}
 		},
 		onError: (error: any) => {
-			toast.error(error.toString());
+			toast.error(error.message || 'Failed to save coupon.');
 		},
 	});
 
-	// Loading status based on form submission or mutation pending
-	const isLoading = form.formState.isSubmitting || upsertMutation.isPending;
-
-	const { isSaveDisabled, resetDirtyState } = useFormDirtyGuard({
-		form,
-		isEditing,
-		isLoading,
-	});
-
-	// Reset form values when data changes
 	useEffect(() => {
 		if (data) {
 			form.reset({
 				code: data.code,
 				discount: data.discount,
 				maxUses: data.maxUses,
+				maxUsesPerUser: data.maxUsesPerUser ?? 1,
 				startDate: data.startDate,
 				endDate: data.endDate,
 			});
 		}
 	}, [data, form]);
 
-	// Submit handler for form submission
 	const handleSubmit = async () => {
 		const values = form.getValues();
 		try {
@@ -133,66 +106,61 @@ const CouponDetails: FC<CouponDetailsProps> = ({ data, storeUrl }) => {
 				code: values.code,
 				discount: values.discount,
 				maxUses: values.maxUses ?? 0,
+				maxUsesPerUser: values.maxUsesPerUser ?? 1,
 				startDate: values.startDate,
 				endDate: values.endDate,
-				storeId: '',
-				createdAt: new Date(),
-				updatedAt: new Date(),
+				storeId: data?.storeId || null,
 			});
 		} catch {
-			// Error Toast handled in upsertMutation onError callback
+			/* toast handles error */
 		}
 	};
 
 	return (
 		<AlertDialog>
-			<Card className='w-full'>
-				<CardHeader>
-					<CardTitle>Coupon Information</CardTitle>
+			<Card className='w-full border-none shadow-none'>
+				<CardHeader className='px-0 pt-0'>
+					<CardTitle className='text-xl font-bold'>
+						{isEditing ? 'Edit Global Coupon' : 'Create Global Platform Coupon'}
+					</CardTitle>
 					<CardDescription>
-						{data?.id
-							? `Update ${data?.code} coupon information.`
-							: ' Lets create a coupon. You can edit coupon later from the coupons table or the coupon page.'}
+						Global Platform Coupons apply across all stores site-wide for welcome promos and campaign sales.
 					</CardDescription>
 				</CardHeader>
-				<CardContent>
+				<CardContent className='px-0 pb-0'>
 					<Form {...form}>
-						<form
-							onSubmit={(e) => {
-								e.preventDefault();
-								form.handleSubmit(handleSubmit)(e);
-							}}
-							className='space-y-4'
-						>
+						<form onSubmit={form.handleSubmit(handleSubmit)} className='space-y-4'>
 							<FormField
-								disabled={isLoading}
 								control={form.control}
 								name='code'
 								render={({ field }) => (
-									<FormItem className='flex-1'>
-										<FormLabel>Coupon code</FormLabel>
+									<FormItem>
+										<FormLabel>Coupon Code</FormLabel>
 										<FormControl>
-											<Input placeholder='Coupon' {...field} />
+											<Input
+												placeholder='e.g. WELCOME87 or RAKIB'
+												{...field}
+												className='uppercase tracking-wider font-semibold'
+											/>
 										</FormControl>
 										<FormMessage />
 									</FormItem>
 								)}
 							/>
 
-							<div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
+							<div className='grid grid-cols-1 sm:grid-cols-3 gap-4'>
 								<FormField
-									disabled={isLoading}
 									control={form.control}
 									name='discount'
 									render={({ field }) => (
-										<FormItem className='flex-1'>
-											<FormLabel>Coupon discount (%)</FormLabel>
+										<FormItem>
+											<FormLabel>Discount (%)</FormLabel>
 											<FormControl>
 												<Input
 													type='number'
 													min={1}
 													max={99}
-													placeholder='%'
+													placeholder='87'
 													value={typeof field.value === 'number' || typeof field.value === 'string' ? field.value : ''}
 													onChange={(e) => {
 														const val = e.target.value;
@@ -206,12 +174,11 @@ const CouponDetails: FC<CouponDetailsProps> = ({ data, storeUrl }) => {
 								/>
 
 								<FormField
-									disabled={isLoading}
 									control={form.control}
 									name='maxUses'
 									render={({ field }) => (
-										<FormItem className='flex-1'>
-											<FormLabel>Total Limit (0 = Unlimited)</FormLabel>
+										<FormItem>
+											<FormLabel>Total Stock Limit</FormLabel>
 											<FormControl>
 												<Input
 													type='number'
@@ -224,23 +191,23 @@ const CouponDetails: FC<CouponDetailsProps> = ({ data, storeUrl }) => {
 													}}
 												/>
 											</FormControl>
+											<FormDescription className='text-[11px]'>0 = unlimited total uses</FormDescription>
 											<FormMessage />
 										</FormItem>
 									)}
 								/>
 
 								<FormField
-									disabled={isLoading}
 									control={form.control}
 									name='maxUsesPerUser'
 									render={({ field }) => (
-										<FormItem className='flex-1'>
+										<FormItem>
 											<FormLabel>Limit Per Customer</FormLabel>
 											<FormControl>
 												<Input
 													type='number'
 													min={0}
-													placeholder='1 (Single-use)'
+													placeholder='1'
 													value={typeof field.value === 'number' || typeof field.value === 'string' ? field.value : ''}
 													onChange={(e) => {
 														const val = e.target.value;
@@ -248,56 +215,51 @@ const CouponDetails: FC<CouponDetailsProps> = ({ data, storeUrl }) => {
 													}}
 												/>
 											</FormControl>
+											<FormDescription className='text-[11px]'>1 = single-use per customer</FormDescription>
 											<FormMessage />
 										</FormItem>
 									)}
 								/>
 							</div>
-							<div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+
+							<div className='grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2'>
 								<FormField
-									disabled={isLoading}
 									control={form.control}
 									name='startDate'
 									render={({ field }) => (
 										<FormItem className='flex flex-col'>
-											<FormLabel>Start date</FormLabel>
+											<FormLabel>Start Date</FormLabel>
 											<FormControl>
 												<DateTimePicker
-													minDate={new Date(new Date().setHours(0, 0, 0, 0))}
-													calendarProps={{ showFixedNumberOfWeeks: true }}
 													onChange={(date) => {
-														field.onChange(
-															date ? format(date, "yyyy-MM-dd'T'HH:mm:ss") : '',
-														);
+														if (date instanceof Date) {
+															field.onChange(format(date, "yyyy-MM-dd'T'HH:mm:ss"));
+														}
 													}}
-													value={field.value ? new Date(field.value) : null}
+													value={field.value ? new Date(field.value) : new Date()}
+													className='w-full rounded-md border border-input p-2 text-sm bg-background'
 												/>
 											</FormControl>
 											<FormMessage />
 										</FormItem>
 									)}
 								/>
+
 								<FormField
-									disabled={isLoading}
 									control={form.control}
 									name='endDate'
 									render={({ field }) => (
 										<FormItem className='flex flex-col'>
-											<FormLabel>End date</FormLabel>
+											<FormLabel>End Date</FormLabel>
 											<FormControl>
 												<DateTimePicker
-													minDate={
-														form.watch('startDate')
-															? new Date(form.watch('startDate'))
-															: new Date(new Date().setHours(0, 0, 0, 0))
-													}
-													calendarProps={{ showFixedNumberOfWeeks: true }}
 													onChange={(date) => {
-														field.onChange(
-															date ? format(date, "yyyy-MM-dd'T'HH:mm:ss") : '',
-														);
+														if (date instanceof Date) {
+															field.onChange(format(date, "yyyy-MM-dd'T'HH:mm:ss"));
+														}
 													}}
-													value={field.value ? new Date(field.value) : null}
+													value={field.value ? new Date(field.value) : new Date()}
+													className='w-full rounded-md border border-input p-2 text-sm bg-background'
 												/>
 											</FormControl>
 											<FormMessage />
@@ -306,13 +268,14 @@ const CouponDetails: FC<CouponDetailsProps> = ({ data, storeUrl }) => {
 								/>
 							</div>
 
-							<Button type='submit' disabled={isSaveDisabled}>
-								{isLoading
-									? 'loading...'
-									: data?.id
-										? 'Save coupon information'
-										: 'Create coupon'}
-							</Button>
+							<div className='flex justify-end gap-3 pt-4'>
+								<Button type='button' variant='outline' onClick={() => setClose()}>
+									Cancel
+								</Button>
+								<Button type='submit' disabled={upsertMutation.isPending}>
+									{upsertMutation.isPending ? 'Saving...' : isEditing ? 'Update Coupon' : 'Create Global Coupon'}
+								</Button>
+							</div>
 						</form>
 					</Form>
 				</CardContent>
@@ -321,4 +284,4 @@ const CouponDetails: FC<CouponDetailsProps> = ({ data, storeUrl }) => {
 	);
 };
 
-export default CouponDetails;
+export default AdminCouponDetails;

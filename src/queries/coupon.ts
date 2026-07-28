@@ -4,6 +4,7 @@ import { CartWithCartItemsType } from '@/lib/types';
 import { db } from '@/lib/db';
 import { currentUser } from '@clerk/nextjs/server';
 import { Coupon } from '@prisma/client';
+import { v4 } from 'uuid';
 
 
 
@@ -118,19 +119,25 @@ export const validateCouponCode = async (code: string) => {
 			throw new Error(`This coupon is inactive (limit of ${coupon.maxUses} uses reached).`);
 		}
 
-		// Verify single-use per customer
+		// Verify per-customer max usage limit
 		const user = await currentUser();
 		if (user) {
-			const hasUsed = await db.coupon.findFirst({
+			const userRedemptions = await db.orderGroup.count({
 				where: {
-					id: coupon.id,
-					users: {
-						some: { id: user.id },
+					couponId: coupon.id,
+					order: {
+						userId: user.id,
+						paymentStatus: 'Paid',
 					},
 				},
 			});
-			if (hasUsed) {
-				throw new Error('You have already redeemed this single-use coupon.');
+
+			const maxPerUser = (coupon).maxUsesPerUser ?? 1;
+			if (maxPerUser > 0 && userRedemptions >= maxPerUser) {
+				const limitText = maxPerUser === 1 ? 'one time' : `${maxPerUser} times`;
+				throw new Error(
+					`Sorry, this discount code can only be used ${limitText} per customer.`,
+				);
 			}
 		}
 
@@ -725,5 +732,82 @@ export const getFeaturedCoupon = async () => {
 	} catch (error) {
 		console.error('getFeaturedCoupon error:', error);
 		return null;
+	}
+};
+
+export const upsertAdminCoupon = async (couponData: {
+	id?: string;
+	code: string;
+	discount: number;
+	maxUses?: number;
+	maxUsesPerUser?: number;
+	startDate: string;
+	endDate: string;
+	storeId?: string | null;
+}) => {
+	try {
+		const user = await currentUser();
+		if (!user) throw new Error('Unauthenticated.');
+
+		const dbUser = await db.user.findUnique({
+			where: { id: user.id },
+			select: { role: true },
+		});
+
+		const isAdmin =
+			user.privateMetadata?.role === 'ADMIN' ||
+			user.publicMetadata?.role === 'ADMIN' ||
+			dbUser?.role === 'ADMIN';
+
+		if (!isAdmin) {
+			throw new Error('Unauthorized Access: Admin privileges required.');
+		}
+
+		if (!couponData.code) throw new Error('Please provide a coupon code.');
+
+		const cleanCode = couponData.code.trim().toUpperCase();
+
+		const existing = await db.coupon.findFirst({
+			where: {
+				code: cleanCode,
+				...(couponData.id ? { NOT: { id: couponData.id } } : {}),
+			},
+		});
+
+		if (existing) {
+			throw new Error(`A coupon with code "${cleanCode}" already exists.`);
+		}
+
+		const couponId = couponData.id || v4();
+
+		const existingById = await db.coupon.findUnique({
+			where: { id: couponId },
+		});
+
+		const payload: any = {
+			code: cleanCode,
+			discount: Number(couponData.discount),
+			maxUses: Number(couponData.maxUses ?? 0),
+			maxUsesPerUser: Number(couponData.maxUsesPerUser ?? 1),
+			startDate: couponData.startDate,
+			endDate: couponData.endDate,
+			storeId: couponData.storeId || null,
+		};
+
+		if (existingById) {
+			return await db.coupon.update({
+				where: { id: couponId },
+				data: payload,
+			});
+		} else {
+			return await db.coupon.create({
+				data: {
+					id: couponId,
+					...payload,
+				},
+			});
+		}
+	} catch (error: any) {
+		throw new Error(error.message || 'Failed to save admin coupon.');
 	}
 };

@@ -650,7 +650,8 @@ model Coupon {
   startDate String
   endDate   String
   discount  Int
-  maxUses   Int    @default(0)
+  maxUses         Int    @default(0)
+  maxUsesPerUser  Int    @default(1)
 
   storeId String?
   store   Store?  @relation("CouponToStore", fields: [storeId], references: [id], onDelete: Cascade)
