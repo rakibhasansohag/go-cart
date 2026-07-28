@@ -21,6 +21,7 @@ const CartSummary: FC<Props> = ({ cartItems, selectedItems = [], shippingFees })
 	const [appliedCoupon, setAppliedCoupon] = useState<{
 		code: string;
 		discount: number;
+		storeId?: string | null;
 		storeName: string;
 	} | null>(null);
 
@@ -71,10 +72,20 @@ const CartSummary: FC<Props> = ({ cartItems, selectedItems = [], shippingFees })
 		return total + item.price * item.quantity;
 	}, 0);
 
-	// Calculate coupon discount
+	// Calculate coupon discount based on whether coupon is Global or Store-Specific
 	let discountAmount = 0;
 	if (appliedCoupon) {
-		discountAmount = (subtotal * appliedCoupon.discount) / 100;
+		const applicableItems = appliedCoupon.storeId
+			? itemsToCalculate.filter(
+					(item) => (item.storeId || (item as any).storeId) === appliedCoupon.storeId,
+			  )
+			: itemsToCalculate;
+
+		const applicableSubtotal = applicableItems.reduce((acc, item) => {
+			return acc + item.price * item.quantity;
+		}, 0);
+
+		discountAmount = (applicableSubtotal * appliedCoupon.discount) / 100;
 	}
 
 	// Calculate final total

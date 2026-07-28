@@ -487,6 +487,7 @@ export const getUserCartCoupon = async () => {
 			return {
 				code: userCart.coupon.code,
 				discount: userCart.coupon.discount,
+				storeId: userCart.coupon.storeId,
 				storeName: userCart.coupon.store?.name || 'Global Platform',
 			};
 		}

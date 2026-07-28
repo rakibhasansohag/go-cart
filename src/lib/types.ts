@@ -150,6 +150,7 @@ export type CartProductType = {
 	deliveryTimeMin: number;
 	deliveryTimeMax: number;
 	isFreeShipping: boolean;
+	storeId?: string;
 };
 
 // Define a local SortOrder type
