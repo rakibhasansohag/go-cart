@@ -101,3 +101,152 @@ Goal: prefetch on server, `useSuspenseQuery` on client, `useMutation` + cache in
   - [x] Create `store-settings-view.tsx` client component
   - [x] `store-details.tsx` form mutation → `invalidateQueries`
   - **Test**: Settings form loads prefetched data, save works without reload
+
+---
+
+## Phase 9: Payment Integrity & Provider Webhooks
+
+Goal: make server-verified provider events the source of truth for payment state before adding automated refunds.
+
+- [ ] **Phase 9.1 — Authorization and ownership**
+  - [ ] Require the authenticated customer to own the order before creating or capturing a payment
+  - [ ] Verify order eligibility, amount, currency, and current payment state on the server
+  - [ ] Stop accepting trusted user IDs or payment status values from the browser
+  - **Test**: A customer cannot create, capture, inspect, or update payment data for another customer's order
+
+- [ ] **Phase 9.2 — Payment event and idempotency model**
+  - [ ] Add a payment-event/audit model with provider event ID, order ID, event type, amount, currency, status, and timestamps
+  - [ ] Add unique constraints for provider event IDs and payment intent/capture IDs
+  - [ ] Define safe retry and duplicate-event behavior
+  - **Test**: Replaying the same provider event does not duplicate payments or order updates
+
+- [ ] **Phase 9.3 — Stripe webhook**
+  - [ ] Add a dedicated Stripe webhook route with signature verification
+  - [ ] Reconcile successful, failed, cancelled, and refunded payments from verified webhook events
+  - [ ] Update `Order`, `PaymentDetails`, and audit records transactionally
+  - **Test**: Verified events update the correct order once; invalid signatures and mismatched amounts are rejected
+
+- [ ] **Phase 9.4 — PayPal verification/webhook**
+  - [ ] Verify PayPal captures on the server and add provider webhook handling
+  - [ ] Reconcile successful, failed, reversed, and refunded captures
+  - [ ] Update `Order`, `PaymentDetails`, and audit records transactionally
+  - **Test**: A browser-supplied capture response cannot mark an order as paid without provider verification
+
+- [ ] **Phase 9.5 — Query synchronization**
+  - [ ] Add centralized payment and order query keys where missing
+  - [ ] Prefetch payment/order state on relevant server pages
+  - [ ] Invalidate the customer order, payment history, seller order, and admin order caches after reconciled changes
+  - **Test**: Payment status changes appear across customer and dashboard views without a manual reload
+
+---
+
+## Phase 10: Returns, Refunds & Disputes
+
+Goal: deliver a complete post-purchase workflow connecting customers, sellers, administrators, payments, orders, and inventory.
+
+- [ ] **Phase 10.1 — Domain model and migration**
+  - [ ] Add `ReturnRequest`, `ReturnItem`, `ReturnEvidence`, `ReturnEvent`, and refund transaction records
+  - [ ] Define statuses, reasons, requested resolutions, actor roles, deadlines, and audit timestamps
+  - [ ] Relate requests to the customer, order, order group, order item, store, and payment
+  - [ ] Add indexes and constraints that prevent duplicate active requests for the same eligible quantity
+  - **Test**: Prisma migration applies cleanly and invalid relationships or duplicate active requests are rejected
+
+- [ ] **Phase 10.2 — Eligibility and transactional business rules**
+  - [ ] Enforce ownership, delivered-item status, return window, store policy, and refundable quantity
+  - [ ] Calculate refundable item, shipping, coupon, tax, and partial-refund amounts on the server
+  - [ ] Implement transactional state transitions with an append-only audit trail
+  - [ ] Prevent sellers from acting on requests belonging to another store
+  - **Test**: Invalid transitions, expired requests, excess quantities, and cross-store access are rejected
+
+- [ ] **Phase 10.3 — Customer Returns Center**
+  - [ ] Add return initiation from eligible order items
+  - [ ] Support refund or exchange requests, reason selection, notes, quantity, and evidence uploads
+  - [ ] Add a customer request list and detail timeline with seller/admin responses
+  - [ ] Use server prefetch + `HydrationBoundary`, granular `Suspense`, and mutations with targeted invalidation
+  - **Test**: A customer can submit and track a valid request without a full-page reload
+
+- [ ] **Phase 10.4 — Seller return queue**
+  - [ ] Add store-scoped return list, filters, detail review, and evidence display
+  - [ ] Support approve, reject, request-more-information, receive-item, and exchange decisions
+  - [ ] Add optimistic UI only for reversible low-risk status updates
+  - [ ] Invalidate seller returns, orders, inventory, and customer request caches after decisions
+  - **Test**: Sellers can process only their own store's requests and every action is audited
+
+- [ ] **Phase 10.5 — Admin disputes**
+  - [ ] Add an admin queue for escalated, overdue, and high-risk requests
+  - [ ] Support evidence review, final decisions, internal notes, and actor attribution
+  - [ ] Preserve the complete customer/seller/admin event timeline
+  - **Test**: Admin decisions are permission-protected, auditable, and reflected in all affected views
+
+- [ ] **Phase 10.6 — Provider refunds**
+  - [ ] Execute full or partial Stripe refunds from approved requests
+  - [ ] Execute full or partial PayPal refunds from approved requests
+  - [ ] Use idempotency keys and verified provider responses/events
+  - [ ] Reconcile `PaymentStatus`, order totals, return status, and refund audit records
+  - **Test**: Retried refund requests cannot issue duplicate refunds
+
+- [ ] **Phase 10.7 — Inventory and order synchronization**
+  - [ ] Restock only received and restockable returned quantities
+  - [ ] Update item, group, and overall order statuses consistently
+  - [ ] Handle partial returns, partial refunds, exchanges, damaged items, and rejected returns
+  - [ ] Invalidate inventory, product availability, order, payment, and return caches
+  - **Test**: Partial and full return scenarios preserve correct stock, totals, and statuses
+
+---
+
+## Phase 11: Shipment Tracking & Notifications
+
+Goal: keep customers, sellers, and administrators informed throughout fulfillment and post-purchase workflows.
+
+- [ ] **Phase 11.1 — Shipment tracking model**
+  - [ ] Add shipment, carrier, tracking number, shipment item, and tracking-event records
+  - [ ] Support split and partial shipments per order group
+  - **Test**: Multiple shipments can safely represent different items from one store order
+
+- [ ] **Phase 11.2 — Seller fulfillment workflow**
+  - [ ] Allow sellers to create shipments, assign items, and record carrier/tracking details
+  - [ ] Synchronize shipment events with item, group, and order statuses
+  - **Test**: Shipment creation and delivery events update the correct items and order summaries
+
+- [ ] **Phase 11.3 — Customer tracking experience**
+  - [ ] Add shipment cards and a tracking timeline to order details
+  - [ ] Show split shipments, delivery estimates, delays, and delivered state
+  - [ ] Prefetch tracking data and invalidate affected order/tracking queries after updates
+  - **Test**: Customers can track every shipment associated with their order
+
+- [ ] **Phase 11.4 — Notification center**
+  - [ ] Add persisted in-app notifications with read/unread state
+  - [ ] Notify relevant actors about payment, shipment, return, dispute, and refund events
+  - [ ] Add email delivery behind a provider-neutral notification service
+  - [ ] Prevent duplicate notifications when provider events are retried
+  - **Test**: Each domain event produces the intended notification once for the correct recipient
+
+---
+
+## Phase 12: Automated Testing & CI
+
+Goal: protect the critical marketplace workflows before production deployment.
+
+- [ ] **Phase 12.1 — Test infrastructure**
+  - [ ] Add unit/integration test tooling, isolated test environment variables, and deterministic fixtures
+  - [ ] Add browser end-to-end testing for customer, seller, and admin roles
+  - [ ] Add `test`, `test:integration`, and `test:e2e` scripts
+  - **Test**: All suites run locally from documented commands
+
+- [ ] **Phase 12.2 — Critical integration coverage**
+  - [ ] Cover permissions, totals, coupon usage, inventory changes, order transitions, and query invalidation
+  - [ ] Cover payment webhook verification, idempotency, retries, and refund reconciliation
+  - [ ] Cover return eligibility, partial returns, disputes, and restocking
+  - **Test**: Critical server workflows pass against an isolated test database
+
+- [ ] **Phase 12.3 — End-to-end commerce journeys**
+  - [ ] Cover browse → cart → checkout → payment → order history
+  - [ ] Cover seller fulfillment → shipment tracking → delivery
+  - [ ] Cover delivered item → return request → decision → refund/restock
+  - **Test**: The complete customer, seller, and admin journeys pass in supported browsers
+
+- [ ] **Phase 12.4 — Continuous integration**
+  - [ ] Run formatting/linting, TypeScript, tests, and production build for every pull request
+  - [ ] Cache dependencies safely and upload useful failure artifacts
+  - [ ] Block merging when required checks fail
+  - **Test**: A deliberately failing check prevents the pull request from passing
