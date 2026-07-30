@@ -63,7 +63,10 @@ export default async function HomePage() {
 			<CategoriesHeader />
 			<div className='relative w-full'>
 				<Sideline />
-				<div className='relative w-[calc(100%-40px)] h-full bg-secondary'>
+				<main id='main-content' className='relative w-[calc(100%-40px)] h-full bg-secondary'>
+					<h1 className='sr-only'>
+						GoCart - Discover Exclusive Deals, Top Categories & Trending Products
+					</h1>
 					<div className='max-w-[1600px] mx-auto min-h-screen p-4 space-y-10'>
 						<HydrationBoundary state={dehydrate(queryClient)}>
 							{/* Main sections & Animated deals */}
@@ -82,7 +85,7 @@ export default async function HomePage() {
 							</Suspense>
 						</HydrationBoundary>
 					</div>
-				</div>
+				</main>
 			</div>
 			<Footer />
 		</>

@@ -40,7 +40,7 @@ export function HomeMainAndDeals({
 	return (
 		<>
 			{/* Main Grid */}
-			<div className='w-full grid gap-2 min-[1170px]:grid-cols-[1fr_350px] min-[1465px]:grid-cols-[200px_1fr_350px]'>
+			<section aria-label='Featured hero products and promotions' className='w-full grid gap-2 min-[1170px]:grid-cols-[1fr_350px] min-[1465px]:grid-cols-[200px_1fr_350px]'>
 				{/* Left Ad */}
 				<div
 					className='cursor-pointer hidden min-[1465px]:block bg-cover bg-no-repeat rounded-md'
@@ -66,25 +66,25 @@ export function HomeMainAndDeals({
 						user={user}
 					/>
 				</div>
-			</div>
+			</section>
 
 			{/* Animated deals */}
-			<div className='mt-2 hidden min-[915px]:block'>
+			<section aria-label='Live flash deals' className='mt-2 hidden min-[915px]:block'>
 				<AnimatedDeals
 					products={products_best_deals.filter(
 						(product): product is SimpleProduct => 'variantSlug' in product,
 					)}
 				/>
-			</div>
+			</section>
 
 			{/* Super Deals Swiper */}
-			<div className='mt-10 bg-background rounded-md'>
+			<section aria-label='Super deals carousel' className='mt-10 bg-background rounded-md'>
 				<MainSwiper products={products_super_deals} type='curved'>
 					<div className='mb-4 pl-4 flex items-center justify-between'>
 						<Image src='/assets/images/ads/super-deals.avif' alt='Super deals' width={200} height={50} style={{ width: 200, height: 50 }} />
 					</div>
 				</MainSwiper>
-			</div>
+			</section>
 		</>
 	);
 }

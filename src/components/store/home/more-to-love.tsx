@@ -17,12 +17,17 @@ export default function MoreToLoveSection() {
 	const topPopularProducts = (products || []).slice(0, 12);
 
 	return (
-		<div>
+		<section id='more-to-love' aria-labelledby='more-to-love-heading'>
 			{/* Header */}
-			<div className='text-center h-[32px] leading-[32px] text-[24px] font-extrabold text-foreground flex justify-center'>
-				<div className='h-[1px] flex-1 border-t-[2px] border-t-[hsla(0,0%,59.2%,.3)] my-4 mx-[14px]' />
-				<span>More to love</span>
-				<div className='h-[1px] flex-1 border-t-[2px] border-t-[hsla(0,0%,59.2%,.3)] my-4 mx-[14px]' />
+			<div className='relative text-center h-[32px] leading-[32px] flex items-center justify-center'>
+				<div className='absolute inset-0 flex items-center' aria-hidden='true'>
+					<div className='w-full border-t border-border/40 dark:border-border/60' />
+				</div>
+				<div className='relative flex justify-center'>
+					<h2 id='more-to-love-heading' className='px-4 bg-secondary z-10 text-foreground font-extrabold text-[24px]'>
+						More to love
+					</h2>
+				</div>
 			</div>
 			{/* Products grid (1 column < 576px, 2 columns >= 576px) */}
 			<div className='mt-7 bg-background p-4 pb-16 rounded-md w-full grid grid-cols-1 min-[576px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4'>
@@ -30,6 +35,6 @@ export default function MoreToLoveSection() {
 					<ProductCard key={product.id + product.slug} product={product} className='w-full' />
 				))}
 			</div>
-		</div>
+		</section>
 	);
 }

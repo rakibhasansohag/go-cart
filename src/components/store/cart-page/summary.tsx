@@ -77,8 +77,8 @@ const CartSummary: FC<Props> = ({ cartItems, selectedItems = [], shippingFees })
 	if (appliedCoupon) {
 		const applicableItems = appliedCoupon.storeId
 			? itemsToCalculate.filter(
-					(item) => (item.storeId || (item as any).storeId) === appliedCoupon.storeId,
-			  )
+				(item) => (item.storeId || item.storeId) === appliedCoupon.storeId,
+			)
 			: itemsToCalculate;
 
 		const applicableSubtotal = applicableItems.reduce((acc, item) => {
@@ -127,7 +127,7 @@ const CartSummary: FC<Props> = ({ cartItems, selectedItems = [], shippingFees })
 								setAppliedCoupon(null);
 								setCouponCode('');
 								toast.info('Coupon code removed');
-								saveUserCart(activeItems, '').catch(() => {});
+								saveUserCart(activeItems, '').catch(() => { });
 							}}
 							className='hover:opacity-75 transition-opacity'
 							title='Remove coupon'

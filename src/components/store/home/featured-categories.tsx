@@ -12,19 +12,24 @@ export default function FeaturedCategories() {
 	});
 
 	return (
-		<div className='w-full mx-auto'>
+		<section id='featured-categories' aria-labelledby='featured-categories-heading' className='w-full mx-auto'>
 			{/* Header */}
-			<div className='text-center h-[32px] leading-[32px] text-[24px] font-extrabold text-foreground flex justify-center'>
-				<div className='h-[1px] flex-1 border-t-[2px] border-t-[hsla(0,0%,59.2%,.3)] my-4 mx-[14px]' />
-				<span className=''>Featured Categories</span>
-				<div className='h-[1px] flex-1 border-t-[2px] border-t-[hsla(0,0%,59.2%,.3)] my-4 mx-[14px]' />
+			<div className='relative text-center h-[32px] leading-[32px] flex items-center justify-center'>
+				<div className='absolute inset-0 flex items-center' aria-hidden='true'>
+					<div className='w-full border-t border-border/40 dark:border-border/60' />
+				</div>
+				<div className='relative flex justify-center'>
+					<h2 id='featured-categories-heading' className='px-4 bg-secondary z-10 text-foreground font-extrabold text-[24px]'>
+						Featured Categories
+					</h2>
+				</div>
 			</div>
 			{/* List */}
-			<div className='grid min-[770px]:grid-cols-2 min-[1120px]:grid-cols-3  gap-4 w-full mt-7'>
+			<div className='grid min-[770px]:grid-cols-2 min-[1120px]:grid-cols-3 gap-4 w-full mt-7'>
 				{categories.map((category) => (
 					<CategoryCard key={category.id} category={category} />
 				))}
 			</div>
-		</div>
+		</section>
 	);
 }
