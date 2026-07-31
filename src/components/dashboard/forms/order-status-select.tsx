@@ -88,11 +88,11 @@ const OrderStatusSelect: FC<Props> = ({ groupId, status, storeId, storeUrl }) =>
 				setNewStatus(selectedStatus);
 				toast.success(`Order status ${selectedStatus} has been updated.`);
 				setIsOpen(false);
-				if (storeUrl) {
-					queryClient.invalidateQueries({
-						queryKey: queryKeys.dashboard.orders(storeUrl),
-					});
-				}
+				queryClient.invalidateQueries({
+					queryKey: storeUrl
+						? queryKeys.dashboard.orders(storeUrl)
+						: queryKeys.dashboard.orderLists(),
+				});
 			}
 		},
 		onError: (error: unknown) => {

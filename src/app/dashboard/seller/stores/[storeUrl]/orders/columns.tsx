@@ -16,16 +16,16 @@ import CustomModal from '@/components/dashboard/shared/custom-modal';
 import StoreOrderSummary from '@/components/dashboard/shared/store-order-summary';
 
 import Link from 'next/link';
-import { formatOrderId } from '@/lib/utils';
+import { formatPackageId } from '@/lib/utils';
 
 export const columns: ColumnDef<StoreOrderType>[] = [
 	{
 		accessorKey: 'id',
-		header: 'Order ID',
+		header: 'Package ID',
 		cell: ({ row }) => {
 			return (
 				<span className='font-mono text-xs font-bold text-foreground bg-muted/60 px-2 py-1 rounded-md border border-border/50'>
-					{formatOrderId(row.original.id)}
+					{formatPackageId(row.original.id)}
 				</span>
 			);
 		},
@@ -159,4 +159,3 @@ const ViewOrderButton: React.FC<ViewOrderButtonProps> = ({ group }) => {
 		</button>
 	);
 };
-

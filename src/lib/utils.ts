@@ -18,6 +18,13 @@ export const formatOrderId = (id: string) => {
 	return `#ORD-${clean.slice(-7)}`;
 };
 
+// Order groups are customer packages, so use a distinct reference.
+export const formatPackageId = (id: string) => {
+	if (!id) return '';
+	const clean = id.replace(/-/g, '').toUpperCase();
+	return `#PKG-${clean.slice(-7)}`;
+};
+
 // Point :  Helper function to generate a unique slug
 export const generateUniqueSlug = async (
 	baseSlug: string,

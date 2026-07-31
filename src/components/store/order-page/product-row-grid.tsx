@@ -2,8 +2,15 @@ import ProductStatusTag from '@/components/shared/product-status';
 import { ProductStatus } from '@/lib/types';
 import { OrderItem } from '@prisma/client';
 import Image from 'next/image';
+import ReturnLink from './return-link';
 
-export default function ProductRowGrid({ product }: { product: OrderItem }) {
+export default function ProductRowGrid({
+	product,
+	canRequestReturn = false,
+}: {
+	product: OrderItem;
+	canRequestReturn?: boolean;
+}) {
 	const nameParts = product.name.split('·');
 	const mainName = nameParts[0]?.trim();
 	const variantName = nameParts[1]?.trim();
@@ -51,6 +58,11 @@ export default function ProductRowGrid({ product }: { product: OrderItem }) {
 
 					<ProductStatusTag status={product.status as ProductStatus} />
 				</div>
+				{canRequestReturn && (
+					<div className='mt-2 flex justify-end'>
+						<ReturnLink orderItemId={product.id} />
+					</div>
+				)}
 			</div>
 		</div>
 	);

@@ -13,6 +13,7 @@ import {
 	getUserWishlist,
 	getUserFollowedStores,
 } from '@/queries/profile';
+import { getCustomerReturns } from '@/queries/returns';
 
 export default function ProfileSidebar() {
 	const pathname = usePathname();
@@ -36,6 +37,15 @@ export default function ProfileSidebar() {
 			queryClient.prefetchQuery({
 				queryKey: queryKeys.profile.reviews({ filter: '', period: '', search: '', page: 1, pageSize: 10 }),
 				queryFn: () => getUserReviews('', '', '', 1, 10),
+			});
+		} else if (link === '/profile/returns') {
+			queryClient.prefetchQuery({
+				queryKey: queryKeys.profile.returns({
+					status: 'ALL',
+					page: 1,
+					pageSize: 10,
+				}),
+				queryFn: () => getCustomerReturns('ALL', 1, 10),
 			});
 		} else if (link.startsWith('/profile/wishlist/')) {
 			queryClient.prefetchQuery({
@@ -163,6 +173,10 @@ const menu = [
 	{
 		title: 'Payment',
 		link: '/profile/payment',
+	},
+	{
+		title: 'Returns',
+		link: '/profile/returns',
 	},
 	{
 		title: 'Shipping address',

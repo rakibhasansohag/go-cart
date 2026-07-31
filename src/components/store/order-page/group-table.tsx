@@ -8,7 +8,7 @@ import React from 'react';
 import ProductRow from './product-row';
 import { useMediaQuery } from 'react-responsive';
 import ProductRowGrid from './product-row-grid';
-import { formatOrderId } from '@/lib/utils';
+import { formatPackageId } from '@/lib/utils';
 import { Copy, Check, Store, Truck, Calendar, Tag, XCircle, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 import Link from 'next/link';
@@ -16,6 +16,7 @@ import Link from 'next/link';
 export default function OrderGroupTable({
 	group,
 	deliveryInfo,
+	check,
 }: {
 	group: OrderGroupWithItemsType;
 	deliveryInfo: {
@@ -33,7 +34,7 @@ export default function OrderGroupTable({
 	const discountedAmount = Math.max(0, subTotal + shippingFees - total);
 	const isBigScreen = useMediaQuery({ query: '(min-width: 1024px)' });
 
-	const formattedGroupId = formatOrderId(group.id);
+	const formattedGroupId = formatPackageId(group.id);
 
 	const handleCopyGroupId = () => {
 		navigator.clipboard.writeText(formattedGroupId);
@@ -61,6 +62,9 @@ export default function OrderGroupTable({
 							title='Click to copy Package ID'
 						>
 							<Store className='w-3.5 h-3.5 text-primary' />
+							<span className='text-[10px] font-semibold uppercase tracking-wide text-muted-foreground'>
+								Package
+							</span>
 							<span className='text-xs font-bold text-foreground font-mono'>
 								{formattedGroupId}
 							</span>
@@ -116,11 +120,17 @@ export default function OrderGroupTable({
 							<ProductRowGrid
 								key={product.id ?? `${group.id}-item-${index}`}
 								product={product}
+								canRequestReturn={
+									check && product.status === 'Delivered'
+								}
 							/>
 						) : (
 							<ProductRow
 								key={product.id ?? `${group.id}-item-${index}`}
 								product={product}
+								canRequestReturn={
+									check && product.status === 'Delivered'
+								}
 							/>
 						),
 					)}

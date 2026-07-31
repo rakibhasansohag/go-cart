@@ -20,6 +20,11 @@ export const queryKeys = {
 		following: (page: number) => ['profile', 'following', page] as const,
 		history: (ids: string[], page: number) => ['profile', 'history', { ids, page }] as const,
 		addresses: () => ['profile', 'addresses'] as const,
+		returns: (filters: object) => ['profile', 'returns', filters] as const,
+		returnDetail: (returnId: string) =>
+			['profile', 'returns', 'detail', returnId] as const,
+		returnCandidate: (orderItemId: string) =>
+			['profile', 'returns', 'candidate', orderItemId] as const,
 	},
 	orders: {
 		detail: (orderId: string) => ['orders', 'detail', orderId] as const,
@@ -45,6 +50,7 @@ export const queryKeys = {
 			['store', 'followInfo', storeId, userId] as const,
 	},
 	dashboard: {
+		orderLists: () => ['dashboard', 'orders'] as const,
 		categories: () => ['dashboard', 'categories'] as const,
 		subCategories: () => ['dashboard', 'subCategories'] as const,
 		offerTags: () => ['dashboard', 'offerTags'] as const,
@@ -54,7 +60,7 @@ export const queryKeys = {
 			['dashboard', 'products', storeUrl, { page, limit, search }] as const,
 		coupons: (storeUrl: string) => ['dashboard', 'coupons', storeUrl] as const,
 		orders: (storeUrl: string, page?: number, limit?: number, search?: string, status?: string) =>
-			['dashboard', 'orders', storeUrl, { page, limit, search, status }] as const,
+			[...queryKeys.dashboard.orderLists(), storeUrl, { page, limit, search, status }] as const,
 		shipping: (storeUrl: string) => ['dashboard', 'shipping', storeUrl] as const,
 		storeSettings: (storeUrl: string) => ['dashboard', 'settings', storeUrl] as const,
 		adminAnalytics: () => ['dashboard', 'adminAnalytics'] as const,

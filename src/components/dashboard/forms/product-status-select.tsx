@@ -32,11 +32,11 @@ const ProductStatusSelect: FC<Props> = ({ orderItemId, status, storeId, storeUrl
 			if (response) {
 				setNewStatus(selectedStatus);
 				toast.success(`Product status ${selectedStatus} updated.`);
-				if (storeUrl) {
-					queryClient.invalidateQueries({
-						queryKey: queryKeys.dashboard.orders(storeUrl),
-					});
-				}
+				queryClient.invalidateQueries({
+					queryKey: storeUrl
+						? queryKeys.dashboard.orders(storeUrl)
+						: queryKeys.dashboard.orderLists(),
+				});
 			}
 		},
 		onError: (error: unknown) => {

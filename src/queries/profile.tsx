@@ -122,7 +122,7 @@ const fetchUserOrdersFromDb = unstable_cache(
 			totalCount,
 		};
 	},
-	['user-orders-cache'],
+	['user-orders-cache-v2'],
 	{ revalidate: 300, tags: ['user-orders'] }
 );
 

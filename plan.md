@@ -191,12 +191,63 @@ once so Windows releases Prisma's query-engine file, then run `bun dev`. Confirm
 There is intentionally no customer return form yet; Phase 10.3 will connect
 these server rules to the order details and customer Returns Center.
 
-- [ ] **Phase 10.3 — Customer Returns Center**
-  - [ ] Add return initiation from eligible order items
-  - [ ] Support refund or exchange requests, reason selection, notes, quantity, and evidence uploads
-  - [ ] Add a customer request list and detail timeline with seller/admin responses
-  - [ ] Use server prefetch + `HydrationBoundary`, granular `Suspense`, and mutations with targeted invalidation
+- [x] **Phase 10.3 — Customer Returns Center**
+  - [x] Add return initiation from eligible order items
+  - [x] Support refund or exchange requests, reason selection, notes, quantity, and evidence uploads
+  - [x] Add a customer request list and detail timeline with seller/admin responses
+  - [x] Use server prefetch + `HydrationBoundary`, granular `Suspense`, and mutations with targeted invalidation
   - **Test**: A customer can submit and track a valid request without a full-page reload
+
+**Phase 10.3 acceptance (July 31, 2026):** Eligible delivered order items
+link to a secured return form with server-calculated estimates and Cloudinary
+evidence uploads. The customer Returns Center and protected detail timeline use
+server prefetch, hydrated Suspense queries, targeted invalidation, and polling
+only while requests remain active. The full automated suite passes 31/31 tests,
+TypeScript and touched-file lint pass, and private return pages are semantic,
+theme-aware, responsive, and marked `noindex`.
+
+### Phase 10.3.1 — Fulfillment status integrity prerequisite
+
+- [x] Synchronize seller package changes to package items and derive the overall
+  customer order status in one transaction
+- [x] Derive package and overall order summaries when an individual item changes
+- [x] Invalidate the customer order data cache and the affected seller order
+  queries after status mutations
+- [x] Show customer orders as `#ORD-…` and seller/store packages as `#PKG-…`
+  while retaining UUIDs as internal database identifiers
+- [ ] Replace unrestricted status dropdowns with a server-enforced, forward-only
+  fulfillment state machine
+- [ ] Permit cancellation only from eligible pre-delivery states; never move a
+  cancelled, delivered, picked-up, returned, or refunded record backwards
+- [ ] Replace the current informational **Cancel Package** dialog with an
+  auditable customer cancellation request/contact flow and seller decision
+- [ ] Add an explicit pickup completion state so `AwaitingPickup` cannot be
+  mistaken for a completed pickup
+- [ ] Keep return/refund/exchange statuses out of the normal fulfillment menu;
+  expose return actions only after `Delivered` or completed pickup
+- [ ] Record every fulfillment transition with actor, previous state, next state,
+  timestamp, and optional reason
+- **Test**: Invalid skips and backward transitions fail on the server; a valid
+  seller transition updates item, package, and customer order views; cancellation
+  remains available only before fulfillment becomes irreversible
+
+**Planned fulfillment paths:**
+
+- Delivery: `Pending → Confirmed → Processing → Ready for shipment → Shipped →
+  Out for delivery → Delivered`
+- Pickup: `Pending → Confirmed → Processing → Awaiting pickup → Picked up`
+- Exception: `Cancelled` may be selected from an allowed pre-delivery state after
+  customer contact; return/refund/exchange states begin only after delivery or
+  pickup and are controlled by the Returns Center.
+
+**Manual checkpoint before Phase 10.4:** Restart `bun dev`, change a paid package
+through the currently available statuses until `Delivered`, then open that order
+as its customer. Confirm the same delivery state appears on the order list,
+overall order header, package, and item, and that the delivered item shows
+**Request return**. Submit a refund or exchange request and confirm the browser
+redirects to its timeline. Verify the request appears under **Account → Returns**,
+survives a refresh, and creates matching `ReturnRequest`, `ReturnItem`,
+`ReturnEvent`, and optional `ReturnEvidence` records in Prisma Studio.
 
 - [ ] **Phase 10.4 — Seller return queue**
   - [ ] Add store-scoped return list, filters, detail review, and evidence display

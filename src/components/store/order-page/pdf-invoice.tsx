@@ -7,6 +7,7 @@ import {
 	Text,
 	View,
 } from '@react-pdf/renderer';
+import { formatOrderId } from '@/lib/utils';
 
 export const generateOrderPDFBlob = async (
 	order: OrderFulltType,
@@ -66,7 +67,7 @@ export const generateOrderPDFBlob = async (
 				<Text style={styles.header}>Order Invoice</Text>
 				{/* Order Summary */}
 				<View style={styles.section}>
-					<Text>Order ID: {order.id}</Text>
+					<Text>Order ID: {formatOrderId(order.id)}</Text>
 					<Text>
 						Order Date: {new Date(order.createdAt).toLocaleDateString()}
 					</Text>

@@ -1,8 +1,14 @@
 'use server';
 
 import { db } from '@/lib/db';
-import { OrderStatus, ProductStatus } from '@/lib/types';
+import {
+	deriveGroupStatus,
+	deriveOrderStatus,
+	productStatusForOrderStatus,
+} from '@/lib/orders/status-sync';
 import { currentUser } from '@clerk/nextjs/server';
+import { OrderStatus, ProductStatus } from '@prisma/client';
+import { updateTag } from 'next/cache';
 
 // Function: getOrder
 // Description: Retrieves a specific order by its ID and the current user's ID, including associated groups, items, store information,
@@ -103,17 +109,50 @@ export const updateOrderGroupStatus = async (
 	// Ensure order existence
 	if (!order) throw new Error('Order not found.');
 
-	// Update the order status
-	const updatedOrder = await db.orderGroup.update({
-		where: {
-			id: groupId,
-		},
-		data: {
-			status,
-		},
+	const updatedStatus = await db.$transaction(async (tx) => {
+		const updatedGroup = await tx.orderGroup.update({
+			where: {
+				id: groupId,
+			},
+			data: {
+				status,
+			},
+		});
+		const itemStatus = productStatusForOrderStatus(status);
+
+		await tx.orderItem.updateMany({
+			where: { orderGroupId: groupId },
+			data: { status: itemStatus },
+		});
+
+		if (itemStatus === ProductStatus.Delivered) {
+			await tx.orderItem.updateMany({
+				where: {
+					orderGroupId: groupId,
+					deliveredAt: null,
+				},
+				data: { deliveredAt: new Date() },
+			});
+		}
+
+		const groups = await tx.orderGroup.findMany({
+			where: { orderId: order.orderId },
+			select: { status: true },
+		});
+
+		await tx.order.update({
+			where: { id: order.orderId },
+			data: {
+				orderStatus: deriveOrderStatus(groups.map((group) => group.status)),
+			},
+		});
+
+		return updatedGroup.status;
 	});
 
-	return updatedOrder.status;
+	updateTag('user-orders');
+
+	return updatedStatus;
 };
 
 export const updateOrderItemStatus = async (
@@ -153,23 +192,61 @@ export const updateOrderItemStatus = async (
 				storeId,
 			},
 		},
+		select: {
+			id: true,
+			deliveredAt: true,
+			orderGroupId: true,
+			orderGroup: {
+				select: {
+					orderId: true,
+				},
+			},
+		},
 	});
 
 	// Ensure order existence
 	if (!product) throw new Error('Order item not found.');
 
-	// Update the order status
-	const updatedProduct = await db.orderItem.update({
-		where: {
-			id: orderItemId,
-		},
-		data: {
-			status,
-			...(status === ProductStatus.Delivered && !product.deliveredAt
-				? { deliveredAt: new Date() }
-				: {}),
-		},
+	const updatedStatus = await db.$transaction(async (tx) => {
+		const updatedProduct = await tx.orderItem.update({
+			where: {
+				id: orderItemId,
+			},
+			data: {
+				status,
+				...(status === ProductStatus.Delivered && !product.deliveredAt
+					? { deliveredAt: new Date() }
+					: {}),
+			},
+		});
+
+		const items = await tx.orderItem.findMany({
+			where: { orderGroupId: product.orderGroupId },
+			select: { status: true },
+		});
+		const groupStatus = deriveGroupStatus(items.map((item) => item.status));
+
+		await tx.orderGroup.update({
+			where: { id: product.orderGroupId },
+			data: { status: groupStatus },
+		});
+
+		const groups = await tx.orderGroup.findMany({
+			where: { orderId: product.orderGroup.orderId },
+			select: { status: true },
+		});
+
+		await tx.order.update({
+			where: { id: product.orderGroup.orderId },
+			data: {
+				orderStatus: deriveOrderStatus(groups.map((group) => group.status)),
+			},
+		});
+
+		return updatedProduct.status;
 	});
 
-	return updatedProduct.status;
+	updateTag('user-orders');
+
+	return updatedStatus;
 };

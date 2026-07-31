@@ -5,7 +5,7 @@ import {
 	ProductStatus,
 	StoreOrderType,
 } from '@/lib/types';
-import { formatOrderId, getShippingDatesRange } from '@/lib/utils';
+import { formatPackageId, getShippingDatesRange } from '@/lib/utils';
 import { FC } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -64,7 +64,7 @@ const StoreOrderSummary: FC<Props> = ({ group }) => {
 								Order Details
 							</h2>
 							<span className='font-mono font-bold text-sm bg-muted/60 text-foreground px-2 py-0.5 rounded-md border border-border/50'>
-								{formatOrderId(group.id)}
+								{formatPackageId(group.id)}
 							</span>
 						</div>
 						<div className='flex items-center gap-x-2 print:hidden'>

@@ -18,6 +18,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/query-keys';
 import OrderTableHeader from './order-table-header';
+import { formatOrderId } from '@/lib/utils';
 
 export function OrdersTableSkeleton() {
 	return (
@@ -210,7 +211,7 @@ function OrdersTableContent({
 												<div className='flex items-center gap-3'>
 													<div className='flex flex-col'>
 														<p className='block antialiased font-sans text-sm leading-normal font-normal'>
-															#{order.id}
+															{formatOrderId(order.id)}
 														</p>
 														<p className='block antialiased font-sans text-sm leading-normal font-normal'>
 															Placed on: {new Date(order.createdAt).toDateString()}

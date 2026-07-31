@@ -1,5 +1,5 @@
 import { currentUser } from '@clerk/nextjs/server';
-import { Eye, Heart, Puzzle, Rss, WalletCards } from 'lucide-react';
+import { Eye, Heart, Puzzle, Rss, Undo2, WalletCards } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 
@@ -63,6 +63,11 @@ const menu = [
 		title: 'Coupons',
 		icon: <Puzzle />,
 		link: '/profile/coupons',
+	},
+	{
+		title: 'Returns',
+		icon: <Undo2 />,
+		link: '/profile/returns',
 	},
 	{
 		title: 'Shopping credit',

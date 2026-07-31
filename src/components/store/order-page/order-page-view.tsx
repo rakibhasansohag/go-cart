@@ -44,12 +44,12 @@ export default function OrderPageView({ orderId }: { orderId: string }) {
 		) || 0;
 
 	const deliveredItemsCount =
-		order.groups.reduce((total, group) => {
-			if (group.status === 'Delivered') {
-				return total + group.items.length;
-			}
-			return total;
-		}, 0) || 0;
+		order.groups.reduce(
+			(total, group) =>
+				total +
+				group.items.filter((item) => item.status === 'Delivered').length,
+			0,
+		) || 0;
 
 	const rawSubTotal =
 		order.groups.reduce((sum, group) => sum + group.subTotal, 0) ||
@@ -58,6 +58,9 @@ export default function OrderPageView({ orderId }: { orderId: string }) {
 		order.groups.reduce((sum, group) => sum + group.shippingFees, 0) ||
 		order.shippingFees;
 	const isPendingPayment = ['Pending', 'Failed', 'Declined', 'Cancelled'].includes(
+		order.paymentStatus,
+	);
+	const canRequestReturns = ['Paid', 'PartiallyRefunded'].includes(
 		order.paymentStatus,
 	);
 
@@ -102,7 +105,7 @@ export default function OrderPageView({ orderId }: { orderId: string }) {
 
 					<OrderGroupsContainer
 						groups={order.groups}
-						check={!isPendingPayment}
+						check={canRequestReturns}
 					/>
 				</div>
 

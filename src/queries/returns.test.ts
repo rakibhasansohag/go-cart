@@ -4,6 +4,7 @@ const {
 	authMock,
 	transactionMock,
 	userFindUniqueMock,
+	dbOrderItemFindFirstMock,
 	orderItemFindFirstMock,
 	returnRequestCreateMock,
 	returnRequestFindUniqueMock,
@@ -15,6 +16,7 @@ const {
 	authMock: vi.fn(),
 	transactionMock: vi.fn(),
 	userFindUniqueMock: vi.fn(),
+	dbOrderItemFindFirstMock: vi.fn(),
 	orderItemFindFirstMock: vi.fn(),
 	returnRequestCreateMock: vi.fn(),
 	returnRequestFindUniqueMock: vi.fn(),
@@ -52,11 +54,15 @@ vi.mock('@/lib/db', () => ({
 		user: {
 			findUnique: userFindUniqueMock,
 		},
+		orderItem: {
+			findFirst: dbOrderItemFindFirstMock,
+		},
 	},
 }));
 
 import {
 	createReturnRequest,
+	getReturnCandidate,
 	transitionReturnRequest,
 } from './returns';
 
@@ -95,6 +101,100 @@ describe('return request service', () => {
 			}),
 		).rejects.toThrow('valid return reason');
 		expect(transactionMock).not.toHaveBeenCalled();
+	});
+
+	it('rejects evidence that did not come from the configured uploader', async () => {
+		authMock.mockResolvedValue({ userId: 'customer-1' });
+
+		await expect(
+			createReturnRequest({
+				orderItemId: 'item-1',
+				quantity: 1,
+				reason: 'DAMAGED',
+				resolution: 'REFUND',
+				evidence: [
+					{
+						type: 'IMAGE',
+						url: 'https://example.com/untrusted-image.png',
+					},
+				],
+			}),
+		).rejects.toThrow('GoCart uploader');
+		expect(transactionMock).not.toHaveBeenCalled();
+	});
+
+	it('returns a server-calculated eligibility preview for the customer', async () => {
+		authMock.mockResolvedValue({ userId: 'customer-1' });
+		dbOrderItemFindFirstMock.mockResolvedValue({
+			id: 'item-1',
+			orderGroupId: 'group-1',
+			name: 'Trail boots · Brown',
+			image: 'https://res.cloudinary.com/demo/image/upload/boots.png',
+			size: '42',
+			sku: 'BOOTS-42',
+			status: 'Delivered',
+			deliveredAt: new Date(),
+			updatedAt: new Date(),
+			quantity: 2,
+			price: 40,
+			shippingFee: 10,
+			returnItems: [],
+			orderGroup: {
+				coupon: { discount: 10 },
+				store: {
+					id: 'store-1',
+					returnPolicy: 'Return in 30 days.',
+					returnsAccepted: true,
+					returnWindowDays: 30,
+					returnShippingFees: true,
+				},
+				order: {
+					id: 'order-1',
+					userId: 'customer-1',
+					paymentStatus: 'Paid',
+					paymentDetails: {
+						id: 'payment-1',
+						currency: 'USD',
+					},
+				},
+			},
+		});
+
+		const result = await getReturnCandidate('item-1');
+
+		expect(result).toMatchObject({
+			eligible: true,
+			availableQuantity: 2,
+			order: { id: 'order-1' },
+			amounts: [
+				{
+					quantity: 1,
+					breakdown: {
+						itemSubtotal: 40,
+						shipping: 5,
+						couponDiscount: 4.5,
+						total: 40.5,
+					},
+				},
+				{
+					quantity: 2,
+					breakdown: {
+						itemSubtotal: 80,
+						shipping: 10,
+						couponDiscount: 9,
+						total: 81,
+					},
+				},
+			],
+		});
+		expect(dbOrderItemFindFirstMock).toHaveBeenCalledWith(
+			expect.objectContaining({
+				where: {
+					id: 'item-1',
+					orderGroup: { order: { userId: 'customer-1' } },
+				},
+			}),
+		);
 	});
 
 	it('derives ownership and refundable totals from server records', async () => {
@@ -209,6 +309,40 @@ describe('return request service', () => {
 			}),
 		).rejects.toThrow('note is required');
 		expect(returnRequestUpdateManyMock).not.toHaveBeenCalled();
+	});
+
+	it('treats a seller account as the customer on its own return', async () => {
+		authMock.mockResolvedValue({ userId: 'seller-customer-1' });
+		userFindUniqueMock.mockResolvedValue({ role: 'SELLER' });
+		returnRequestFindUniqueMock.mockResolvedValue({
+			id: 'return-1',
+			status: 'REQUESTED',
+			customerId: 'seller-customer-1',
+			store: {
+				userId: 'different-store-owner',
+				returnWindowDays: 30,
+			},
+		});
+		returnRequestUpdateManyMock.mockResolvedValue({ count: 1 });
+		returnEventCreateMock.mockResolvedValue({ id: 'event-1' });
+		returnItemUpdateManyMock.mockResolvedValue({ count: 1 });
+		returnRequestFindUniqueOrThrowMock.mockResolvedValue({
+			id: 'return-1',
+			status: 'CANCELLED',
+		});
+
+		await transitionReturnRequest({
+			returnRequestId: 'return-1',
+			toStatus: 'CANCELLED',
+		});
+
+		expect(returnEventCreateMock).toHaveBeenCalledWith({
+			data: expect.objectContaining({
+				actorRole: 'CUSTOMER',
+				actorId: 'seller-customer-1',
+				toStatus: 'CANCELLED',
+			}),
+		});
 	});
 
 	it('writes a valid status change and audit event in one transaction', async () => {
