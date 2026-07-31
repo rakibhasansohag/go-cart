@@ -16,7 +16,7 @@ import Pagination from '../../shared/pagination';
 import { Skeleton } from '@/components/ui/skeleton';
 
 import { useSuspenseQuery } from '@tanstack/react-query';
-import { activeOrderSyncOptions } from '@/lib/orders/live-sync';
+import { useOrderStatusSync } from '@/hooks/use-order-status-sync';
 import { queryKeys } from '@/lib/query-keys';
 import OrderTableHeader from './order-table-header';
 import { formatOrderId, formatPackageId } from '@/lib/utils';
@@ -168,10 +168,18 @@ function OrdersTableContent({
 				totalCount: number;
 			}>;
 		},
-		...activeOrderSyncOptions,
 	});
 
-	const data = res.orders;
+	const { data: statusSnapshots = [] } = useOrderStatusSync({
+		orderIds: res.orders.map(({ id }) => id),
+	});
+	const statusByOrder = new Map(
+		statusSnapshots.map((snapshot) => [snapshot.orderId, snapshot.order]),
+	);
+	const data = res.orders.map((order) => ({
+		...order,
+		...(statusByOrder.get(order.id) ?? {}),
+	}));
 	const totalDataPages = res.totalPages;
 
 	return (

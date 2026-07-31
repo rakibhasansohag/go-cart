@@ -29,6 +29,8 @@ export const queryKeys = {
 	},
 	orders: {
 		detail: (orderId: string) => ['orders', 'detail', orderId] as const,
+		statuses: (orderIds: string[], groupIds: string[]) =>
+			['orders', 'statuses', { orderIds, groupIds }] as const,
 	},
 	payments: {
 		order: (orderId: string) => ['payments', 'order', orderId] as const,

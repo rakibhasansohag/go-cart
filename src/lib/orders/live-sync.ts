@@ -6,8 +6,9 @@
  */
 export const ACTIVE_ORDER_REFRESH_INTERVAL_MS = 10_000;
 
-export const activeOrderSyncOptions = {
+export const activeOrderStatusSyncOptions = {
 	refetchInterval: ACTIVE_ORDER_REFRESH_INTERVAL_MS,
 	refetchIntervalInBackground: false,
 	refetchOnWindowFocus: true,
+	staleTime: 5_000,
 } as const;

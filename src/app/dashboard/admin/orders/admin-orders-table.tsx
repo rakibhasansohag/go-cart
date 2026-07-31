@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { activeOrderSyncOptions } from '@/lib/orders/live-sync';
+import { useOrderStatusSync } from '@/hooks/use-order-status-sync';
 import DataTable from '@/components/ui/data-table';
 import { getAllAdminOrders } from '@/queries/analytics';
 import { queryKeys } from '@/lib/query-keys';
@@ -185,10 +185,33 @@ export default function AdminOrdersTable({ initialData }: AdminOrdersTableProps)
 		queryKey: queryKeys.dashboard.adminOrders(page, pageSize, search),
 		queryFn: () => getAllAdminOrders({ page, limit: pageSize, search }),
 		initialData: page === 1 && pageSize === 10 && !search ? initialData : undefined,
-		...activeOrderSyncOptions,
 	});
 
-	const orders = data?.orders ?? [];
+	const baseOrders = data?.orders ?? [];
+	const { data: statusSnapshots = [] } = useOrderStatusSync({
+		groupIds: baseOrders.map(({ id }) => id),
+	});
+	const statusByGroup = new Map(
+		statusSnapshots.map((snapshot) => [snapshot.id, snapshot]),
+	);
+	const orders = baseOrders.map((order) => {
+		const snapshot = statusByGroup.get(order.id);
+		if (!snapshot) return order;
+		return {
+			...order,
+			status: snapshot.status,
+			packageStatus: snapshot.packageStatus,
+			shipment:
+				order.shipment && snapshot.shipment
+					? { ...order.shipment, status: snapshot.shipment.status }
+					: order.shipment,
+			order: {
+				...order.order,
+				orderStatus: snapshot.order.orderStatus,
+				paymentStatus: snapshot.order.paymentStatus,
+			},
+		};
+	});
 	const totalCount = data?.totalCount ?? 0;
 	const totalPages = data?.totalPages ?? 1;
 

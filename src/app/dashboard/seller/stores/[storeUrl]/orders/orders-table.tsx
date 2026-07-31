@@ -10,7 +10,7 @@ import { StoreOrderType } from '@/lib/types';
 import { exportOrdersToCSV } from '@/lib/export-utils';
 import { Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { activeOrderSyncOptions } from '@/lib/orders/live-sync';
+import { useOrderStatusSync } from '@/hooks/use-order-status-sync';
 
 interface OrdersTableProps {
 	storeUrl: string;
@@ -43,10 +43,33 @@ export default function OrdersTable({ storeUrl, initialData }: OrdersTableProps)
 		queryKey: queryKeys.dashboard.orders(storeUrl, page, pageSize, search, status),
 		queryFn: () => getStoreOrders(storeUrl, { page, limit: pageSize, search, status }),
 		initialData: page === 1 && pageSize === 10 && !search && status === 'ALL' ? initialData : undefined,
-		...activeOrderSyncOptions,
 	});
 
-	const orders = data?.orders ?? [];
+	const baseOrders = data?.orders ?? [];
+	const { data: statusSnapshots = [] } = useOrderStatusSync({
+		groupIds: baseOrders.map(({ id }) => id),
+	});
+	const statusByGroup = new Map(
+		statusSnapshots.map((snapshot) => [snapshot.id, snapshot]),
+	);
+	const orders = baseOrders.map((order) => {
+		const snapshot = statusByGroup.get(order.id);
+		if (!snapshot) return order;
+		return {
+			...order,
+			status: snapshot.status,
+			packageStatus: snapshot.packageStatus,
+			shipment:
+				order.shipment && snapshot.shipment
+					? { ...order.shipment, status: snapshot.shipment.status }
+					: order.shipment,
+			order: {
+				...order.order,
+				orderStatus: snapshot.order.orderStatus,
+				paymentStatus: snapshot.order.paymentStatus,
+			},
+		};
+	});
 	const totalCount = data?.totalCount ?? 0;
 	const totalPages = data?.totalPages ?? 1;
 

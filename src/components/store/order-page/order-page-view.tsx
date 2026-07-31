@@ -9,16 +9,19 @@ import OrderUserDetailsCard from '@/components/store/cards/order/user';
 import OrderGroupsContainer from './groups-container';
 import OrderHeader from './header';
 import OrderPayment from './payment';
-import { activeOrderSyncOptions } from '@/lib/orders/live-sync';
+import { useOrderStatusSync } from '@/hooks/use-order-status-sync';
 
 export default function OrderPageView({ orderId }: { orderId: string }) {
-	const { data: order } = useSuspenseQuery({
+	const { data: baseOrder } = useSuspenseQuery({
 		queryKey: queryKeys.orders.detail(orderId),
 		queryFn: () => getOrder(orderId),
-		...activeOrderSyncOptions,
 	});
 
-	if (!order) {
+	const { data: statusSnapshots = [] } = useOrderStatusSync({
+		orderIds: [orderId],
+	});
+
+	if (!baseOrder) {
 		return (
 			<div className='rounded-2xl border border-border bg-card p-8 text-center'>
 				<h1 className='text-lg font-semibold'>Order unavailable</h1>
@@ -28,6 +31,28 @@ export default function OrderPageView({ orderId }: { orderId: string }) {
 			</div>
 		);
 	}
+
+	const statusByGroup = new Map(
+		statusSnapshots.map((snapshot) => [snapshot.id, snapshot]),
+	);
+	const orderSnapshot = statusSnapshots[0]?.order;
+	const order = {
+		...baseOrder,
+		...orderSnapshot,
+		groups: baseOrder.groups.map((group) => {
+			const snapshot = statusByGroup.get(group.id);
+			if (!snapshot) return group;
+			return {
+				...group,
+				status: snapshot.status,
+				packageStatus: snapshot.packageStatus,
+				shipment:
+					group.shipment && snapshot.shipment
+						? { ...group.shipment, status: snapshot.shipment.status }
+						: group.shipment,
+			};
+		}),
+	};
 
 	const totalItemsCount =
 		order.groups.reduce(

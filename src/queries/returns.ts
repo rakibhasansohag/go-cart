@@ -43,6 +43,11 @@ export type TransitionReturnRequestInput = {
 	note?: string;
 };
 
+const RETURN_TRANSACTION_OPTIONS = {
+	maxWait: 10_000,
+	timeout: 30_000,
+} as const;
+
 const returnCandidateInclude = Prisma.validator<Prisma.OrderItemInclude>()({
 	returnItems: {
 		where: {
@@ -463,7 +468,7 @@ export async function createReturnRequest(input: CreateReturnRequestInput) {
 					events: { orderBy: { createdAt: 'asc' } },
 				},
 			});
-		});
+		}, RETURN_TRANSACTION_OPTIONS);
 	} catch (error) {
 		if (
 			error instanceof Prisma.PrismaClientKnownRequestError &&
@@ -600,5 +605,5 @@ export async function transitionReturnRequest(
 				events: { orderBy: { createdAt: 'asc' } },
 			},
 		});
-	});
+	}, RETURN_TRANSACTION_OPTIONS);
 }
