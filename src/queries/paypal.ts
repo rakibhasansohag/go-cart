@@ -1,159 +1,204 @@
 'use server';
 
-import { db } from '@/lib/db';
-import { currentUser } from '@clerk/nextjs/server';
+import { createHash } from 'crypto';
+import { assertPaymentAmount, requireOwnedOrder } from '@/lib/payments/security';
+import { paypalRequest } from '@/lib/payments/paypal-client';
+import { reconcilePaymentEvent } from '@/lib/payments/reconcile';
+import type { PaymentStatus } from '@prisma/client';
 
-// Function: createPayPalPayment
-// Description: Creates a PayPal payment and return payment details.
-// Permission Level: User only
-// Parameters:
-//   - orderId: The ID of the order to process payment for.
-// Returns: Details of the created payment from paypal.
-export const createPayPalPayment = async (orderId: string) => {
-	try {
-		// Get current user
-		const user = await currentUser();
-
-		// Ensure user is authenticated
-		if (!user) throw new Error('Unauthenticated.');
-
-		// Fetch the order to get total price
-		const order = await db.order.findUnique({
-			where: {
-				id: orderId,
-			},
-		});
-
-		if (!order) throw new Error('Order not found.');
-
-		// Here you can call the PayPal API to create a payment
-		const response = await fetch(
-			'https://api.sandbox.paypal.com/v2/checkout/orders',
-			{
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-					Authorization: `Basic ${Buffer.from(
-						`${process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID}:${process.env.PAYPAL_SECRET}`,
-					).toString('base64')}`,
-				},
-				body: JSON.stringify({
-					intent: 'CAPTURE',
-					purchase_units: [
-						{
-							amount: {
-								currency_code: 'USD',
-								value: order.total.toFixed(2).toString(),
-							},
-						},
-					],
-				}),
-			},
-		);
-		const paymentData = await response.json();
-		return paymentData;
-	} catch (error) {
-		throw error;
-	}
+type PayPalAmount = {
+	currency_code: string;
+	value: string;
 };
 
-// Function: capturePayPalPayment
-// Description: Captures a PayPal payment and updates the order status in the database.
-// Permission Level: User only
-// Parameters:
-//   - orderId: The ID of the order to update.
-//   - paymentId: The PayPal payment ID to capture.
-// Returns: Updated order details.
+type PayPalCapture = {
+	id: string;
+	status: string;
+	amount: PayPalAmount;
+};
 
-export const capturePayPalPayment = async (
-	orderId: string,
-	paymentId: string,
-) => {
-	// Get current user
-	const user = await currentUser();
+type PayPalOrder = {
+	id: string;
+	status: string;
+	purchase_units: Array<{
+		custom_id?: string;
+		invoice_id?: string;
+		amount: PayPalAmount;
+		payments?: { captures?: PayPalCapture[] };
+	}>;
+};
 
-	// Ensure user is authenticated
-	if (!user) throw new Error('Unauthenticated.');
+function requestId(prefix: string, value: string) {
+	const digest = createHash('sha256').update(value).digest('hex').slice(0, 28);
+	return `${prefix}-${digest}`;
+}
 
-	// Capture the payment using PayPal API
-	const captureResponse = await fetch(
-		`https://api.sandbox.paypal.com/v2/checkout/orders/${paymentId}/capture`,
+function getPurchaseUnit(order: PayPalOrder) {
+	const purchaseUnit = order.purchase_units?.[0];
+	if (!purchaseUnit) {
+		throw new Error('PayPal returned an incomplete order.');
+	}
+	return purchaseUnit;
+}
+
+function assertPayPalOrderMatches(
+	localOrder: Awaited<ReturnType<typeof requireOwnedOrder>>,
+	paypalOrder: PayPalOrder,
+) {
+	const purchaseUnit = getPurchaseUnit(paypalOrder);
+
+	if (
+		purchaseUnit.custom_id !== localOrder.id ||
+		purchaseUnit.invoice_id !== localOrder.id
+	) {
+		throw new Error('PayPal payment does not belong to this order.');
+	}
+
+	assertPaymentAmount(
+		localOrder.total,
+		Number(purchaseUnit.amount.value),
+		purchaseUnit.amount.currency_code,
+	);
+}
+
+function paymentStatusFromCapture(status: string): PaymentStatus {
+	switch (status) {
+		case 'COMPLETED':
+			return 'Paid';
+		case 'DENIED':
+			return 'Declined';
+		case 'VOIDED':
+			return 'Cancelled';
+		default:
+			return 'Pending';
+	}
+}
+
+export async function createPayPalPayment(orderId: string) {
+	const order = await requireOwnedOrder(orderId, { requirePayable: true });
+
+	if (
+		order.paymentDetails?.paymentMethod === 'Paypal' &&
+		order.paymentDetails.paymentInetntId
+	) {
+		const existingOrder = await paypalRequest<PayPalOrder>(
+			`/v2/checkout/orders/${order.paymentDetails.paymentInetntId}`,
+		);
+
+		if (['CREATED', 'SAVED', 'APPROVED'].includes(existingOrder.status)) {
+			assertPayPalOrderMatches(order, existingOrder);
+			return { id: existingOrder.id, status: existingOrder.status };
+		}
+	}
+
+	const paypalOrder = await paypalRequest<PayPalOrder>(
+		'/v2/checkout/orders',
 		{
 			method: 'POST',
 			headers: {
-				'Content-Type': 'application/json',
-				Authorization: `Basic ${Buffer.from(
-					`${process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID}:${process.env.PAYPAL_SECRET}`,
-				).toString('base64')}`,
+				'PayPal-Request-Id': requestId(
+					'create',
+					`${order.id}:${order.updatedAt.toISOString()}`,
+				),
 			},
+			body: JSON.stringify({
+				intent: 'CAPTURE',
+				purchase_units: [
+					{
+						custom_id: order.id,
+						invoice_id: order.id,
+						amount: {
+							currency_code: 'USD',
+							value: order.total.toFixed(2),
+						},
+					},
+				],
+			}),
 		},
 	);
 
-	const captureData = await captureResponse.json();
+	assertPayPalOrderMatches(order, paypalOrder);
+	await reconcilePaymentEvent({
+		orderId: order.id,
+		provider: 'Paypal',
+		providerEventId: `paypal:order-created:${paypalOrder.id}`,
+		providerPaymentId: paypalOrder.id,
+		eventType: 'CHECKOUT.ORDER.CREATED',
+		providerStatus: paypalOrder.status,
+		paymentStatus: 'Pending',
+		amount: order.total,
+		currency: 'USD',
+		verifyOrderAmount: true,
+	});
 
-	// Check if capture was successful
-	if (captureData.status !== 'COMPLETED') {
-		return await db.order.update({
-			where: {
-				id: orderId,
-			},
-			data: {
-				paymentStatus: 'Failed',
-			},
-		});
-		//throw new Error("Payment capture failed.");
+	return { id: paypalOrder.id, status: paypalOrder.status };
+}
+
+export async function capturePayPalPayment(
+	orderId: string,
+	paymentId: string,
+) {
+	const order = await requireOwnedOrder(orderId, { requirePayable: true });
+
+	if (
+		!order.paymentDetails ||
+		order.paymentDetails.paymentMethod !== 'Paypal' ||
+		order.paymentDetails.paymentInetntId !== paymentId
+	) {
+		throw new Error('PayPal payment does not match this order.');
 	}
 
-	// Upsert payment details record
-	const newPaymentDetails = await db.paymentDetails.upsert({
-		where: {
-			orderId,
-		},
-		update: {
-			paymentInetntId: paymentId,
-			status:
-				captureData.status === 'COMPLETED' ? 'Completed' : captureData.status,
-			amount: Number(
-				captureData.purchase_units[0].payments.captures[0].amount.value,
-			),
-			currency:
-				captureData.purchase_units[0].payments.captures[0].amount.currency_code,
-			paymentMethod: 'Paypal',
-			userId: user.id,
-		},
-		create: {
-			paymentInetntId: paymentId,
-			status:
-				captureData.status === 'COMPLETED' ? 'Completed' : captureData.status,
-			amount: Number(
-				captureData.purchase_units[0].payments.captures[0].amount.value,
-			),
-			currency:
-				captureData.purchase_units[0].payments.captures[0].amount.currency_code,
-			paymentMethod: 'Paypal',
-			orderId: orderId,
-			userId: user.id,
-		},
-	});
+	const providerOrder = await paypalRequest<PayPalOrder>(
+		`/v2/checkout/orders/${paymentId}`,
+	);
+	assertPayPalOrderMatches(order, providerOrder);
 
-	// Update the order with the new payment details
-	const updatedOrder = await db.order.update({
-		where: {
-			id: orderId,
-		},
-		data: {
-			paymentStatus: captureData.status === 'COMPLETED' ? 'Paid' : 'Failed',
-			paymentMethod: 'Paypal',
-			paymentDetails: {
-				connect: {
-					id: newPaymentDetails.id,
-				},
+	const capturedOrder = await paypalRequest<PayPalOrder>(
+		`/v2/checkout/orders/${paymentId}/capture`,
+		{
+			method: 'POST',
+			headers: {
+				'PayPal-Request-Id': requestId('capture', paymentId),
 			},
+			body: '{}',
 		},
-		include: {
-			paymentDetails: true,
-		},
+	);
+
+	assertPayPalOrderMatches(order, capturedOrder);
+	const capture = getPurchaseUnit(capturedOrder).payments?.captures?.[0];
+
+	if (!capture) {
+		throw new Error('PayPal did not return a payment capture.');
+	}
+
+	assertPaymentAmount(
+		order.total,
+		Number(capture.amount.value),
+		capture.amount.currency_code,
+	);
+
+	const paymentStatus = paymentStatusFromCapture(capture.status);
+	const result = await reconcilePaymentEvent({
+		orderId: order.id,
+		provider: 'Paypal',
+		providerEventId: `paypal:verified:${capture.id}:${capture.status}`,
+		providerPaymentId: paymentId,
+		providerCaptureId: capture.id,
+		eventType: 'PAYMENT.CAPTURE.SERVER_VERIFIED',
+		providerStatus: capture.status,
+		paymentStatus,
+		amount: Number(capture.amount.value),
+		currency: capture.amount.currency_code,
+		verifyOrderAmount: paymentStatus === 'Paid',
 	});
 
-	return updatedOrder;
-};
+	if (paymentStatus !== 'Paid') {
+		throw new Error(
+			paymentStatus === 'Pending'
+				? 'Your PayPal payment is still processing. We will update this order automatically.'
+				: 'PayPal could not complete this payment. Please try again.',
+		);
+	}
+
+	return result.order;
+}

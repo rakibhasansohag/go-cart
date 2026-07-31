@@ -127,7 +127,7 @@ function PaymentsTableContent({
 							</thead>
 							<tbody>
 								{data.map((payment) => {
-									const amount = payment.amount / 100;
+									const amount = payment.amount;
 									return (
 										<tr key={payment.id} className='border-b'>
 											<td className='p-4'>

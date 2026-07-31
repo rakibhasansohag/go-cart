@@ -1,0 +1,4 @@
+interface:
+  display_name: "TanStack Query for Next.js"
+  short_description: "TanStack Query v5 patterns for Next.js App Router"
+  default_prompt: "Implement this Next.js data flow with TanStack Query v5 prefetching, hydration, mutations, and targeted invalidation."

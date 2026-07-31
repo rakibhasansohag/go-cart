@@ -1,47 +1,52 @@
 'use client';
 import { Button } from '@/components/store/ui/button';
-import { useRouter } from 'next/navigation';
 import {
 	useStripe,
 	useElements,
 	PaymentElement,
 } from '@stripe/react-stripe-js';
-import { FormEvent, useEffect, useState } from 'react';
+import { FormEvent, useCallback, useEffect, useState } from 'react';
 import {
-	createStripePayment,
 	createStripePaymentIntent,
+	verifyStripePayment,
 } from '@/queries/stripe';
 import { toast } from 'sonner';
+import { useQueryClient } from '@tanstack/react-query';
+import { invalidatePaymentQueries } from '@/lib/payments/query-sync';
+
+function getErrorMessage(error: unknown, fallback: string) {
+	return error instanceof Error ? error.message : fallback;
+}
 
 export default function StripePayment({ orderId }: { orderId: string }) {
-	const router = useRouter();
+	const queryClient = useQueryClient();
 	const stripe = useStripe();
 	const elements = useElements();
 	const [errorMessage, setErrorMessage] = useState<string>();
 	const [clientSecret, setClientSecret] = useState<string | null>(null);
 	const [loading, setLoading] = useState<boolean>(false);
-	const [userId, setUserId] = useState<string | null>(null);
 
-	useEffect(() => {
-		getClientSecret();
-	}, [orderId]);
-
-	const getClientSecret = async () => {
+	const getClientSecret = useCallback(async () => {
 		try {
 			const res = await createStripePaymentIntent(orderId);
 			if (res.clientSecret) setClientSecret(res.clientSecret);
-			if (res.userId) setUserId(res.userId);
-		} catch (err: any) {
-			setErrorMessage(err.message || 'Failed to initialize payment.');
+		} catch (error: unknown) {
+			setErrorMessage(
+				getErrorMessage(error, 'Failed to initialize payment.'),
+			);
 		}
-	};
+	}, [orderId]);
+
+	useEffect(() => {
+		void getClientSecret();
+	}, [getClientSecret]);
 
 	const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
 		event.preventDefault();
 		setLoading(true);
 
-		if (!stripe || !elements || !userId) {
-			setErrorMessage('Payment not initialized. User session missing.');
+		if (!stripe || !elements) {
+			setErrorMessage('Secure payment is still initializing. Please wait.');
 			setLoading(false);
 			return;
 		}
@@ -66,12 +71,14 @@ export default function StripePayment({ orderId }: { orderId: string }) {
 
 			if (!error && paymentIntent) {
 				try {
-					const res = await createStripePayment(orderId, paymentIntent, userId);
-					if (!res.paymentDetails?.paymentInetntId) throw new Error('Payment confirmation failed.');
-					toast.success('Payment completed successfully!');
-					router.refresh();
-				} catch (error: any) {
-					const msg = error.message || error.toString();
+					await verifyStripePayment(orderId);
+					await invalidatePaymentQueries(queryClient, orderId);
+					toast.success('Payment confirmed. Your order is ready!');
+				} catch (error: unknown) {
+					const msg = getErrorMessage(
+						error,
+						'Payment confirmation failed.',
+					);
 					setErrorMessage(msg);
 					toast.error(msg);
 				}
@@ -97,7 +104,16 @@ export default function StripePayment({ orderId }: { orderId: string }) {
 	}
 
 	return (
-		<form onSubmit={handleSubmit} className='bg-card p-4 rounded-xl border border-border/60 space-y-3'>
+		<form
+			onSubmit={handleSubmit}
+			className='space-y-3 rounded-xl border border-border/60 bg-card p-4 text-card-foreground'
+		>
+			<div>
+				<p className='text-xs font-semibold text-foreground'>Pay securely by card</p>
+				<p className='mt-0.5 text-[11px] text-muted-foreground'>
+					Your card details are handled by Stripe and never stored by GoCart.
+				</p>
+			</div>
 			{clientSecret && <PaymentElement />}
 			{errorMessage && (
 				<div className='text-xs font-semibold text-red-500 bg-red-500/10 p-2.5 rounded-lg border border-red-500/20'>
@@ -105,9 +121,8 @@ export default function StripePayment({ orderId }: { orderId: string }) {
 				</div>
 			)}
 			<Button
-				variant='black'
 				disabled={!stripe || loading}
-				className='w-full h-11 text-xs font-bold rounded-xl disabled:opacity-50 cursor-pointer'
+				className='h-11 w-full cursor-pointer rounded-xl bg-primary text-xs font-bold text-primary-foreground hover:bg-primary/90 disabled:opacity-50'
 			>
 				{loading ? 'Processing Payment...' : 'Pay Now'}
 			</Button>

@@ -44,7 +44,7 @@ export default function DownloadApp() {
 											src={AppStoreIcon}
 											alt='App store'
 											width={80}
-											height={80}
+											style={{ height: 'auto' }}
 										/>
 									</Link>
 									<Link
@@ -55,7 +55,7 @@ export default function DownloadApp() {
 											src={GooglePlayIcon}
 											alt='Play store'
 											width={80}
-											height={80}
+											style={{ height: 'auto' }}
 										/>
 									</Link>
 								</div>

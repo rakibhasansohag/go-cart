@@ -1,130 +1,136 @@
 'use server';
 
-import { db } from '@/lib/db';
-import { currentUser } from '@clerk/nextjs/server';
-import { PaymentIntent } from '@stripe/stripe-js';
-import Stripe from 'stripe';
+import { assertPaymentAmount, requireOwnedOrder } from '@/lib/payments/security';
+import { reconcilePaymentEvent } from '@/lib/payments/reconcile';
+import { getStripeClient } from '@/lib/payments/stripe-client';
+import type { PaymentStatus } from '@prisma/client';
+import type Stripe from 'stripe';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
-	apiVersion: '2025-10-29.clover',
-});
+function paymentStatusFromIntent(
+	status: Stripe.PaymentIntent.Status,
+): PaymentStatus {
+	switch (status) {
+		case 'succeeded':
+			return 'Paid';
+		case 'canceled':
+			return 'Cancelled';
+		case 'requires_payment_method':
+			return 'Failed';
+		default:
+			return 'Pending';
+	}
+}
 
-// STRIPE CHECK LIST WITH THIS ORDER DETAILS
-// TODO : http://localhost:3000/order/5f608838-fcc1-48d1-b0ec-feae3f4d4f14
+function assertIntentMatchesOrder(
+	order: Awaited<ReturnType<typeof requireOwnedOrder>>,
+	intent: Stripe.PaymentIntent,
+) {
+	if (intent.metadata.orderId !== order.id) {
+		throw new Error('Stripe payment does not belong to this order.');
+	}
 
-export const createStripePaymentIntent = async (orderId: string) => {
-	try {
-		// Get current user
-		const user = await currentUser();
+	assertPaymentAmount(order.total, intent.amount / 100, intent.currency);
+}
 
-		console.log(
-			'createStripePaymentIntent called. currentUser():',
-			await currentUser(),
+export async function createStripePaymentIntent(orderId: string) {
+	const order = await requireOwnedOrder(orderId, { requirePayable: true });
+	const stripe = getStripeClient();
+
+	if (
+		order.paymentDetails?.paymentMethod === 'Stripe' &&
+		order.paymentDetails.paymentInetntId.startsWith('pi_')
+	) {
+		const existingIntent = await stripe.paymentIntents.retrieve(
+			order.paymentDetails.paymentInetntId,
 		);
 
-		// Ensure user is authenticated
-		if (!user) throw new Error('Unauthenticated.');
+		if (
+			existingIntent.status !== 'canceled' &&
+			existingIntent.client_secret
+		) {
+			assertIntentMatchesOrder(order, existingIntent);
+			return {
+				paymentIntentId: existingIntent.id,
+				clientSecret: existingIntent.client_secret,
+			};
+		}
+	}
 
-		// Fetch the order to get total price
-		const order = await db.order.findUnique({
-			where: {
-				id: orderId,
-			},
-		});
-
-		if (!order) throw new Error('Order not found.');
-
-		console.log('order[stripe]:=>', order);
-
-		const paymentIntent = await stripe.paymentIntents.create({
+	const idempotencyKey = `stripe-intent:${order.id}:${order.updatedAt.getTime()}`;
+	const paymentIntent = await stripe.paymentIntents.create(
+		{
 			amount: Math.round(order.total * 100),
 			currency: 'usd',
 			automatic_payment_methods: { enabled: true },
-		});
+			metadata: { orderId: order.id },
+		},
+		{ idempotencyKey },
+	);
 
-		return {
-			paymentIntentId: paymentIntent.id,
-			clientSecret: paymentIntent.client_secret,
-			userId: user.id,
-		};
-	} catch (error) {
-		throw error;
+	await reconcilePaymentEvent({
+		orderId: order.id,
+		provider: 'Stripe',
+		providerEventId: `stripe:intent-created:${paymentIntent.id}`,
+		providerPaymentId: paymentIntent.id,
+		eventType: 'payment_intent.created',
+		providerStatus: paymentIntent.status,
+		paymentStatus: 'Pending',
+		amount: paymentIntent.amount / 100,
+		currency: paymentIntent.currency,
+		verifyOrderAmount: true,
+	});
+
+	return {
+		paymentIntentId: paymentIntent.id,
+		clientSecret: paymentIntent.client_secret,
+	};
+}
+
+export async function verifyStripePayment(orderId: string) {
+	const order = await requireOwnedOrder(orderId);
+
+	if (
+		!order.paymentDetails ||
+		order.paymentDetails.paymentMethod !== 'Stripe'
+	) {
+		throw new Error('Stripe payment has not been initialized for this order.');
 	}
-};
 
-export const createStripePayment = async (
-	orderId: string,
-	paymentIntent: PaymentIntent,
-	userId: string,
-) => {
-	try {
-		// Ensure user is authenticated
-		if (!userId) throw new Error('Unauthenticated.');
+	const stripe = getStripeClient();
+	const paymentIntent = await stripe.paymentIntents.retrieve(
+		order.paymentDetails.paymentInetntId,
+	);
+	assertIntentMatchesOrder(order, paymentIntent);
 
-		// Fetch the order to get total price
-		const order = await db.order.findUnique({
-			where: {
-				id: orderId,
-			},
-		});
+	const paymentStatus = paymentStatusFromIntent(paymentIntent.status);
+	const result = await reconcilePaymentEvent({
+		orderId: order.id,
+		provider: 'Stripe',
+		providerEventId: `stripe:verified:${paymentIntent.id}:${paymentIntent.status}`,
+		providerPaymentId: paymentIntent.id,
+		eventType: 'payment_intent.server_verified',
+		providerStatus: paymentIntent.status,
+		paymentStatus,
+		amount: paymentIntent.amount / 100,
+		currency: paymentIntent.currency,
+		verifyOrderAmount: paymentStatus === 'Paid',
+	});
 
-		if (!order) throw new Error('Order not found.');
-
-		const intentAmount = Number(paymentIntent.amount ?? 0);
-		const amountDollars = intentAmount / 100;
-
-		const updatedPaymentDetails = await db.paymentDetails.upsert({
-			where: {
-				orderId,
-			},
-			update: {
-				paymentInetntId: paymentIntent.id,
-				paymentMethod: 'Stripe',
-				// amount: paymentIntent.amount,
-				amount: amountDollars,
-				currency: paymentIntent.currency,
-				status:
-					paymentIntent.status === 'succeeded'
-						? 'Completed'
-						: paymentIntent.status,
-				userId: userId,
-			},
-			create: {
-				paymentInetntId: paymentIntent.id,
-				paymentMethod: 'Stripe',
-				// amount: paymentIntent.amount,
-				amount: amountDollars,
-				currency: paymentIntent.currency,
-				status:
-					paymentIntent.status === 'succeeded'
-						? 'Completed'
-						: paymentIntent.status,
-				orderId: orderId,
-				userId: userId,
-			},
-		});
-
-		// Update the order with payment details
-		const updatedOrder = await db.order.update({
-			where: {
-				id: orderId,
-			},
-			data: {
-				paymentStatus: paymentIntent.status === 'succeeded' ? 'Paid' : 'Failed',
-				paymentMethod: 'Stripe',
-				paymentDetails: {
-					connect: {
-						id: updatedPaymentDetails.id,
-					},
-				},
-			},
-			include: {
-				paymentDetails: true,
-			},
-		});
-
-		return updatedOrder;
-	} catch (error) {
-		throw error;
+	if (paymentStatus !== 'Paid') {
+		throw new Error(
+			paymentStatus === 'Pending'
+				? 'Your payment is still processing. We will update this order automatically.'
+				: 'Stripe could not confirm this payment. Please try another payment method.',
+		);
 	}
-};
+
+	return result.order;
+}
+
+/**
+ * Backward-compatible server action name. The browser no longer supplies a
+ * PaymentIntent or user ID; Stripe is queried and verified on the server.
+ */
+export async function createStripePayment(orderId: string) {
+	return verifyStripePayment(orderId);
+}

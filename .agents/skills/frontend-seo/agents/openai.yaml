@@ -1,0 +1,4 @@
+interface:
+  display_name: "Frontend SEO"
+  short_description: "Next.js SEO, semantics, and accessibility guidance"
+  default_prompt: "Review or implement this frontend change using semantic HTML, accessible structure, and Next.js SEO best practices."

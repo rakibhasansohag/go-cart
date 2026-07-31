@@ -21,6 +21,12 @@ export const queryKeys = {
 		history: (ids: string[], page: number) => ['profile', 'history', { ids, page }] as const,
 		addresses: () => ['profile', 'addresses'] as const,
 	},
+	orders: {
+		detail: (orderId: string) => ['orders', 'detail', orderId] as const,
+	},
+	payments: {
+		order: (orderId: string) => ['payments', 'order', orderId] as const,
+	},
 	categories: {
 		all: () => ['categories'] as const,
 		withSubs: () => ['categories', 'withSubs'] as const,

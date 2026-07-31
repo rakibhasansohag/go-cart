@@ -109,33 +109,33 @@ Goal: prefetch on server, `useSuspenseQuery` on client, `useMutation` + cache in
 Goal: make server-verified provider events the source of truth for payment state before adding automated refunds.
 
 - [ ] **Phase 9.1 — Authorization and ownership**
-  - [ ] Require the authenticated customer to own the order before creating or capturing a payment
-  - [ ] Verify order eligibility, amount, currency, and current payment state on the server
-  - [ ] Stop accepting trusted user IDs or payment status values from the browser
+  - [x] Require the authenticated customer to own the order before creating or capturing a payment
+  - [x] Verify order eligibility, amount, currency, and current payment state on the server
+  - [x] Stop accepting trusted user IDs or payment status values from the browser
   - **Test**: A customer cannot create, capture, inspect, or update payment data for another customer's order
 
 - [ ] **Phase 9.2 — Payment event and idempotency model**
-  - [ ] Add a payment-event/audit model with provider event ID, order ID, event type, amount, currency, status, and timestamps
-  - [ ] Add unique constraints for provider event IDs and payment intent/capture IDs
-  - [ ] Define safe retry and duplicate-event behavior
+  - [x] Add a payment-event/audit model with provider event ID, order ID, event type, amount, currency, status, and timestamps
+  - [x] Add unique constraints for provider event IDs and payment intent/capture IDs
+  - [x] Define safe retry and duplicate-event behavior
   - **Test**: Replaying the same provider event does not duplicate payments or order updates
 
 - [ ] **Phase 9.3 — Stripe webhook**
-  - [ ] Add a dedicated Stripe webhook route with signature verification
-  - [ ] Reconcile successful, failed, cancelled, and refunded payments from verified webhook events
-  - [ ] Update `Order`, `PaymentDetails`, and audit records transactionally
+  - [x] Add a dedicated Stripe webhook route with signature verification
+  - [x] Reconcile successful, failed, cancelled, and refunded payments from verified webhook events
+  - [x] Update `Order`, `PaymentDetails`, and audit records transactionally
   - **Test**: Verified events update the correct order once; invalid signatures and mismatched amounts are rejected
 
 - [ ] **Phase 9.4 — PayPal verification/webhook**
-  - [ ] Verify PayPal captures on the server and add provider webhook handling
-  - [ ] Reconcile successful, failed, reversed, and refunded captures
-  - [ ] Update `Order`, `PaymentDetails`, and audit records transactionally
+  - [x] Verify PayPal captures on the server and add provider webhook handling
+  - [x] Reconcile successful, failed, reversed, and refunded captures
+  - [x] Update `Order`, `PaymentDetails`, and audit records transactionally
   - **Test**: A browser-supplied capture response cannot mark an order as paid without provider verification
 
 - [ ] **Phase 9.5 — Query synchronization**
-  - [ ] Add centralized payment and order query keys where missing
-  - [ ] Prefetch payment/order state on relevant server pages
-  - [ ] Invalidate the customer order, payment history, seller order, and admin order caches after reconciled changes
+  - [x] Add centralized payment and order query keys where missing
+  - [x] Prefetch payment/order state on relevant server pages
+  - [x] Invalidate the customer order, payment history, seller order, and admin order caches after reconciled changes
   - **Test**: Payment status changes appear across customer and dashboard views without a manual reload
 
 ---

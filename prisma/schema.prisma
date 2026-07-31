@@ -502,6 +502,7 @@ model Order {
 
   paymentMethod  PaymentMethod?
   paymentDetails PaymentDetails? @relation("PaymentDetailsToOrder")
+  paymentEvents  PaymentEvent[]  @relation("PaymentEventsToOrder")
 
   shippingAddressId String
   shippingAddress   ShippingAddress @relation("ShippingAddressToOrder", fields: [shippingAddressId], references: [id])
@@ -645,13 +646,13 @@ model Wishlist {
 }
 
 model Coupon {
-  id        String @id @default(uuid())
-  code      String @unique
-  startDate String
-  endDate   String
-  discount  Int
-  maxUses         Int    @default(0)
-  maxUsesPerUser  Int    @default(1)
+  id             String @id @default(uuid())
+  code           String @unique
+  startDate      String
+  endDate        String
+  discount       Int
+  maxUses        Int    @default(0)
+  maxUsesPerUser Int    @default(1)
 
   storeId String?
   store   Store?  @relation("CouponToStore", fields: [storeId], references: [id], onDelete: Cascade)
@@ -670,11 +671,12 @@ model Coupon {
 model PaymentDetails {
   id String @id @default(uuid())
 
-  paymentInetntId String
-  paymentMethod   String
-  status          String
-  amount          Float
-  currency        String
+  paymentInetntId   String  @unique
+  providerCaptureId String? @unique
+  paymentMethod     String
+  status            String
+  amount            Float
+  currency          String
 
   orderId String @unique
   order   Order  @relation("PaymentDetailsToOrder", fields: [orderId], references: [id], onDelete: Cascade)
@@ -687,4 +689,27 @@ model PaymentDetails {
 
   @@index([orderId])
   @@index([userId])
+}
+
+model PaymentEvent {
+  id String @id @default(uuid())
+
+  provider          PaymentMethod
+  providerEventId   String        @unique
+  providerPaymentId String?
+  eventType         String
+  status            String
+  amount            Float?
+  currency          String?
+  metadata          Json?
+
+  orderId String
+  order   Order  @relation("PaymentEventsToOrder", fields: [orderId], references: [id], onDelete: Cascade)
+
+  processedAt DateTime @default(now())
+  createdAt   DateTime @default(now())
+
+  @@index([orderId])
+  @@index([provider, providerPaymentId])
+  @@index([eventType])
 }

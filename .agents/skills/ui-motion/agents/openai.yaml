@@ -1,0 +1,4 @@
+interface:
+  display_name: "UI Motion"
+  short_description: "Accessible UI motion and micro-interaction guidance"
+  default_prompt: "Implement polished, accessible UI motion that supports the interaction without distracting users."
