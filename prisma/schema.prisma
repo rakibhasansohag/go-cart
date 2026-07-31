@@ -91,6 +91,9 @@ model Store {
   numReviews                          Int         @default(0)
   featured                            Boolean     @default(false)
   returnPolicy                        String      @default("Return in 30 days.")
+  returnsAccepted                     Boolean     @default(true)
+  returnWindowDays                    Int         @default(30)
+  returnShippingFees                  Boolean     @default(false)
   defaultShippingService              String      @default("International Delivery")
   defaultShippingFeePerItem           Float       @default(0)
   defaultShippingFeeForAdditionalItem Float       @default(0)
@@ -620,7 +623,8 @@ model OrderItem {
   orderGroupId String
   orderGroup   OrderGroup @relation("OrderItemToGroup", fields: [orderGroupId], references: [id], onDelete: Cascade)
 
-  status ProductStatus @default(Pending)
+  status      ProductStatus @default(Pending)
+  deliveredAt DateTime?
 
   returnItems ReturnItem[] @relation("ReturnItemToOrderItem")
 
@@ -628,6 +632,7 @@ model OrderItem {
   updatedAt DateTime @updatedAt
 
   @@index([orderGroupId])
+  @@index([status, deliveredAt])
 }
 
 model Wishlist {
@@ -792,9 +797,13 @@ model ReturnRequest {
   sellerNote   String? @db.Text
   adminNote    String? @db.Text
 
-  requestedAmount Float
-  approvedAmount  Float?
-  currency        String @default("USD")
+  requestedAmount   Float
+  requestedSubtotal Float  @default(0)
+  requestedShipping Float  @default(0)
+  requestedDiscount Float  @default(0)
+  requestedTax      Float  @default(0)
+  approvedAmount    Float?
+  currency          String @default("USD")
 
   respondBy   DateTime?
   returnBy    DateTime?
@@ -841,6 +850,8 @@ model ReturnItem {
   restockedQuantity Int      @default(0)
   unitAmount        Float
   shippingAmount    Float    @default(0)
+  discountAmount    Float    @default(0)
+  taxAmount         Float    @default(0)
   requestedAmount   Float
   approvedAmount    Float?
   restockable       Boolean?

@@ -171,12 +171,25 @@ overlapping active return requests are rejected without leaving test records.
 exist. Customer-facing return screens intentionally begin after Phase 10.2
 adds ownership, delivery, return-window, quantity, and amount validation.
 
-- [ ] **Phase 10.2 — Eligibility and transactional business rules**
-  - [ ] Enforce ownership, delivered-item status, return window, store policy, and refundable quantity
-  - [ ] Calculate refundable item, shipping, coupon, tax, and partial-refund amounts on the server
-  - [ ] Implement transactional state transitions with an append-only audit trail
-  - [ ] Prevent sellers from acting on requests belonging to another store
+- [x] **Phase 10.2 — Eligibility and transactional business rules**
+  - [x] Enforce ownership, delivered-item status, return window, store policy, and refundable quantity
+  - [x] Calculate refundable item, shipping, coupon, tax, and partial-refund amounts on the server
+  - [x] Implement transactional state transitions with an append-only audit trail
+  - [x] Prevent sellers from acting on requests belonging to another store
   - **Test**: Invalid transitions, expired requests, excess quantities, and cross-store access are rejected
+
+**Phase 10.2 acceptance (July 31, 2026):** Server-owned eligibility and
+refund calculations, runtime input validation, store-scoped authorization,
+concurrency-safe transitions, and append-only audit events are implemented.
+The focused return suite passes 17/17 tests, the full suite passes 28/28, and
+a real Neon create → review → audit transaction passed before rolling back
+cleanly with no test records retained.
+
+**Manual checkpoint before Phase 10.3:** Stop the existing development server
+once so Windows releases Prisma's query-engine file, then run `bun dev`. Confirm
+`bun --no-env-file x prisma migrate status` reports the database is up to date.
+There is intentionally no customer return form yet; Phase 10.3 will connect
+these server rules to the order details and customer Returns Center.
 
 - [ ] **Phase 10.3 — Customer Returns Center**
   - [ ] Add return initiation from eligible order items

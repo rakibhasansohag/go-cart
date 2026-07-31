@@ -146,9 +146,12 @@ export const updateOrderItemStatus = async (
 	}
 
 	// Retrieve the product item to be updated
-	const product = await db.orderItem.findUnique({
+	const product = await db.orderItem.findFirst({
 		where: {
 			id: orderItemId,
+			orderGroup: {
+				storeId,
+			},
 		},
 	});
 
@@ -162,6 +165,9 @@ export const updateOrderItemStatus = async (
 		},
 		data: {
 			status,
+			...(status === ProductStatus.Delivered && !product.deliveredAt
+				? { deliveredAt: new Date() }
+				: {}),
 		},
 	});
 
