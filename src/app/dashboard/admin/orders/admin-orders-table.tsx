@@ -11,13 +11,29 @@ import PaymentStatusTag from '@/components/shared/payment-status';
 import OrderStatusTag from '@/components/shared/order-status';
 import { PaymentStatus, OrderStatus } from '@/lib/types';
 import { format } from 'date-fns';
+import { formatOrderId, formatPackageId } from '@/lib/utils';
 
-const adminOrderColumns: ColumnDef<any>[] = [
+type AdminOrder = Awaited<
+	ReturnType<typeof getAllAdminOrders>
+>['orders'][number];
+
+const adminOrderColumns: ColumnDef<AdminOrder>[] = [
 	{
-		accessorKey: 'id',
+		accessorKey: 'orderId',
 		header: 'Order ID',
 		cell: ({ row }) => (
-			<span className='font-medium text-xs font-mono'>{row.original.id}</span>
+			<span className='whitespace-nowrap font-mono text-xs font-semibold'>
+				{formatOrderId(row.original.order.id)}
+			</span>
+		),
+	},
+	{
+		accessorKey: 'id',
+		header: 'Package ID',
+		cell: ({ row }) => (
+			<span className='whitespace-nowrap rounded-md border border-border/60 bg-muted/40 px-2 py-1 font-mono text-xs font-semibold'>
+				{formatPackageId(row.original.id)}
+			</span>
 		),
 	},
 	{
@@ -25,6 +41,20 @@ const adminOrderColumns: ColumnDef<any>[] = [
 		header: 'Store',
 		cell: ({ row }) => (
 			<span className='font-medium text-sm'>{row.original.store?.name || 'N/A'}</span>
+		),
+	},
+	{
+		accessorKey: 'seller',
+		header: 'Seller',
+		cell: ({ row }) => (
+			<div className='min-w-36'>
+				<p className='text-xs font-semibold'>
+					{row.original.store.user?.name || 'Seller'}
+				</p>
+				<p className='text-[10px] text-muted-foreground'>
+					{row.original.store.user?.email || ''}
+				</p>
+			</div>
 		),
 	},
 	{
@@ -43,29 +73,43 @@ const adminOrderColumns: ColumnDef<any>[] = [
 	},
 	{
 		accessorKey: 'items',
-		header: 'Items',
+		header: 'Products',
 		cell: ({ row }) => {
-			const images = (row.original.items || []).map((item: any) => item.image);
+			const items = row.original.items || [];
+			const firstItem = items[0];
 			return (
-				<div className='flex items-center -space-x-2 overflow-hidden'>
-					{images.slice(0, 3).map((img: string, i: number) => (
+				<div className='flex min-w-44 items-center gap-2'>
+					{firstItem && (
 						<Image
-							key={i}
-							src={img}
-							alt=''
-							width={28}
-							height={28}
-							className='inline-block h-7 w-7 rounded-full ring-2 ring-background object-cover'
+							src={firstItem.image}
+							alt={firstItem.name}
+							width={32}
+							height={32}
+							className='h-8 w-8 rounded-md border border-border object-cover'
 						/>
-					))}
-					{images.length > 3 && (
-						<span className='flex h-7 w-7 items-center justify-center rounded-full bg-muted text-[10px] font-semibold ring-2 ring-background'>
-							+{images.length - 3}
-						</span>
 					)}
+					<div className='min-w-0'>
+						<p className='max-w-36 truncate text-xs font-semibold'>
+							{firstItem?.name || 'No products'}
+						</p>
+						<p className='text-[10px] text-muted-foreground'>
+							{firstItem ? `SKU ${firstItem.sku}` : ''}
+							{items.length > 1 ? ` · +${items.length - 1} more` : ''}
+						</p>
+					</div>
 				</div>
 			);
 		},
+	},
+	{
+		accessorKey: 'payment',
+		header: 'Payment',
+		cell: ({ row }) => (
+			<PaymentStatusTag
+				status={row.original.order.paymentStatus as PaymentStatus}
+				isTable
+			/>
+		),
 	},
 	{
 		accessorKey: 'total',
@@ -77,8 +121,17 @@ const adminOrderColumns: ColumnDef<any>[] = [
 		),
 	},
 	{
+		accessorKey: 'orderStatus',
+		header: 'Overall',
+		cell: ({ row }) => (
+			<OrderStatusTag
+				status={row.original.order.orderStatus as OrderStatus}
+			/>
+		),
+	},
+	{
 		accessorKey: 'status',
-		header: 'Order Status',
+		header: 'Package',
 		cell: ({ row }) => (
 			<OrderStatusTag status={row.original.status as OrderStatus} />
 		),
@@ -96,7 +149,7 @@ const adminOrderColumns: ColumnDef<any>[] = [
 
 interface AdminOrdersTableProps {
 	initialData?: {
-		orders: any[];
+		orders: AdminOrder[];
 		totalCount: number;
 		totalPages: number;
 		page: number;
@@ -131,7 +184,7 @@ export default function AdminOrdersTable({ initialData }: AdminOrdersTableProps)
 				filterValue='id'
 				data={orders}
 				columns={adminOrderColumns}
-				searchPlaceholder='Search by Order ID, store or customer...'
+				searchPlaceholder='Search order, package, store, seller, customer, product or SKU...'
 				totalCount={totalCount}
 				pageCount={totalPages}
 				pageIndex={page - 1}

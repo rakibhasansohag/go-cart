@@ -185,7 +185,7 @@ export default function DataTable<TData, TValue>({
 			)}
 
 			{/* Table */}
-			<div className='border bg-background rounded-lg relative'>
+			<div className='overflow-x-auto border bg-background rounded-lg relative'>
 				<Table className=''>
 					{/* Table header */}
 					<TableHeader>

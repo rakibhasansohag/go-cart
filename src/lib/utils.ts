@@ -6,24 +6,11 @@ import ColorThief from 'colorthief';
 import { CartProductType, Country } from './types';
 import countries from '@/data/countries.json';
 import { differenceInDays, differenceInHours } from 'date-fns';
+export { formatOrderId, formatPackageId } from './orders/references';
 
 export function cn(...inputs: ClassValue[]) {
 	return twMerge(clsx(inputs));
 }
-
-// Helper: format UUID into clean order serial number e.g. #ORD-94139F7
-export const formatOrderId = (id: string) => {
-	if (!id) return '';
-	const clean = id.replace(/-/g, '').toUpperCase();
-	return `#ORD-${clean.slice(-7)}`;
-};
-
-// Order groups are customer packages, so use a distinct reference.
-export const formatPackageId = (id: string) => {
-	if (!id) return '';
-	const clean = id.replace(/-/g, '').toUpperCase();
-	return `#PKG-${clean.slice(-7)}`;
-};
 
 // Point :  Helper function to generate a unique slug
 export const generateUniqueSlug = async (
@@ -166,10 +153,7 @@ export const isProductValidToAdd = (product: CartProductType): boolean => {
 		sizeId,
 		size,
 		stock,
-		shippingFee,
-		extraShippingFee,
 		shippingMethod,
-		shippingService,
 		variantImage,
 		weight,
 		deliveryTimeMin,
@@ -211,7 +195,7 @@ export const updateProductHistory = (variantId: string) => {
 	if (historyString) {
 		try {
 			productHistory = JSON.parse(historyString);
-		} catch (error) {
+		} catch {
 			productHistory = [];
 		}
 	}

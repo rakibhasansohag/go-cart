@@ -18,7 +18,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/query-keys';
 import OrderTableHeader from './order-table-header';
-import { formatOrderId } from '@/lib/utils';
+import { formatOrderId, formatPackageId } from '@/lib/utils';
 
 export function OrdersTableSkeleton() {
 	return (
@@ -29,6 +29,7 @@ export function OrdersTableSkeleton() {
 						<thead>
 							<tr>
 								<th className='border-y p-4 text-sm font-semibold'>Order</th>
+								<th className='border-y p-4 text-sm font-semibold'>Packages</th>
 								<th className='border-y p-4 text-sm font-semibold'>Products</th>
 								<th className='border-y p-4 text-sm font-semibold'>Items</th>
 								<th className='border-y p-4 text-sm font-semibold'>Payment</th>
@@ -45,6 +46,9 @@ export function OrdersTableSkeleton() {
 											<Skeleton className='h-4 w-20' />
 											<Skeleton className='h-3 w-32' />
 										</div>
+									</td>
+									<td className='p-4'>
+										<Skeleton className='h-6 w-24 rounded-md' />
 									</td>
 									<td className='p-4'>
 										<div className='flex gap-1'>
@@ -179,6 +183,9 @@ function OrdersTableContent({
 										Order
 									</th>
 									<th className='cursor-pointer text-sm border-y p-4'>
+										Packages
+									</th>
+									<th className='cursor-pointer text-sm border-y p-4'>
 										Products
 									</th>
 									<th className='cursor-pointer text-sm border-y p-4'>
@@ -217,6 +224,23 @@ function OrdersTableContent({
 															Placed on: {new Date(order.createdAt).toDateString()}
 														</p>
 													</div>
+												</div>
+											</td>
+											<td className='p-4'>
+												<div className='flex max-w-48 flex-wrap gap-1.5'>
+													{order.groups.slice(0, 2).map((group) => (
+														<span
+															key={group.id}
+															className='rounded-md border border-border/60 bg-muted/40 px-2 py-1 font-mono text-[10px] font-semibold text-muted-foreground'
+														>
+															{formatPackageId(group.id)}
+														</span>
+													))}
+													{order.groups.length > 2 && (
+														<span className='rounded-md bg-muted px-2 py-1 text-[10px] font-semibold text-muted-foreground'>
+															+{order.groups.length - 2}
+														</span>
+													)}
 												</div>
 											</td>
 											<td>

@@ -15,6 +15,7 @@ import {
 import { currentUser } from '@clerk/nextjs/server';
 import { subMonths, subYears } from 'date-fns';
 import { unstable_cache } from 'next/cache';
+import { normalizeCommerceReference } from '@/lib/orders/references';
 
 // Cached handler for getUserOrders
 const fetchUserOrdersFromDb = unstable_cache(
@@ -56,16 +57,34 @@ const fetchUserOrdersFromDb = unstable_cache(
 			whereClause.AND.push({ createdAt: { gte: subYears(now, 2) } });
 
 		if (search.trim()) {
+			const textSearch = search.trim();
+			const referenceSearch = normalizeCommerceReference(textSearch);
 			whereClause.AND.push({
 				OR: [
 					{
-						id: { contains: search },
+						id: {
+							contains: referenceSearch,
+							mode: 'insensitive',
+						},
+					},
+					{
+						groups: {
+							some: {
+								id: {
+									contains: referenceSearch,
+									mode: 'insensitive',
+								},
+							},
+						},
 					},
 					{
 						groups: {
 							some: {
 								store: {
-									name: { contains: search },
+									name: {
+										contains: textSearch,
+										mode: 'insensitive',
+									},
 								},
 							},
 						},
@@ -75,7 +94,20 @@ const fetchUserOrdersFromDb = unstable_cache(
 							some: {
 								items: {
 									some: {
-										name: { contains: search },
+										OR: [
+											{
+												name: {
+													contains: textSearch,
+													mode: 'insensitive',
+												},
+											},
+											{
+												sku: {
+													contains: textSearch,
+													mode: 'insensitive',
+												},
+											},
+										],
 									},
 								},
 							},

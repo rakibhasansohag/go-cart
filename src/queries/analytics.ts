@@ -1,6 +1,7 @@
 'use server';
 
 import { db } from '@/lib/db';
+import { normalizeCommerceReference } from '@/lib/orders/references';
 import { currentUser } from '@clerk/nextjs/server';
 
 export type MonthlyRevenueData = {
@@ -439,14 +440,94 @@ export const getAllAdminOrders = async ({
 	}
 
 	const skip = Math.max(0, (page - 1) * limit);
+	const textSearch = search.trim();
+	const referenceSearch = normalizeCommerceReference(textSearch);
 
-	const where = search.trim()
+	const where = textSearch
 		? {
 				OR: [
-					{ id: { contains: search.trim(), mode: 'insensitive' as const } },
-					{ store: { name: { contains: search.trim(), mode: 'insensitive' as const } } },
-					{ order: { user: { name: { contains: search.trim(), mode: 'insensitive' as const } } } },
-					{ order: { user: { email: { contains: search.trim(), mode: 'insensitive' as const } } } },
+					{
+						id: {
+							contains: referenceSearch,
+							mode: 'insensitive' as const,
+						},
+					},
+					{
+						order: {
+							id: {
+								contains: referenceSearch,
+								mode: 'insensitive' as const,
+							},
+						},
+					},
+					{
+						store: {
+							name: {
+								contains: textSearch,
+								mode: 'insensitive' as const,
+							},
+						},
+					},
+					{
+						store: {
+							user: {
+								OR: [
+									{
+										name: {
+											contains: textSearch,
+											mode: 'insensitive' as const,
+										},
+									},
+									{
+										email: {
+											contains: textSearch,
+											mode: 'insensitive' as const,
+										},
+									},
+								],
+							},
+						},
+					},
+					{
+						order: {
+							user: {
+								OR: [
+									{
+										name: {
+											contains: textSearch,
+											mode: 'insensitive' as const,
+										},
+									},
+									{
+										email: {
+											contains: textSearch,
+											mode: 'insensitive' as const,
+										},
+									},
+								],
+							},
+						},
+					},
+					{
+						items: {
+							some: {
+								OR: [
+									{
+										name: {
+											contains: textSearch,
+											mode: 'insensitive' as const,
+										},
+									},
+									{
+										sku: {
+											contains: textSearch,
+											mode: 'insensitive' as const,
+										},
+									},
+								],
+							},
+						},
+					},
 				],
 		  }
 		: {};
@@ -458,7 +539,17 @@ export const getAllAdminOrders = async ({
 			skip,
 			take: limit,
 			include: {
-				store: true,
+				store: {
+					include: {
+						user: {
+							select: {
+								id: true,
+								name: true,
+								email: true,
+							},
+						},
+					},
+				},
 				coupon: true,
 				items: true,
 				order: {

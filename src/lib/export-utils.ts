@@ -1,11 +1,12 @@
 import { StoreOrderType } from '@/lib/types';
-import { formatOrderId } from '@/lib/utils';
+import { formatOrderId, formatPackageId } from '@/lib/utils';
 
 export function exportOrdersToCSV(orders: StoreOrderType[], filenamePrefix = 'store-orders') {
 	if (!orders || orders.length === 0) return;
 
 	const headers = [
 		'Order ID',
+		'Package ID',
 		'Date',
 		'Customer Name',
 		'Customer Email',
@@ -26,7 +27,8 @@ export function exportOrdersToCSV(orders: StoreOrderType[], filenamePrefix = 'st
 		});
 
 		return [
-			`"${formatOrderId(group.id)}"`,
+			`"${formatOrderId(group.order.id)}"`,
+			`"${formatPackageId(group.id)}"`,
 			`"${dateStr}"`,
 			`"${fullName.replace(/"/g, '""')}"`,
 			`"${email.replace(/"/g, '""')}"`,

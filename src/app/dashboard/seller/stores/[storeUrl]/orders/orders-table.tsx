@@ -89,7 +89,7 @@ export default function OrdersTable({ storeUrl, initialData }: OrdersTableProps)
 				filterValue='id'
 				data={orders}
 				columns={columns}
-				searchPlaceholder='Search order by ID or customer email...'
+				searchPlaceholder='Search order, package, customer, product or SKU...'
 				totalCount={totalCount}
 				pageCount={totalPages}
 				pageIndex={page - 1}

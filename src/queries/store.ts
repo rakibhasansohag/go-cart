@@ -1,10 +1,11 @@
 'use server';
 
 import { currentUser } from '@clerk/nextjs/server';
-import { OrderStatus, ShippingRate, Store } from '@prisma/client';
+import { OrderStatus, Prisma, ShippingRate, Store } from '@prisma/client';
 import { db } from '@/lib/db';
 import { StoreDefaultShippingType, StoreStatus, StoreType } from '@/lib/types';
 import { checkIfUserFollowingStore } from './product';
+import { normalizeCommerceReference } from '@/lib/orders/references';
 
 // Point:   Function: upsertStore
 // Description: Upserts store details into the database, ensuring uniqueness of name,url, email, and phone number.
@@ -35,7 +36,11 @@ export const upsertStore = async (store: Partial<Store>) => {
 			if (existingStoreById) {
 				// Server-side Guard: Email and Store URL are immutable once created.
 				// Strip email and url from update payload so they can never be modified.
-				const { email, url, createdAt, updatedAt, ...updateData } = store;
+				const updateData = { ...store };
+				delete updateData.email;
+				delete updateData.url;
+				delete updateData.createdAt;
+				delete updateData.updatedAt;
 
 				const storeDetails = await db.store.update({
 					where: { id: store.id },
@@ -400,20 +405,88 @@ export const getStoreOrders = async (
 		}
 
 		const skip = Math.max(0, (page - 1) * limit);
+		const textSearch = search.trim();
+		const referenceSearch = normalizeCommerceReference(textSearch);
 
-		const where: any = {
+		const where: Prisma.OrderGroupWhereInput = {
 			storeId: store.id,
 			...(status && status !== 'ALL' ? { status: status as OrderStatus } : {}),
-			...(search.trim()
+			...(textSearch
 				? {
 						OR: [
-							{ id: { contains: search.trim(), mode: 'insensitive' as const } },
+							{
+								id: {
+									contains: referenceSearch,
+									mode: 'insensitive' as const,
+								},
+							},
+							{
+								order: {
+									id: {
+										contains: referenceSearch,
+										mode: 'insensitive' as const,
+									},
+								},
+							},
 							{
 								order: {
 									shippingAddress: {
 										user: {
-											email: { contains: search.trim(), mode: 'insensitive' as const },
+											OR: [
+												{
+													email: {
+														contains: textSearch,
+														mode: 'insensitive' as const,
+													},
+												},
+												{
+													name: {
+														contains: textSearch,
+														mode: 'insensitive' as const,
+													},
+												},
+											],
 										},
+									},
+								},
+							},
+							{
+								order: {
+									shippingAddress: {
+										OR: [
+											{
+												firstName: {
+													contains: textSearch,
+													mode: 'insensitive' as const,
+												},
+											},
+											{
+												lastName: {
+													contains: textSearch,
+													mode: 'insensitive' as const,
+												},
+											},
+										],
+									},
+								},
+							},
+							{
+								items: {
+									some: {
+										OR: [
+											{
+												name: {
+													contains: textSearch,
+													mode: 'insensitive' as const,
+												},
+											},
+											{
+												sku: {
+													contains: textSearch,
+													mode: 'insensitive' as const,
+												},
+											},
+										],
 									},
 								},
 							},
@@ -431,6 +504,8 @@ export const getStoreOrders = async (
 					coupon: true,
 					order: {
 						select: {
+							id: true,
+							orderStatus: true,
 							paymentStatus: true,
 
 							shippingAddress: {

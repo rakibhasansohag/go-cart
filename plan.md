@@ -231,6 +231,9 @@ theme-aware, responsive, and marked `noindex`.
   seller transition updates item, package, and customer order views; cancellation
   remains available only before fulfillment becomes irreversible
 
+
+
+
 **Planned fulfillment paths:**
 
 - Delivery: `Pending → Confirmed → Processing → Ready for shipment → Shipped →
@@ -239,6 +242,24 @@ theme-aware, responsive, and marked `noindex`.
 - Exception: `Cancelled` may be selected from an allowed pre-delivery state after
   customer contact; return/refund/exchange states begin only after delivery or
   pickup and are controlled by the Returns Center.
+
+### Phase 10.3.2 — Order and package traceability
+
+- [x] Keep UUIDs internal while presenting distinct `#ORD-…` customer-order and
+  `#PKG-…` seller-package references
+- [x] Show Order ID and Package ID together in seller fulfillment views and CSV
+  exports
+- [x] Show package references alongside the parent Order ID in customer history
+  and order details
+- [x] Correct the admin package-row label and show Order ID, Package ID, store,
+  seller, customer, product/SKU, payment, overall status, and package status
+- [x] Normalize friendly references and search Order ID, Package ID, full UUID,
+  store, seller, customer, product name, and SKU where each role is authorized
+- [x] Preserve store scoping so one seller can update only their package; derive
+  `PartiallyShipped` until every store package reaches `Delivered`
+- **Test**: Customer, seller, and admin searches resolve both friendly reference
+  formats; seller results never expose another store's packages; mixed package
+  delivery states do not mark the full customer order delivered
 
 **Manual checkpoint before Phase 10.4:** Restart `bun dev`, change a paid package
 through the currently available statuses until `Delivered`, then open that order

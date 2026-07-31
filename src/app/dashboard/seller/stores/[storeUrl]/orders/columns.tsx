@@ -16,7 +16,7 @@ import CustomModal from '@/components/dashboard/shared/custom-modal';
 import StoreOrderSummary from '@/components/dashboard/shared/store-order-summary';
 
 import Link from 'next/link';
-import { formatPackageId } from '@/lib/utils';
+import { formatOrderId, formatPackageId } from '@/lib/utils';
 
 export const columns: ColumnDef<StoreOrderType>[] = [
 	{
@@ -26,6 +26,17 @@ export const columns: ColumnDef<StoreOrderType>[] = [
 			return (
 				<span className='font-mono text-xs font-bold text-foreground bg-muted/60 px-2 py-1 rounded-md border border-border/50'>
 					{formatPackageId(row.original.id)}
+				</span>
+			);
+		},
+	},
+	{
+		accessorKey: 'orderId',
+		header: 'Order ID',
+		cell: ({ row }) => {
+			return (
+				<span className='font-mono text-xs font-semibold text-muted-foreground'>
+					{formatOrderId(row.original.order.id)}
 				</span>
 			);
 		},

@@ -5,7 +5,7 @@ import {
 	ProductStatus,
 	StoreOrderType,
 } from '@/lib/types';
-import { formatPackageId, getShippingDatesRange } from '@/lib/utils';
+import { formatOrderId, formatPackageId, getShippingDatesRange } from '@/lib/utils';
 import { FC } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -42,14 +42,6 @@ const StoreOrderSummary: FC<Props> = ({ group }) => {
 		user,
 	} = shippingAddress;
 
-	const { coupon, couponId, subTotal, shippingFees } = group;
-
-	let discountedAmount = 0;
-
-	if (couponId && coupon) {
-		discountedAmount = ((subTotal + shippingFees) * coupon.discount) / 100;
-	}
-
 	const handlePrint = () => {
 		window.print();
 	};
@@ -65,6 +57,14 @@ const StoreOrderSummary: FC<Props> = ({ group }) => {
 							</h2>
 							<span className='font-mono font-bold text-sm bg-muted/60 text-foreground px-2 py-0.5 rounded-md border border-border/50'>
 								{formatPackageId(group.id)}
+							</span>
+						</div>
+						<div className='flex items-center gap-2 rounded-lg border border-border/50 bg-muted/30 px-2 py-1'>
+							<span className='text-[10px] font-semibold uppercase tracking-wide text-muted-foreground'>
+								Order
+							</span>
+							<span className='font-mono text-xs font-semibold text-foreground'>
+								{formatOrderId(group.order.id)}
 							</span>
 						</div>
 						<div className='flex items-center gap-x-2 print:hidden'>

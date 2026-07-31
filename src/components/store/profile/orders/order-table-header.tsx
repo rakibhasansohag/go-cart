@@ -2,7 +2,6 @@ import SearchInput from '@/components/store/ui/search-input';
 import SelectDropdown from '@/components/store/ui/select-dropdown';
 import ClearFiltersButton from '@/components/store/ui/clear-filters-button';
 import Tabs from '@/components/store/ui/tabs';
-import { useRouter } from 'next/navigation';
 import { Dispatch, FC, SetStateAction, useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/query-keys';
@@ -26,7 +25,6 @@ const OrderTableHeader: FC<Props> = ({
 	period,
 	setPeriod,
 }) => {
-	const router = useRouter();
 	const queryClient = useQueryClient();
 
 	// Handle debounced search input
@@ -83,7 +81,7 @@ const OrderTableHeader: FC<Props> = ({
 			<div className='flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mt-3 w-full'>
 				<div className='flex-1 w-full'>
 					<SearchInput
-						placeholder='Order ID, product or store name'
+						placeholder='Order ID, package ID, product, SKU or store'
 						value={debouncedSearch}
 						onChange={setDebouncedSearch}
 						onSubmit={() => setSearch(debouncedSearch)}
