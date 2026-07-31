@@ -16,6 +16,7 @@ import Pagination from '../../shared/pagination';
 import { Skeleton } from '@/components/ui/skeleton';
 
 import { useSuspenseQuery } from '@tanstack/react-query';
+import { activeOrderSyncOptions } from '@/lib/orders/live-sync';
 import { queryKeys } from '@/lib/query-keys';
 import OrderTableHeader from './order-table-header';
 import { formatOrderId, formatPackageId } from '@/lib/utils';
@@ -155,7 +156,9 @@ function OrdersTableContent({
 	const { data: res } = useSuspenseQuery({
 		queryKey: queryKeys.profile.orders({ filter, period, search, page, pageSize }),
 		queryFn: async () => {
-			const res = await fetch(`/api/profile/orders?filter=${filter}&period=${period}&search=${search}&page=${page}&pageSize=${pageSize}`);
+			const res = await fetch(`/api/profile/orders?filter=${filter}&period=${period}&search=${search}&page=${page}&pageSize=${pageSize}`, {
+				cache: 'no-store',
+			});
 			if (!res.ok) throw new Error('Failed to fetch orders');
 			return res.json() as Promise<{
 				orders: UserOrderType[];
@@ -165,6 +168,7 @@ function OrdersTableContent({
 				totalCount: number;
 			}>;
 		},
+		...activeOrderSyncOptions,
 	});
 
 	const data = res.orders;

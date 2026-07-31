@@ -9,20 +9,13 @@ import OrderUserDetailsCard from '@/components/store/cards/order/user';
 import OrderGroupsContainer from './groups-container';
 import OrderHeader from './header';
 import OrderPayment from './payment';
+import { activeOrderSyncOptions } from '@/lib/orders/live-sync';
 
 export default function OrderPageView({ orderId }: { orderId: string }) {
 	const { data: order } = useSuspenseQuery({
 		queryKey: queryKeys.orders.detail(orderId),
 		queryFn: () => getOrder(orderId),
-		refetchInterval: (query) => {
-			const paymentStatus = query.state.data?.paymentStatus;
-			return paymentStatus &&
-				['Pending', 'Failed', 'Declined', 'Cancelled'].includes(
-					paymentStatus,
-				)
-				? 5000
-				: false;
-		},
+		...activeOrderSyncOptions,
 	});
 
 	if (!order) {

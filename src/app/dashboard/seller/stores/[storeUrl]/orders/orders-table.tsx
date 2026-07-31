@@ -10,6 +10,7 @@ import { StoreOrderType } from '@/lib/types';
 import { exportOrdersToCSV } from '@/lib/export-utils';
 import { Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { activeOrderSyncOptions } from '@/lib/orders/live-sync';
 
 interface OrdersTableProps {
 	storeUrl: string;
@@ -38,10 +39,11 @@ export default function OrdersTable({ storeUrl, initialData }: OrdersTableProps)
 	const [search, setSearch] = useState('');
 	const [status, setStatus] = useState('ALL');
 
-	const { data, isFetching } = useQuery({
+	const { data, isPending } = useQuery({
 		queryKey: queryKeys.dashboard.orders(storeUrl, page, pageSize, search, status),
 		queryFn: () => getStoreOrders(storeUrl, { page, limit: pageSize, search, status }),
 		initialData: page === 1 && pageSize === 10 && !search && status === 'ALL' ? initialData : undefined,
+		...activeOrderSyncOptions,
 	});
 
 	const orders = data?.orders ?? [];
@@ -105,7 +107,7 @@ export default function OrdersTable({ storeUrl, initialData }: OrdersTableProps)
 					setPage(1);
 				}}
 				searchValue={search}
-				isLoading={isFetching}
+				isLoading={isPending}
 			/>
 		</div>
 	);

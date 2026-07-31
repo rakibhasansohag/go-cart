@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { activeOrderSyncOptions } from '@/lib/orders/live-sync';
 import DataTable from '@/components/ui/data-table';
 import { getAllAdminOrders } from '@/queries/analytics';
 import { queryKeys } from '@/lib/query-keys';
@@ -180,10 +181,11 @@ export default function AdminOrdersTable({ initialData }: AdminOrdersTableProps)
 	const [pageSize, setPageSize] = useState(initialData?.limit ?? 10);
 	const [search, setSearch] = useState('');
 
-	const { data, isFetching } = useQuery({
+	const { data, isPending } = useQuery({
 		queryKey: queryKeys.dashboard.adminOrders(page, pageSize, search),
 		queryFn: () => getAllAdminOrders({ page, limit: pageSize, search }),
 		initialData: page === 1 && pageSize === 10 && !search ? initialData : undefined,
+		...activeOrderSyncOptions,
 	});
 
 	const orders = data?.orders ?? [];
@@ -217,7 +219,7 @@ export default function AdminOrdersTable({ initialData }: AdminOrdersTableProps)
 					setPage(1);
 				}}
 				searchValue={search}
-				isLoading={isFetching}
+				isLoading={isPending}
 			/>
 		</div>
 	);
