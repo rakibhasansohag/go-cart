@@ -1,5 +1,4 @@
 import { Suspense } from 'react';
-import { notFound } from 'next/navigation';
 import OrdersTable from './orders-table';
 import DataTableSkeleton from '@/components/dashboard/shared/table-skeleton';
 import { getStoreOrders } from '@/queries/store';
@@ -12,10 +11,6 @@ export default async function SellerOrdersPage({
 	params: Promise<StoreParams>;
 }) {
 	const { storeUrl } = await params;
-
-	if (!storeUrl) {
-		return notFound();
-	}
 
 	const initialData = await getStoreOrders(storeUrl, { page: 1, limit: 10 });
 

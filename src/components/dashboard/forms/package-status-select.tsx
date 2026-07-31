@@ -26,6 +26,7 @@ interface Props {
 	orderId: string;
 	status: PackageStatus;
 	storeUrl?: string;
+	contentAlign?: 'start' | 'end';
 }
 
 export default function PackageStatusSelect({
@@ -34,6 +35,7 @@ export default function PackageStatusSelect({
 	orderId,
 	status,
 	storeUrl,
+	contentAlign = 'end',
 }: Props) {
 	const [currentStatus, setCurrentStatus] = useState(status);
 	const queryClient = useQueryClient();
@@ -61,9 +63,15 @@ export default function PackageStatusSelect({
 						? queryKeys.dashboard.orders(storeUrl)
 						: queryKeys.dashboard.orderLists(),
 				}),
-				queryClient.invalidateQueries({ queryKey: queryKeys.orders.detail(orderId) }),
-				queryClient.invalidateQueries({ queryKey: queryKeys.profile.orderLists() }),
-				queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.adminOrders() }),
+				queryClient.invalidateQueries({
+					queryKey: queryKeys.orders.detail(orderId),
+				}),
+				queryClient.invalidateQueries({
+					queryKey: queryKeys.profile.orderLists(),
+				}),
+				queryClient.invalidateQueries({
+					queryKey: queryKeys.dashboard.adminOrders(),
+				}),
 			]);
 		},
 		onError: (error: unknown) => {
@@ -85,7 +93,11 @@ export default function PackageStatusSelect({
 					<PackageStatusTag status={currentStatus} />
 				</button>
 			</DropdownMenuTrigger>
-			<DropdownMenuContent align='end' className='w-56'>
+			<DropdownMenuContent
+				align={contentAlign}
+				sideOffset={6}
+				className='z-[100000] w-56'
+			>
 				<DropdownMenuLabel>Next preparation step</DropdownMenuLabel>
 				<DropdownMenuSeparator />
 				{allowed.map((nextStatus) => (

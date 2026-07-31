@@ -6,6 +6,7 @@ import OrderPageView from '@/components/store/order-page/order-page-view';
 import { getQueryClient } from '@/lib/get-query-client';
 import { queryKeys } from '@/lib/query-keys';
 import { getOrder } from '@/queries/order';
+import { auth } from '@clerk/nextjs/server';
 
 export default async function OrderPage({
 	params,
@@ -13,6 +14,12 @@ export default async function OrderPage({
 	params: Promise<{ orderId: string }>;
 }) {
 	const { orderId } = await params;
+	const { userId } = await auth();
+	if (!userId) {
+		redirect(
+			`/sign-in?redirect_url=${encodeURIComponent(`/order/${orderId}`)}`,
+		);
+	}
 	const queryClient = getQueryClient();
 	const order = await getOrder(orderId);
 

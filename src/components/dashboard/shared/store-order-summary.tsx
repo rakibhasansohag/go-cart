@@ -1,10 +1,10 @@
 import PaymentStatusTag from '@/components/shared/payment-status';
+import { PaymentStatus, ProductStatus, StoreOrderType } from '@/lib/types';
 import {
-	PaymentStatus,
-	ProductStatus,
-	StoreOrderType,
-} from '@/lib/types';
-import { formatOrderId, formatPackageId, getShippingDatesRange } from '@/lib/utils';
+	formatOrderId,
+	formatPackageId,
+	getShippingDatesRange,
+} from '@/lib/utils';
 import { FC } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -66,9 +66,7 @@ const StoreOrderSummary: FC<Props> = ({ group }) => {
 				<div className='flex items-center justify-between gap-4 border-b pb-4 border-border'>
 					<div className='space-y-1.5'>
 						<div className='flex items-center gap-2'>
-							<h2 className='font-bold text-2xl leading-8'>
-								Order Details
-							</h2>
+							<h2 className='font-bold text-2xl leading-8'>Order Details</h2>
 							<span className='font-mono font-bold text-sm bg-muted/60 text-foreground px-2 py-0.5 rounded-md border border-border/50'>
 								{formatPackageId(group.id)}
 							</span>
@@ -88,6 +86,7 @@ const StoreOrderSummary: FC<Props> = ({ group }) => {
 								groupId={group.id}
 								orderId={group.order.id}
 								status={group.packageStatus}
+								contentAlign='start'
 							/>
 							{group.shipment && (
 								<ShipmentStatusTag status={group.shipment.status} />
@@ -137,7 +136,10 @@ const StoreOrderSummary: FC<Props> = ({ group }) => {
 							<p className='font-medium text-xs text-muted-foreground mb-1'>
 								Payment Reference
 							</p>
-							<h6 className='font-semibold text-sm font-mono text-foreground truncate' title={paymentDetails?.paymentInetntId || '-'}>
+							<h6
+								className='font-semibold text-sm font-mono text-foreground truncate'
+								title={paymentDetails?.paymentInetntId || '-'}
+							>
 								{paymentDetails?.paymentInetntId || '-'}
 							</h6>
 						</div>
@@ -148,7 +150,8 @@ const StoreOrderSummary: FC<Props> = ({ group }) => {
 							Shipping Address
 						</p>
 						<h6 className='font-semibold text-sm text-foreground leading-relaxed'>
-							{address1}, {address2 && `${address2}, `}{city}, {state} {zip_code}, {country.name}
+							{address1}, {address2 && `${address2}, `}
+							{city}, {state} {zip_code}, {country.name}
 						</h6>
 					</div>
 					{/* Customer Details */}
@@ -158,16 +161,31 @@ const StoreOrderSummary: FC<Props> = ({ group }) => {
 						</p>
 						<div className='grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs'>
 							<div>
-								<span className='text-muted-foreground block text-[11px]'>Name</span>
-								<span className='font-semibold text-foreground capitalize'>{firstName} {lastName}</span>
+								<span className='text-muted-foreground block text-[11px]'>
+									Name
+								</span>
+								<span className='font-semibold text-foreground capitalize'>
+									{firstName} {lastName}
+								</span>
 							</div>
 							<div>
-								<span className='text-muted-foreground block text-[11px]'>Email</span>
-								<span className='font-semibold text-foreground truncate block' title={user?.email || ''}>{user?.email || '-'}</span>
+								<span className='text-muted-foreground block text-[11px]'>
+									Email
+								</span>
+								<span
+									className='font-semibold text-foreground truncate block'
+									title={user?.email || ''}
+								>
+									{user?.email || '-'}
+								</span>
 							</div>
 							<div>
-								<span className='text-muted-foreground block text-[11px]'>Phone</span>
-								<span className='font-semibold text-foreground'>{phone || '-'}</span>
+								<span className='text-muted-foreground block text-[11px]'>
+									Phone
+								</span>
+								<span className='font-semibold text-foreground'>
+									{phone || '-'}
+								</span>
 							</div>
 						</div>
 					</div>
@@ -212,14 +230,28 @@ const StoreOrderSummary: FC<Props> = ({ group }) => {
 									<ExternalLink className='w-3 h-3 shrink-0 opacity-60' />
 								</Link>
 								<p className='text-muted-foreground text-[11px]'>
-									SKU: <span className='font-mono font-medium text-foreground'>{product.sku}</span>
+									SKU:{' '}
+									<span className='font-mono font-medium text-foreground'>
+										{product.sku}
+									</span>
 								</p>
 								<p className='text-muted-foreground text-[11px]'>
-									Size: <span className='font-medium text-foreground'>{product.size}</span> · Qty: <span className='font-medium text-foreground'>{product.quantity}</span>
+									Size:{' '}
+									<span className='font-medium text-foreground'>
+										{product.size}
+									</span>{' '}
+									· Qty:{' '}
+									<span className='font-medium text-foreground'>
+										{product.quantity}
+									</span>
 								</p>
 								<p className='text-muted-foreground text-[11px]'>
-									Price: <span className='font-medium text-foreground'>${product.price.toFixed(2)}</span>
-									{product.shippingFee > 0 && ` (+$${product.shippingFee.toFixed(2)} shipping)`}
+									Price:{' '}
+									<span className='font-medium text-foreground'>
+										${product.price.toFixed(2)}
+									</span>
+									{product.shippingFee > 0 &&
+										` (+$${product.shippingFee.toFixed(2)} shipping)`}
 								</p>
 							</div>
 							{/* Product status & total */}

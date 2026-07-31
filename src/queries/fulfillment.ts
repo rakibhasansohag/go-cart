@@ -24,6 +24,14 @@ import { updateTag } from 'next/cache';
 
 type TransactionClient = Prisma.TransactionClient;
 
+// Fulfillment updates touch the package, items, order summary, and audit trail.
+// Remote Postgres providers can legitimately take longer than Prisma's default
+// five-second interactive transaction timeout.
+const FULFILLMENT_TRANSACTION_OPTIONS = {
+	maxWait: 10_000,
+	timeout: 30_000,
+} as const;
+
 function requiredIdempotencyKey(value: string): string {
 	const key = value.trim();
 	if (key.length < 8 || key.length > 200) {
@@ -143,7 +151,7 @@ export async function updatePackageStatus(input: {
 			packageStatus: input.nextStatus,
 		});
 		return input.nextStatus;
-	});
+	}, FULFILLMENT_TRANSACTION_OPTIONS);
 
 	updateTag('user-orders');
 	return result;
@@ -224,7 +232,7 @@ export async function updateShipmentStatus(input: {
 			shipment: { status: input.nextStatus },
 		});
 		return input.nextStatus;
-	});
+	}, FULFILLMENT_TRANSACTION_OPTIONS);
 
 	updateTag('user-orders');
 	return result;
@@ -380,7 +388,7 @@ export async function decidePackageCancellation(input: {
 				decidedAt: new Date(),
 			},
 		});
-	});
+	}, FULFILLMENT_TRANSACTION_OPTIONS);
 
 	updateTag('user-orders');
 	return result;

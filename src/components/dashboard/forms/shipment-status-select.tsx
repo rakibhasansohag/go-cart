@@ -95,10 +95,18 @@ export default function ShipmentStatusSelect({
 			setMessage('');
 			toast.success(`Shipment is now ${SHIPMENT_STATUS_LABELS[nextStatus]}.`);
 			void Promise.all([
-				queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.adminOrders() }),
-				queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.orderLists() }),
-				queryClient.invalidateQueries({ queryKey: queryKeys.orders.detail(orderId) }),
-				queryClient.invalidateQueries({ queryKey: queryKeys.profile.orderLists() }),
+				queryClient.invalidateQueries({
+					queryKey: queryKeys.dashboard.adminOrders(),
+				}),
+				queryClient.invalidateQueries({
+					queryKey: queryKeys.dashboard.orderLists(),
+				}),
+				queryClient.invalidateQueries({
+					queryKey: queryKeys.orders.detail(orderId),
+				}),
+				queryClient.invalidateQueries({
+					queryKey: queryKeys.profile.orderLists(),
+				}),
 			]);
 		},
 		onError: (error: unknown) => {
@@ -130,7 +138,11 @@ export default function ShipmentStatusSelect({
 							<ShipmentStatusTag status={currentStatus} />
 						</button>
 					</DropdownMenuTrigger>
-					<DropdownMenuContent align='end' className='w-60'>
+					<DropdownMenuContent
+						align='end'
+						sideOffset={6}
+						className='z-[100000] w-60'
+					>
 						<DropdownMenuLabel>Next logistics step</DropdownMenuLabel>
 						<DropdownMenuSeparator />
 						{allowed.map((nextStatus) => (
@@ -155,8 +167,8 @@ export default function ShipmentStatusSelect({
 					<DialogHeader>
 						<DialogTitle>Record failed delivery attempt</DialogTitle>
 						<DialogDescription>
-							Choose a reason and add any useful delivery note. This is stored in
-							the fulfillment audit history.
+							Choose a reason and add any useful delivery note. This is stored
+							in the fulfillment audit history.
 						</DialogDescription>
 					</DialogHeader>
 					<div className='space-y-4 py-2'>
@@ -176,7 +188,9 @@ export default function ShipmentStatusSelect({
 							</select>
 						</div>
 						<div className='space-y-2'>
-							<Label htmlFor={`failure-message-${groupId}`}>Optional message</Label>
+							<Label htmlFor={`failure-message-${groupId}`}>
+								Optional message
+							</Label>
 							<textarea
 								id={`failure-message-${groupId}`}
 								value={message}

@@ -13,8 +13,9 @@ export const getOrder = async (orderId: string) => {
 	// Retrieve current user
 	const user = await currentUser();
 
-	// Check if user is authenticated
-	if (!user) throw new Error('Unauthenticated.');
+	// Auth can briefly be unavailable while Clerk refreshes a session. Returning
+	// null keeps speculative navigation and Fast Refresh from becoming a 500.
+	if (!user) return null;
 
 	// Get order details, with groups, product items, and ordered by total price
 	const order = await db.order.findUnique({
