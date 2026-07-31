@@ -22,13 +22,16 @@ import { useRouter } from "next/navigation";
 const RECENT_FILTERS = { page: 1, limit: 6 } as const;
 
 export default function NotificationBell() {
-  const { isSignedIn } = useUser();
+  const { isLoaded, isSignedIn, user } = useUser();
   const router = useRouter();
   const queryClient = useQueryClient();
   const { data, refetch } = useQuery({
-    queryKey: queryKeys.notifications.list(RECENT_FILTERS),
+    queryKey: queryKeys.notifications.list({
+      ...RECENT_FILTERS,
+      viewerId: user?.id,
+    }),
     queryFn: () => getNotifications(RECENT_FILTERS),
-    enabled: Boolean(isSignedIn),
+    enabled: Boolean(isLoaded && isSignedIn),
     refetchInterval: 30_000,
     refetchIntervalInBackground: false,
     refetchOnWindowFocus: true,
