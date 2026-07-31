@@ -3,7 +3,10 @@
 	"version": "0.1.0",
 	"private": true,
 	"scripts": {
-		"dev": "bun run db:prepare && next dev",
+		"dev": "bun run db:prepare && next dev --webpack",
+		"dev:turbo": "bun run db:prepare && next dev",
+		"dev:fresh": "bun run clean:next && bun dev",
+		"clean:next": "bun -e \"require('fs').rmSync('.next',{recursive:true,force:true})\"",
 		"db:prepare": "bun --no-env-file x prisma generate && bun --no-env-file x prisma migrate deploy",
 		"build": "bun prisma generate && next build",
 		"start": "next start",
@@ -12,6 +15,7 @@
 		"test:payment": "vitest run src/lib/payments",
 		"test:watch": "vitest",
 		"typecheck": "tsc --noEmit",
+		"stripe:listen": "stripe listen --events payment_intent.succeeded,payment_intent.payment_failed,payment_intent.canceled,charge.refunded --forward-to http://localhost:3000/api/webhooks/stripe",
 		"postinstall": "bun prisma generate"
 	},
 	"dependencies": {

@@ -25,6 +25,7 @@ import {
 import { Store } from '@prisma/client';
 import { Button } from '@/components/ui/button';
 import DashboardBreadcrumbs from './dashboard-breadcrumbs';
+import NotificationBell from '@/components/shared/notification-bell';
 
 interface HeaderProps {
 	isAdmin?: boolean;
@@ -94,6 +95,7 @@ export default function Header({ isAdmin: propIsAdmin, stores }: HeaderProps) {
 
 			{/* Right section: Theme & Profile */}
 			<div className='flex items-center gap-3'>
+				<NotificationBell />
 				<ThemeToggle />
 				<UserButton
 					appearance={{

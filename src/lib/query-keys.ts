@@ -35,6 +35,10 @@ export const queryKeys = {
 	payments: {
 		order: (orderId: string) => ['payments', 'order', orderId] as const,
 	},
+	notifications: {
+		all: () => ['notifications'] as const,
+		list: (filters: object) => ['notifications', 'list', filters] as const,
+	},
 	categories: {
 		all: () => ['categories'] as const,
 		withSubs: () => ['categories', 'withSubs'] as const,

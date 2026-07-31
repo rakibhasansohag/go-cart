@@ -6,8 +6,14 @@ import {
 	assertShipmentTransition,
 	canRequestCancellation,
 	orderStatusForFulfillment,
+	PACKAGE_STATUS_LABELS,
 	productStatusForFulfillment,
+	SHIPMENT_STATUS_LABELS,
 } from '@/lib/orders/fulfillment-state-machine';
+import {
+	DOMAIN_EVENT_TYPES,
+	publishDomainEvent,
+} from '@/lib/notifications/domain-events';
 import { deriveOrderStatus } from '@/lib/orders/status-sync';
 import { currentUser } from '@clerk/nextjs/server';
 import {
@@ -146,6 +152,22 @@ export async function updatePackageStatus(input: {
 			},
 		});
 
+		await publishDomainEvent(tx, {
+			eventKey: `fulfillment:${idempotencyKey}`,
+			eventType: DOMAIN_EVENT_TYPES.PACKAGE_STATUS_CHANGED,
+			aggregateType: 'ORDER_PACKAGE',
+			aggregateId: group.id,
+			actorUserId: user.id,
+			orderId: group.orderId,
+			storeId: store.id,
+			payload: {
+				orderId: group.orderId,
+				groupId: group.id,
+				previousStatus: PACKAGE_STATUS_LABELS[group.packageStatus],
+				nextStatus: PACKAGE_STATUS_LABELS[input.nextStatus],
+			},
+		});
+
 		await syncLegacyFulfillmentSummary(tx, {
 			...group,
 			packageStatus: input.nextStatus,
@@ -179,7 +201,7 @@ export async function updateShipmentStatus(input: {
 
 		const group = await tx.orderGroup.findUnique({
 			where: { id: input.groupId },
-			include: { shipment: true },
+			include: { shipment: true, store: { select: { url: true } } },
 		});
 		if (!group?.shipment) throw new Error('Shipment not found.');
 
@@ -224,6 +246,24 @@ export async function updateShipmentStatus(input: {
 				orderId: group.orderId,
 				orderGroupId: group.id,
 				shipmentId: group.shipment.id,
+			},
+		});
+
+		await publishDomainEvent(tx, {
+			eventKey: `fulfillment:${idempotencyKey}`,
+			eventType: DOMAIN_EVENT_TYPES.SHIPMENT_STATUS_CHANGED,
+			aggregateType: 'SHIPMENT',
+			aggregateId: group.shipment.id,
+			actorUserId: user.id,
+			orderId: group.orderId,
+			storeId: group.storeId,
+			payload: {
+				orderId: group.orderId,
+				groupId: group.id,
+				shipmentId: group.shipment.id,
+				storeUrl: group.store.url,
+				previousStatus: SHIPMENT_STATUS_LABELS[group.shipment.status],
+				nextStatus: SHIPMENT_STATUS_LABELS[input.nextStatus],
 			},
 		});
 

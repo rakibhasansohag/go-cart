@@ -35,6 +35,9 @@ model User {
   fulfillmentEvents     FulfillmentTransition[] @relation("FulfillmentTransitionActor")
   cancellationRequests  CancellationRequest[]   @relation("CancellationRequestCustomer")
   cancellationDecisions CancellationRequest[]   @relation("CancellationRequestDecider")
+  domainEvents          DomainEvent[]           @relation("DomainEventActor")
+  notifications         Notification[]          @relation("NotificationRecipient")
+  emailOutboxJobs       EmailOutbox[]           @relation("EmailOutboxRecipient")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -765,6 +768,94 @@ model FulfillmentTransition {
   @@index([orderGroupId, createdAt])
   @@index([shipmentId, createdAt])
   @@index([actorUserId])
+}
+
+enum NotificationCategory {
+  ORDER
+  PAYMENT
+  FULFILLMENT
+  DELIVERY
+  CANCELLATION
+  RETURN
+  REFUND
+  SYSTEM
+}
+
+enum EmailOutboxStatus {
+  PENDING
+  PROCESSING
+  SENT
+  FAILED
+  CANCELLED
+}
+
+model DomainEvent {
+  id            String @id @default(uuid())
+  eventKey      String @unique
+  eventType     String
+  aggregateType String
+  aggregateId   String
+  payload       Json
+
+  actorUserId String?
+  actorUser   User?   @relation("DomainEventActor", fields: [actorUserId], references: [id])
+
+  notifications Notification[]
+  emailOutbox   EmailOutbox[]
+
+  createdAt DateTime @default(now())
+
+  @@index([eventType, createdAt])
+  @@index([aggregateType, aggregateId, createdAt])
+  @@index([actorUserId])
+}
+
+model Notification {
+  id        String               @id @default(uuid())
+  category  NotificationCategory
+  eventType String
+  title     String
+  message   String               @db.Text
+  actionUrl String?
+  readAt    DateTime?
+
+  sourceEventId String
+  sourceEvent   DomainEvent @relation(fields: [sourceEventId], references: [id], onDelete: Cascade)
+
+  recipientId String
+  recipient   User   @relation("NotificationRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([sourceEventId, recipientId])
+  @@index([recipientId, readAt, createdAt])
+  @@index([recipientId, category, createdAt])
+}
+
+model EmailOutbox {
+  id             String            @id @default(uuid())
+  templateKey    String
+  recipientEmail String
+  payload        Json
+  status         EmailOutboxStatus @default(PENDING)
+  attemptCount   Int               @default(0)
+  nextAttemptAt  DateTime          @default(now())
+  lastAttemptAt  DateTime?
+  sentAt         DateTime?
+  lastError      String?           @db.Text
+
+  sourceEventId String
+  sourceEvent   DomainEvent @relation(fields: [sourceEventId], references: [id], onDelete: Cascade)
+
+  recipientId String
+  recipient   User   @relation("EmailOutboxRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([sourceEventId, recipientId])
+  @@index([status, nextAttemptAt])
+  @@index([recipientId, createdAt])
 }
 
 model CancellationRequest {

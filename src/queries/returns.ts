@@ -21,6 +21,10 @@ import {
 	calculateRefundBreakdown,
 	toReturnActorRole,
 } from '@/lib/returns/domain';
+import {
+	DOMAIN_EVENT_TYPES,
+	publishDomainEvent,
+} from '@/lib/notifications/domain-events';
 
 export type ReturnEvidenceInput = {
 	type: ReturnEvidenceType;
@@ -63,6 +67,7 @@ const returnCandidateInclude = Prisma.validator<Prisma.OrderItemInclude>()({
 			store: {
 				select: {
 					id: true,
+					url: true,
 					returnPolicy: true,
 					returnsAccepted: true,
 					returnWindowDays: true,
@@ -409,7 +414,7 @@ export async function createReturnRequest(input: CreateReturnRequestInput) {
 			});
 			const now = new Date();
 
-			return tx.returnRequest.create({
+			const request = await tx.returnRequest.create({
 				data: {
 					reason: input.reason,
 					resolution: input.resolution,
@@ -468,6 +473,28 @@ export async function createReturnRequest(input: CreateReturnRequestInput) {
 					events: { orderBy: { createdAt: 'asc' } },
 				},
 			});
+
+			await publishDomainEvent(tx, {
+				eventKey: `return.requested:${request.id}`,
+				eventType: DOMAIN_EVENT_TYPES.RETURN_REQUESTED,
+				aggregateType: 'RETURN_REQUEST',
+				aggregateId: request.id,
+				actorUserId: userId,
+				orderId: order.id,
+				storeId: store.id,
+				payload: {
+					returnRequestId: request.id,
+					orderId: order.id,
+					groupId: item.orderGroupId,
+					storeUrl: store.url,
+					resolution: input.resolution,
+					requestedAmount: breakdown.total,
+					currency:
+						order.paymentDetails?.currency?.toUpperCase() ?? 'USD',
+				},
+			});
+
+			return request;
 		}, RETURN_TRANSACTION_OPTIONS);
 	} catch (error) {
 		if (
