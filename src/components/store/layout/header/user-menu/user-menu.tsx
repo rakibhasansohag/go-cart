@@ -2,29 +2,41 @@ import { MessageIcon, OrderIcon, WishlistIcon } from '@/components/store/icons';
 import { Button } from '@/components/store/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
+import { db } from '@/lib/db';
 import { SignOutButton, UserButton } from '@clerk/nextjs';
-import { currentUser } from '@clerk/nextjs/server';
+import { auth } from '@clerk/nextjs/server';
 import { ChevronDown, UserIcon } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 
 export default async function UserMenu() {
-	// Safely fetch the current user with try/catch to prevent Clerk API 500 errors from crashing the page
+	const { userId } = await auth();
 	let user = null;
-	try {
-		user = await currentUser();
-	} catch (error) {
-		console.warn('Clerk currentUser API error fallback to guest view:', error);
+	if (userId) {
+		try {
+			user = await db.user.findUnique({
+				where: { id: userId },
+				select: { name: true, picture: true, role: true },
+			});
+		} catch (error) {
+			console.warn('Unable to load the local user menu profile:', error);
+		}
 	}
+	const roleLink =
+		user?.role === 'ADMIN'
+			? { title: 'Go to Admin dashboard', link: '/dashboard/admin' }
+			: user?.role === 'SELLER'
+				? { title: 'Go to Seller dashboard', link: '/dashboard/seller' }
+				: { title: 'Become a Seller', link: '/seller/apply' };
 
 	return (
 		<div className='relative group px-2 '>
 			{/* Trigger */}
 			<div>
-				{user ? (
+				{userId && user ? (
 					<Image
-						src={user.imageUrl}
-						alt={user.fullName! || 'User'}
+						src={user.picture}
+						alt={user.name || 'User'}
 						width={40}
 						height={40}
 						className='w-10 h-10 object-cover rounded-full'
@@ -124,8 +136,8 @@ export default async function UserMenu() {
 								<Separator className='!max-w-[257px] mx-auto dark:bg-slate-700/60' />
 
 								<ul className='pt-3 pr-4 pb-2 pl-4 w-full space-y-1.5'>
-									{extraLinks.map((item, i) => (
-										<li key={i}>
+									{[roleLink, ...extraLinks].map((item) => (
+										<li key={item.title}>
 											<Link href={item.link}>
 												<span className='block text-sm text-main-primary hover:underline hover:text-main-primary/80'>
 													{item.title}
@@ -168,10 +180,6 @@ const extraLinks = [
 	{
 		title: 'Settings',
 		link: '/',
-	},
-	{
-		title: 'Become a Seller',
-		link: '/become-seller',
 	},
 	{
 		title: 'Help Center',

@@ -1,7 +1,7 @@
 'use server';
 
 import { db } from '@/lib/db';
-import { currentUser } from '@clerk/nextjs/server';
+import { auth } from '@clerk/nextjs/server';
 
 // Function: getOrder
 // Description: Retrieves a specific order by its ID and the current user's ID, including associated groups, items, store information,
@@ -11,17 +11,17 @@ import { currentUser } from '@clerk/nextjs/server';
 // Returns: Object containing order details with groups sorted by totalPrice in descending order.
 export const getOrder = async (orderId: string) => {
 	// Retrieve current user
-	const user = await currentUser();
+	const { userId } = await auth();
 
 	// Auth can briefly be unavailable while Clerk refreshes a session. Returning
 	// null keeps speculative navigation and Fast Refresh from becoming a 500.
-	if (!user) return null;
+	if (!userId) return null;
 
 	// Get order details, with groups, product items, and ordered by total price
 	const order = await db.order.findUnique({
 		where: {
 			id: orderId,
-			userId: user.id,
+			userId,
 		},
 		include: {
 			groups: {

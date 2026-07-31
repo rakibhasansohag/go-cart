@@ -3,7 +3,8 @@ import { ReactNode } from 'react';
 import { redirect } from 'next/navigation';
 
 // Clerk
-import { currentUser } from '@clerk/nextjs/server';
+import { auth } from '@clerk/nextjs/server';
+import { db } from '@/lib/db';
 
 // Components
 import Header from '@/components/dashboard/Header/Header';
@@ -15,8 +16,13 @@ export default async function AdminDashboardLayout({
 	children: ReactNode;
 }) {
 	// Block non admins from accessing the admin dashboard
-	const user = await currentUser();
-	if (!user || user.privateMetadata.role !== 'ADMIN') redirect('/');
+	const { userId } = await auth();
+	if (!userId) redirect('/sign-in?redirect_url=/dashboard/admin');
+	const user = await db.user.findUnique({
+		where: { id: userId },
+		select: { role: true },
+	});
+	if (user?.role !== 'ADMIN') redirect('/');
 	return (
 		<div className='w-full min-h-screen bg-background text-foreground flex'>
 			{/* Sidebar */}

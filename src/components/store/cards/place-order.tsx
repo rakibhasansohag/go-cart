@@ -1,12 +1,11 @@
 import { ShippingAddress } from '@prisma/client';
-import { Dispatch, FC, SetStateAction } from 'react';
+import { Dispatch, FC, SetStateAction, useRef } from 'react';
 import { Button } from '../ui/button';
 import FastDelivery from './fast-delivery';
 import { SecurityPrivacyCard } from '../product-page/returns-security-privacy-card';
 import { toast } from 'sonner';
-import { emptyUserCart, placeOrder } from '@/queries/user';
+import { placeOrder } from '@/queries/user';
 import { useCartStore } from '@/cart-store/useCartStore';
-import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { CartWithCartItemsType } from '@/lib/types';
 import ApplyCouponForm from '../forms/apply-coupon';
@@ -25,8 +24,9 @@ const PlaceOrderCard: FC<Props> = ({
 	cartData,
 }) => {
 	const { id, coupon, subTotal, shippingFees, total } = cartData;
-	const { push } = useRouter();
 	const emptyCart = useCartStore((state) => state.emptyCart);
+	const submissionStarted = useRef(false);
+	const orderToastId = 'place-order-progress';
 
 	const placeOrderMutation = useMutation({
 		mutationFn: async () => {
@@ -34,28 +34,41 @@ const PlaceOrderCard: FC<Props> = ({
 				throw new Error('Select a shipping address first !');
 			}
 			const order = await placeOrder(shippingAddress, id);
-			if (order) {
-				emptyCart();
-				await emptyUserCart();
-				return order;
-			}
+			if (order) return order;
 			throw new Error('Failed to place order.');
 		},
-		onSuccess: (order) => {
-			push(`/order/${order.orderId}`);
+		onMutate: () => {
+			toast.loading('Creating your order…', { id: orderToastId });
 		},
-		onError: (error: any) => {
-			toast.error(error.message || error.toString());
+		onSuccess: (order) => {
+			emptyCart();
+			toast.success('Order created. Opening secure payment…', {
+				id: orderToastId,
+			});
+			// Use a full document handoff after checkout so stale checkout/session
+			// state cannot leak into the secure payment page transition.
+			window.location.assign(`/order/${order.orderId}`);
+		},
+		onError: (error: unknown) => {
+			const message = error instanceof Error ? error.message : String(error);
+			toast.error(message || 'Unable to place the order.', {
+				id: orderToastId,
+			});
+		},
+		onSettled: () => {
+			submissionStarted.current = false;
 		},
 	});
 
 	const loading = placeOrderMutation.isPending;
 
 	const handlePlaceOrder = () => {
+		if (submissionStarted.current || placeOrderMutation.isPending) return;
 		if (!shippingAddress) {
 			toast.error('Select a shipping address first !');
 			return;
 		}
+		submissionStarted.current = true;
 		placeOrderMutation.mutate();
 	};
 
@@ -112,7 +125,10 @@ const PlaceOrderCard: FC<Props> = ({
 								({coupon.code}) ({coupon.discount}%) discount
 							</p>
 							<p className='overflow-hidden text-sm leading-5 break-words text-zinc-400'>
-								Coupon applied to {coupon.store?.name ? `items from ${coupon.store.name}` : 'your entire order'}
+								Coupon applied to{' '}
+								{coupon.store?.name
+									? `items from ${coupon.store.name}`
+									: 'your entire order'}
 							</p>
 						</div>
 					</div>
@@ -123,9 +139,18 @@ const PlaceOrderCard: FC<Props> = ({
 				)}
 			</div>
 			<div className='mt-2 p-4 bg-background'>
-				<Button onClick={() => handlePlaceOrder()} disabled={loading} className='w-full cursor-pointer disabled:opacity-50'>
+				<Button
+					type='button'
+					onClick={handlePlaceOrder}
+					disabled={loading || !shippingAddress}
+					aria-busy={loading}
+					className='w-full cursor-pointer disabled:cursor-not-allowed disabled:opacity-50'
+				>
 					{loading ? (
-						<PulseLoader size={5} color='#fff' />
+						<>
+							<PulseLoader size={5} color='currentColor' />
+							<span>Creating order…</span>
+						</>
 					) : (
 						<span>Place order</span>
 					)}

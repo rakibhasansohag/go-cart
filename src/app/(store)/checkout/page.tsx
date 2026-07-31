@@ -3,20 +3,20 @@ import Header from '@/components/store/layout/header/header';
 import { db } from '@/lib/db';
 import { Country } from '@/lib/types';
 import { getUserShippingAddresses } from '@/queries/user';
-import { currentUser } from '@clerk/nextjs/server';
+import { auth } from '@clerk/nextjs/server';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
 export const dynamic = 'force-dynamic';
 
 export default async function CheckoutPage() {
-	const user = await currentUser();
-	if (!user) redirect('/cart');
+	const { userId } = await auth();
+	if (!userId) redirect('/sign-in?redirect_url=/checkout');
 
 	// Get user cart
 	const cart = await db.cart.findFirst({
 		where: {
-			userId: user.id,
+			userId,
 		},
 		include: {
 			cartItems: true,

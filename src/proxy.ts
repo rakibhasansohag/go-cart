@@ -24,29 +24,11 @@ export default clerkMiddleware(async (auth, req) => {
 		return NextResponse.redirect(new URL('/', req.url));
 	}
 
-	// Protect routes: if not signed-in, do smarter redirect
+	// Let Clerk perform the correct document redirect / Server Action response.
+	// Avoid guessing session state from internal cookie names, which can change
+	// while Clerk refreshes a development session.
 	if (!userId && protectedRoutes(req)) {
-		const cookieNames = [
-			'__session',
-			'__session_v1',
-			'intermediate_session',
-			'session',
-		];
-
-		const hasSessionCookie = cookieNames.some(
-			(name) => !!req.cookies.get(name),
-		);
-
-		const signInUrl = new URL('/sign-in', req.url);
-		signInUrl.searchParams.set('redirect_url', req.nextUrl.pathname);
-
-		if (hasSessionCookie) {
-			const authCheckUrl = new URL('/auth-check', req.url);
-			authCheckUrl.searchParams.set('redirect_url', req.nextUrl.pathname);
-			return NextResponse.redirect(authCheckUrl);
-		} else {
-			return NextResponse.redirect(signInUrl);
-		}
+		return (await auth()).redirectToSignIn({ returnBackUrl: req.url });
 	}
 
 	return NextResponse.next();

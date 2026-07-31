@@ -1,6 +1,6 @@
 'use server';
 
-import { currentUser } from '@clerk/nextjs/server';
+import { auth, currentUser } from '@clerk/nextjs/server';
 import { db } from '@/lib/db';
 import {
 	CartProductType,
@@ -983,15 +983,14 @@ export const placeOrder = async (
 	cartId: string,
 ): Promise<{ orderId: string }> => {
 	// Ensure the user is authenticated
-	const user = await currentUser();
-	if (!user) throw new Error('Unauthenticated.');
-
-	const userId = user.id;
+	const { userId } = await auth();
+	if (!userId) throw new Error('Unauthenticated.');
 
 	// Fetch user's cart with all items
-	const cart = await db.cart.findUnique({
+	const cart = await db.cart.findFirst({
 		where: {
 			id: cartId,
+			userId,
 		},
 		include: {
 			cartItems: true,
@@ -1000,6 +999,11 @@ export const placeOrder = async (
 	});
 
 	if (!cart) throw new Error('Cart not found.');
+
+	const ownedShippingAddress = await db.shippingAddress.findFirst({
+		where: { id: shippingAddress.id, userId },
+	});
+	if (!ownedShippingAddress) throw new Error('Shipping address not found.');
 
 	const cartItems = cart.cartItems;
 	const cartCoupon = cart.coupon; // The coupon, if it exists
@@ -1085,7 +1089,7 @@ export const placeOrder = async (
 				: size.price;
 
 			// Calculate Shipping details
-			const countryId = shippingAddress.countryId;
+			const countryId = ownedShippingAddress.countryId;
 
 			const temp_country = await db.country.findUnique({
 				where: {
@@ -1195,7 +1199,7 @@ export const placeOrder = async (
 		const { shippingService, deliveryTimeMin, deliveryTimeMax } =
 			await getDeliveryDetailsForStoreByCountry(
 				storeId,
-				shippingAddress.countryId,
+				ownedShippingAddress.countryId,
 			);
 
 		// Check coupon store (Global Platform Coupon applies to all stores)
@@ -1296,14 +1300,9 @@ export const placeOrder = async (
 		},
 	});
 
-	// Delete cart
-	/*
-  await db.cart.delete({
-	where: {
-	  id: cartId,
-	},
-  });
-  */
+	// Complete checkout in the same server action so the client never has to
+	// make a second authenticated request before navigating to payment.
+	await db.cart.deleteMany({ where: { id: cartId, userId } });
 
 	return {
 		orderId: order.id,
