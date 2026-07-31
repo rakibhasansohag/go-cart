@@ -88,6 +88,11 @@ export default function PackageStatusSelect({
 					type='button'
 					disabled={mutation.isPending}
 					aria-label={`Change package status. Current status: ${PACKAGE_STATUS_LABELS[currentStatus]}`}
+					title={
+						mutation.isPending
+							? 'Updating package status…'
+							: `Change package status from ${PACKAGE_STATUS_LABELS[currentStatus]}`
+					}
 					className='rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-60'
 				>
 					<PackageStatusTag status={currentStatus} />

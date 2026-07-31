@@ -133,6 +133,11 @@ export default function ShipmentStatusSelect({
 							type='button'
 							disabled={mutation.isPending}
 							aria-label={`Change shipment status. Current status: ${SHIPMENT_STATUS_LABELS[currentStatus]}`}
+							title={
+								mutation.isPending
+									? 'Updating shipment status…'
+									: `Change shipment status from ${SHIPMENT_STATUS_LABELS[currentStatus]}`
+							}
 							className='rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-60'
 						>
 							<ShipmentStatusTag status={currentStatus} />
