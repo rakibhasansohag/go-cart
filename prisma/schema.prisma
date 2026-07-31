@@ -29,6 +29,9 @@ model User {
   wishlist          Wishlist[]        @relation("WishlistToUser")
   payments          PaymentDetails[]  @relation("PaymentDetailsToUser")
   coupons           Coupon[]          @relation("CouponToUser")
+  returnRequests    ReturnRequest[]   @relation("ReturnCustomer")
+  returnEvidence    ReturnEvidence[]  @relation("ReturnEvidenceUploader")
+  returnEvents      ReturnEvent[]     @relation("ReturnEventActor")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -102,12 +105,13 @@ model Store {
   userId String
   user   User   @relation("UserStores", fields: [userId], references: [id])
 
-  products      Product[]      @relation("StoreToProduct")
-  shippingRates ShippingRate[] @relation("StoreShippingRates")
-  followers     User[]         @relation("UserFollowingStore")
-  cartItems     CartItem[]     @relation("CartItemToStore")
-  orderGroups   OrderGroup[]   @relation("OrderGroupToStore")
-  coupons       Coupon[]       @relation("CouponToStore")
+  products       Product[]       @relation("StoreToProduct")
+  shippingRates  ShippingRate[]  @relation("StoreShippingRates")
+  followers      User[]          @relation("UserFollowingStore")
+  cartItems      CartItem[]      @relation("CartItemToStore")
+  orderGroups    OrderGroup[]    @relation("OrderGroupToStore")
+  coupons        Coupon[]        @relation("CouponToStore")
+  returnRequests ReturnRequest[] @relation("ReturnRequestToStore")
 
   @@index([userId])
 }
@@ -503,6 +507,7 @@ model Order {
   paymentMethod  PaymentMethod?
   paymentDetails PaymentDetails? @relation("PaymentDetailsToOrder")
   paymentEvents  PaymentEvent[]  @relation("PaymentEventsToOrder")
+  returnRequests ReturnRequest[] @relation("ReturnRequestToOrder")
 
   shippingAddressId String
   shippingAddress   ShippingAddress @relation("ShippingAddressToOrder", fields: [shippingAddressId], references: [id])
@@ -539,6 +544,8 @@ model OrderGroup {
 
   couponId String?
   coupon   Coupon? @relation("CouponToOrderGroup", fields: [couponId], references: [id])
+
+  returnRequests ReturnRequest[] @relation("ReturnRequestToOrderGroup")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -615,6 +622,8 @@ model OrderItem {
 
   status ProductStatus @default(Pending)
 
+  returnItems ReturnItem[] @relation("ReturnItemToOrderItem")
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -684,6 +693,9 @@ model PaymentDetails {
   userId String
   user   User   @relation("PaymentDetailsToUser", fields: [userId], references: [id], onDelete: Cascade)
 
+  returnRequests     ReturnRequest[]     @relation("ReturnRequestToPayment")
+  refundTransactions RefundTransaction[] @relation("RefundTransactionToPayment")
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -712,4 +724,206 @@ model PaymentEvent {
   @@index([orderId])
   @@index([provider, providerPaymentId])
   @@index([eventType])
+}
+
+enum ReturnRequestStatus {
+  REQUESTED
+  UNDER_REVIEW
+  MORE_INFO_REQUIRED
+  APPROVED
+  REJECTED
+  AWAITING_SHIPMENT
+  IN_TRANSIT
+  RECEIVED
+  REFUND_PENDING
+  REFUNDED
+  EXCHANGE_PENDING
+  EXCHANGED
+  CANCELLED
+  ESCALATED
+  CLOSED
+}
+
+enum ReturnReason {
+  DAMAGED
+  DEFECTIVE
+  WRONG_ITEM
+  NOT_AS_DESCRIBED
+  SIZE_OR_FIT
+  CHANGED_MIND
+  ARRIVED_LATE
+  MISSING_PARTS
+  OTHER
+}
+
+enum ReturnResolution {
+  REFUND
+  EXCHANGE
+}
+
+enum ReturnActorRole {
+  CUSTOMER
+  SELLER
+  ADMIN
+  SYSTEM
+}
+
+enum ReturnEvidenceType {
+  IMAGE
+  VIDEO
+  DOCUMENT
+}
+
+enum RefundTransactionStatus {
+  PENDING
+  PROCESSING
+  SUCCEEDED
+  FAILED
+  CANCELLED
+}
+
+model ReturnRequest {
+  id         String              @id @default(uuid())
+  status     ReturnRequestStatus @default(REQUESTED)
+  reason     ReturnReason
+  resolution ReturnResolution
+
+  customerNote String? @db.Text
+  sellerNote   String? @db.Text
+  adminNote    String? @db.Text
+
+  requestedAmount Float
+  approvedAmount  Float?
+  currency        String @default("USD")
+
+  respondBy   DateTime?
+  returnBy    DateTime?
+  escalatedAt DateTime?
+  resolvedAt  DateTime?
+  closedAt    DateTime?
+
+  customerId String
+  customer   User   @relation("ReturnCustomer", fields: [customerId], references: [id])
+
+  orderId String
+  order   Order  @relation("ReturnRequestToOrder", fields: [orderId], references: [id], onDelete: Cascade)
+
+  orderGroupId String
+  orderGroup   OrderGroup @relation("ReturnRequestToOrderGroup", fields: [orderGroupId], references: [id])
+
+  storeId String
+  store   Store  @relation("ReturnRequestToStore", fields: [storeId], references: [id])
+
+  paymentDetailsId String?
+  paymentDetails   PaymentDetails? @relation("ReturnRequestToPayment", fields: [paymentDetailsId], references: [id])
+
+  items        ReturnItem[]
+  evidence     ReturnEvidence[]
+  events       ReturnEvent[]
+  transactions RefundTransaction[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([customerId, status])
+  @@index([storeId, status])
+  @@index([orderId])
+  @@index([orderGroupId])
+  @@index([paymentDetailsId])
+  @@index([createdAt])
+}
+
+model ReturnItem {
+  id String @id @default(uuid())
+
+  quantity          Int
+  receivedQuantity  Int      @default(0)
+  restockedQuantity Int      @default(0)
+  unitAmount        Float
+  shippingAmount    Float    @default(0)
+  requestedAmount   Float
+  approvedAmount    Float?
+  restockable       Boolean?
+
+  // Set while a request is active and clear on terminal states. This prevents
+  // overlapping active requests for the same order item.
+  activeRequestKey String? @unique
+
+  returnRequestId String
+  returnRequest   ReturnRequest @relation(fields: [returnRequestId], references: [id], onDelete: Cascade)
+
+  orderItemId String
+  orderItem   OrderItem @relation("ReturnItemToOrderItem", fields: [orderItemId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([returnRequestId, orderItemId])
+  @@index([orderItemId])
+}
+
+model ReturnEvidence {
+  id   String             @id @default(uuid())
+  type ReturnEvidenceType
+  url  String             @db.Text
+  alt  String             @default("")
+
+  returnRequestId String
+  returnRequest   ReturnRequest @relation(fields: [returnRequestId], references: [id], onDelete: Cascade)
+
+  uploadedById String?
+  uploadedBy   User?   @relation("ReturnEvidenceUploader", fields: [uploadedById], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@index([returnRequestId])
+  @@index([uploadedById])
+}
+
+model ReturnEvent {
+  id         String               @id @default(uuid())
+  actorRole  ReturnActorRole
+  eventType  String
+  fromStatus ReturnRequestStatus?
+  toStatus   ReturnRequestStatus?
+  note       String?              @db.Text
+  metadata   Json?
+
+  returnRequestId String
+  returnRequest   ReturnRequest @relation(fields: [returnRequestId], references: [id], onDelete: Cascade)
+
+  actorId String?
+  actor   User?   @relation("ReturnEventActor", fields: [actorId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@index([returnRequestId, createdAt])
+  @@index([actorId])
+  @@index([eventType])
+}
+
+model RefundTransaction {
+  id               String                  @id @default(uuid())
+  provider         PaymentMethod
+  providerRefundId String?                 @unique
+  idempotencyKey   String                  @unique
+  status           RefundTransactionStatus @default(PENDING)
+  amount           Float
+  currency         String
+  failureReason    String?                 @db.Text
+  providerResponse Json?
+  processedAt      DateTime?
+
+  returnRequestId String
+  returnRequest   ReturnRequest @relation(fields: [returnRequestId], references: [id], onDelete: Cascade)
+
+  paymentDetailsId String
+  paymentDetails   PaymentDetails @relation("RefundTransactionToPayment", fields: [paymentDetailsId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([returnRequestId])
+  @@index([paymentDetailsId])
+  @@index([provider, status])
 }

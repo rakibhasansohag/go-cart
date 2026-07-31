@@ -108,35 +108,42 @@ Goal: prefetch on server, `useSuspenseQuery` on client, `useMutation` + cache in
 
 Goal: make server-verified provider events the source of truth for payment state before adding automated refunds.
 
-- [ ] **Phase 9.1 — Authorization and ownership**
+- [x] **Phase 9.1 — Authorization and ownership**
   - [x] Require the authenticated customer to own the order before creating or capturing a payment
   - [x] Verify order eligibility, amount, currency, and current payment state on the server
   - [x] Stop accepting trusted user IDs or payment status values from the browser
   - **Test**: A customer cannot create, capture, inspect, or update payment data for another customer's order
 
-- [ ] **Phase 9.2 — Payment event and idempotency model**
+- [x] **Phase 9.2 — Payment event and idempotency model**
   - [x] Add a payment-event/audit model with provider event ID, order ID, event type, amount, currency, status, and timestamps
   - [x] Add unique constraints for provider event IDs and payment intent/capture IDs
   - [x] Define safe retry and duplicate-event behavior
   - **Test**: Replaying the same provider event does not duplicate payments or order updates
 
-- [ ] **Phase 9.3 — Stripe webhook**
+- [x] **Phase 9.3 — Stripe webhook**
   - [x] Add a dedicated Stripe webhook route with signature verification
   - [x] Reconcile successful, failed, cancelled, and refunded payments from verified webhook events
   - [x] Update `Order`, `PaymentDetails`, and audit records transactionally
   - **Test**: Verified events update the correct order once; invalid signatures and mismatched amounts are rejected
 
-- [ ] **Phase 9.4 — PayPal verification/webhook**
+- [x] **Phase 9.4 — PayPal verification/webhook**
   - [x] Verify PayPal captures on the server and add provider webhook handling
   - [x] Reconcile successful, failed, reversed, and refunded captures
   - [x] Update `Order`, `PaymentDetails`, and audit records transactionally
   - **Test**: A browser-supplied capture response cannot mark an order as paid without provider verification
 
-- [ ] **Phase 9.5 — Query synchronization**
+- [x] **Phase 9.5 — Query synchronization**
   - [x] Add centralized payment and order query keys where missing
   - [x] Prefetch payment/order state on relevant server pages
   - [x] Invalidate the customer order, payment history, seller order, and admin order caches after reconciled changes
   - **Test**: Payment status changes appear across customer and dashboard views without a manual reload
+
+**Phase 9 acceptance (July 31, 2026):** Stripe sandbox payment, signed
+webhook ingestion, invalid-signature rejection, and duplicate-event
+idempotency passed. Payment tests (11/11), TypeScript, migration, and
+customer order synchronization passed. PayPal implementation is accepted;
+its deployed sandbox webhook verification is deferred and remains a release
+check before enabling PayPal in production.
 
 ---
 
@@ -144,12 +151,25 @@ Goal: make server-verified provider events the source of truth for payment state
 
 Goal: deliver a complete post-purchase workflow connecting customers, sellers, administrators, payments, orders, and inventory.
 
-- [ ] **Phase 10.1 — Domain model and migration**
-  - [ ] Add `ReturnRequest`, `ReturnItem`, `ReturnEvidence`, `ReturnEvent`, and refund transaction records
-  - [ ] Define statuses, reasons, requested resolutions, actor roles, deadlines, and audit timestamps
-  - [ ] Relate requests to the customer, order, order group, order item, store, and payment
-  - [ ] Add indexes and constraints that prevent duplicate active requests for the same eligible quantity
+- [x] **Phase 10.1 — Domain model and migration**
+  - [x] Add `ReturnRequest`, `ReturnItem`, `ReturnEvidence`, `ReturnEvent`, and refund transaction records
+  - [x] Define statuses, reasons, requested resolutions, actor roles, deadlines, and audit timestamps
+  - [x] Relate requests to the customer, order, order group, order item, store, and payment
+  - [x] Add indexes and constraints that prevent duplicate active requests for the same eligible quantity
   - **Test**: Prisma migration applies cleanly and invalid relationships or duplicate active requests are rejected
+
+**Phase 10.1 acceptance (July 31, 2026):** The additive returns-domain
+migration is applied to Neon, Prisma Client generation and schema validation
+pass, and rollback-only database checks confirm that invalid relationships and
+overlapping active return requests are rejected without leaving test records.
+
+**Manual checkpoint before Phase 10.2:** Run `bun dev`, then run
+`bun --no-env-file x prisma migrate status` in another terminal and expect
+`Database schema is up to date!`. Optionally open
+`bun --no-env-file x prisma studio` and confirm the empty `ReturnRequest`,
+`ReturnItem`, `ReturnEvidence`, `ReturnEvent`, and `RefundTransaction` tables
+exist. Customer-facing return screens intentionally begin after Phase 10.2
+adds ownership, delivery, return-window, quantity, and amount validation.
 
 - [ ] **Phase 10.2 — Eligibility and transactional business rules**
   - [ ] Enforce ownership, delivered-item status, return window, store policy, and refundable quantity
