@@ -36,4 +36,10 @@ describe('fulfillment status synchronization', () => {
 			deriveOrderStatus([OrderStatus.Pending, OrderStatus.Processing]),
 		).toBe(OrderStatus.Processing);
 	});
+
+	it('treats mixed delivery and pickup completion as a completed order', () => {
+		expect(
+			deriveOrderStatus([OrderStatus.Delivered, OrderStatus.PickedUp]),
+		).toBe(OrderStatus.Delivered);
+	});
 });

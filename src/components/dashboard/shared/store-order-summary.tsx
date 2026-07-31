@@ -1,6 +1,5 @@
 import PaymentStatusTag from '@/components/shared/payment-status';
 import {
-	OrderStatus,
 	PaymentStatus,
 	ProductStatus,
 	StoreOrderType,
@@ -10,9 +9,12 @@ import { FC } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ExternalLink, Printer } from 'lucide-react';
-import OrderStatusSelect from '../forms/order-status-select';
+import PackageStatusSelect from '../forms/package-status-select';
+import ShipmentStatusTag from '@/components/shared/shipment-status';
 import ProductStatusTag from '@/components/shared/product-status';
 import { Button } from '@/components/ui/button';
+import CancellationRequestActions from '@/components/dashboard/orders/cancellation-request-actions';
+import { CancellationRequestStatus } from '@prisma/client';
 
 interface Props {
 	group: StoreOrderType;
@@ -22,6 +24,9 @@ const StoreOrderSummary: FC<Props> = ({ group }) => {
 	const paymentDetails = group.order.paymentDetails;
 	const paymentStatus = group.order.paymentStatus as PaymentStatus;
 	const shippingAddress = group.order.shippingAddress;
+	const activeCancellation = group.cancellationRequests.find(
+		(request) => request.status === CancellationRequestStatus.REQUESTED,
+	);
 
 	const { minDate, maxDate } = getShippingDatesRange(
 		group.shippingDeliveryMin,
@@ -49,6 +54,15 @@ const StoreOrderSummary: FC<Props> = ({ group }) => {
 	return (
 		<div className='py-2 relative print:py-0 print:text-black'>
 			<div className='w-full px-1'>
+				{activeCancellation && (
+					<div className='mb-4 print:hidden'>
+						<CancellationRequestActions
+							request={activeCancellation}
+							storeId={group.storeId}
+							orderId={group.order.id}
+						/>
+					</div>
+				)}
 				<div className='flex items-center justify-between gap-4 border-b pb-4 border-border'>
 					<div className='space-y-1.5'>
 						<div className='flex items-center gap-2'>
@@ -69,11 +83,15 @@ const StoreOrderSummary: FC<Props> = ({ group }) => {
 						</div>
 						<div className='flex items-center gap-x-2 print:hidden'>
 							<PaymentStatusTag status={paymentStatus} />
-							<OrderStatusSelect
+							<PackageStatusSelect
 								storeId={group.storeId}
 								groupId={group.id}
-								status={group.status as OrderStatus}
+								orderId={group.order.id}
+								status={group.packageStatus}
 							/>
+							{group.shipment && (
+								<ShipmentStatusTag status={group.shipment.status} />
+							)}
 						</div>
 					</div>
 					<Button

@@ -29,13 +29,19 @@ describe('return eligibility', () => {
 		});
 	});
 
+	it('accepts a verified pickup inside the return window', () => {
+		expect(
+			assertReturnEligibility({ ...eligibleInput, itemStatus: 'PickedUp' }),
+		).toMatchObject({ availableQuantity: 2 });
+	});
+
 	it('rejects an item that is not delivered', () => {
 		expect(() =>
 			assertReturnEligibility({
 				...eligibleInput,
 				itemStatus: 'Shipped',
 			}),
-		).toThrow('Only delivered items');
+		).toThrow('Only delivered or picked-up items');
 	});
 
 	it('rejects an expired return request', () => {

@@ -43,7 +43,9 @@ const fetchUserOrdersFromDb = unstable_cache(
 		if (filter === 'shipped')
 			whereClause.AND.push({ orderStatus: OrderStatus.Shipped });
 		if (filter === 'delivered')
-			whereClause.AND.push({ orderStatus: OrderStatus.Delivered });
+			whereClause.AND.push({
+				orderStatus: { in: [OrderStatus.Delivered, OrderStatus.PickedUp] },
+			});
 
 		const now = new Date();
 		if (period === 'last-6-months') {

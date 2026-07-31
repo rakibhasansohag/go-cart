@@ -20,18 +20,21 @@ model User {
   picture String @db.Text
   role    Role   @default(USER)
 
-  stores            Store[]           @relation("UserStores")
-  following         Store[]           @relation("UserFollowingStore")
-  reviews           Review[]          @relation("ReviewToUser")
-  cart              Cart?             @relation("UserCart")
-  shippingAddresses ShippingAddress[] @relation("UserShippingAddresses")
-  orders            Order[]           @relation("UserOrders")
-  wishlist          Wishlist[]        @relation("WishlistToUser")
-  payments          PaymentDetails[]  @relation("PaymentDetailsToUser")
-  coupons           Coupon[]          @relation("CouponToUser")
-  returnRequests    ReturnRequest[]   @relation("ReturnCustomer")
-  returnEvidence    ReturnEvidence[]  @relation("ReturnEvidenceUploader")
-  returnEvents      ReturnEvent[]     @relation("ReturnEventActor")
+  stores                Store[]                 @relation("UserStores")
+  following             Store[]                 @relation("UserFollowingStore")
+  reviews               Review[]                @relation("ReviewToUser")
+  cart                  Cart?                   @relation("UserCart")
+  shippingAddresses     ShippingAddress[]       @relation("UserShippingAddresses")
+  orders                Order[]                 @relation("UserOrders")
+  wishlist              Wishlist[]              @relation("WishlistToUser")
+  payments              PaymentDetails[]        @relation("PaymentDetailsToUser")
+  coupons               Coupon[]                @relation("CouponToUser")
+  returnRequests        ReturnRequest[]         @relation("ReturnCustomer")
+  returnEvidence        ReturnEvidence[]        @relation("ReturnEvidenceUploader")
+  returnEvents          ReturnEvent[]           @relation("ReturnEventActor")
+  fulfillmentEvents     FulfillmentTransition[] @relation("FulfillmentTransitionActor")
+  cancellationRequests  CancellationRequest[]   @relation("CancellationRequestCustomer")
+  cancellationDecisions CancellationRequest[]   @relation("CancellationRequestDecider")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -478,6 +481,76 @@ enum OrderStatus {
   Returned
   PartiallyShipped
   OnHold
+  PickedUp
+}
+
+enum FulfillmentMode {
+  PLATFORM
+  SELLER
+  PICKUP
+}
+
+enum PackageStatus {
+  PENDING
+  ACCEPTED
+  PROCESSING
+  READY_FOR_HANDOFF
+  HANDED_OFF
+  CANCELLED
+}
+
+enum ShipmentStatus {
+  AWAITING_RECEIPT
+  RECEIVED_AT_HUB
+  READY_FOR_DISPATCH
+  IN_TRANSIT
+  OUT_FOR_DELIVERY
+  DELIVERY_ATTEMPT_FAILED
+  READY_FOR_REDELIVERY
+  RETURNED_TO_HUB
+  RETURNED_TO_SELLER
+  DELIVERED
+  AWAITING_PICKUP
+  PICKED_UP
+  CANCELLED
+}
+
+enum FulfillmentEntityType {
+  PACKAGE
+  SHIPMENT
+}
+
+enum FulfillmentActorRole {
+  CUSTOMER
+  SELLER
+  WAREHOUSE
+  CARRIER
+  ADMIN
+  SYSTEM
+}
+
+enum FulfillmentSource {
+  MANUAL
+  API
+  WEBHOOK
+  AUTOMATION
+  MIGRATION
+}
+
+enum CancellationRequestStatus {
+  REQUESTED
+  APPROVED
+  REJECTED
+  WITHDRAWN
+}
+
+enum CancellationReasonCode {
+  ORDERED_BY_MISTAKE
+  FOUND_BETTER_PRICE
+  SHIPPING_TOO_SLOW
+  WRONG_ADDRESS
+  WRONG_ITEM_OR_SIZE
+  OTHER
 }
 
 enum PaymentStatus {
@@ -507,10 +580,12 @@ model Order {
   orderStatus   OrderStatus   @default(Pending)
   paymentStatus PaymentStatus @default(Pending)
 
-  paymentMethod  PaymentMethod?
-  paymentDetails PaymentDetails? @relation("PaymentDetailsToOrder")
-  paymentEvents  PaymentEvent[]  @relation("PaymentEventsToOrder")
-  returnRequests ReturnRequest[] @relation("ReturnRequestToOrder")
+  paymentMethod        PaymentMethod?
+  paymentDetails       PaymentDetails?         @relation("PaymentDetailsToOrder")
+  paymentEvents        PaymentEvent[]          @relation("PaymentEventsToOrder")
+  returnRequests       ReturnRequest[]         @relation("ReturnRequestToOrder")
+  fulfillmentEvents    FulfillmentTransition[] @relation("FulfillmentTransitionToOrder")
+  cancellationRequests CancellationRequest[]   @relation("CancellationRequestToOrder")
 
   shippingAddressId String
   shippingAddress   ShippingAddress @relation("ShippingAddressToOrder", fields: [shippingAddressId], references: [id])
@@ -526,8 +601,10 @@ model Order {
 }
 
 model OrderGroup {
-  id     String      @id @default(uuid())
-  status OrderStatus @default(Pending)
+  id              String          @id @default(uuid())
+  status          OrderStatus     @default(Pending)
+  fulfillmentMode FulfillmentMode @default(PLATFORM)
+  packageStatus   PackageStatus   @default(PENDING)
 
   items OrderItem[] @relation("OrderItemToGroup")
 
@@ -548,7 +625,10 @@ model OrderGroup {
   couponId String?
   coupon   Coupon? @relation("CouponToOrderGroup", fields: [couponId], references: [id])
 
-  returnRequests ReturnRequest[] @relation("ReturnRequestToOrderGroup")
+  returnRequests       ReturnRequest[]         @relation("ReturnRequestToOrderGroup")
+  shipment             Shipment?
+  fulfillmentEvents    FulfillmentTransition[] @relation("FulfillmentTransitionToOrderGroup")
+  cancellationRequests CancellationRequest[]   @relation("CancellationRequestToOrderGroup")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -600,6 +680,9 @@ enum ProductStatus {
 
   /// Product is awaiting customer pickup (for pickup orders)
   AwaitingPickup
+
+  /// Customer pickup was completed and verified
+  PickedUp
 }
 
 model OrderItem {
@@ -633,6 +716,84 @@ model OrderItem {
 
   @@index([orderGroupId])
   @@index([status, deliveredAt])
+}
+
+model Shipment {
+  id     String         @id @default(uuid())
+  status ShipmentStatus @default(AWAITING_RECEIPT)
+
+  failureReasonCode String?
+  failureMessage    String? @db.Text
+
+  orderGroupId String     @unique
+  orderGroup   OrderGroup @relation(fields: [orderGroupId], references: [id], onDelete: Cascade)
+
+  fulfillmentEvents FulfillmentTransition[] @relation("FulfillmentTransitionToShipment")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+}
+
+model FulfillmentTransition {
+  id             String                @id @default(uuid())
+  entityType     FulfillmentEntityType
+  previousStatus String
+  nextStatus     String
+  actorRole      FulfillmentActorRole
+  source         FulfillmentSource     @default(MANUAL)
+  reasonCode     String?
+  message        String?               @db.Text
+  idempotencyKey String                @unique
+
+  actorUserId String?
+  actorUser   User?   @relation("FulfillmentTransitionActor", fields: [actorUserId], references: [id])
+
+  orderId String
+  order   Order  @relation("FulfillmentTransitionToOrder", fields: [orderId], references: [id], onDelete: Cascade)
+
+  orderGroupId String
+  orderGroup   OrderGroup @relation("FulfillmentTransitionToOrderGroup", fields: [orderGroupId], references: [id], onDelete: Cascade)
+
+  shipmentId String?
+  shipment   Shipment? @relation("FulfillmentTransitionToShipment", fields: [shipmentId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([orderId, createdAt])
+  @@index([orderGroupId, createdAt])
+  @@index([shipmentId, createdAt])
+  @@index([actorUserId])
+}
+
+model CancellationRequest {
+  id           String                    @id @default(uuid())
+  status       CancellationRequestStatus @default(REQUESTED)
+  reasonCode   CancellationReasonCode
+  message      String?                   @db.Text
+  decisionNote String?                   @db.Text
+
+  customerId String
+  customer   User   @relation("CancellationRequestCustomer", fields: [customerId], references: [id])
+
+  decidedById String?
+  decidedBy   User?   @relation("CancellationRequestDecider", fields: [decidedById], references: [id])
+
+  orderId String
+  order   Order  @relation("CancellationRequestToOrder", fields: [orderId], references: [id], onDelete: Cascade)
+
+  orderGroupId String
+  orderGroup   OrderGroup @relation("CancellationRequestToOrderGroup", fields: [orderGroupId], references: [id], onDelete: Cascade)
+
+  decidedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([customerId, status])
+  @@index([orderGroupId, status])
+  @@index([orderId])
+  @@index([decidedById])
 }
 
 model Wishlist {

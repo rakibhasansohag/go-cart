@@ -24,11 +24,12 @@ interface OrdersTableProps {
 
 const STATUS_TABS = [
 	{ label: 'All Orders', value: 'ALL' },
-	{ label: 'Pending', value: 'Pending' },
-	{ label: 'Processing', value: 'Processing' },
-	{ label: 'Shipped', value: 'Shipped' },
-	{ label: 'Delivered', value: 'Delivered' },
-	{ label: 'Cancelled', value: 'Cancelled' },
+	{ label: 'Pending', value: 'PENDING' },
+	{ label: 'Accepted', value: 'ACCEPTED' },
+	{ label: 'Processing', value: 'PROCESSING' },
+	{ label: 'Ready for handoff', value: 'READY_FOR_HANDOFF' },
+	{ label: 'Handed off', value: 'HANDED_OFF' },
+	{ label: 'Cancelled', value: 'CANCELLED' },
 ];
 
 export default function OrdersTable({ storeUrl, initialData }: OrdersTableProps) {

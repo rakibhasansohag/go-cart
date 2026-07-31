@@ -71,10 +71,10 @@ export function assertReturnEligibility(
 		);
 	}
 
-	if (input.itemStatus !== 'Delivered') {
+	if (!['Delivered', 'PickedUp'].includes(input.itemStatus)) {
 		throw new ReturnRuleError(
 			'ITEM_NOT_DELIVERED',
-			'Only delivered items are eligible for return.',
+			'Only delivered or picked-up items are eligible for return.',
 		);
 	}
 

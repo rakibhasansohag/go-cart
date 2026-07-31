@@ -13,7 +13,8 @@ export const queryKeys = {
 		featuredCategories: () => ['home', 'featuredCategories'] as const,
 	},
 	profile: {
-		orders: (filters: object) => ['profile', 'orders', filters] as const,
+		orderLists: () => ['profile', 'orders'] as const,
+		orders: (filters: object) => [...queryKeys.profile.orderLists(), filters] as const,
 		payments: (filters: object) => ['profile', 'payments', filters] as const,
 		reviews: (filters: object) => ['profile', 'reviews', filters] as const,
 		wishlist: (page: number) => ['profile', 'wishlist', page] as const,

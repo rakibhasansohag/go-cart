@@ -9,6 +9,8 @@ import { ColumnDef } from '@tanstack/react-table';
 import Image from 'next/image';
 import PaymentStatusTag from '@/components/shared/payment-status';
 import OrderStatusTag from '@/components/shared/order-status';
+import PackageStatusTag from '@/components/shared/package-status';
+import ShipmentStatusSelect from '@/components/dashboard/forms/shipment-status-select';
 import { PaymentStatus, OrderStatus } from '@/lib/types';
 import { format } from 'date-fns';
 import { formatOrderId, formatPackageId } from '@/lib/utils';
@@ -130,11 +132,27 @@ const adminOrderColumns: ColumnDef<AdminOrder>[] = [
 		),
 	},
 	{
-		accessorKey: 'status',
-		header: 'Package',
+		accessorKey: 'packageStatus',
+		header: 'Preparation',
 		cell: ({ row }) => (
-			<OrderStatusTag status={row.original.status as OrderStatus} />
+			<PackageStatusTag status={row.original.packageStatus} />
 		),
+	},
+	{
+		accessorKey: 'shipment',
+		header: 'Shipment',
+		cell: ({ row }) =>
+			row.original.shipment ? (
+				<ShipmentStatusSelect
+					groupId={row.original.id}
+					orderId={row.original.order.id}
+					status={row.original.shipment.status}
+					mode={row.original.fulfillmentMode}
+					packageStatus={row.original.packageStatus}
+				/>
+			) : (
+				<span className='text-xs text-muted-foreground'>Not created</span>
+			),
 	},
 	{
 		accessorKey: 'createdAt',

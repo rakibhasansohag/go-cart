@@ -78,6 +78,11 @@ const productStatusStyles: {
 		textColor: 'text-violet-800 dark:text-violet-500',
 		label: 'Awaiting Pickup',
 	},
+	[ProductStatus.PickedUp]: {
+		bgColor: 'bg-emerald-100 dark:bg-emerald-500/10',
+		textColor: 'text-emerald-800 dark:text-emerald-400',
+		label: 'Picked up',
+	},
 };
 
 const ProductStatusTag: React.FC<ProductStatusTagProps> = ({ status }) => {

@@ -47,7 +47,9 @@ export default function OrderPageView({ orderId }: { orderId: string }) {
 		order.groups.reduce(
 			(total, group) =>
 				total +
-				group.items.filter((item) => item.status === 'Delivered').length,
+				group.items.filter((item) =>
+					['Delivered', 'PickedUp'].includes(item.status),
+				).length,
 			0,
 		) || 0;
 

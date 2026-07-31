@@ -1,7 +1,7 @@
 'use server';
 
 import { currentUser } from '@clerk/nextjs/server';
-import { OrderStatus, Prisma, ShippingRate, Store } from '@prisma/client';
+import { PackageStatus, Prisma, ShippingRate, Store } from '@prisma/client';
 import { db } from '@/lib/db';
 import { StoreDefaultShippingType, StoreStatus, StoreType } from '@/lib/types';
 import { checkIfUserFollowingStore } from './product';
@@ -410,7 +410,9 @@ export const getStoreOrders = async (
 
 		const where: Prisma.OrderGroupWhereInput = {
 			storeId: store.id,
-			...(status && status !== 'ALL' ? { status: status as OrderStatus } : {}),
+			...(status && status !== 'ALL'
+				? { packageStatus: status as PackageStatus }
+				: {}),
 			...(textSearch
 				? {
 						OR: [
@@ -502,6 +504,14 @@ export const getStoreOrders = async (
 				include: {
 					items: true,
 					coupon: true,
+					shipment: true,
+					cancellationRequests: {
+						orderBy: { createdAt: 'desc' },
+						take: 1,
+					},
+					fulfillmentEvents: {
+						orderBy: { createdAt: 'asc' },
+					},
 					order: {
 						select: {
 							id: true,

@@ -7,9 +7,9 @@ import Image from 'next/image';
 import { ColumnDef } from '@tanstack/react-table';
 
 // Types
-import { OrderStatus, PaymentStatus, StoreOrderType } from '@/lib/types';
+import { PaymentStatus, StoreOrderType } from '@/lib/types';
 import PaymentStatusTag from '@/components/shared/payment-status';
-import OrderStatusSelect from '@/components/dashboard/forms/order-status-select';
+import PackageStatusSelect from '@/components/dashboard/forms/package-status-select';
 import { Expand } from 'lucide-react';
 import { useModal } from '@/providers/modal-provider';
 import CustomModal from '@/components/dashboard/shared/custom-modal';
@@ -17,6 +17,7 @@ import StoreOrderSummary from '@/components/dashboard/shared/store-order-summary
 
 import Link from 'next/link';
 import { formatOrderId, formatPackageId } from '@/lib/utils';
+import ShipmentStatusTag from '@/components/shared/shipment-status';
 
 export const columns: ColumnDef<StoreOrderType>[] = [
 	{
@@ -105,19 +106,30 @@ export const columns: ColumnDef<StoreOrderType>[] = [
 		},
 	},
 	{
-		accessorKey: 'status',
-		header: 'Status',
+		accessorKey: 'packageStatus',
+		header: 'Preparation',
 		cell: ({ row }) => {
 			return (
 				<div>
-					<OrderStatusSelect
+					<PackageStatusSelect
 						groupId={row.original.id}
-						status={row.original.status as OrderStatus}
+						orderId={row.original.order.id}
+						status={row.original.packageStatus}
 						storeId={row.original.storeId}
 					/>
 				</div>
 			);
 		},
+	},
+	{
+		accessorKey: 'shipmentStatus',
+		header: 'Shipment',
+		cell: ({ row }) =>
+			row.original.shipment ? (
+				<ShipmentStatusTag status={row.original.shipment.status} />
+			) : (
+				<span className='text-xs text-muted-foreground'>Not created</span>
+			),
 	},
 	{
 		accessorKey: 'total',

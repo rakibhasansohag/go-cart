@@ -70,11 +70,16 @@ const statusStyles: {
 		textColor: 'text-violet-800 dark:text-violet-500',
 		label: 'On Hold',
 	},
+	[OrderStatus.PickedUp]: {
+		bgColor: 'bg-emerald-100 dark:bg-emerald-500/10',
+		textColor: 'text-emerald-800 dark:text-emerald-400',
+		label: 'Picked up',
+	},
 };
 
 const OrderStatusTag: FC<OrderStatusTagProps> = ({ status }) => {
 	const styles = statusStyles[status];
-	const { bgColor, textColor } = styles;
+	const { bgColor, textColor, label } = styles;
 	return (
 		<div>
 			<span
@@ -85,7 +90,7 @@ const OrderStatusTag: FC<OrderStatusTagProps> = ({ status }) => {
 				)}
 			>
 				<Truck className=' shrink-0 size-3' />
-				{status}
+				{label}
 			</span>
 		</div>
 	);

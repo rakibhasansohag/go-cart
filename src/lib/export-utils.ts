@@ -11,7 +11,9 @@ export function exportOrdersToCSV(orders: StoreOrderType[], filenamePrefix = 'st
 		'Customer Name',
 		'Customer Email',
 		'Payment Status',
-		'Order Status',
+		'Overall Order Status',
+		'Package Preparation',
+		'Shipment Status',
 		'Items Count',
 		'Total Amount ($)',
 	];
@@ -33,7 +35,9 @@ export function exportOrdersToCSV(orders: StoreOrderType[], filenamePrefix = 'st
 			`"${fullName.replace(/"/g, '""')}"`,
 			`"${email.replace(/"/g, '""')}"`,
 			`"${group.order?.paymentStatus || ''}"`,
-			`"${group.status || ''}"`,
+			`"${group.order.orderStatus || ''}"`,
+			`"${group.packageStatus || ''}"`,
+			`"${group.shipment?.status || ''}"`,
 			group.items?.length || 0,
 			group.total ? group.total.toFixed(2) : '0.00',
 		];

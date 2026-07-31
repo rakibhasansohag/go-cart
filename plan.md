@@ -206,7 +206,12 @@ only while requests remain active. The full automated suite passes 31/31 tests,
 TypeScript and touched-file lint pass, and private return pages are semantic,
 theme-aware, responsive, and marked `noindex`.
 
-### Phase 10.3.1 — Fulfillment status integrity prerequisite
+### Phase 10.3.1 — Centralized fulfillment integrity and role ownership
+
+**Current priority 1:** Complete this state machine before continuing with the
+seller return queue. A seller prepares and hands off only their own package;
+GoCart logistics, verified carrier events, or an audited administrator action
+own the delivery truth.
 
 - [x] Synchronize seller package changes to package items and derive the overall
   customer order status in one transaction
@@ -215,33 +220,61 @@ theme-aware, responsive, and marked `noindex`.
   queries after status mutations
 - [x] Show customer orders as `#ORD-…` and seller/store packages as `#PKG-…`
   while retaining UUIDs as internal database identifiers
-- [ ] Replace unrestricted status dropdowns with a server-enforced, forward-only
-  fulfillment state machine
-- [ ] Permit cancellation only from eligible pre-delivery states; never move a
+- [x] Keep the customer `Order`, each seller `Package` (`OrderGroup`), and each
+  physical `Shipment` as separate records with independently derived statuses
+- [x] Add fulfillment modes: platform fulfilled by default, seller fulfilled as
+  an optional future path, and customer pickup
+- [x] Replace unrestricted status dropdowns with a server-enforced, forward-only
+  fulfillment state machine and an actor allowlist for every transition
+- [x] Limit seller-controlled package states to `Pending → Accepted → Processing
+  → Ready for handoff → Handed off`; sellers must not mark warehouse receipt,
+  transit, out-for-delivery, or delivery in platform-fulfilled mode
+- [x] Let warehouse/logistics, verified carrier events, or an audited admin
+  advance `Awaiting receipt → Received at hub → Ready for dispatch → In transit
+  → Out for delivery → Delivered`
+- [x] Derive partial customer states from all packages and shipments so one
+  seller or delivery does not mark a multi-store order fully delivered
+- [x] Permit cancellation only from eligible pre-delivery states; never move a
   cancelled, delivered, picked-up, returned, or refunded record backwards
-- [ ] Replace the current informational **Cancel Package** dialog with an
+- [x] Replace the current informational **Cancel Package** dialog with an
   auditable customer cancellation request/contact flow and seller decision
-- [ ] Add an explicit pickup completion state so `AwaitingPickup` cannot be
+- [x] Add an explicit pickup completion state so `AwaitingPickup` cannot be
   mistaken for a completed pickup
-- [ ] Keep return/refund/exchange statuses out of the normal fulfillment menu;
+- [x] Require a reason code for a failed delivery attempt, allow an optional
+  message, and route it to redelivery, hub return, or seller return
+- [x] Keep return/refund/exchange statuses out of the normal fulfillment menu;
   expose return actions only after `Delivered` or completed pickup
-- [ ] Record every fulfillment transition with actor, previous state, next state,
-  timestamp, and optional reason
+- [x] Record every fulfillment transition with actor, previous state, next state,
+  source, timestamp, reason, and idempotency key
 - **Test**: Invalid skips and backward transitions fail on the server; a valid
-  seller transition updates item, package, and customer order views; cancellation
-  remains available only before fulfillment becomes irreversible
+  seller transition stops at handoff; logistics can advance only received
+  packages; partial multi-store delivery remains partial; cancellation remains
+  available only before fulfillment becomes irreversible
 
-
-
+**Phase 10.3.1 acceptance (July 31, 2026):** Package preparation and shipment
+execution now use separate persisted state machines. Seller controls stop at
+handoff; audited admin logistics controls advance one step at a time; failed
+attempts require a reason; pickup completion is explicit; order/item summaries
+remain derived across every store package; customer cancellation requests and
+seller decisions are persisted; and transition history records actor, source,
+before/after status, timestamp, reason, and idempotency key. Existing packages
+were migrated to one shipment each with audit snapshots. The full suite passes
+52/52 tests, TypeScript passes, and touched-file lint has no errors.
 
 **Planned fulfillment paths:**
 
-- Delivery: `Pending → Confirmed → Processing → Ready for shipment → Shipped →
-  Out for delivery → Delivered`
+- Seller preparation: `Pending → Accepted → Processing → Ready for handoff →
+  Handed off`
+- Platform delivery: `Awaiting receipt → Received at hub → Ready for dispatch →
+  In transit → Out for delivery → Delivered`
 - Pickup: `Pending → Confirmed → Processing → Awaiting pickup → Picked up`
-- Exception: `Cancelled` may be selected from an allowed pre-delivery state after
-  customer contact; return/refund/exchange states begin only after delivery or
-  pickup and are controlled by the Returns Center.
+- Delivery exception: `Out for delivery → Delivery attempt failed → Ready for
+  redelivery → Out for delivery`, or `Returned to hub → Returned to seller`
+- Cancellation exception: an auditable request may terminate an eligible
+  pre-handoff package; it is never implemented by moving a completed state
+  backwards
+- Post-delivery: return/refund/exchange begins only after verified delivery or
+  pickup and remains controlled by the Returns Center
 
 ### Phase 10.3.2 — Order and package traceability
 
@@ -261,14 +294,180 @@ theme-aware, responsive, and marked `noindex`.
   formats; seller results never expose another store's packages; mixed package
   delivery states do not mark the full customer order delivered
 
-**Manual checkpoint before Phase 10.4:** Restart `bun dev`, change a paid package
-through the currently available statuses until `Delivered`, then open that order
-as its customer. Confirm the same delivery state appears on the order list,
-overall order header, package, and item, and that the delivered item shows
-**Request return**. Submit a refund or exchange request and confirm the browser
-redirects to its timeline. Verify the request appears under **Account → Returns**,
-survives a refresh, and creates matching `ReturnRequest`, `ReturnItem`,
-`ReturnEvent`, and optional `ReturnEvidence` records in Prisma Studio.
+### Phase 10.3.3 — Notification system and demo automation priority gate
+
+**Current priority 2:** Build this immediately after Phase 10.3.1 and before
+resuming Phase 10.4. Manual seller/admin actions and automatic demo transitions
+must use the same transition, audit, event, and notification pipeline.
+
+**Timing contract — immediate work and cron work are independent:**
+
+- Request-triggered events are immediate: placing an order, confirming payment,
+  changing a status, requesting cancellation/return, or making an admin decision
+  writes its business state, audit event, in-app notification, and email outbox
+  job in the originating transaction
+- After that transaction commits, Next.js `after()` attempts SMTP delivery so
+  the user response is not blocked; success/failure is recorded on the outbox job
+- The initiating browser invalidates its affected queries immediately. Other
+  already-open customer/seller/admin sessions see the persisted notification on
+  their next visibility-aware header poll (target 15–30 seconds) without needing
+  a paid realtime service
+- Cron never delays an ordinary notification. Its two responsibilities are to
+  create due demo fulfillment transitions and retry pending/failed outbox jobs
+- When cron creates an automatic status transition, that transition uses the
+  same domain service and emits its in-app notification and email immediately
+  within that cron invocation
+
+#### Domain events and reliable delivery
+
+- [ ] Add a provider-neutral domain-event/outbox model written in the same
+  transaction as each status, payment, return, dispute, and refund mutation
+- [ ] Add unique event/idempotency keys so retries cannot create duplicate
+  in-app notifications or emails
+- [ ] Create the in-app notification and email outbox job in the business
+  transaction, then use Next.js `after()` to attempt SMTP immediately after the
+  response; retain failed email jobs for scheduled retry
+- [ ] Make immediate dispatch safe to retry and best-effort: a crash after the
+  response leaves the durable outbox job pending for recovery instead of losing
+  the email or rolling back the successful business action
+- [ ] Store delivery attempts, last error, attempt count, next attempt time, and
+  sent time without allowing an email failure to roll back a valid order update
+- [ ] Define typed event payloads and a centralized recipient resolver instead
+  of sending messages directly from page components or status dropdowns
+
+#### Demo-only automatic fulfillment
+
+- [ ] Add a per-package automation mode and `nextTransitionAt`; new paid test
+  packages opt in only when the explicit environment switch is enabled
+- [ ] Add a secured, once-daily Vercel Cron route that selects due packages in
+  bounded batches and advances each package by at most one valid step
+- [ ] Keep automation and recovery as separate secured jobs/routes: one advances
+  due demo fulfillment; the other retries pending/failed email outbox jobs
+- [ ] Run automatic steps through the exact server transition service used by
+  sellers, logistics, and admins, with actor/source recorded as `SYSTEM`
+- [ ] In demo mode, simulate both sides of the journey in order: seller
+  preparation/handoff, platform receipt/dispatch, and logistics delivery; still
+  emit the correct role-scoped event at every boundary
+- [ ] Never auto-advance unpaid, cancelled, failed-delivery, delivered,
+  picked-up, returned, refunded, disputed, or manually paused records
+- [ ] Prevent overlapping cron runs and make every run safe to repeat; record an
+  automation-run summary and surface failures to admins
+- [ ] Provide a protected local/manual trigger for testing without waiting one
+  day; it must use the same authorization and idempotency rules
+- [ ] Document environment controls with secure defaults:
+  - `DEMO_FULFILLMENT_AUTOMATION_ENABLED=false`
+  - `DEMO_FULFILLMENT_STEP_HOURS=24`
+  - `DEMO_FULFILLMENT_BATCH_SIZE=100`
+  - `EMAIL_NOTIFICATIONS_ENABLED=false`
+  - `CRON_SECRET=<random secret>`
+- [ ] Treat `DEMO_FULFILLMENT_STEP_HOURS=24` as the minimum due interval, not an
+  exact timer: Vercel Hobby executes cron only once daily and may run at any time
+  within the configured UTC hour, so due work advances at the next cron window
+
+#### In-app notification experience
+
+- [ ] Add persisted notifications for customers, sellers, and admins with type,
+  title, message, safe internal action URL, created time, read time, and source
+  event
+- [ ] Add a shared header bell with unread count and a small recent-notification
+  popover; also add a complete `/notifications` page reachable from customer,
+  seller, and admin navigation
+- [ ] Mark one notification read when its action is opened, support **Mark all
+  as read**, and navigate only to validated internal role-authorized routes
+- [ ] Add server-side pagination, unread/read state, category, role-relevant
+  event type, and date filters
+- [ ] Server-prefetch the full page; use stable query keys, targeted invalidation,
+  and 15–30 second polling only while the tab is visible instead of requiring a
+  paid realtime service
+- [ ] Use native buttons/links, visible focus, useful accessible labels, a
+  restrained unread announcement, responsive layout, and light/dark theme tokens
+
+#### SMTP email and admin-controlled templates
+
+- [ ] Add `nodemailer` and `mjml` server dependencies and their required type
+  declarations; reuse the already-installed `jodit-react` package for admin
+  editing instead of introducing a second rich-text editor
+- [ ] Add a provider-neutral SMTP adapter with one reusable Nodemailer
+  transporter, TLS configuration, connection verification, and secrets kept
+  server-only
+- [ ] Support Gmail SMTP for the hobby deployment through a Google App Password,
+  while allowing another SMTP provider through environment changes only
+- [ ] Add MJML as the server-side email renderer and create a polished,
+  code-owned GoCart master layout with responsive/mobile-safe structure, branded
+  header, preheader, status/summary card, Order/Package/Shipment references,
+  primary CTA, support text, accessible contrast, and footer
+- [ ] Seed a polished default template for every supported event family: account,
+  order/payment, package/fulfillment, shipment/delivery attempt, cancellation,
+  return/dispute, exchange, refund, and admin operational alert
+- [ ] Add admin-only email-template management keyed by domain event and locale,
+  including subject, preheader, body, CTA label, enabled state, allowed variables,
+  plain-text fallback, draft/published version, preview, and test-send
+- [ ] Reuse the installed Jodit React editor for the editable body content only;
+  keep the MJML shell, responsive grid, GoCart header/footer, security rules, and
+  critical transaction fields controlled by the application
+- [ ] Load Jodit client-side, use a restrained email-safe toolbar, insert allowed
+  variables from a picker, and provide a polished admin layout with template
+  list/search/filter, autosaved draft indicator, desktop/mobile preview tabs,
+  send-test dialog, publish confirmation, and clear validation feedback
+- [ ] Support three explicit admin actions for every event template: **Use
+  default**, **Customize default**, and **Reset to default**; default templates
+  remain immutable and cannot be deleted
+- [ ] Store only the custom override/version in the database. When no published
+  custom override exists—or it is disabled, invalid, or fails compilation—the
+  renderer automatically uses the matching code-owned default template
+- [ ] Sanitize Jodit HTML before storage and rendering, reject scripts, unsafe
+  URLs and unknown variables, compile the final MJML only on the server, and
+  reject publishing when compilation reports an error
+- [ ] Generate and store/send both compiled responsive HTML and a meaningful
+  plain-text alternative; record template source (`DEFAULT` or `CUSTOM`), version,
+  editor, preview/test activity, and the version used for each email attempt
+- [ ] Include a role-authorized deep link in each email and never expose private
+  order, store, payment, or return data to the wrong recipient
+
+#### Preferences and recipient rules
+
+- [ ] Add per-user notification preferences by category and channel for
+  customers, sellers, and admins, with sensible role-based defaults
+- [ ] Keep visual template selection admin-owned: recipients choose whether an
+  optional category may use email/in-app channels, while the system/admin chooses
+  the published default or custom template used for that event
+- [ ] Keep required security and critical transaction notices enabled; allow
+  optional email categories to be disabled while preserving essential in-app
+  audit information
+- [ ] Customer events: payment, package progress, shipment/delivery, cancellation,
+  return, exchange, and refund
+- [ ] Seller events: new paid package, cancellation request, return request,
+  fulfillment exceptions, and seller/admin decisions
+- [ ] Admin events: escalated disputes, payment/webhook failures, stuck
+  automation, repeated SMTP failures, and exceptional overrides; do not notify
+  every admin about every normal order by default
+
+- **Test**: A manual action creates its in-app notification immediately and
+  attempts email without waiting for cron; a cron-created transition emits the
+  same outputs during its run; each transition produces exactly one audit event,
+  one in-app notification per intended recipient, and at most one email per
+  enabled preference; clicking marks it read and opens the authorized resource;
+  filters and pagination run server-side; disabling automation performs no
+  status writes; failed SMTP delivery retries without duplicating messages; MJML
+  defaults render on desktop/mobile, Jodit overrides are sanitized, and an
+  absent/disabled/broken custom template falls back to the default
+
+**Manual checkpoint before Phase 10.4:** Restart `bun dev`, create a paid
+multi-store order, and progress one package manually while triggering another
+through the protected demo automation route. Confirm sellers can stop only at
+handoff; the customer sees partial aggregate status; every intended role receives
+one in-app notification; opening it marks it read and follows the correct link;
+an enabled test email arrives immediately without invoking cron; switch one
+event to a Jodit custom body, preview/test/publish it, then reset it and confirm
+the default MJML template is used again. Disabled email preferences suppress
+only optional mail. Finally complete delivery through the logistics/admin path
+and confirm **Request return** appears only for the delivered item. Verify the matching
+fulfillment audit, notification, outbox/email attempt, and automation-run records
+in Prisma Studio.
+
+**Priority execution order:** `10.3.1 centralized state machine → 10.3.3 event
+outbox and in-app foundation → SMTP/templates/preferences → demo automation →
+Phase 11 shipment UI → resume Phase 10.4–10.7 returns/refunds`.
 
 - [ ] **Phase 10.4 — Seller return queue**
   - [ ] Add store-scoped return list, filters, detail review, and evidence display
@@ -299,32 +498,51 @@ survives a refresh, and creates matching `ReturnRequest`, `ReturnItem`,
 
 ---
 
-## Phase 11: Shipment Tracking & Notifications
+## Phase 11: Centralized Shipment Tracking & Notification Expansion
 
-Goal: keep customers, sellers, and administrators informed throughout fulfillment and post-purchase workflows.
+Goal: connect physical shipments to the centralized fulfillment state machine,
+then expand the Phase 10.3.3 notification foundation across the complete
+post-purchase workflow.
 
 - [ ] **Phase 11.1 — Shipment tracking model**
-  - [ ] Add shipment, carrier, tracking number, shipment item, and tracking-event records
+  - [ ] Add shipment, carrier, tracking number, shipment item, tracking event,
+    delivery attempt, and proof-of-delivery records
   - [ ] Support split and partial shipments per order group
-  - **Test**: Multiple shipments can safely represent different items from one store order
+  - [ ] Allow compatible packages to be consolidated without forcing a ready
+    package to wait indefinitely for another store
+  - **Test**: Multiple shipments can safely represent different items from one
+    store order, and one shipment can carry compatible packages without merging
+    their seller ownership or audit history
 
-- [ ] **Phase 11.2 — Seller fulfillment workflow**
-  - [ ] Allow sellers to create shipments, assign items, and record carrier/tracking details
-  - [ ] Synchronize shipment events with item, group, and order statuses
-  - **Test**: Shipment creation and delivery events update the correct items and order summaries
+- [ ] **Phase 11.2 — Seller handoff and centralized logistics workflow**
+  - [ ] Let sellers prepare and hand off their own package, but never claim
+    warehouse receipt or customer delivery in platform-fulfilled mode
+  - [ ] Let warehouse/logistics or audited admins receive packages, assign
+    shipment items, dispatch shipments, and record delivery exceptions
+  - [ ] Accept verified carrier events and synchronize them with item, package,
+    shipment, and derived order statuses
+  - **Test**: Seller handoff, warehouse receipt, split dispatch, failed attempt,
+    retry, and delivery update only the correct records and authorized views
 
 - [ ] **Phase 11.3 — Customer tracking experience**
   - [ ] Add shipment cards and a tracking timeline to order details
-  - [ ] Show split shipments, delivery estimates, delays, and delivered state
+  - [ ] Show Order ID, Package ID, Shipment ID, split shipments, delivery
+    estimates, attempts, delays, proof, and partial/full delivered state
   - [ ] Prefetch tracking data and invalidate affected order/tracking queries after updates
   - **Test**: Customers can track every shipment associated with their order
 
-- [ ] **Phase 11.4 — Notification center**
-  - [ ] Add persisted in-app notifications with read/unread state
-  - [ ] Notify relevant actors about payment, shipment, return, dispute, and refund events
-  - [ ] Add email delivery behind a provider-neutral notification service
-  - [ ] Prevent duplicate notifications when provider events are retried
-  - **Test**: Each domain event produces the intended notification once for the correct recipient
+- [ ] **Phase 11.4 — Notification coverage and operations**
+  - [ ] Reuse the Phase 10.3.3 event/outbox pipeline for shipment, delivery
+    attempts, return deadlines, dispute escalation, refund, exchange, and
+    inventory-reconciliation events
+  - [ ] Add an admin delivery-health view for pending/failed email jobs,
+    automation failures, retries, and notification audit records
+  - [ ] Add retention rules for notification bodies and delivery logs without
+    deleting immutable business audit events
+  - [ ] Document how to replace Gmail SMTP or the database outbox with a
+    dedicated provider/queue without changing domain mutation code
+  - **Test**: Each event reaches only its intended customer, seller, or admin
+    once, and operational failures can be retried and audited safely
 
 ---
 

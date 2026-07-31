@@ -13,6 +13,7 @@ const ORDER_TO_PRODUCT_STATUS: Record<OrderStatus, ProductStatus> = {
 	[OrderStatus.Returned]: ProductStatus.Returned,
 	[OrderStatus.PartiallyShipped]: ProductStatus.PartiallyShipped,
 	[OrderStatus.OnHold]: ProductStatus.OnHold,
+	[OrderStatus.PickedUp]: ProductStatus.PickedUp,
 };
 
 const PRODUCT_TO_ORDER_STATUS: Record<ProductStatus, OrderStatus> = {
@@ -30,6 +31,7 @@ const PRODUCT_TO_ORDER_STATUS: Record<ProductStatus, OrderStatus> = {
 	[ProductStatus.PartiallyShipped]: OrderStatus.PartiallyShipped,
 	[ProductStatus.ExchangeRequested]: OrderStatus.OnHold,
 	[ProductStatus.AwaitingPickup]: OrderStatus.Confirmed,
+	[ProductStatus.PickedUp]: OrderStatus.PickedUp,
 };
 
 const IN_TRANSIT_STATUSES = new Set<OrderStatus>([
@@ -39,6 +41,7 @@ const IN_TRANSIT_STATUSES = new Set<OrderStatus>([
 	OrderStatus.PartiallyShipped,
 	OrderStatus.Returned,
 	OrderStatus.Refunded,
+	OrderStatus.PickedUp,
 ]);
 
 export function productStatusForOrderStatus(
@@ -68,6 +71,15 @@ export function deriveOrderStatus(
 	const firstStatus = statuses[0];
 	if (statuses.every((status) => status === firstStatus)) {
 		return firstStatus;
+	}
+
+	if (
+		statuses.every(
+			(status) =>
+				status === OrderStatus.Delivered || status === OrderStatus.PickedUp,
+		)
+	) {
+		return OrderStatus.Delivered;
 	}
 
 	if (statuses.some((status) => IN_TRANSIT_STATUSES.has(status))) {

@@ -65,6 +65,36 @@ export type SellerAnalyticsData = {
 	topProducts: TopSellingProductSummary[];
 };
 
+const INVALID_CUSTOMER_NAMES = new Set([
+	'',
+	'null',
+	'null null',
+	'undefined',
+	'undefined undefined',
+]);
+
+function getCustomerDisplayName({
+	name,
+	email,
+	firstName,
+	lastName,
+}: {
+	name?: string | null;
+	email?: string | null;
+	firstName?: string | null;
+	lastName?: string | null;
+}) {
+	const savedName = name?.trim() ?? '';
+	if (!INVALID_CUSTOMER_NAMES.has(savedName.toLowerCase())) return savedName;
+
+	const shippingName = [firstName, lastName]
+		.filter((part): part is string => Boolean(part?.trim()))
+		.join(' ')
+		.trim();
+
+	return shippingName || email?.split('@')[0]?.trim() || 'Customer';
+}
+
 /**
  * Retrieves platform-wide analytics for Admin Dashboard
  */
@@ -105,6 +135,9 @@ export const getAdminAnalyticsData = async (): Promise<AdminAnalyticsData> => {
 								email: true,
 								picture: true,
 							},
+						},
+						shippingAddress: {
+							select: { firstName: true, lastName: true },
 						},
 					},
 				},
@@ -163,7 +196,12 @@ export const getAdminAnalyticsData = async (): Promise<AdminAnalyticsData> => {
 
 	const recentOrders: RecentOrderSummary[] = recentOrderGroups.map((g) => ({
 		id: g.id,
-		customerName: g.order?.user?.name || 'Customer',
+		customerName: getCustomerDisplayName({
+			name: g.order?.user?.name,
+			email: g.order?.user?.email,
+			firstName: g.order?.shippingAddress?.firstName,
+			lastName: g.order?.shippingAddress?.lastName,
+		}),
 		customerEmail: g.order?.user?.email || '',
 		customerImage: g.order?.user?.picture || undefined,
 		storeName: g.store?.name || 'Store',
@@ -263,6 +301,9 @@ export const getSellerStoreAnalyticsData = async (
 										picture: true,
 									},
 								},
+								shippingAddress: {
+									select: { firstName: true, lastName: true },
+								},
 							},
 						},
 					},
@@ -338,7 +379,12 @@ export const getSellerStoreAnalyticsData = async (
 
 	const recentOrders: RecentOrderSummary[] = recentOrderGroups.map((g) => ({
 		id: g.id,
-		customerName: g.order?.user?.name || 'Customer',
+		customerName: getCustomerDisplayName({
+			name: g.order?.user?.name,
+			email: g.order?.user?.email,
+			firstName: g.order?.shippingAddress?.firstName,
+			lastName: g.order?.shippingAddress?.lastName,
+		}),
 		customerEmail: g.order?.user?.email || '',
 		customerImage: g.order?.user?.picture || undefined,
 		storeName: g.store?.name || store.name,
@@ -550,9 +596,17 @@ export const getAllAdminOrders = async ({
 						},
 					},
 				},
-				coupon: true,
-				items: true,
-				order: {
+			coupon: true,
+			items: true,
+			shipment: true,
+			cancellationRequests: {
+				orderBy: { createdAt: 'desc' },
+				take: 1,
+			},
+			fulfillmentEvents: {
+				orderBy: { createdAt: 'asc' },
+			},
+			order: {
 					include: {
 						user: true,
 						shippingAddress: {

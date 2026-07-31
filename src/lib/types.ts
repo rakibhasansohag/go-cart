@@ -10,7 +10,6 @@ import {
 	ReviewImage,
 	ShippingAddress,
 	ShippingFeeMethod,
-	ShippingRate,
 	Size,
 	Spec,
 	Store,
@@ -20,6 +19,9 @@ import {
 	OrderItem,
 	Category,
 	SubCategory,
+	Shipment,
+	CancellationRequest,
+	FulfillmentTransition,
 } from '@prisma/client';
 import { getAllSubCategories } from '@/queries/subCategory';
 import { getAllAdminCoupons } from '@/queries/coupon';
@@ -284,6 +286,7 @@ export enum OrderStatus {
 	Returned = 'Returned',
 	PartiallyShipped = 'PartiallyShipped',
 	OnHold = 'OnHold',
+	PickedUp = 'PickedUp',
 }
 
 export enum PaymentStatus {
@@ -300,6 +303,9 @@ export enum PaymentStatus {
 export type OrderGroupWithItemsType = OrderGroup & {
 	items: OrderItem[];
 	store: Store;
+	shipment: Shipment | null;
+	cancellationRequests: CancellationRequest[];
+	fulfillmentEvents: FulfillmentTransition[];
 	_count: {
 		items: number;
 	};
@@ -321,6 +327,7 @@ export enum ProductStatus {
 	PartiallyShipped = 'PartiallyShipped',
 	ExchangeRequested = 'ExchangeRequested',
 	AwaitingPickup = 'AwaitingPickup',
+	PickedUp = 'PickedUp',
 }
 
 export type FiltersQueryType = {

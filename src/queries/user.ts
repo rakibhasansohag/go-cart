@@ -17,6 +17,9 @@ import {
 import {
 	CartItem,
 	Country as CountryDB,
+	FulfillmentActorRole,
+	FulfillmentEntityType,
+	FulfillmentSource,
 	ShippingAddress,
 } from '@prisma/client';
 
@@ -1221,7 +1224,37 @@ export const placeOrder = async (
 				shippingDeliveryMin: deliveryTimeMin || 7,
 				shippingDeliveryMax: deliveryTimeMax || 30,
 				couponId: check && cartCoupon ? cartCoupon?.id : null,
+				shipment: {
+					create: {},
+				},
 			},
+			include: { shipment: true },
+		});
+
+		await db.fulfillmentTransition.createMany({
+			data: [
+				{
+					entityType: FulfillmentEntityType.PACKAGE,
+					previousStatus: 'CREATED',
+					nextStatus: orderGroup.packageStatus,
+					actorRole: FulfillmentActorRole.SYSTEM,
+					source: FulfillmentSource.API,
+					idempotencyKey: `order:${order.id}:package:${orderGroup.id}:created`,
+					orderId: order.id,
+					orderGroupId: orderGroup.id,
+				},
+				{
+					entityType: FulfillmentEntityType.SHIPMENT,
+					previousStatus: 'CREATED',
+					nextStatus: orderGroup.shipment!.status,
+					actorRole: FulfillmentActorRole.SYSTEM,
+					source: FulfillmentSource.API,
+					idempotencyKey: `order:${order.id}:shipment:${orderGroup.shipment!.id}:created`,
+					orderId: order.id,
+					orderGroupId: orderGroup.id,
+					shipmentId: orderGroup.shipment!.id,
+				},
+			],
 		});
 
 		// Create OrderItems for this OrderGroup
