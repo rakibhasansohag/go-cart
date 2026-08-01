@@ -34,6 +34,7 @@ import {
 } from '@prisma/client';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
+import { Check, LockKeyhole } from 'lucide-react';
 
 const FAILURE_REASONS = [
 	['CUSTOMER_UNAVAILABLE', 'Customer unavailable'],
@@ -42,6 +43,22 @@ const FAILURE_REASONS = [
 	['ACCESS_RESTRICTED', 'Delivery access restricted'],
 	['WEATHER_OR_SAFETY', 'Weather or safety issue'],
 	['OTHER', 'Other'],
+] as const;
+
+const SHIPMENT_STEPS = [
+	ShipmentStatus.AWAITING_RECEIPT,
+	ShipmentStatus.RECEIVED_AT_HUB,
+	ShipmentStatus.READY_FOR_DISPATCH,
+	ShipmentStatus.IN_TRANSIT,
+	ShipmentStatus.OUT_FOR_DELIVERY,
+	ShipmentStatus.DELIVERED,
+	ShipmentStatus.DELIVERY_ATTEMPT_FAILED,
+	ShipmentStatus.READY_FOR_REDELIVERY,
+	ShipmentStatus.RETURNED_TO_HUB,
+	ShipmentStatus.RETURNED_TO_SELLER,
+	ShipmentStatus.AWAITING_PICKUP,
+	ShipmentStatus.PICKED_UP,
+	ShipmentStatus.CANCELLED,
 ] as const;
 
 interface Props {
@@ -61,6 +78,9 @@ export default function ShipmentStatusSelect({
 }: Props) {
 	const [currentStatus, setCurrentStatus] = useState(status);
 	const [failureOpen, setFailureOpen] = useState(false);
+	const [confirmStatus, setConfirmStatus] = useState<ShipmentStatus | null>(
+		null,
+	);
 	const [reasonCode, setReasonCode] = useState('CUSTOMER_UNAVAILABLE');
 	const [message, setMessage] = useState('');
 	const queryClient = useQueryClient();
@@ -92,6 +112,7 @@ export default function ShipmentStatusSelect({
 		onSuccess: (nextStatus) => {
 			setCurrentStatus(nextStatus);
 			setFailureOpen(false);
+			setConfirmStatus(null);
 			setMessage('');
 			toast.success(`Shipment is now ${SHIPMENT_STATUS_LABELS[nextStatus]}.`);
 			void Promise.all([
@@ -119,53 +140,112 @@ export default function ShipmentStatusSelect({
 			setFailureOpen(true);
 			return;
 		}
-		mutation.mutate({ nextStatus });
+		setConfirmStatus(nextStatus);
 	};
 
 	return (
 		<>
-			{allowed.length === 0 ? (
-				<ShipmentStatusTag status={currentStatus} />
-			) : (
-				<DropdownMenu>
-					<DropdownMenuTrigger asChild>
-						<button
-							type='button'
-							disabled={mutation.isPending}
-							aria-label={`Change shipment status. Current status: ${SHIPMENT_STATUS_LABELS[currentStatus]}`}
-							title={
-								mutation.isPending
-									? 'Updating shipment status…'
-									: `Change shipment status from ${SHIPMENT_STATUS_LABELS[currentStatus]}`
-							}
-							className='rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-60'
-						>
-							<ShipmentStatusTag status={currentStatus} />
-						</button>
-					</DropdownMenuTrigger>
-					<DropdownMenuContent
-						align='end'
-						sideOffset={6}
-						className='z-[100000] w-60'
+			<DropdownMenu>
+				<DropdownMenuTrigger asChild>
+					<button
+						type='button'
+						disabled={mutation.isPending}
+						aria-label={`Change shipment status. Current status: ${SHIPMENT_STATUS_LABELS[currentStatus]}`}
+						title={
+							mutation.isPending
+								? 'Updating shipment status…'
+								: `Change shipment status from ${SHIPMENT_STATUS_LABELS[currentStatus]}`
+						}
+						className='rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-60'
 					>
-						<DropdownMenuLabel>Next logistics step</DropdownMenuLabel>
-						<DropdownMenuSeparator />
-						{allowed.map((nextStatus) => (
+						<ShipmentStatusTag status={currentStatus} />
+					</button>
+				</DropdownMenuTrigger>
+				<DropdownMenuContent
+					align='end'
+					sideOffset={6}
+					className='z-[100000] w-60'
+				>
+					<DropdownMenuLabel>Logistics steps</DropdownMenuLabel>
+					<DropdownMenuSeparator />
+					{SHIPMENT_STEPS.map((nextStatus) => {
+						const isCurrent = nextStatus === currentStatus;
+						const isAllowed = allowed.includes(nextStatus);
+						const currentIndex = SHIPMENT_STEPS.indexOf(
+							currentStatus as (typeof SHIPMENT_STEPS)[number],
+						);
+						const stepIndex = SHIPMENT_STEPS.indexOf(nextStatus);
+						return (
 							<DropdownMenuItem
 								key={nextStatus}
 								disabled={
 									mutation.isPending ||
+									isCurrent ||
+									!isAllowed ||
 									(currentStatus === ShipmentStatus.AWAITING_RECEIPT &&
 										packageStatus !== PackageStatus.HANDED_OFF)
 								}
 								onSelect={() => chooseStatus(nextStatus)}
 							>
-								<ShipmentStatusTag status={nextStatus} />
+								<span className='flex w-full items-center justify-between gap-2'>
+									<span className='flex items-center gap-2'>
+										{stepIndex < currentIndex ? (
+											<Check
+												className='size-3.5 text-emerald-600'
+												aria-hidden='true'
+											/>
+										) : !isAllowed && !isCurrent ? (
+											<LockKeyhole
+												className='size-3.5 text-muted-foreground'
+												aria-hidden='true'
+											/>
+										) : null}
+										<ShipmentStatusTag status={nextStatus} />
+									</span>
+									{isCurrent && (
+										<span className='text-[11px] text-muted-foreground'>
+											Current
+										</span>
+									)}
+								</span>
 							</DropdownMenuItem>
-						))}
-					</DropdownMenuContent>
-				</DropdownMenu>
-			)}
+						);
+					})}
+				</DropdownMenuContent>
+			</DropdownMenu>
+
+			<Dialog
+				open={confirmStatus !== null}
+				onOpenChange={(open) => !open && setConfirmStatus(null)}
+			>
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle>Confirm shipment update</DialogTitle>
+						<DialogDescription>
+							Move this shipment from{' '}
+							<strong>{SHIPMENT_STATUS_LABELS[currentStatus]}</strong> to{' '}
+							<strong>
+								{confirmStatus ? SHIPMENT_STATUS_LABELS[confirmStatus] : ''}
+							</strong>
+							? This step cannot be reversed.
+						</DialogDescription>
+					</DialogHeader>
+					<DialogFooter>
+						<Button variant='outline' onClick={() => setConfirmStatus(null)}>
+							Keep current status
+						</Button>
+						<Button
+							disabled={mutation.isPending || !confirmStatus}
+							onClick={() => {
+								if (confirmStatus)
+									mutation.mutate({ nextStatus: confirmStatus });
+							}}
+						>
+							Confirm update
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
 
 			<Dialog open={failureOpen} onOpenChange={setFailureOpen}>
 				<DialogContent>
