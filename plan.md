@@ -458,6 +458,9 @@ its visible-tab background poll remains the 30-second free-tier fallback.
       code-owned GoCart master layout with responsive/mobile-safe structure, branded
       header, preheader, status/summary card, Order/Package/Shipment references,
       primary CTA, support text, accessible contrast, and footer
+- [x] Refine the reusable master layout with balanced outer spacing, padded
+      transaction-detail cells, and customer-safe payment references while
+      retaining complete provider identifiers only in internal payment records
 - [ ] Seed a polished default template for every supported event family: account,
       order/payment, package/fulfillment, shipment/delivery attempt, cancellation,
       return/dispute, exchange, refund, and admin operational alert

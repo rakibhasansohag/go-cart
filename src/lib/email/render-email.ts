@@ -70,6 +70,17 @@ function displayReference(value: unknown, type: 'order' | 'package') {
 	return type === 'order' ? formatOrderId(value) : formatPackageId(value);
 }
 
+function customerPaymentReference(value: unknown) {
+	if (typeof value !== 'string' || !value.trim()) return '';
+	const reference = value.trim();
+	if (/^PAY-[A-Z0-9]+$/i.test(reference)) return reference.toUpperCase();
+	const suffix = reference
+		.replace(/^(pi|ch|pay|txn)[_-]/i, '')
+		.replace(/[^a-zA-Z0-9]/g, '')
+		.slice(-10);
+	return suffix ? `PAY-${suffix.toUpperCase()}` : '';
+}
+
 function safeImageUrl(value: unknown) {
 	if (typeof value !== 'string') return null;
 	try {
@@ -264,8 +275,10 @@ export async function renderEmailTemplate(input: {
 					['Order', payload.orderId],
 					['Payment method', payload.paymentMethod ?? payload.provider],
 					[
-						'Payment reference',
-						payload.paymentReference ?? payload.providerPaymentId,
+						'Transaction reference',
+						customerPaymentReference(
+							payload.paymentReference ?? payload.providerPaymentId,
+						),
 					],
 					['Paid at', formatDateTime(payload.paidAt)],
 				]
@@ -311,9 +324,16 @@ export async function renderEmailTemplate(input: {
 		.filter((entry): entry is [string, string] => typeof entry[1] === 'string' && Boolean(entry[1]))
 		.map(
 			([label, value]) =>
-				`<tr><td style="padding:6px 0;color:#64748b">${label}</td><td style="padding:6px 0;text-align:right;font-weight:700;color:#0f172a">${escapeHtml(value)}</td></tr>`,
+				`<tr><td style="padding:7px 12px 7px 14px;color:#64748b">${label}</td><td style="padding:7px 14px 7px 12px;text-align:right;font-weight:700;color:#0f172a">${escapeHtml(value)}</td></tr>`,
 		)
 		.join('');
+	const referenceText = referenceValues
+		.filter(
+			(entry): entry is [string, string] =>
+				typeof entry[1] === 'string' && Boolean(entry[1]),
+		)
+		.map(([label, value]) => `${label}: ${value}`)
+		.join('\n');
 	const itemSummaryOptions =
 		input.templateKey === 'payment.succeeded'
 			? { heading: 'Items in your order', totalLabel: 'Total paid' }
@@ -355,24 +375,29 @@ export async function renderEmailTemplate(input: {
 					<mj-all font-family="Arial, Helvetica, sans-serif" />
 					<mj-text color="#334155" font-size="16px" line-height="1.65" />
 				</mj-attributes>
+				<mj-style inline="inline">
+					.email-detail-table { border-collapse: separate; }
+				</mj-style>
 			</mj-head>
 			<mj-body background-color="#eef2f7" width="620px">
-				<mj-section background-color="#0f172a" padding="22px 28px" border-radius="16px 16px 0 0">
-					<mj-column><mj-text color="#ffffff" font-size="26px" font-weight="700" padding="0">GoCart</mj-text></mj-column>
-				</mj-section>
-				<mj-section background-color="#ffffff" padding="34px 30px 18px">
-					<mj-column>
-						<mj-text font-size="26px" line-height="1.3" font-weight="700" color="#0f172a" padding="0 0 16px">${escapeHtml(subject)}</mj-text>
-						<mj-text padding="0">${bodyHtml}</mj-text>
-					</mj-column>
-				</mj-section>
-				${referenceRows ? `<mj-section background-color="#ffffff" padding="0 30px 20px"><mj-column><mj-text padding="0"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:16px">${referenceRows}</table></mj-text></mj-column></mj-section>` : ''}
-				${receipt?.html ?? ''}
-				${customerNote ? `<mj-section background-color="#ffffff" padding="0 30px 22px"><mj-column><mj-text padding="0 0 6px" color="#0f172a" font-size="16px" font-weight="700">Customer note</mj-text><mj-text padding="0"><div style="padding:12px 14px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px">${escapeHtml(customerNote)}</div></mj-text></mj-column></mj-section>` : ''}
-				${actionUrl && ctaLabel ? `<mj-section background-color="#ffffff" padding="0 30px 34px"><mj-column><mj-button href="${escapeHtml(actionUrl)}" background-color="#2563eb" color="#ffffff" font-weight="700" border-radius="9px" padding="0" inner-padding="13px 22px">${escapeHtml(ctaLabel)}</mj-button></mj-column></mj-section>` : ''}
-				<mj-section background-color="#f8fafc" padding="20px 30px" border-top="1px solid #e2e8f0" border-radius="0 0 16px 16px">
-					<mj-column><mj-text color="#64748b" font-size="12px" padding="0">Transactional update from GoCart. For your security, open sensitive order details only after signing in.</mj-text></mj-column>
-				</mj-section>
+				<mj-wrapper background-color="#eef2f7" padding="40px 0">
+					<mj-section background-color="#0f172a" padding="22px 28px" border-radius="16px 16px 0 0">
+						<mj-column><mj-text color="#ffffff" font-size="26px" font-weight="700" padding="0">GoCart</mj-text></mj-column>
+					</mj-section>
+					<mj-section background-color="#ffffff" padding="34px 30px 18px">
+						<mj-column>
+							<mj-text font-size="26px" line-height="1.3" font-weight="700" color="#0f172a" padding="0 0 16px">${escapeHtml(subject)}</mj-text>
+							<mj-text padding="0">${bodyHtml}</mj-text>
+						</mj-column>
+					</mj-section>
+					${referenceRows ? `<mj-section background-color="#ffffff" padding="0 30px 20px"><mj-column><mj-text padding="0"><table class="email-detail-table" role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px">${referenceRows}</table></mj-text></mj-column></mj-section>` : ''}
+					${receipt?.html ?? ''}
+					${customerNote ? `<mj-section background-color="#ffffff" padding="0 30px 22px"><mj-column><mj-text padding="0 0 6px" color="#0f172a" font-size="16px" font-weight="700">Customer note</mj-text><mj-text padding="0"><div style="padding:12px 14px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px">${escapeHtml(customerNote)}</div></mj-text></mj-column></mj-section>` : ''}
+					${actionUrl && ctaLabel ? `<mj-section background-color="#ffffff" padding="0 30px 34px"><mj-column><mj-button href="${escapeHtml(actionUrl)}" background-color="#2563eb" color="#ffffff" font-weight="700" border-radius="9px" padding="0" inner-padding="13px 22px">${escapeHtml(ctaLabel)}</mj-button></mj-column></mj-section>` : ''}
+					<mj-section background-color="#f8fafc" padding="20px 30px" border-top="1px solid #e2e8f0" border-radius="0 0 16px 16px">
+						<mj-column><mj-text color="#64748b" font-size="12px" padding="0">Transactional update from GoCart. For your security, open sensitive order details only after signing in.</mj-text></mj-column>
+					</mj-section>
+				</mj-wrapper>
 			</mj-body>
 		</mjml>`,
 		{ validationLevel: 'strict' },
@@ -387,6 +412,7 @@ export async function renderEmailTemplate(input: {
 			subject,
 			preheader,
 			plainTextFromHtml(bodyHtml),
+			referenceText,
 			receipt?.text,
 			customerNote ? `Customer note: ${customerNote}` : '',
 			actionUrl,

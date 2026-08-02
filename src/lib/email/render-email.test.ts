@@ -73,6 +73,12 @@ describe('renderEmailTemplate', () => {
 		expect(email.html).toContain('-$100.00');
 		expect(email.html).toContain('$904.98');
 		expect(email.html).toContain('https://cdn.example.com/watch.jpg');
+		expect(email.html).toContain('Transaction reference');
+		expect(email.html).toContain('PAY-TEST123');
+		expect(email.html).not.toContain('pi_test_123');
+		expect(email.html).toContain('padding:40px 0');
+		expect(email.html).toContain('padding:7px 14px 7px 12px');
+		expect(email.text).toContain('Transaction reference: PAY-TEST123');
 		expect(email.text).toContain('Total paid: $904.98');
 	});
 
