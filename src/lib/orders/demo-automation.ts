@@ -25,7 +25,7 @@ import {
 	demoFulfillmentAutomationEnabled,
 	demoFulfillmentBatchSize,
 	demoFulfillmentStepHours,
-} from '@/lib/email/config';
+} from './demo-config';
 
 const TX_OPTIONS = { maxWait: 10_000, timeout: 30_000 } as const;
 

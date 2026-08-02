@@ -1,16 +1,15 @@
-import 'server-only';
-
 import { after } from 'next/server';
-import { emailNotificationsEnabled } from './config';
-import { dispatchEmailOutboxBatch } from './outbox';
 
 export function scheduleEmailOutboxDispatch(sourceEventIds: string[]) {
 	const uniqueEventIds = [...new Set(sourceEventIds)].filter(Boolean);
-	if (!emailNotificationsEnabled() || uniqueEventIds.length === 0) return;
+	if (uniqueEventIds.length === 0) return;
 
 	try {
 		after(async () => {
 			try {
+				const [{ emailNotificationsEnabled }, { dispatchEmailOutboxBatch }] =
+					await Promise.all([import('./config'), import('./outbox')]);
+				if (!emailNotificationsEnabled()) return;
 				await dispatchEmailOutboxBatch({
 					limit: Math.min(100, uniqueEventIds.length * 5),
 					sourceEventIds: uniqueEventIds,

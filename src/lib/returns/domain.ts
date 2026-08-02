@@ -263,6 +263,13 @@ export function assertReturnTransition(
 	}
 }
 
+export function getAllowedReturnTransitions(
+	fromStatus: ReturnRequestStatus,
+	actorRole: ReturnActorRole,
+) {
+	return [...(TRANSITIONS_BY_ACTOR[actorRole][fromStatus] ?? [])];
+}
+
 export function toReturnActorRole(role: Role): ReturnActorRole {
 	if (role === 'ADMIN') return 'ADMIN';
 	if (role === 'SELLER') return 'SELLER';

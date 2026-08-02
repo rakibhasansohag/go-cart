@@ -1,6 +1,6 @@
 import { NotificationCategory, Prisma, Role } from '@prisma/client';
 import { formatOrderId, formatPackageId } from '@/lib/orders/references';
-import { demoFulfillmentAutomationEnabled, demoFulfillmentStepHours } from '@/lib/email/config';
+import { demoFulfillmentAutomationEnabled, demoFulfillmentStepHours } from '@/lib/orders/demo-config';
 
 type TransactionClient = Prisma.TransactionClient;
 

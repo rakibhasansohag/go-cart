@@ -60,6 +60,11 @@ export const SellerDashboardSidebarOptions: DashboardSidebarMenuInterface[] = [
 		link: 'orders',
 	},
 	{
+		label: 'Returns',
+		icon: 'box-list',
+		link: 'returns',
+	},
+	{
 		label: 'Inventory',
 		icon: 'inventory',
 		link: 'inventory',

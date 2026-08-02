@@ -61,7 +61,7 @@ export const queryKeys = {
 		followInfo: (storeId: string, userId: string) =>
 			['store', 'followInfo', storeId, userId] as const,
 	},
-	dashboard: {
+		dashboard: {
 		orderLists: () => ['dashboard', 'orders'] as const,
 		categories: () => ['dashboard', 'categories'] as const,
 		subCategories: () => ['dashboard', 'subCategories'] as const,
@@ -87,6 +87,8 @@ export const queryKeys = {
 				storeUrl,
 				{ page, limit, search, status },
 			] as const,
+		returns: (storeUrl: string, filters: object) =>
+			['dashboard', 'returns', storeUrl, filters] as const,
 		shipping: (storeUrl: string) =>
 			['dashboard', 'shipping', storeUrl] as const,
 		storeSettings: (storeUrl: string) =>

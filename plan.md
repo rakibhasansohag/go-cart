@@ -548,8 +548,8 @@ outbox and in-app foundation → SMTP/templates/preferences → demo automation 
 Phase 11 shipment UI → resume Phase 10.4–10.7 returns/refunds`.
 
 - [ ] **Phase 10.4 — Seller return queue**
-  - [ ] Add store-scoped return list, filters, detail review, and evidence display
-  - [ ] Support approve, reject, request-more-information, receive-item, and exchange decisions
+  - [x] Add store-scoped return list, filters, detail review, and evidence display
+  - [x] Support approve, reject, request-more-information, receive-item, and exchange decisions
   - [ ] Add optimistic UI only for reversible low-risk status updates
   - [ ] Invalidate seller returns, orders, inventory, and customer request caches after decisions
   - **Test**: Sellers can process only their own store's requests and every action is audited
