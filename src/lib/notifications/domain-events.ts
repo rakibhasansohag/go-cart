@@ -1,5 +1,6 @@
 import { NotificationCategory, Prisma, Role } from '@prisma/client';
 import { formatOrderId, formatPackageId } from '@/lib/orders/references';
+import { demoFulfillmentAutomationEnabled, demoFulfillmentStepHours } from '@/lib/email/config';
 
 type TransactionClient = Prisma.TransactionClient;
 
@@ -301,6 +302,15 @@ export async function publishPaidOrderNotifications(
 	sourceEventIds.push(paymentEvent.id);
 
 	for (const orderPackage of paidOrder.groups) {
+		if (demoFulfillmentAutomationEnabled()) {
+			await tx.orderGroup.update({
+				where: { id: orderPackage.id },
+				data: {
+					automationMode: 'DEMO',
+					nextTransitionAt: new Date(Date.now() + demoFulfillmentStepHours() * 60 * 60 * 1000),
+				},
+			});
+		}
 		const packageEvent = await publishDomainEvent(tx, {
 			eventKey: `package:paid-ready:${input.provider}:${input.providerPaymentId}:${orderPackage.id}`,
 			eventType: DOMAIN_EVENT_TYPES.PAID_PACKAGE_READY,

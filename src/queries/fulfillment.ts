@@ -47,7 +47,7 @@ function requiredIdempotencyKey(value: string): string {
 	return key;
 }
 
-async function syncLegacyFulfillmentSummary(
+export async function syncLegacyFulfillmentSummary(
 	tx: TransactionClient,
 	group: {
 		id: string;

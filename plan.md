@@ -354,30 +354,30 @@ summary poll remains the free-tier fallback.
 
 #### Demo-only automatic fulfillment
 
-- [ ] Add a per-package automation mode and `nextTransitionAt`; new paid test
+- [x] Add a per-package automation mode and `nextTransitionAt`; new paid test
       packages opt in only when the explicit environment switch is enabled
-- [ ] Add a secured, once-daily Vercel Cron route that selects due packages in
+- [x] Add a secured, once-daily Vercel Cron route that selects due packages in
       bounded batches and advances each package by at most one valid step
-- [ ] Keep automation and recovery as separate secured jobs/routes: one advances
+- [x] Keep automation and recovery as separate secured jobs/routes: one advances
       due demo fulfillment; the other retries pending/failed email outbox jobs
 - [ ] Run automatic steps through the exact server transition service used by
       sellers, logistics, and admins, with actor/source recorded as `SYSTEM`
-- [ ] In demo mode, simulate both sides of the journey in order: seller
+- [x] In demo mode, simulate both sides of the journey in order: seller
       preparation/handoff, platform receipt/dispatch, and logistics delivery; still
       emit the correct role-scoped event at every boundary
-- [ ] Never auto-advance unpaid, cancelled, failed-delivery, delivered,
+- [x] Never auto-advance unpaid, cancelled, failed-delivery, delivered,
       picked-up, returned, refunded, disputed, or manually paused records
-- [ ] Prevent overlapping cron runs and make every run safe to repeat; record an
+- [x] Prevent overlapping cron runs and make every run safe to repeat; record an
       automation-run summary and surface failures to admins
-- [ ] Provide a protected local/manual trigger for testing without waiting one
+- [x] Provide a protected local/manual trigger for testing without waiting one
       day; it must use the same authorization and idempotency rules
-- [ ] Document environment controls with secure defaults:
+- [x] Document environment controls with secure defaults:
   - `DEMO_FULFILLMENT_AUTOMATION_ENABLED=false`
   - `DEMO_FULFILLMENT_STEP_HOURS=24`
   - `DEMO_FULFILLMENT_BATCH_SIZE=100`
   - `EMAIL_NOTIFICATIONS_ENABLED=false`
   - `CRON_SECRET=<random secret>`
-- [ ] Treat `DEMO_FULFILLMENT_STEP_HOURS=24` as the minimum due interval, not an
+- [x] Treat `DEMO_FULFILLMENT_STEP_HOURS=24` as the minimum due interval, not an
       exact timer: Vercel Hobby executes cron only once daily and may run at any time
       within the configured UTC hour, so due work advances at the next cron window
 

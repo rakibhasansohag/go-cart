@@ -7,6 +7,10 @@
 		{
 			"path": "/api/cron/abandoned-checkouts",
 			"schedule": "30 8 * * *"
+		},
+		{
+			"path": "/api/cron/demo-fulfillment",
+			"schedule": "45 8 * * *"
 		}
 	]
 }

@@ -541,6 +541,18 @@ enum FulfillmentSource {
   MIGRATION
 }
 
+enum FulfillmentAutomationMode {
+  MANUAL
+  DEMO
+}
+
+enum AutomationRunStatus {
+  RUNNING
+  SUCCEEDED
+  PARTIAL
+  FAILED
+}
+
 enum CancellationRequestStatus {
   REQUESTED
   APPROVED
@@ -605,10 +617,13 @@ model Order {
 }
 
 model OrderGroup {
-  id              String          @id @default(uuid())
-  status          OrderStatus     @default(Pending)
-  fulfillmentMode FulfillmentMode @default(PLATFORM)
-  packageStatus   PackageStatus   @default(PENDING)
+  id               String                    @id @default(uuid())
+  status           OrderStatus               @default(Pending)
+  fulfillmentMode  FulfillmentMode           @default(PLATFORM)
+  packageStatus    PackageStatus             @default(PENDING)
+  automationMode   FulfillmentAutomationMode @default(MANUAL)
+  nextTransitionAt DateTime?
+  automationPaused Boolean                   @default(false)
 
   items OrderItem[] @relation("OrderItemToGroup")
 
@@ -640,6 +655,7 @@ model OrderGroup {
   @@index([orderId])
   @@index([storeId])
   @@index([couponId])
+  @@index([automationMode, automationPaused, nextTransitionAt])
 }
 
 enum ProductStatus {
@@ -769,6 +785,21 @@ model FulfillmentTransition {
   @@index([orderGroupId, createdAt])
   @@index([shipmentId, createdAt])
   @@index([actorUserId])
+}
+
+model AutomationRun {
+  id             String              @id @default(uuid())
+  status         AutomationRunStatus @default(RUNNING)
+  startedAt      DateTime            @default(now())
+  finishedAt     DateTime?
+  scannedCount   Int                 @default(0)
+  advancedCount  Int                 @default(0)
+  skippedCount   Int                 @default(0)
+  failedCount    Int                 @default(0)
+  errorSummary   String?             @db.Text
+  idempotencyKey String              @unique
+
+  @@index([status, startedAt])
 }
 
 enum NotificationCategory {
