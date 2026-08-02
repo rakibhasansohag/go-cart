@@ -116,7 +116,10 @@ export async function updatePackageStatus(input: {
 			where: { idempotencyKey },
 		});
 		if (duplicate) {
-			return duplicate.nextStatus as PackageStatus;
+			return {
+				status: duplicate.nextStatus as PackageStatus,
+				sourceEventId: null,
+			};
 		}
 
 		const group = await tx.orderGroup.findFirst({
@@ -160,7 +163,7 @@ export async function updatePackageStatus(input: {
 			},
 		});
 
-		await publishDomainEvent(tx, {
+		const domainEvent = await publishDomainEvent(tx, {
 			eventKey: `fulfillment:${idempotencyKey}`,
 			eventType: DOMAIN_EVENT_TYPES.PACKAGE_STATUS_CHANGED,
 			aggregateType: 'ORDER_PACKAGE',
@@ -197,12 +200,14 @@ export async function updatePackageStatus(input: {
 			...group,
 			packageStatus: input.nextStatus,
 		});
-		return input.nextStatus;
+		return { status: input.nextStatus, sourceEventId: domainEvent.id };
 	}, FULFILLMENT_TRANSACTION_OPTIONS);
 
-	scheduleEmailOutboxDispatch();
+	scheduleEmailOutboxDispatch(
+		result.sourceEventId ? [result.sourceEventId] : [],
+	);
 	updateTag('user-orders');
-	return result;
+	return result.status;
 }
 
 export async function updateShipmentStatus(input: {
@@ -223,7 +228,12 @@ export async function updateShipmentStatus(input: {
 		const duplicate = await tx.fulfillmentTransition.findUnique({
 			where: { idempotencyKey },
 		});
-		if (duplicate) return duplicate.nextStatus as ShipmentStatus;
+		if (duplicate) {
+			return {
+				status: duplicate.nextStatus as ShipmentStatus,
+				sourceEventId: null,
+			};
+		}
 
 		const group = await tx.orderGroup.findUnique({
 			where: { id: input.groupId },
@@ -282,7 +292,7 @@ export async function updateShipmentStatus(input: {
 			},
 		});
 
-		await publishDomainEvent(tx, {
+		const domainEvent = await publishDomainEvent(tx, {
 			eventKey: `fulfillment:${idempotencyKey}`,
 			eventType: DOMAIN_EVENT_TYPES.SHIPMENT_STATUS_CHANGED,
 			aggregateType: 'SHIPMENT',
@@ -326,12 +336,14 @@ export async function updateShipmentStatus(input: {
 			...group,
 			shipment: { status: input.nextStatus },
 		});
-		return input.nextStatus;
+		return { status: input.nextStatus, sourceEventId: domainEvent.id };
 	}, FULFILLMENT_TRANSACTION_OPTIONS);
 
-	scheduleEmailOutboxDispatch();
+	scheduleEmailOutboxDispatch(
+		result.sourceEventId ? [result.sourceEventId] : [],
+	);
 	updateTag('user-orders');
-	return result;
+	return result.status;
 }
 
 export async function requestPackageCancellation(input: {

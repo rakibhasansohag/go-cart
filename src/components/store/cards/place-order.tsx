@@ -1,5 +1,5 @@
 import { ShippingAddress } from '@prisma/client';
-import { Dispatch, FC, SetStateAction, useRef } from 'react';
+import { Dispatch, FC, SetStateAction, useRef, useState } from 'react';
 import { Button } from '../ui/button';
 import FastDelivery from './fast-delivery';
 import { SecurityPrivacyCard } from '../product-page/returns-security-privacy-card';
@@ -26,6 +26,7 @@ const PlaceOrderCard: FC<Props> = ({
 	const { id, coupon, subTotal, shippingFees, total } = cartData;
 	const emptyCart = useCartStore((state) => state.emptyCart);
 	const submissionStarted = useRef(false);
+	const [isRedirecting, setIsRedirecting] = useState(false);
 	const orderToastId = 'place-order-progress';
 
 	const placeOrderMutation = useMutation({
@@ -41,6 +42,7 @@ const PlaceOrderCard: FC<Props> = ({
 			toast.loading('Creating your order…', { id: orderToastId });
 		},
 		onSuccess: (order) => {
+			setIsRedirecting(true);
 			emptyCart();
 			toast.success('Order created. Opening secure payment…', {
 				id: orderToastId,
@@ -50,20 +52,19 @@ const PlaceOrderCard: FC<Props> = ({
 			window.location.assign(`/order/${order.orderId}`);
 		},
 		onError: (error: unknown) => {
+			submissionStarted.current = false;
+			setIsRedirecting(false);
 			const message = error instanceof Error ? error.message : String(error);
 			toast.error(message || 'Unable to place the order.', {
 				id: orderToastId,
 			});
 		},
-		onSettled: () => {
-			submissionStarted.current = false;
-		},
 	});
 
-	const loading = placeOrderMutation.isPending;
+	const loading = placeOrderMutation.isPending || isRedirecting;
 
 	const handlePlaceOrder = () => {
-		if (submissionStarted.current || placeOrderMutation.isPending) return;
+		if (submissionStarted.current || loading) return;
 		if (!shippingAddress) {
 			toast.error('Select a shipping address first !');
 			return;
@@ -139,6 +140,19 @@ const PlaceOrderCard: FC<Props> = ({
 				)}
 			</div>
 			<div className='mt-2 p-4 bg-background'>
+				{loading && (
+					<div
+						role='status'
+						aria-live='polite'
+						className='mb-3 rounded-lg border border-border/60 bg-muted/30 p-3'
+					>
+						<div className='mb-2 h-3 w-3/4 animate-pulse rounded bg-muted-foreground/20' />
+						<div className='h-3 w-1/2 animate-pulse rounded bg-muted-foreground/15' />
+						<span className='sr-only'>
+							Creating your order and opening secure payment.
+						</span>
+					</div>
+				)}
 				<Button
 					type='button'
 					onClick={handlePlaceOrder}
@@ -149,7 +163,9 @@ const PlaceOrderCard: FC<Props> = ({
 					{loading ? (
 						<>
 							<PulseLoader size={5} color='currentColor' />
-							<span>Creating order…</span>
+							<span>
+								{isRedirecting ? 'Opening secure payment…' : 'Creating order…'}
+							</span>
 						</>
 					) : (
 						<span>Place order</span>

@@ -45,7 +45,9 @@ describe('renderEmailTemplate', () => {
 				paidAt: '2026-08-02T04:30:00.000Z',
 				subTotal: 999.98,
 				shippingFees: 5,
-				total: 1004.98,
+				discountAmount: 100,
+				couponCode: 'WELCOME10',
+				total: 904.98,
 				currency: 'USD',
 				itemCount: 2,
 				items: [
@@ -67,9 +69,11 @@ describe('renderEmailTemplate', () => {
 		expect(email.subject).toContain('#ORD-CA8304B');
 		expect(email.html).toContain('Apex Chronos Premium Timepiece');
 		expect(email.html).toContain('Qty 2');
-		expect(email.html).toContain('$1,004.98');
+		expect(email.html).toContain('Coupon (WELCOME10)');
+		expect(email.html).toContain('-$100.00');
+		expect(email.html).toContain('$904.98');
 		expect(email.html).toContain('https://cdn.example.com/watch.jpg');
-		expect(email.text).toContain('Total paid: $1,004.98');
+		expect(email.text).toContain('Total paid: $904.98');
 	});
 
 	it.each([
@@ -100,5 +104,17 @@ describe('renderEmailTemplate', () => {
 		expect(returnEmail.html).toContain('Estimated refund');
 		expect(returnEmail.html).toContain('Customer note');
 		expect(returnEmail.html).toContain('visible damage near the clasp');
+	});
+
+	it('renders a saved-cart reminder with products, coupon, and checkout link', async () => {
+		process.env.APP_URL = 'https://gocart.example';
+		const email = await renderEmailTemplate({
+			templateKey: 'checkout.abandoned',
+		});
+
+		expect(email.html).toContain('Items saved in your cart');
+		expect(email.html).toContain('Coupon (WELCOME10)');
+		expect(email.html).toContain('https://gocart.example/cart');
+		expect(email.text).toContain('Cart total');
 	});
 });

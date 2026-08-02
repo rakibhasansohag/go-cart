@@ -38,7 +38,7 @@ vi.mock('./smtp', () => ({
 	sendSmtpEmail: sendSmtpEmailMock,
 }));
 
-import { dispatchEmailOutboxJob } from './outbox';
+import { dispatchEmailOutboxBatch, dispatchEmailOutboxJob } from './outbox';
 
 const job = {
 	id: 'job-1',
@@ -123,5 +123,35 @@ describe('email outbox dispatcher', () => {
 				}),
 			}),
 		);
+	});
+
+	it('limits immediate delivery to the source events from the current action', async () => {
+		findManyMock.mockResolvedValue([]);
+
+		await dispatchEmailOutboxBatch({
+			limit: 10,
+			sourceEventIds: ['event-current'],
+		});
+
+		expect(findManyMock).toHaveBeenCalledWith(
+			expect.objectContaining({
+				where: expect.objectContaining({
+					sourceEventId: { in: ['event-current'] },
+				}),
+			}),
+		);
+	});
+
+	it('does not turn an explicitly empty event scope into a global recovery run', async () => {
+		await expect(
+			dispatchEmailOutboxBatch({ sourceEventIds: [] }),
+		).resolves.toEqual({
+			disabled: false,
+			claimed: 0,
+			sent: 0,
+			failed: 0,
+			skipped: 0,
+		});
+		expect(findManyMock).not.toHaveBeenCalled();
 	});
 });

@@ -20,6 +20,8 @@ export const EMAIL_TEMPLATE_VARIABLES = [
 	'paidAt',
 	'subTotal',
 	'shippingFees',
+	'discountAmount',
+	'couponCode',
 	'total',
 	'currency',
 	'itemCount',
@@ -27,6 +29,7 @@ export const EMAIL_TEMPLATE_VARIABLES = [
 	'resolution',
 	'requestedAmount',
 	'customerNote',
+	'cartId',
 ] as const;
 
 export type EmailTemplateVariable = (typeof EMAIL_TEMPLATE_VARIABLES)[number];
@@ -118,6 +121,20 @@ export const EMAIL_TEMPLATE_DEFINITIONS: EmailTemplateDefinition[] = [
 		ctaLabel: 'Review return',
 		allowedVariables: commonVariables,
 	},
+	{
+		key: 'checkout.abandoned',
+		name: 'Abandoned checkout reminder',
+		category: 'Cart',
+		description: 'Sent when a saved checkout remains inactive.',
+		audience: 'Customer',
+		trigger: 'After a saved cart remains inactive for the configured delay',
+		subject: 'Your GoCart items are still waiting',
+		preheader: '{{itemCount}} saved item(s) are ready when you are.',
+		bodyHtml:
+			'<p>{{message}}</p><p>Your prices and availability will be checked again when you return to checkout.</p>',
+		ctaLabel: 'Return to cart',
+		allowedVariables: commonVariables,
+	},
 ];
 
 export function getEmailTemplateDefinition(templateKey: string) {
@@ -148,13 +165,16 @@ export function getEmailTemplateTestPayload(templateKey: string) {
 		paidAt: 'August 2, 2026 at 10:30 AM',
 		subTotal: '999.98',
 		shippingFees: '5.00',
-		total: '1004.98',
+		discountAmount: '100.00',
+		couponCode: 'WELCOME10',
+		total: '904.98',
 		currency: 'USD',
 		itemCount: '2',
 		returnReason: 'Item arrived damaged',
 		resolution: 'Refund',
 		requestedAmount: '299.99',
 		customerNote: 'The item arrived with visible damage near the clasp.',
+		cartId: 'CART-DEMO123',
 		items: [
 			{
 				name: 'Apex Chronos Premium Timepiece',
@@ -205,6 +225,13 @@ export function getEmailTemplateTestPayload(templateKey: string) {
 				message:
 					'A customer requested a refund for one delivered item and attached return details.',
 				nextStatus: 'Requested',
+			};
+		case 'checkout.abandoned':
+			return {
+				...basePayload,
+				message: 'Your saved GoCart checkout has been waiting for you.',
+				nextStatus: 'Saved cart',
+				actionUrl: '/cart',
 			};
 		default:
 			return basePayload;

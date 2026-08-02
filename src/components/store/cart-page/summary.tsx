@@ -76,9 +76,7 @@ const CartSummary: FC<Props> = ({ cartItems, selectedItems = [], shippingFees })
 	let discountAmount = 0;
 	if (appliedCoupon) {
 		const applicableItems = appliedCoupon.storeId
-			? itemsToCalculate.filter(
-				(item) => (item.storeId || item.storeId) === appliedCoupon.storeId,
-			)
+			? itemsToCalculate.filter((item) => item.storeId === appliedCoupon.storeId)
 			: itemsToCalculate;
 
 		const applicableSubtotal = applicableItems.reduce((acc, item) => {
@@ -220,7 +218,12 @@ const CartSummary: FC<Props> = ({ cartItems, selectedItems = [], shippingFees })
 				</h3>
 			</div>
 			<div className='my-3'>
-				<Button onClick={() => handleSaveCart()} className='w-full h-11 text-sm font-bold'>
+				<Button
+					onClick={handleSaveCart}
+					disabled={loading}
+					aria-busy={loading}
+					className='w-full h-11 text-sm font-bold disabled:cursor-wait'
+				>
 					{loading ? (
 						<PulseLoader size={5} color='#fff' />
 					) : (

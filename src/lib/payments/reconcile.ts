@@ -33,7 +33,7 @@ export async function reconcilePaymentEvent(input: ReconcilePaymentInput) {
 						where: { id: existingEvent.orderId },
 						include: { paymentDetails: true },
 					});
-					return { duplicate: true, order };
+					return { duplicate: true, order, sourceEventIds: [] as string[] };
 				}
 
 				const order = await tx.order.findUnique({
@@ -114,8 +114,9 @@ export async function reconcilePaymentEvent(input: ReconcilePaymentInput) {
 					include: { paymentDetails: true },
 				});
 
+				let sourceEventIds: string[] = [];
 				if (nextStatus === PaymentStatus.Paid) {
-					await publishPaidOrderNotifications(tx, {
+					sourceEventIds = await publishPaidOrderNotifications(tx, {
 						orderId: order.id,
 						provider: input.provider,
 						providerPaymentId: input.providerPaymentId,
@@ -129,12 +130,20 @@ export async function reconcilePaymentEvent(input: ReconcilePaymentInput) {
 					duplicate: false,
 					order: updatedOrder,
 					paymentDetails,
+					sourceEventIds,
 				};
 			},
 			{ maxWait: 10_000, timeout: 30_000 },
 		);
-		scheduleEmailOutboxDispatch();
-		return result;
+		scheduleEmailOutboxDispatch(result.sourceEventIds);
+		if (result.duplicate) {
+			return { duplicate: true, order: result.order };
+		}
+		return {
+			duplicate: false,
+			order: result.order,
+			paymentDetails: result.paymentDetails,
+		};
 	} catch (error) {
 		if (
 			error instanceof Prisma.PrismaClientKnownRequestError &&
@@ -149,7 +158,6 @@ export async function reconcilePaymentEvent(input: ReconcilePaymentInput) {
 						include: { paymentDetails: true },
 					})
 				: null;
-			scheduleEmailOutboxDispatch();
 			return { duplicate: true, order };
 		}
 

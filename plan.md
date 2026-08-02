@@ -398,6 +398,28 @@ its visible-tab background poll remains the 30-second free-tier fallback.
 
 #### SMTP email and admin-controlled templates
 
+- **Checkout and targeted-delivery checkpoint (August 2, 2026):** Cart
+      rehydration now restores the product store identity required for
+      store-scoped coupon totals, and checkout keeps its submit control locked
+      with an accessible progress skeleton until the secure payment page takes
+      over. Immediate SMTP dispatch is scoped to only the domain events created
+      by the current payment, fulfillment, or return action; older pending jobs
+      remain available exclusively to the recovery cron instead of being sent as
+      an unrelated burst. Payment receipts show the original subtotal, coupon
+      code/discount, shipping, products, and final paid amount, while the paid
+      package event targets each affected seller. A secured, idempotent daily
+      abandoned-checkout job can remind customers about unchanged saved carts
+      after a configurable inactivity window and is disabled by default.
+
+- [x] Restore store-scoped coupon calculations after local-cart rehydration and
+      prevent duplicate checkout submissions during the order-to-payment handoff
+- [x] Scope immediate outbox delivery to the source events from the current
+      action; retain global pending/failed recovery for the dedicated cron only
+- [x] Include coupon code and discount amount in payment/package receipts and
+      immediately dispatch the matching paid-package email to each seller
+- [x] Add an opt-in, bounded, idempotent abandoned-checkout reminder cron with
+      product snapshots, totals, safe cart link, and free-tier environment controls
+
 - **Template-management checkpoint (August 2, 2026):** The SMTP outbox now uses
       a responsive code-owned MJML 4 shell and records the source/version used
       for each successful send. Admins can edit a sanitized Jodit body, save a

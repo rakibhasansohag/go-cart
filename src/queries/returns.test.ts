@@ -80,6 +80,7 @@ describe('return request service', () => {
 			async (callback: (tx: typeof transactionClient) => unknown) =>
 				callback(transactionClient),
 		);
+		publishDomainEventMock.mockResolvedValue({ id: 'event-1' });
 	});
 
 	it('requires authentication before reading an order item', async () => {

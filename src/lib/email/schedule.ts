@@ -4,13 +4,17 @@ import { after } from 'next/server';
 import { emailNotificationsEnabled } from './config';
 import { dispatchEmailOutboxBatch } from './outbox';
 
-export function scheduleEmailOutboxDispatch() {
-	if (!emailNotificationsEnabled()) return;
+export function scheduleEmailOutboxDispatch(sourceEventIds: string[]) {
+	const uniqueEventIds = [...new Set(sourceEventIds)].filter(Boolean);
+	if (!emailNotificationsEnabled() || uniqueEventIds.length === 0) return;
 
 	try {
 		after(async () => {
 			try {
-				await dispatchEmailOutboxBatch({ limit: 10 });
+				await dispatchEmailOutboxBatch({
+					limit: Math.min(100, uniqueEventIds.length * 5),
+					sourceEventIds: uniqueEventIds,
+				});
 			} catch (error) {
 				console.error('Email outbox dispatch failed:', error);
 			}

@@ -2,7 +2,7 @@
 import { useCartStore } from '@/cart-store/useCartStore';
 import useFromStore from '@/hooks/useFromStore';
 import { CartProductType, Country } from '@/lib/types';
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import CartHeader from './cart-header';
 import CartProduct from '../cards/cart-product';
 import CartSummary from './summary';
@@ -17,16 +17,15 @@ export default function CartContainer({
 }: {
 	userCountry: Country;
 }) {
-	const cartItems = useFromStore(useCartStore, (state) => state.cart) || [];
+	const storedCart = useFromStore(useCartStore, (state) => state.cart);
+	const cartItems = useMemo(() => storedCart ?? [], [storedCart]);
 	const setCart = useCartStore((state) => state.setCart);
 
-	const [loading, setLoading] = useState<boolean>(false);
 	const [isCartLoaded, setIsCartLoaded] = useState<boolean>(false);
 	const [selectedItems, setSelectedItems] = useState<CartProductType[]>([]);
 	const [totalShipping, setTotalShipping] = useState<number>(0);
 
-	// Ref to track if the component has mounted
-	const hasMounted = useRef(false);
+	const lastSyncedCartKey = useRef('');
 
 	useEffect(() => {
 		if (cartItems !== undefined) {
@@ -35,24 +34,33 @@ export default function CartContainer({
 	}, [cartItems]);
 
 	useEffect(() => {
+		if (!isCartLoaded || cartItems.length === 0) return;
+
+		const cartKey = `${userCountry.code}:${cartItems
+			.map(
+				(item) =>
+					`${item.productId}:${item.variantId}:${item.sizeId}:${item.quantity}`,
+			)
+			.sort()
+			.join('|')}`;
+		if (lastSyncedCartKey.current === cartKey) return;
+		lastSyncedCartKey.current = cartKey;
+
+		let cancelled = false;
 		const loadAndSyncCart = async () => {
 			try {
-				setLoading(true);
 				const updatedCart = await updateCartWithLatest(cartItems);
-				setCart(updatedCart);
-				setLoading(false);
-			} catch (error) {
-				setLoading(false);
+				if (!cancelled) setCart(updatedCart);
+			} catch {
+				lastSyncedCartKey.current = '';
 			}
 		};
 
-		// Run only when userCountry changes and after the initial mount
-		if (hasMounted.current && cartItems?.length) {
-			loadAndSyncCart();
-		} else {
-			hasMounted.current = true; // Set the ref to true after the first render
-		}
-	}, [userCountry]);
+		void loadAndSyncCart();
+		return () => {
+			cancelled = true;
+		};
+	}, [cartItems, isCartLoaded, setCart, userCountry.code]);
 
 	// TODO: Update the black and light mode features
 

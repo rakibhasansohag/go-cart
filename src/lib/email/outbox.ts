@@ -113,7 +113,10 @@ export async function dispatchEmailOutboxJob(
 	}
 }
 
-export async function dispatchEmailOutboxBatch(input?: { limit?: number }) {
+export async function dispatchEmailOutboxBatch(input?: {
+	limit?: number;
+	sourceEventIds?: string[];
+}) {
 	if (!emailNotificationsEnabled()) {
 		return { disabled: true, claimed: 0, sent: 0, failed: 0, skipped: 0 };
 	}
@@ -122,8 +125,17 @@ export async function dispatchEmailOutboxBatch(input?: { limit?: number }) {
 		100,
 		Math.max(1, input?.limit ?? emailOutboxBatchSize()),
 	);
+	const sourceEventIds = [...new Set(input?.sourceEventIds ?? [])].filter(Boolean);
+	if (input?.sourceEventIds && sourceEventIds.length === 0) {
+		return { disabled: false, claimed: 0, sent: 0, failed: 0, skipped: 0 };
+	}
 	const candidates = await db.emailOutbox.findMany({
-		where: claimableWhere(),
+		where: {
+			...claimableWhere(),
+			...(sourceEventIds.length > 0
+				? { sourceEventId: { in: sourceEventIds } }
+				: {}),
+		},
 		select: { id: true },
 		orderBy: [{ nextAttemptAt: 'asc' }, { createdAt: 'asc' }],
 		take: limit,

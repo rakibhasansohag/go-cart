@@ -375,7 +375,7 @@ export async function createReturnRequest(input: CreateReturnRequestInput) {
 	const evidence = validateEvidence(input.evidence);
 
 	try {
-		const request = await db.$transaction(async (tx) => {
+		const result = await db.$transaction(async (tx) => {
 			const item = await tx.orderItem.findFirst({
 				where: {
 					id: input.orderItemId,
@@ -475,7 +475,7 @@ export async function createReturnRequest(input: CreateReturnRequestInput) {
 				},
 			});
 
-			await publishDomainEvent(tx, {
+			const domainEvent = await publishDomainEvent(tx, {
 				eventKey: `return.requested:${request.id}`,
 				eventType: DOMAIN_EVENT_TYPES.RETURN_REQUESTED,
 				aggregateType: 'RETURN_REQUEST',
@@ -513,10 +513,10 @@ export async function createReturnRequest(input: CreateReturnRequestInput) {
 				},
 			});
 
-			return request;
+			return { request, sourceEventId: domainEvent.id };
 		}, RETURN_TRANSACTION_OPTIONS);
-		scheduleEmailOutboxDispatch();
-		return request;
+		scheduleEmailOutboxDispatch([result.sourceEventId]);
+		return result.request;
 	} catch (error) {
 		if (
 			error instanceof Prisma.PrismaClientKnownRequestError &&

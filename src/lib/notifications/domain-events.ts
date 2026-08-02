@@ -8,6 +8,7 @@ export const DOMAIN_EVENT_TYPES = {
 	PACKAGE_STATUS_CHANGED: 'package.status_changed',
 	SHIPMENT_STATUS_CHANGED: 'shipment.status_changed',
 	RETURN_REQUESTED: 'return.requested',
+	CHECKOUT_ABANDONED: 'checkout.abandoned',
 } as const;
 
 export type DomainEventType =
@@ -16,7 +17,12 @@ export type DomainEventType =
 export type PublishDomainEventInput = {
 	eventKey: string;
 	eventType: DomainEventType;
-	aggregateType: 'ORDER' | 'ORDER_PACKAGE' | 'SHIPMENT' | 'RETURN_REQUEST';
+	aggregateType:
+		| 'ORDER'
+		| 'ORDER_PACKAGE'
+		| 'SHIPMENT'
+		| 'RETURN_REQUEST'
+		| 'CART';
 	aggregateId: string;
 	actorUserId?: string | null;
 	orderId?: string;
@@ -52,6 +58,14 @@ async function resolveRecipients(
 			select: { userId: true },
 		});
 		if (order) recipientIds.add(order.userId);
+	}
+
+	if (input.eventType === DOMAIN_EVENT_TYPES.CHECKOUT_ABANDONED) {
+		const cart = await tx.cart.findUnique({
+			where: { id: input.aggregateId },
+			select: { userId: true },
+		});
+		if (cart) recipientIds.add(cart.userId);
 	}
 
 	if (
@@ -150,6 +164,13 @@ function notificationFor(input: PublishDomainEventInput, recipient: Recipient) {
 					? `/dashboard/seller/stores/${storeUrl}/orders`
 					: null,
 			};
+		case DOMAIN_EVENT_TYPES.CHECKOUT_ABANDONED:
+			return {
+				category: NotificationCategory.ORDER,
+				title: 'Your cart is waiting',
+				message: 'You still have saved items ready for checkout.',
+				actionUrl: '/cart',
+			};
 	}
 }
 
@@ -178,6 +199,7 @@ export async function publishPaidOrderNotifications(
 					subTotal: true,
 					shippingFees: true,
 					total: true,
+					coupon: { select: { code: true } },
 					store: { select: { name: true, url: true } },
 					items: {
 						select: {
@@ -195,8 +217,28 @@ export async function publishPaidOrderNotifications(
 		},
 	});
 	if (!paidOrder) throw new Error('Paid order could not be found.');
+	const sourceEventIds: string[] = [];
+	const originalSubtotal = paidOrder.groups.reduce(
+		(total, orderPackage) => total + orderPackage.subTotal,
+		0,
+	);
+	const shippingFees = paidOrder.groups.reduce(
+		(total, orderPackage) => total + orderPackage.shippingFees,
+		0,
+	);
+	const discountAmount = Math.max(
+		0,
+		originalSubtotal + shippingFees - input.amount,
+	);
+	const couponCode = [
+		...new Set(
+			paidOrder.groups
+				.map((orderPackage) => orderPackage.coupon?.code)
+				.filter((code): code is string => Boolean(code)),
+		),
+	].join(', ');
 
-	await publishDomainEvent(tx, {
+	const paymentEvent = await publishDomainEvent(tx, {
 		eventKey: `payment:succeeded:${input.provider}:${input.providerPaymentId}`,
 		eventType: DOMAIN_EVENT_TYPES.PAYMENT_SUCCEEDED,
 		aggregateType: 'ORDER',
@@ -209,8 +251,10 @@ export async function publishPaidOrderNotifications(
 			paymentMethod: input.provider,
 			paymentReference: input.providerPaymentId,
 			paidAt: input.paidAt.toISOString(),
-			subTotal: paidOrder.subTotal,
-			shippingFees: paidOrder.shippingFees,
+			subTotal: originalSubtotal,
+			shippingFees,
+			discountAmount,
+			couponCode,
 			total: input.amount,
 			currency: input.currency,
 			itemCount: paidOrder.groups.reduce(
@@ -236,9 +280,10 @@ export async function publishPaidOrderNotifications(
 			),
 		},
 	});
+	sourceEventIds.push(paymentEvent.id);
 
 	for (const orderPackage of paidOrder.groups) {
-		await publishDomainEvent(tx, {
+		const packageEvent = await publishDomainEvent(tx, {
 			eventKey: `package:paid-ready:${input.provider}:${input.providerPaymentId}:${orderPackage.id}`,
 			eventType: DOMAIN_EVENT_TYPES.PAID_PACKAGE_READY,
 			aggregateType: 'ORDER_PACKAGE',
@@ -255,6 +300,13 @@ export async function publishPaidOrderNotifications(
 				subTotal: orderPackage.subTotal,
 				shippingFees: orderPackage.shippingFees,
 				total: orderPackage.total,
+				discountAmount: Math.max(
+					0,
+					orderPackage.subTotal +
+						orderPackage.shippingFees -
+						orderPackage.total,
+				),
+				couponCode: orderPackage.coupon?.code ?? '',
 				currency: input.currency,
 				itemCount: orderPackage.items.reduce(
 					(count, item) => count + item.quantity,
@@ -273,7 +325,10 @@ export async function publishPaidOrderNotifications(
 				nextStatus: 'Awaiting acceptance',
 			},
 		});
+		sourceEventIds.push(packageEvent.id);
 	}
+
+	return sourceEventIds;
 }
 
 export async function publishDomainEvent(

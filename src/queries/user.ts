@@ -592,6 +592,7 @@ export const updateCartWithLatest = async (
 
 			return {
 				productId,
+				storeId: product.storeId,
 				variantId,
 				productSlug: product.slug,
 				variantSlug: variant.slug,

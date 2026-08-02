@@ -169,14 +169,30 @@ function commerceItemsMarkup(
 			return `<tr style="border-bottom:1px solid #e2e8f0">${imageCell}<td style="padding:12px 8px 12px 0;vertical-align:top"><div style="font-weight:700;color:#0f172a">${escapeHtml(item.name)}</div>${details ? `<div style="margin-top:4px;font-size:12px;line-height:1.5;color:#64748b">${details}</div>` : ''}<div style="margin-top:5px;font-size:13px;color:#475569">Qty ${item.quantity} &times; ${escapeHtml(formatMoney(item.unitPrice, currency))}</div></td><td width="105" style="padding:12px 0;text-align:right;vertical-align:top;font-weight:700;color:#0f172a">${escapeHtml(formatMoney(item.totalPrice, currency))}</td></tr>`;
 		})
 		.join('');
-	const totalRows = [
-		['Subtotal', formatMoney(payload.subTotal, currency)],
-		['Shipping', formatMoney(payload.shippingFees, currency)],
-		[options.totalLabel, formatMoney(payload.total, currency)],
-	]
+	const discountAmount = Math.max(0, amountValue(payload.discountAmount));
+	const couponCode =
+		typeof payload.couponCode === 'string' ? payload.couponCode.trim() : '';
+	const summaryRows = [
+		{ label: 'Subtotal', value: formatMoney(payload.subTotal, currency) },
+		{ label: 'Shipping', value: formatMoney(payload.shippingFees, currency) },
+		...(discountAmount > 0
+			? [
+					{
+						label: couponCode ? `Coupon (${couponCode})` : 'Discount',
+						value: `-${formatMoney(discountAmount, currency)}`,
+					},
+				]
+			: []),
+		{
+			label: options.totalLabel,
+			value: formatMoney(payload.total, currency),
+			isTotal: true,
+		},
+	];
+	const totalRows = summaryRows
 		.map(
-			([label, value], index) =>
-				`<tr><td style="padding:${index === 2 ? '12px 0 4px' : '4px 0'};${index === 2 ? 'border-top:1px solid #cbd5e1;font-size:17px;font-weight:700;' : ''}color:#475569">${label}</td><td style="padding:${index === 2 ? '12px 0 4px' : '4px 0'};text-align:right;${index === 2 ? 'border-top:1px solid #cbd5e1;font-size:17px;' : ''}font-weight:700;color:#0f172a">${escapeHtml(value)}</td></tr>`,
+			({ label, value, isTotal }) =>
+				`<tr><td style="padding:${isTotal ? '12px 0 4px' : '4px 0'};${isTotal ? 'border-top:1px solid #cbd5e1;font-size:17px;font-weight:700;' : ''}color:#475569">${escapeHtml(label)}</td><td style="padding:${isTotal ? '12px 0 4px' : '4px 0'};text-align:right;${isTotal ? 'border-top:1px solid #cbd5e1;font-size:17px;' : ''}font-weight:700;color:#0f172a">${escapeHtml(value)}</td></tr>`,
 		)
 		.join('');
 
@@ -192,6 +208,11 @@ function commerceItemsMarkup(
 				: [
 						`Subtotal: ${formatMoney(payload.subTotal, currency)}`,
 						`Shipping: ${formatMoney(payload.shippingFees, currency)}`,
+						...(discountAmount > 0
+							? [
+									`${couponCode ? `Coupon (${couponCode})` : 'Discount'}: -${formatMoney(discountAmount, currency)}`,
+								]
+							: []),
 						`${options.totalLabel}: ${formatMoney(payload.total, currency)}`,
 					]),
 		].join('\n'),
@@ -248,7 +269,12 @@ export async function renderEmailTemplate(input: {
 					],
 					['Paid at', formatDateTime(payload.paidAt)],
 				]
-			: input.templateKey === 'return.requested'
+			: input.templateKey === 'checkout.abandoned'
+				? [
+						['Cart', payload.cartId],
+						['Status', payload.nextStatus],
+					]
+				: input.templateKey === 'return.requested'
 				? [
 						['Return request', payload.returnRequestId],
 						['Order', payload.orderId],
@@ -303,7 +329,12 @@ export async function renderEmailTemplate(input: {
 									totalLabel: 'Estimated refund',
 									showTotals: false,
 								}
-							: null;
+							: input.templateKey === 'checkout.abandoned'
+								? {
+										heading: 'Items saved in your cart',
+										totalLabel: 'Cart total',
+									}
+								: null;
 	const receipt =
 		itemSummaryOptions && receiptItems(payload).length > 0
 			? commerceItemsMarkup(payload, itemSummaryOptions)

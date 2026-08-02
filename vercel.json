@@ -1,0 +1,12 @@
+{
+	"crons": [
+		{
+			"path": "/api/cron/email-outbox",
+			"schedule": "15 8 * * *"
+		},
+		{
+			"path": "/api/cron/abandoned-checkouts",
+			"schedule": "30 8 * * *"
+		}
+	]
+}

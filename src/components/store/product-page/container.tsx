@@ -61,6 +61,7 @@ const ProductPageContainer: FC<Props> = ({
 
 	const data: CartProductType = {
 		productId: id,
+		storeId: productData.store.id,
 		variantId,
 		productSlug: slug,
 		variantSlug: variant.slug,
@@ -102,6 +103,7 @@ const ProductPageContainer: FC<Props> = ({
 		setProductToBeAddedToCart((prevProduct) => ({
 			...prevProduct,
 			productId: id,
+			storeId: productData.store.id,
 			variantId,
 			productSlug: slug,
 			variantSlug: variant.slug,
@@ -114,6 +116,7 @@ const ProductPageContainer: FC<Props> = ({
 		}));
 	}, [
 		id,
+		variantId,
 		slug,
 		variantSlug,
 		variant,
@@ -150,7 +153,7 @@ const ProductPageContainer: FC<Props> = ({
 					) {
 						setCart(parsedValue.state.cart);
 					}
-				} catch (error) {}
+				} catch {}
 			}
 		};
 
