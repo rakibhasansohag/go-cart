@@ -18,20 +18,25 @@ import {
 } from './fulfillment-state-machine';
 
 describe('centralized fulfillment state machine', () => {
-	it('allows sellers to move package preparation forward one step only', () => {
+	it('allows forward package progress and rejects backward transitions', () => {
 		expect(
 			getAllowedPackageTransitions(
 				PackageStatus.PENDING,
 				FulfillmentActorRole.SELLER,
 			),
-		).toEqual([PackageStatus.ACCEPTED]);
+		).toEqual([
+			PackageStatus.ACCEPTED,
+			PackageStatus.PROCESSING,
+			PackageStatus.READY_FOR_HANDOFF,
+			PackageStatus.HANDED_OFF,
+		]);
 		expect(() =>
 			assertPackageTransition(
 				PackageStatus.PENDING,
 				PackageStatus.PROCESSING,
 				FulfillmentActorRole.SELLER,
 			),
-		).toThrow(/cannot move/i);
+		).not.toThrow();
 		expect(() =>
 			assertPackageTransition(
 				PackageStatus.PROCESSING,
@@ -103,7 +108,10 @@ describe('centralized fulfillment state machine', () => {
 	});
 
 	it('keeps terminal delivery and pickup states forward-only', () => {
-		for (const status of [ShipmentStatus.DELIVERED, ShipmentStatus.PICKED_UP]) {
+		for (const status of [
+			ShipmentStatus.DELIVERED,
+			ShipmentStatus.PICKED_UP,
+		]) {
 			expect(
 				getAllowedShipmentTransitions({
 					current: status,
@@ -127,7 +135,9 @@ describe('centralized fulfillment state machine', () => {
 	});
 
 	it('allows cancellation requests only before handoff', () => {
-		expect(canRequestCancellation(PackageStatus.READY_FOR_HANDOFF)).toBe(true);
+		expect(canRequestCancellation(PackageStatus.READY_FOR_HANDOFF)).toBe(
+			true,
+		);
 		expect(canRequestCancellation(PackageStatus.HANDED_OFF)).toBe(false);
 		expect(canRequestCancellation(PackageStatus.CANCELLED)).toBe(false);
 	});

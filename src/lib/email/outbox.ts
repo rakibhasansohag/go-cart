@@ -34,6 +34,44 @@ function safeError(error: unknown) {
 	return message.slice(0, 2_000);
 }
 
+function hasDeliverableEmail(value: string) {
+	return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
+}
+
+async function resolveOutboxRecipient(job: {
+	id: string;
+	recipientEmail: string;
+	sourceEventId: string;
+}) {
+	if (hasDeliverableEmail(job.recipientEmail)) return job.recipientEmail;
+
+	// Recover legacy paid-package jobs whose seller User.email was once populated
+	// with a display name. The package's store contact is the operational address.
+	const sourceEvent = await db.domainEvent.findUnique({
+		where: { id: job.sourceEventId },
+		select: { eventType: true, aggregateType: true, aggregateId: true },
+	});
+	if (
+		sourceEvent?.eventType === 'package.paid_ready' &&
+		sourceEvent.aggregateType === 'ORDER_PACKAGE'
+	) {
+		const orderPackage = await db.orderGroup.findUnique({
+			where: { id: sourceEvent.aggregateId },
+			select: { store: { select: { email: true } } },
+		});
+		const storeEmail = orderPackage?.store.email?.trim() ?? '';
+		if (hasDeliverableEmail(storeEmail)) {
+			await db.emailOutbox.update({
+				where: { id: job.id },
+				data: { recipientEmail: storeEmail },
+			});
+			return storeEmail;
+		}
+	}
+
+	throw new Error('Email recipient address is unavailable.');
+}
+
 function claimableWhere(id?: string): Prisma.EmailOutboxWhereInput {
 	const now = new Date();
 	const staleBefore = new Date(now.getTime() - PROCESSING_LEASE_MS);
@@ -42,7 +80,9 @@ function claimableWhere(id?: string): Prisma.EmailOutboxWhereInput {
 		attemptCount: { lt: emailOutboxMaxAttempts() },
 		OR: [
 			{
-				status: { in: [EmailOutboxStatus.PENDING, EmailOutboxStatus.FAILED] },
+				status: {
+					in: [EmailOutboxStatus.PENDING, EmailOutboxStatus.FAILED],
+				},
 				nextAttemptAt: { lte: now },
 			},
 			{
@@ -78,12 +118,13 @@ export async function dispatchEmailOutboxJob(
 	if (!job) return { id, status: 'skipped' };
 
 	try {
+		const recipientEmail = await resolveOutboxRecipient(job);
 		const rendered = await renderOutboxEmail({
 			templateKey: job.templateKey,
 			payload: job.payload,
 		});
 		await sendSmtpEmail({
-			to: job.recipientEmail,
+			to: recipientEmail,
 			subject: rendered.subject,
 			text: rendered.text,
 			html: rendered.html,
@@ -125,7 +166,9 @@ export async function dispatchEmailOutboxBatch(input?: {
 		100,
 		Math.max(1, input?.limit ?? emailOutboxBatchSize()),
 	);
-	const sourceEventIds = [...new Set(input?.sourceEventIds ?? [])].filter(Boolean);
+	const sourceEventIds = [...new Set(input?.sourceEventIds ?? [])].filter(
+		Boolean,
+	);
 	if (input?.sourceEventIds && sourceEventIds.length === 0) {
 		return { disabled: false, claimed: 0, sent: 0, failed: 0, skipped: 0 };
 	}

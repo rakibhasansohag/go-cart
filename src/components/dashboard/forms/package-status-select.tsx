@@ -20,6 +20,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import {
 	getAllowedPackageTransitions,
+	PACKAGE_PREPARATION_STEPS,
 	PACKAGE_STATUS_LABELS,
 } from '@/lib/orders/fulfillment-state-machine';
 import { queryKeys } from '@/lib/query-keys';
@@ -28,15 +29,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { FulfillmentActorRole, PackageStatus } from '@prisma/client';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { Check, LockKeyhole } from 'lucide-react';
-
-const PACKAGE_STEPS = [
-	PackageStatus.PENDING,
-	PackageStatus.ACCEPTED,
-	PackageStatus.PROCESSING,
-	PackageStatus.READY_FOR_HANDOFF,
-	PackageStatus.HANDED_OFF,
-] as const;
+import { Check } from 'lucide-react';
 
 interface Props {
 	storeId: string;
@@ -77,7 +70,9 @@ export default function PackageStatusSelect({
 			}),
 		onSuccess: (nextStatus) => {
 			setCurrentStatus(nextStatus);
-			toast.success(`Package is now ${PACKAGE_STATUS_LABELS[nextStatus]}.`);
+			toast.success(
+				`Package is now ${PACKAGE_STATUS_LABELS[nextStatus]}.`,
+			);
 			void Promise.all([
 				queryClient.invalidateQueries({
 					queryKey: storeUrl
@@ -99,13 +94,38 @@ export default function PackageStatusSelect({
 			toast.error(error instanceof Error ? error.message : String(error));
 		},
 	});
+	const currentIndex = PACKAGE_PREPARATION_STEPS.indexOf(
+		currentStatus as (typeof PACKAGE_PREPARATION_STEPS)[number],
+	);
+	const isTerminal =
+		currentStatus === PackageStatus.HANDED_OFF ||
+		currentStatus === PackageStatus.CANCELLED;
+
+	const selectStatus = (nextStatus: PackageStatus, stepIndex: number) => {
+		if (stepIndex === currentIndex + 1) {
+			mutation.mutate(nextStatus);
+			return;
+		}
+		setConfirmStatus(nextStatus);
+	};
+
+	if (isTerminal) {
+		return (
+			<span
+				title="Preparation is complete and cannot be changed"
+				aria-label={`Package preparation complete: ${PACKAGE_STATUS_LABELS[currentStatus]}`}
+			>
+				<PackageStatusTag status={currentStatus} />
+			</span>
+		);
+	}
 
 	return (
 		<>
 			<DropdownMenu>
 				<DropdownMenuTrigger asChild>
 					<button
-						type='button'
+						type="button"
 						disabled={mutation.isPending}
 						aria-label={`Change package status. Current status: ${PACKAGE_STATUS_LABELS[currentStatus]}`}
 						title={
@@ -113,7 +133,7 @@ export default function PackageStatusSelect({
 								? 'Updating package status…'
 								: 'View preparation steps'
 						}
-						className='rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-60'
+						className="rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-60"
 					>
 						<PackageStatusTag status={currentStatus} />
 					</button>
@@ -121,41 +141,57 @@ export default function PackageStatusSelect({
 				<DropdownMenuContent
 					align={contentAlign}
 					sideOffset={6}
-					className='z-[100000] w-64'
+					className="z-[100000] w-64"
 				>
 					<DropdownMenuLabel>Preparation steps</DropdownMenuLabel>
 					<DropdownMenuSeparator />
-					{PACKAGE_STEPS.map((nextStatus) => {
+					{PACKAGE_PREPARATION_STEPS.map((nextStatus) => {
 						const isCurrent = nextStatus === currentStatus;
 						const isAllowed = allowed.includes(nextStatus);
-						const currentIndex = PACKAGE_STEPS.indexOf(
-							currentStatus as (typeof PACKAGE_STEPS)[number],
-						);
-						const stepIndex = PACKAGE_STEPS.indexOf(nextStatus);
+						const stepIndex =
+							PACKAGE_PREPARATION_STEPS.indexOf(nextStatus);
+						const isCompleted = stepIndex < currentIndex;
+						const isNext = stepIndex === currentIndex + 1;
 						return (
 							<DropdownMenuItem
 								key={nextStatus}
-								disabled={mutation.isPending || isCurrent || !isAllowed}
-								onSelect={() => setConfirmStatus(nextStatus)}
+								disabled={
+									mutation.isPending ||
+									isCurrent ||
+									!isAllowed
+								}
+								onSelect={() =>
+									selectStatus(nextStatus, stepIndex)
+								}
 							>
-								<span className='flex w-full items-center justify-between gap-2'>
-									<span className='flex items-center gap-2'>
-										{stepIndex < currentIndex ? (
+								<span className="flex w-full items-center justify-between gap-2">
+									<span className="flex items-center gap-2">
+										{isCompleted ? (
 											<Check
-												className='size-3.5 text-emerald-600'
-												aria-hidden='true'
-											/>
-										) : !isAllowed && !isCurrent ? (
-											<LockKeyhole
-												className='size-3.5 text-muted-foreground'
-												aria-hidden='true'
+												className="size-3.5 text-emerald-600"
+												aria-hidden="true"
 											/>
 										) : null}
 										<PackageStatusTag status={nextStatus} />
 									</span>
 									{isCurrent && (
-										<span className='text-[11px] text-muted-foreground'>
+										<span className="text-[11px] text-muted-foreground">
 											Current
+										</span>
+									)}
+									{isCompleted && (
+										<span className="text-[11px] text-emerald-700">
+											Done
+										</span>
+									)}
+									{isNext && (
+										<span className="text-[11px] font-medium text-primary">
+											Next
+										</span>
+									)}
+									{isAllowed && !isNext && (
+										<span className="text-[11px] text-amber-700">
+											Skip {stepIndex - currentIndex - 1}
 										</span>
 									)}
 								</span>
@@ -170,24 +206,34 @@ export default function PackageStatusSelect({
 			>
 				<DialogContent>
 					<DialogHeader>
-						<DialogTitle>Confirm preparation update</DialogTitle>
+						<DialogTitle>Skip preparation steps?</DialogTitle>
 						<DialogDescription>
-							Move this package from{' '}
-							<strong>{PACKAGE_STATUS_LABELS[currentStatus]}</strong> to{' '}
+							This moves the package from{' '}
 							<strong>
-								{confirmStatus ? PACKAGE_STATUS_LABELS[confirmStatus] : ''}
+								{PACKAGE_STATUS_LABELS[currentStatus]}
+							</strong>{' '}
+							to{' '}
+							<strong>
+								{confirmStatus
+									? PACKAGE_STATUS_LABELS[confirmStatus]
+									: ''}
 							</strong>
-							? This step cannot be reversed.
+							, skipping the intermediate preparation steps. This
+							cannot be reversed.
 						</DialogDescription>
 					</DialogHeader>
 					<DialogFooter>
-						<Button variant='outline' onClick={() => setConfirmStatus(null)}>
+						<Button
+							variant="outline"
+							onClick={() => setConfirmStatus(null)}
+						>
 							Keep current status
 						</Button>
 						<Button
 							disabled={mutation.isPending || !confirmStatus}
 							onClick={() => {
-								if (confirmStatus) mutation.mutate(confirmStatus);
+								if (confirmStatus)
+									mutation.mutate(confirmStatus);
 								setConfirmStatus(null);
 							}}
 						>

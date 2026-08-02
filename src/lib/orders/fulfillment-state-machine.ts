@@ -32,16 +32,18 @@ export const SHIPMENT_STATUS_LABELS: Record<ShipmentStatus, string> = {
 	[ShipmentStatus.CANCELLED]: 'Cancelled',
 };
 
-const PACKAGE_FORWARD_TRANSITIONS: Record<PackageStatus, readonly PackageStatus[]> = {
-	[PackageStatus.PENDING]: [PackageStatus.ACCEPTED],
-	[PackageStatus.ACCEPTED]: [PackageStatus.PROCESSING],
-	[PackageStatus.PROCESSING]: [PackageStatus.READY_FOR_HANDOFF],
-	[PackageStatus.READY_FOR_HANDOFF]: [PackageStatus.HANDED_OFF],
-	[PackageStatus.HANDED_OFF]: [],
-	[PackageStatus.CANCELLED]: [],
-};
+export const PACKAGE_PREPARATION_STEPS = [
+	PackageStatus.PENDING,
+	PackageStatus.ACCEPTED,
+	PackageStatus.PROCESSING,
+	PackageStatus.READY_FOR_HANDOFF,
+	PackageStatus.HANDED_OFF,
+] as const;
 
-const SHIPMENT_FORWARD_TRANSITIONS: Record<ShipmentStatus, readonly ShipmentStatus[]> = {
+const SHIPMENT_FORWARD_TRANSITIONS: Record<
+	ShipmentStatus,
+	readonly ShipmentStatus[]
+> = {
 	[ShipmentStatus.AWAITING_RECEIPT]: [ShipmentStatus.RECEIVED_AT_HUB],
 	[ShipmentStatus.RECEIVED_AT_HUB]: [ShipmentStatus.READY_FOR_DISPATCH],
 	[ShipmentStatus.READY_FOR_DISPATCH]: [ShipmentStatus.IN_TRANSIT],
@@ -84,7 +86,11 @@ export function getAllowedPackageTransitions(
 	actorRole: FulfillmentActorRole,
 ): PackageStatus[] {
 	if (!PACKAGE_ACTORS.has(actorRole)) return [];
-	return [...PACKAGE_FORWARD_TRANSITIONS[current]];
+	const currentIndex = PACKAGE_PREPARATION_STEPS.indexOf(
+		current as (typeof PACKAGE_PREPARATION_STEPS)[number],
+	);
+	if (currentIndex < 0) return [];
+	return PACKAGE_PREPARATION_STEPS.slice(currentIndex + 1);
 }
 
 export function assertPackageTransition(
@@ -138,7 +144,9 @@ export function assertShipmentTransition({
 		current === ShipmentStatus.AWAITING_RECEIPT &&
 		packageStatus !== PackageStatus.HANDED_OFF
 	) {
-		throw new Error('The package must be handed off before warehouse receipt.');
+		throw new Error(
+			'The package must be handed off before warehouse receipt.',
+		);
 	}
 
 	if (
@@ -149,7 +157,9 @@ export function assertShipmentTransition({
 	}
 
 	if (
-		!getAllowedShipmentTransitions({ current, actorRole, mode }).includes(next)
+		!getAllowedShipmentTransitions({ current, actorRole, mode }).includes(
+			next,
+		)
 	) {
 		throw new Error(
 			`${actorRole.toLowerCase()} cannot move a shipment from ${SHIPMENT_STATUS_LABELS[current]} to ${SHIPMENT_STATUS_LABELS[next]}.`,

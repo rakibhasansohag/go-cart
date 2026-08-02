@@ -246,10 +246,12 @@ own the delivery truth.
       expose return actions only after `Delivered` or completed pickup
 - [x] Record every fulfillment transition with actor, previous state, next state,
       source, timestamp, reason, and idempotency key
-- **Test**: Invalid skips and backward transitions fail on the server; a valid
-  seller transition stops at handoff; logistics can advance only received
-  packages; partial multi-store delivery remains partial; cancellation remains
-  available only before fulfillment becomes irreversible
+- [x] Present every forward seller-preparation step: the immediate next step
+      applies directly, skipping ahead requires explicit confirmation, completed
+      steps cannot be selected again, and `Handed off` is non-interactive
+- **Test**: Forward skips require confirmation in the UI and persist through the
+  server, backward transitions fail, seller control stops at handoff, logistics
+  can advance only received packages, and partial delivery remains partial
 
 **Phase 10.3.1 acceptance (July 31, 2026):** Package preparation and shipment
 execution now use separate persisted state machines. Seller controls stop at
@@ -331,8 +333,9 @@ preferences, template management, expanded event coverage, and retry cron remain
 the next Phase 10.3.3 slices. Successful payment reconciliation now also emits
 one customer payment confirmation and one paid-package notification for each
 affected seller, with provider-scoped idempotency across webhook and server
-verification races. Opening the bell forces an immediate lightweight refresh;
-its visible-tab background poll remains the 30-second free-tier fallback.
+verification races. The bell lazily fetches its five most recent records and
+reuses the fresh TanStack Query cache when reopened; its visible-tab background
+summary poll remains the free-tier fallback.
 
 - [ ] Add a provider-neutral domain-event/outbox model written in the same
       transaction as each status, payment, return, dispute, and refund mutation
@@ -380,6 +383,13 @@ its visible-tab background poll remains the 30-second free-tier fallback.
 
 #### In-app notification experience
 
+**Context-and-cache checkpoint (August 2, 2026):** New order, package,
+shipment, admin handoff, and return notifications include friendly `#ORD-…` and
+`#PKG-…` context where applicable. The header loads only five recent records on
+demand, keeps fresh results for one minute and cached results for five minutes,
+and updates read state in-place instead of refetching every time the popover is
+closed and reopened.
+
 - [ ] Add persisted notifications for customers, sellers, and admins with type,
       title, message, safe internal action URL, created time, read time, and source
       event
@@ -410,6 +420,9 @@ its visible-tab background poll remains the 30-second free-tier fallback.
       package event targets each affected seller. A secured, idempotent daily
       abandoned-checkout job can remind customers about unchanged saved carts
       after a configurable inactivity window and is disabled by default.
+      Seller operational delivery now uses the store contact email rather than
+      stale legacy profile data, while invalid addresses are excluded from the
+      outbox without suppressing the corresponding in-app notification.
 
 - [x] Restore store-scoped coupon calculations after local-cart rehydration and
       prevent duplicate checkout submissions during the order-to-payment handoff

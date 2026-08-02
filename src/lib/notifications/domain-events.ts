@@ -1,4 +1,5 @@
 import { NotificationCategory, Prisma, Role } from '@prisma/client';
+import { formatOrderId, formatPackageId } from '@/lib/orders/references';
 
 type TransactionClient = Prisma.TransactionClient;
 
@@ -18,11 +19,7 @@ export type PublishDomainEventInput = {
 	eventKey: string;
 	eventType: DomainEventType;
 	aggregateType:
-		| 'ORDER'
-		| 'ORDER_PACKAGE'
-		| 'SHIPMENT'
-		| 'RETURN_REQUEST'
-		| 'CART';
+		'ORDER' | 'ORDER_PACKAGE' | 'SHIPMENT' | 'RETURN_REQUEST' | 'CART';
 	aggregateId: string;
 	actorUserId?: string | null;
 	orderId?: string;
@@ -46,6 +43,7 @@ async function resolveRecipients(
 	input: PublishDomainEventInput,
 ): Promise<Recipient[]> {
 	const recipientIds = new Set<string>();
+	const recipientEmailOverrides = new Map<string, string>();
 
 	if (
 		input.orderId &&
@@ -76,9 +74,15 @@ async function resolveRecipients(
 	) {
 		const store = await tx.store.findUnique({
 			where: { id: input.storeId },
-			select: { userId: true },
+			select: { userId: true, email: true },
 		});
-		if (store) recipientIds.add(store.userId);
+		if (store) {
+			recipientIds.add(store.userId);
+			// Seller operational mail belongs at the store contact address. This also
+			// shields delivery from stale legacy User.email values while Clerk remains
+			// the source of truth for authentication.
+			recipientEmailOverrides.set(store.userId, store.email);
+		}
 	}
 
 	// A seller handoff transfers operational control to logistics. Notify every
@@ -96,30 +100,44 @@ async function resolveRecipients(
 
 	if (recipientIds.size === 0) return [];
 
-	return tx.user.findMany({
+	const users = await tx.user.findMany({
 		where: { id: { in: [...recipientIds] } },
 		select: { id: true, email: true, role: true },
 	});
+	return users.map((user) => ({
+		...user,
+		email: recipientEmailOverrides.get(user.id) ?? user.email,
+	}));
+}
+
+function hasDeliverableEmail(value: string) {
+	return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
 }
 
 function notificationFor(input: PublishDomainEventInput, recipient: Recipient) {
 	const orderId = input.orderId ?? payloadText(input.payload, 'orderId');
+	const orderGroupId =
+		payloadText(input.payload, 'orderGroupId') ||
+		(input.aggregateType === 'ORDER_PACKAGE' ? input.aggregateId : '');
 	const storeUrl = payloadText(input.payload, 'storeUrl');
 	const nextStatus = payloadText(input.payload, 'nextStatus');
+	const orderReference = orderId ? formatOrderId(orderId) : '';
+	const packageReference = orderGroupId ? formatPackageId(orderGroupId) : '';
 
 	switch (input.eventType) {
 		case DOMAIN_EVENT_TYPES.PAYMENT_SUCCEEDED:
 			return {
 				category: NotificationCategory.PAYMENT,
 				title: 'Payment confirmed',
-				message: 'Your payment was successful and your order is confirmed.',
+				message:
+					'Your payment was successful and your order is confirmed.',
 				actionUrl: orderId ? `/order/${orderId}` : null,
 			};
 		case DOMAIN_EVENT_TYPES.PAID_PACKAGE_READY:
 			return {
 				category: NotificationCategory.ORDER,
 				title: 'New paid order',
-				message: 'A paid package is ready for preparation.',
+				message: `${packageReference || 'A package'}${orderReference ? ` in ${orderReference}` : ''} is paid and ready for preparation.`,
 				actionUrl: storeUrl
 					? `/dashboard/seller/stores/${storeUrl}/orders`
 					: null,
@@ -129,14 +147,14 @@ function notificationFor(input: PublishDomainEventInput, recipient: Recipient) {
 				return {
 					category: NotificationCategory.FULFILLMENT,
 					title: 'Package ready for logistics',
-					message: 'A seller handed off a package for warehouse processing.',
+					message: `${packageReference || 'A package'}${orderReference ? ` in ${orderReference}` : ''} was handed off for warehouse processing.`,
 					actionUrl: '/dashboard/admin/orders',
 				};
 			}
 			return {
 				category: NotificationCategory.FULFILLMENT,
 				title: 'Package preparation updated',
-				message: `Your package is now ${nextStatus || 'being prepared'}.`,
+				message: `${packageReference || 'Your package'} is now ${nextStatus || 'being prepared'}.`,
 				actionUrl: orderId ? `/order/${orderId}` : null,
 			};
 		case DOMAIN_EVENT_TYPES.SHIPMENT_STATUS_CHANGED:
@@ -144,7 +162,7 @@ function notificationFor(input: PublishDomainEventInput, recipient: Recipient) {
 				? {
 						category: NotificationCategory.DELIVERY,
 						title: 'Shipment status updated',
-						message: `A handed-off package is now ${nextStatus || 'in transit'}.`,
+						message: `${packageReference || 'A handed-off package'} is now ${nextStatus || 'in transit'}.`,
 						actionUrl: storeUrl
 							? `/dashboard/seller/stores/${storeUrl}/orders`
 							: null,
@@ -152,14 +170,14 @@ function notificationFor(input: PublishDomainEventInput, recipient: Recipient) {
 				: {
 						category: NotificationCategory.DELIVERY,
 						title: 'Delivery progress updated',
-						message: `Your shipment is now ${nextStatus || 'in transit'}.`,
+						message: `${packageReference || 'Your package'} is now ${nextStatus || 'in transit'}.`,
 						actionUrl: orderId ? `/order/${orderId}` : null,
 					};
 		case DOMAIN_EVENT_TYPES.RETURN_REQUESTED:
 			return {
 				category: NotificationCategory.RETURN,
 				title: 'New return request',
-				message: 'A customer submitted a return request for your review.',
+				message: `A customer submitted a return request for ${packageReference || 'a package'}${orderReference ? ` in ${orderReference}` : ''}.`,
 				actionUrl: storeUrl
 					? `/dashboard/seller/stores/${storeUrl}/orders`
 					: null,
@@ -366,6 +384,7 @@ export async function publishDomainEvent(
 				...content,
 			},
 		});
+		if (!hasDeliverableEmail(recipient.email)) continue;
 		await tx.emailOutbox.upsert({
 			where: {
 				sourceEventId_recipientId: {
