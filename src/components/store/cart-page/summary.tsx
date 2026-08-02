@@ -52,7 +52,12 @@ const CartSummary: FC<Props> = ({ cartItems, selectedItems = [], shippingFees })
 	});
 
 	const couponMutation = useMutation({
-		mutationFn: (code: string) => validateCouponCode(code),
+		mutationFn: async (code: string) => {
+			const coupon = await validateCouponCode(code);
+			const activeItems = selectedItems.length > 0 ? selectedItems : cartItems;
+			await saveUserCart(activeItems, coupon.code);
+			return coupon;
+		},
 		onSuccess: (data) => {
 			setAppliedCoupon(data);
 			toast.success(
@@ -64,7 +69,7 @@ const CartSummary: FC<Props> = ({ cartItems, selectedItems = [], shippingFees })
 		},
 	});
 
-	const loading = saveCartMutation.isPending;
+	const loading = saveCartMutation.isPending || couponMutation.isPending;
 	const itemsToCalculate = selectedItems.length > 0 ? selectedItems : cartItems;
 
 	// Calculate subtotal from active items

@@ -419,6 +419,13 @@ its visible-tab background poll remains the 30-second free-tier fallback.
       immediately dispatch the matching paid-package email to each seller
 - [x] Add an opt-in, bounded, idempotent abandoned-checkout reminder cron with
       product snapshots, totals, safe cart link, and free-tier environment controls
+- [x] Prevent the cart empty-state flash during persisted-state hydration,
+      recover legacy malformed cart storage, and reconcile saved items before
+      showing cart content
+- [x] Make seller coupon writes backend-authoritative: preserve total and
+      per-customer limits, normalize codes case-insensitively, enforce store
+      ownership, revalidate limits/store scope during cart persistence, and
+      refresh the seller coupon query after mutations
 
 - **Template-management checkpoint (August 2, 2026):** The SMTP outbox now uses
       a responsive code-owned MJML 4 shell and records the source/version used

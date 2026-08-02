@@ -7,7 +7,6 @@ import { FC, useEffect } from 'react';
 import { Coupon } from '@prisma/client';
 
 // Form handling utilities
-import * as z from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 
@@ -46,7 +45,6 @@ import { v4 } from 'uuid';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import { format } from 'date-fns';
-import { NumberInput } from '@tremor/react';
 
 // Date time picker
 import DateTimePicker from 'react-datetime-picker';
@@ -73,6 +71,7 @@ const CouponDetails: FC<CouponDetailsProps> = ({ data, storeUrl }) => {
 			code: data?.code || '',
 			discount: data?.discount,
 			maxUses: data?.maxUses ?? 0,
+			maxUsesPerUser: data?.maxUsesPerUser ?? 1,
 			startDate: data?.startDate || format(new Date(), "yyyy-MM-dd'T'HH:mm:ss"),
 			endDate: data?.endDate || format(new Date(), "yyyy-MM-dd'T'HH:mm:ss"),
 		},
@@ -81,7 +80,8 @@ const CouponDetails: FC<CouponDetailsProps> = ({ data, storeUrl }) => {
 	const isEditing = Boolean(data?.id);
 
 	const upsertMutation = useMutation({
-		mutationFn: (couponData: any) => upsertCoupon(couponData, storeUrl),
+		mutationFn: (couponData: Parameters<typeof upsertCoupon>[0]) =>
+			upsertCoupon(couponData, storeUrl),
 		onSuccess: (response) => {
 			toast.success(
 				data?.id
@@ -97,8 +97,8 @@ const CouponDetails: FC<CouponDetailsProps> = ({ data, storeUrl }) => {
 				router.push(`/dashboard/seller/stores/${storeUrl}/coupons`);
 			}
 		},
-		onError: (error: any) => {
-			toast.error(error.toString());
+		onError: (error) => {
+			toast.error(error instanceof Error ? error.message : String(error));
 		},
 	});
 
@@ -118,6 +118,7 @@ const CouponDetails: FC<CouponDetailsProps> = ({ data, storeUrl }) => {
 				code: data.code,
 				discount: data.discount,
 				maxUses: data.maxUses,
+				maxUsesPerUser: data.maxUsesPerUser ?? 1,
 				startDate: data.startDate,
 				endDate: data.endDate,
 			});
@@ -131,13 +132,11 @@ const CouponDetails: FC<CouponDetailsProps> = ({ data, storeUrl }) => {
 			await upsertMutation.mutateAsync({
 				id: data?.id ? data.id : v4(),
 				code: values.code,
-				discount: values.discount,
-				maxUses: values.maxUses ?? 0,
+				discount: Number(values.discount),
+				maxUses: Number(values.maxUses ?? 0),
+				maxUsesPerUser: Number(values.maxUsesPerUser ?? 1),
 				startDate: values.startDate,
 				endDate: values.endDate,
-				storeId: '',
-				createdAt: new Date(),
-				updatedAt: new Date(),
 			});
 		} catch {
 			// Error Toast handled in upsertMutation onError callback

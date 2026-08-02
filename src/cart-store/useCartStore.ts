@@ -1,6 +1,6 @@
 import { CartProductType } from '@/lib/types';
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { createJSONStorage, persist } from 'zustand/middleware';
 
 // Define the interface of the Cart state
 interface State {
@@ -113,8 +113,6 @@ export const useCartStore = create(
 					totalPrice,
 				}));
 
-				// Manually sync with localStorage after removal
-				localStorage.setItem('cart', JSON.stringify(updatedCart));
 			},
 			removeMultipleFromCart: (products: CartProductType[]) => {
 				const cart = get().cart;
@@ -139,8 +137,6 @@ export const useCartStore = create(
 					totalPrice,
 				}));
 
-				// Manually sync with localStorage after removal
-				localStorage.setItem('cart', JSON.stringify(updatedCart));
 			},
 			emptyCart: () => {
 				set(() => ({
@@ -149,8 +145,6 @@ export const useCartStore = create(
 					totalPrice: 0,
 				}));
 
-				// Explicitly clear the cart from localStorage as well
-				localStorage.removeItem('cart');
 			},
 			setCart: (newCart: CartProductType[]) => {
 				const totalItems = newCart.length;
@@ -167,6 +161,26 @@ export const useCartStore = create(
 		}),
 		{
 			name: 'cart',
+			storage: createJSONStorage(() => window.localStorage, {
+				reviver: (key, value) => {
+					// Recover carts written by the legacy manual localStorage calls.
+					if (key === '' && Array.isArray(value)) {
+						const cart = value as CartProductType[];
+						return {
+							state: {
+								cart,
+								totalItems: cart.length,
+								totalPrice: cart.reduce(
+									(total, item) => total + item.price * item.quantity,
+									0,
+								),
+							},
+							version: 0,
+						};
+					}
+					return value;
+				},
+			}),
 		},
 	),
 );

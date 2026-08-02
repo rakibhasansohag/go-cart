@@ -11,6 +11,29 @@ import { SecurityPrivacyCard } from '../product-page/returns-security-privacy-ca
 import EmptyCart from './empty-cart';
 import { updateCartWithLatest } from '@/queries/user';
 import CountryNote from '../shared/country-note';
+import { Skeleton } from '@/components/ui/skeleton';
+
+function CartPageSkeleton() {
+	return (
+		<main
+			className='min-h-[calc(100vh-65px)] bg-f5 px-2'
+			aria-busy='true'
+			aria-label='Loading your cart'
+		>
+			<div className='mx-auto flex max-w-[1200px] flex-col gap-4 py-4 lg:flex-row'>
+				<section className='min-w-0 flex-1 space-y-3' aria-label='Loading cart items'>
+					<Skeleton className='h-28 w-full rounded-xl' />
+					<Skeleton className='h-48 w-full rounded-xl' />
+				</section>
+				<aside className='w-full space-y-3 lg:w-[380px]' aria-label='Loading cart summary'>
+					<Skeleton className='h-72 w-full rounded-xl' />
+					<Skeleton className='h-32 w-full rounded-xl' />
+				</aside>
+			</div>
+			<span className='sr-only'>Loading your saved cart.</span>
+		</main>
+	);
+}
 
 export default function CartContainer({
 	userCountry,
@@ -21,20 +44,18 @@ export default function CartContainer({
 	const cartItems = useMemo(() => storedCart ?? [], [storedCart]);
 	const setCart = useCartStore((state) => state.setCart);
 
-	const [isCartLoaded, setIsCartLoaded] = useState<boolean>(false);
+	const [isInitialCartReady, setIsInitialCartReady] = useState(false);
 	const [selectedItems, setSelectedItems] = useState<CartProductType[]>([]);
 	const [totalShipping, setTotalShipping] = useState<number>(0);
 
 	const lastSyncedCartKey = useRef('');
 
 	useEffect(() => {
-		if (cartItems !== undefined) {
-			setIsCartLoaded(true); // Flag indicating cartItems has finished loading
+		if (storedCart === undefined) return;
+		if (cartItems.length === 0) {
+			setIsInitialCartReady(true);
+			return;
 		}
-	}, [cartItems]);
-
-	useEffect(() => {
-		if (!isCartLoaded || cartItems.length === 0) return;
 
 		const cartKey = `${userCountry.code}:${cartItems
 			.map(
@@ -43,7 +64,10 @@ export default function CartContainer({
 			)
 			.sort()
 			.join('|')}`;
-		if (lastSyncedCartKey.current === cartKey) return;
+		if (lastSyncedCartKey.current === cartKey) {
+			setIsInitialCartReady(true);
+			return;
+		}
 		lastSyncedCartKey.current = cartKey;
 
 		let cancelled = false;
@@ -53,6 +77,8 @@ export default function CartContainer({
 				if (!cancelled) setCart(updatedCart);
 			} catch {
 				lastSyncedCartKey.current = '';
+			} finally {
+				if (!cancelled) setIsInitialCartReady(true);
 			}
 		};
 
@@ -60,9 +86,13 @@ export default function CartContainer({
 		return () => {
 			cancelled = true;
 		};
-	}, [cartItems, isCartLoaded, setCart, userCountry.code]);
+	}, [cartItems, setCart, storedCart, userCountry.code]);
 
 	// TODO: Update the black and light mode features
+
+	if (storedCart === undefined || !isInitialCartReady) {
+		return <CartPageSkeleton />;
+	}
 
 	return (
 		<div>

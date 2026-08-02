@@ -3,12 +3,20 @@
 import { CartWithCartItemsType } from '@/lib/types';
 import { db } from '@/lib/db';
 import { currentUser } from '@clerk/nextjs/server';
-import { Coupon } from '@prisma/client';
 import { v4 } from 'uuid';
+import { CouponFormSchema } from '@/lib/schemas';
 
+type SellerCouponInput = {
+	id?: string;
+	code: string;
+	discount: number;
+	maxUses?: number;
+	maxUsesPerUser?: number;
+	startDate: string;
+	endDate: string;
+};
 
-
-export const upsertCoupon = async (coupon: Coupon, storeUrl: string) => {
+export const upsertCoupon = async (coupon: SellerCouponInput, storeUrl: string) => {
 	try {
 		// Get current user
 		const user = await currentUser();
@@ -16,67 +24,66 @@ export const upsertCoupon = async (coupon: Coupon, storeUrl: string) => {
 		// Ensure user is authenticated
 		if (!user) throw new Error('Unauthenticated.');
 
-		// Verify seller permission
-		if (user.privateMetadata.role !== 'SELLER')
-			throw new Error(
-				'Unauthorized Access: Seller Privileges Required for Entry.',
-			);
-
 		// Ensure coupon data and storeUrl are provided
 		if (!coupon) throw new Error('Please provide coupon data.');
 		if (!storeUrl) throw new Error('Store URL is required.');
+		const parsedCoupon = CouponFormSchema.parse(coupon);
+		const cleanCode = parsedCoupon.code.trim().toUpperCase();
 
 		// Retrieve store ID using storeUrl
-		const store = await db.store.findUnique({
-			where: { url: storeUrl },
+		const store = await db.store.findFirst({
+			where: { url: { equals: storeUrl, mode: 'insensitive' } },
 		});
 
 		if (!store) throw new Error('Store not found.');
 
-		// Throw error if a coupon with the same code and storeId already exists
+		const dbUser = await db.user.findUnique({
+			where: { id: user.id },
+			select: { role: true },
+		});
+		const isAdmin =
+			user.privateMetadata?.role === 'ADMIN' ||
+			user.publicMetadata?.role === 'ADMIN' ||
+			dbUser?.role === 'ADMIN';
+
+		if (!isAdmin && store.userId !== user.id) {
+			throw new Error('Unauthorized: You do not own this store.');
+		}
+
+		const couponId = coupon.id || v4();
+		const existingById = await db.coupon.findUnique({
+			where: { id: couponId },
+			select: { storeId: true },
+		});
+		if (existingById && existingById.storeId !== store.id) {
+			throw new Error('Unauthorized: Coupon belongs to another store.');
+		}
+
+		// Coupon codes are globally unique and matched case-insensitively.
 		const existingCoupon = await db.coupon.findFirst({
 			where: {
-				AND: [
-					{ code: coupon.code },
-					{ storeId: store.id },
-					{
-						NOT: {
-							id: coupon.id,
-						},
-					},
-				],
+				code: { equals: cleanCode, mode: 'insensitive' },
+				NOT: { id: couponId },
 			},
 		});
 
 		if (existingCoupon) {
-			throw new Error(
-				'A coupon with the same code already exists for this store.',
-			);
+			throw new Error(`A coupon with code "${cleanCode}" already exists.`);
 		}
 
-		// Upsert coupon into the database
-		const couponDetails = await db.coupon.upsert({
-			where: {
-				id: coupon.id,
-			},
-			update: {
-				code: coupon.code,
-				startDate: coupon.startDate,
-				endDate: coupon.endDate,
-				discount: coupon.discount,
-				maxUses: coupon.maxUses ?? 0,
-				storeId: store.id,
-			},
-			create: {
-				id: coupon.id,
-				code: coupon.code,
-				startDate: coupon.startDate,
-				endDate: coupon.endDate,
-				discount: coupon.discount,
-				maxUses: coupon.maxUses ?? 0,
-				storeId: store.id,
-			},
-		});
+		const payload = {
+			code: cleanCode,
+			startDate: parsedCoupon.startDate,
+			endDate: parsedCoupon.endDate,
+			discount: parsedCoupon.discount,
+			maxUses: parsedCoupon.maxUses,
+			maxUsesPerUser: parsedCoupon.maxUsesPerUser,
+			storeId: store.id,
+		};
+
+		const couponDetails = existingById
+			? await db.coupon.update({ where: { id: couponId }, data: payload })
+			: await db.coupon.create({ data: { id: couponId, ...payload } });
 
 		return couponDetails;
 	} catch (error) {
@@ -86,8 +93,9 @@ export const upsertCoupon = async (coupon: Coupon, storeUrl: string) => {
 
 export const validateCouponCode = async (code: string) => {
 	try {
-		const coupon = await db.coupon.findUnique({
-			where: { code: code.toUpperCase().trim() },
+		const cleanCode = code.toUpperCase().trim();
+		const coupon = await db.coupon.findFirst({
+			where: { code: { equals: cleanCode, mode: 'insensitive' } },
 			include: { store: true },
 		});
 
@@ -132,7 +140,7 @@ export const validateCouponCode = async (code: string) => {
 				},
 			});
 
-			const maxPerUser = (coupon).maxUsesPerUser ?? 1;
+			const maxPerUser = coupon.maxUsesPerUser ?? 1;
 			if (maxPerUser > 0 && userRedemptions >= maxPerUser) {
 				const limitText = maxPerUser === 1 ? 'one time' : `${maxPerUser} times`;
 				throw new Error(
@@ -150,8 +158,10 @@ export const validateCouponCode = async (code: string) => {
 			maxUses: coupon.maxUses,
 			usedCount: successfulRedemptions,
 		};
-	} catch (error: any) {
-		throw new Error(error.message || 'Failed to validate coupon code.');
+	} catch (error: unknown) {
+		throw new Error(
+			error instanceof Error ? error.message : 'Failed to validate coupon code.',
+		);
 	}
 };
 
@@ -224,10 +234,8 @@ export const applyCoupon = async (
 		const cleanCode = couponCode.trim().toUpperCase();
 
 		// Step 1: Fetch the coupon details
-		const coupon = await db.coupon.findUnique({
-			where: {
-				code: cleanCode,
-			},
+		const coupon = await db.coupon.findFirst({
+			where: { code: { equals: cleanCode, mode: 'insensitive' } },
 			include: {
 				store: true,
 			},

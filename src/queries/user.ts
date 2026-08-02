@@ -275,15 +275,6 @@ export const saveUserCart = async (
 			? couponCode.trim()
 			: userCart?.coupon?.code || null;
 
-	// Delete any existing user cart
-	if (userCart) {
-		await db.cart.delete({
-			where: {
-				userId,
-			},
-		});
-	}
-
 	// Fetch product, variant, and size data from the database for validation
 	const validatedCartItems = await Promise.all(
 		cartProducts.map(async (cartProduct) => {
@@ -406,8 +397,13 @@ export const saveUserCart = async (
 	let validCouponId: string | null = null;
 
 	if (effectiveCouponCode) {
-		const coupon = await db.coupon.findUnique({
-			where: { code: effectiveCouponCode.toUpperCase() },
+		const coupon = await db.coupon.findFirst({
+			where: {
+				code: {
+					equals: effectiveCouponCode.toUpperCase(),
+					mode: 'insensitive',
+				},
+			},
 			include: { store: true },
 		});
 
@@ -417,25 +413,63 @@ export const saveUserCart = async (
 			const endDate = new Date(coupon.endDate);
 
 			if (currentDate >= startDate && currentDate <= endDate) {
+				const [successfulRedemptions, userRedemptions] = await Promise.all([
+					db.orderGroup.count({
+						where: {
+							couponId: coupon.id,
+							order: { paymentStatus: 'Paid' },
+						},
+					}),
+					db.orderGroup.count({
+						where: {
+							couponId: coupon.id,
+							order: { userId, paymentStatus: 'Paid' },
+						},
+					}),
+				]);
+
+				if (coupon.maxUses > 0 && successfulRedemptions >= coupon.maxUses) {
+					throw new Error('This coupon has reached its total usage limit.');
+				}
+				if (
+					coupon.maxUsesPerUser > 0 &&
+					userRedemptions >= coupon.maxUsesPerUser
+				) {
+					throw new Error('You have reached this coupon\'s per-customer limit.');
+				}
+
 				const storeItems = coupon.storeId
 					? validatedCartItems.filter((item) => item.storeId === coupon.storeId)
 					: validatedCartItems;
-				if (storeItems.length > 0) {
-					const storeSubTotal = storeItems.reduce(
-						(acc, item) => acc + item.price * item.quantity,
-						0,
+				if (storeItems.length === 0) {
+					throw new Error(
+						`This coupon only applies to items from ${coupon.store?.name || 'its issuing store'}.`,
 					);
-					const storeShippingTotal = storeItems.reduce(
-						(acc, item) => acc + item.shippingFee,
-						0,
-					);
-					const storeTotal = storeSubTotal + storeShippingTotal;
-					const discountedAmount = (storeTotal * coupon.discount) / 100;
-					total = Math.max(0, total - discountedAmount);
-					validCouponId = coupon.id;
 				}
+
+				const storeSubTotal = storeItems.reduce(
+					(acc, item) => acc + item.price * item.quantity,
+					0,
+				);
+				const storeShippingTotal = storeItems.reduce(
+					(acc, item) => acc + item.shippingFee,
+					0,
+				);
+				const storeTotal = storeSubTotal + storeShippingTotal;
+				const discountedAmount = (storeTotal * coupon.discount) / 100;
+				total = Math.max(0, total - discountedAmount);
+				validCouponId = coupon.id;
+			} else {
+				throw new Error('Coupon is expired or not yet active.');
 			}
+		} else {
+			throw new Error('Coupon code not found.');
 		}
+	}
+
+	// Replace the persisted cart only after product and coupon validation succeeds.
+	if (userCart) {
+		await db.cart.delete({ where: { userId } });
 	}
 
 	// Save the validated items to the cart in the database
