@@ -38,6 +38,7 @@ model User {
   domainEvents          DomainEvent[]           @relation("DomainEventActor")
   notifications         Notification[]          @relation("NotificationRecipient")
   emailOutboxJobs       EmailOutbox[]           @relation("EmailOutboxRecipient")
+  emailTemplatesEdited  EmailTemplate[]         @relation("EmailTemplateEditor")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -789,6 +790,11 @@ enum EmailOutboxStatus {
   CANCELLED
 }
 
+enum EmailTemplateSource {
+  DEFAULT
+  CUSTOM
+}
+
 model DomainEvent {
   id            String @id @default(uuid())
   eventKey      String @unique
@@ -833,16 +839,18 @@ model Notification {
 }
 
 model EmailOutbox {
-  id             String            @id @default(uuid())
-  templateKey    String
-  recipientEmail String
-  payload        Json
-  status         EmailOutboxStatus @default(PENDING)
-  attemptCount   Int               @default(0)
-  nextAttemptAt  DateTime          @default(now())
-  lastAttemptAt  DateTime?
-  sentAt         DateTime?
-  lastError      String?           @db.Text
+  id              String              @id @default(uuid())
+  templateKey     String
+  recipientEmail  String
+  payload         Json
+  status          EmailOutboxStatus   @default(PENDING)
+  attemptCount    Int                 @default(0)
+  nextAttemptAt   DateTime            @default(now())
+  lastAttemptAt   DateTime?
+  sentAt          DateTime?
+  lastError       String?             @db.Text
+  templateSource  EmailTemplateSource @default(DEFAULT)
+  templateVersion Int                 @default(0)
 
   sourceEventId String
   sourceEvent   DomainEvent @relation(fields: [sourceEventId], references: [id], onDelete: Cascade)
@@ -856,6 +864,33 @@ model EmailOutbox {
   @@unique([sourceEventId, recipientId])
   @@index([status, nextAttemptAt])
   @@index([recipientId, createdAt])
+}
+
+model EmailTemplate {
+  id             String  @id @default(uuid())
+  templateKey    String  @unique
+  draftSubject   String
+  draftPreheader String  @db.Text
+  draftBodyHtml  String  @db.Text
+  draftCtaLabel  String?
+  draftEnabled   Boolean @default(true)
+
+  publishedSubject   String?
+  publishedPreheader String?   @db.Text
+  publishedBodyHtml  String?   @db.Text
+  publishedCtaLabel  String?
+  publishedEnabled   Boolean?
+  publishedVersion   Int       @default(0)
+  publishedAt        DateTime?
+
+  updatedById String?
+  updatedBy   User?   @relation("EmailTemplateEditor", fields: [updatedById], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([updatedById])
+  @@index([publishedAt])
 }
 
 model CancellationRequest {

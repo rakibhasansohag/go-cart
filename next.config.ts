@@ -1,6 +1,10 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
 	reactStrictMode: false,
+	// MJML discovers its component/config modules dynamically at runtime. Keep it
+	// in Node's module system so the Server Action compiler does not rewrite those
+	// lookups into the synthetic `(action-browser)` filesystem namespace.
+	serverExternalPackages: ['mjml'],
 	typescript: {
 		ignoreBuildErrors: true,
 	},

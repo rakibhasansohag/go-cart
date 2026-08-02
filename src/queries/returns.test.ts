@@ -12,6 +12,7 @@ const {
 	returnRequestFindUniqueOrThrowMock,
 	returnItemUpdateManyMock,
 	returnEventCreateMock,
+	publishDomainEventMock,
 } = vi.hoisted(() => ({
 	authMock: vi.fn(),
 	transactionMock: vi.fn(),
@@ -24,6 +25,7 @@ const {
 	returnRequestFindUniqueOrThrowMock: vi.fn(),
 	returnItemUpdateManyMock: vi.fn(),
 	returnEventCreateMock: vi.fn(),
+	publishDomainEventMock: vi.fn(),
 }));
 
 const transactionClient = {
@@ -58,6 +60,11 @@ vi.mock('@/lib/db', () => ({
 			findFirst: dbOrderItemFindFirstMock,
 		},
 	},
+}));
+
+vi.mock('@/lib/notifications/domain-events', () => ({
+	DOMAIN_EVENT_TYPES: { RETURN_REQUESTED: 'return.requested' },
+	publishDomainEvent: publishDomainEventMock,
 }));
 
 import {

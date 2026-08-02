@@ -398,15 +398,24 @@ its visible-tab background poll remains the 30-second free-tier fallback.
 
 #### SMTP email and admin-controlled templates
 
-- [ ] Add `nodemailer` and `mjml` server dependencies and their required type
+- **Template-management checkpoint (August 1, 2026):** The SMTP outbox now uses
+      a responsive code-owned MJML 4 shell and records the source/version used
+      for each successful send. Admins can edit a sanitized Jodit body, save a
+      draft, preview desktop/mobile output, test-send, publish a versioned
+      override, or restore the immutable default. The five currently emitted
+      payment, paid-package, preparation, shipment, and return events have
+      defaults; the remaining event families, locale support, preferences, and
+      template activity history remain intentionally open.
+
+- [x] Add `nodemailer` and `mjml` server dependencies and their required type
       declarations; reuse the already-installed `jodit-react` package for admin
       editing instead of introducing a second rich-text editor
-- [ ] Add a provider-neutral SMTP adapter with one reusable Nodemailer
+- [x] Add a provider-neutral SMTP adapter with one reusable Nodemailer
       transporter, TLS configuration, connection verification, and secrets kept
       server-only
-- [ ] Support Gmail SMTP for the hobby deployment through a Google App Password,
+- [x] Support Gmail SMTP for the hobby deployment through a Google App Password,
       while allowing another SMTP provider through environment changes only
-- [ ] Add MJML as the server-side email renderer and create a polished,
+- [x] Add MJML as the server-side email renderer and create a polished,
       code-owned GoCart master layout with responsive/mobile-safe structure, branded
       header, preheader, status/summary card, Order/Package/Shipment references,
       primary CTA, support text, accessible contrast, and footer
@@ -416,7 +425,7 @@ its visible-tab background poll remains the 30-second free-tier fallback.
 - [ ] Add admin-only email-template management keyed by domain event and locale,
       including subject, preheader, body, CTA label, enabled state, allowed variables,
       plain-text fallback, draft/published version, preview, and test-send
-- [ ] Reuse the installed Jodit React editor for the editable body content only;
+- [x] Reuse the installed Jodit React editor for the editable body content only;
       keep the MJML shell, responsive grid, GoCart header/footer, security rules, and
       critical transaction fields controlled by the application
 - [ ] Load Jodit client-side, use a restrained email-safe toolbar, insert allowed
@@ -426,10 +435,10 @@ its visible-tab background poll remains the 30-second free-tier fallback.
 - [ ] Support three explicit admin actions for every event template: **Use
       default**, **Customize default**, and **Reset to default**; default templates
       remain immutable and cannot be deleted
-- [ ] Store only the custom override/version in the database. When no published
+- [x] Store only the custom override/version in the database. When no published
       custom override exists—or it is disabled, invalid, or fails compilation—the
       renderer automatically uses the matching code-owned default template
-- [ ] Sanitize Jodit HTML before storage and rendering, reject scripts, unsafe
+- [x] Sanitize Jodit HTML before storage and rendering, reject scripts, unsafe
       URLs and unknown variables, compile the final MJML only on the server, and
       reject publishing when compilation reports an error
 - [ ] Generate and store/send both compiled responsive HTML and a meaningful

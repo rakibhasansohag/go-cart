@@ -16,6 +16,7 @@ import { getAllCategories } from '@/queries/category';
 import { getAllSubCategories } from '@/queries/subCategory';
 import { getAllOfferTags } from '@/queries/offer-tag';
 import { getAllStores } from '@/queries/store';
+import { getEmailTemplates } from '@/queries/email-templates';
 
 interface SidebarNavAdminProps {
 	menuLinks: DashboardSidebarMenuInterface[];
@@ -66,6 +67,12 @@ export default function SidebarNavAdmin({
 			queryClient.prefetchQuery({
 				queryKey: queryKeys.dashboard.stores(),
 				queryFn: () => getAllStores(),
+			});
+		} else if (link === '/dashboard/admin/email-templates') {
+			queryClient.prefetchQuery({
+				queryKey: queryKeys.dashboard.emailTemplates(),
+				queryFn: getEmailTemplates,
+				staleTime: 5 * 60 * 1000,
 			});
 		}
 	};

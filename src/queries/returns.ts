@@ -9,6 +9,7 @@ import {
 	ReturnResolution,
 } from '@prisma/client';
 import { db } from '@/lib/db';
+import { scheduleEmailOutboxDispatch } from '@/lib/email/schedule';
 import {
 	INACTIVE_RETURN_STATUSES,
 	RELEASED_RETURN_STATUSES,
@@ -373,7 +374,7 @@ export async function createReturnRequest(input: CreateReturnRequestInput) {
 	const evidence = validateEvidence(input.evidence);
 
 	try {
-		return await db.$transaction(async (tx) => {
+		const request = await db.$transaction(async (tx) => {
 			const item = await tx.orderItem.findFirst({
 				where: {
 					id: input.orderItemId,
@@ -424,8 +425,7 @@ export async function createReturnRequest(input: CreateReturnRequestInput) {
 					requestedShipping: breakdown.shipping,
 					requestedDiscount: breakdown.couponDiscount,
 					requestedTax: breakdown.tax,
-					currency:
-						order.paymentDetails?.currency?.toUpperCase() ?? 'USD',
+					currency: order.paymentDetails?.currency?.toUpperCase() ?? 'USD',
 					respondBy: addDays(now, RETURN_RESPONSE_DAYS),
 					customerId: userId,
 					orderId: order.id,
@@ -489,13 +489,14 @@ export async function createReturnRequest(input: CreateReturnRequestInput) {
 					storeUrl: store.url,
 					resolution: input.resolution,
 					requestedAmount: breakdown.total,
-					currency:
-						order.paymentDetails?.currency?.toUpperCase() ?? 'USD',
+					currency: order.paymentDetails?.currency?.toUpperCase() ?? 'USD',
 				},
 			});
 
 			return request;
 		}, RETURN_TRANSACTION_OPTIONS);
+		scheduleEmailOutboxDispatch();
+		return request;
 	} catch (error) {
 		if (
 			error instanceof Prisma.PrismaClientKnownRequestError &&

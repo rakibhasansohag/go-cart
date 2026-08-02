@@ -1,6 +1,7 @@
 'use server';
 
 import { db } from '@/lib/db';
+import { scheduleEmailOutboxDispatch } from '@/lib/email/schedule';
 import {
 	assertPackageTransition,
 	assertShipmentTransition,
@@ -175,6 +176,7 @@ export async function updatePackageStatus(input: {
 		return input.nextStatus;
 	}, FULFILLMENT_TRANSACTION_OPTIONS);
 
+	scheduleEmailOutboxDispatch();
 	updateTag('user-orders');
 	return result;
 }
@@ -274,6 +276,7 @@ export async function updateShipmentStatus(input: {
 		return input.nextStatus;
 	}, FULFILLMENT_TRANSACTION_OPTIONS);
 
+	scheduleEmailOutboxDispatch();
 	updateTag('user-orders');
 	return result;
 }
