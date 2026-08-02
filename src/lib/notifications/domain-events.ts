@@ -155,8 +155,47 @@ function notificationFor(input: PublishDomainEventInput, recipient: Recipient) {
 
 export async function publishPaidOrderNotifications(
 	tx: TransactionClient,
-	input: { orderId: string; provider: string; providerPaymentId: string },
+	input: {
+		orderId: string;
+		provider: string;
+		providerPaymentId: string;
+		amount: number;
+		currency: string;
+		paidAt: Date;
+	},
 ) {
+	const paidOrder = await tx.order.findUnique({
+		where: { id: input.orderId },
+		select: {
+			id: true,
+			subTotal: true,
+			shippingFees: true,
+			total: true,
+			groups: {
+				select: {
+					id: true,
+					storeId: true,
+					subTotal: true,
+					shippingFees: true,
+					total: true,
+					store: { select: { name: true, url: true } },
+					items: {
+						select: {
+							name: true,
+							image: true,
+							sku: true,
+							size: true,
+							quantity: true,
+							price: true,
+							totalPrice: true,
+						},
+					},
+				},
+			},
+		},
+	});
+	if (!paidOrder) throw new Error('Paid order could not be found.');
+
 	await publishDomainEvent(tx, {
 		eventKey: `payment:succeeded:${input.provider}:${input.providerPaymentId}`,
 		eventType: DOMAIN_EVENT_TYPES.PAYMENT_SUCCEEDED,
@@ -167,19 +206,38 @@ export async function publishPaidOrderNotifications(
 			orderId: input.orderId,
 			providerPaymentId: input.providerPaymentId,
 			provider: input.provider,
+			paymentMethod: input.provider,
+			paymentReference: input.providerPaymentId,
+			paidAt: input.paidAt.toISOString(),
+			subTotal: paidOrder.subTotal,
+			shippingFees: paidOrder.shippingFees,
+			total: input.amount,
+			currency: input.currency,
+			itemCount: paidOrder.groups.reduce(
+				(total, orderPackage) =>
+					total +
+					orderPackage.items.reduce(
+						(count, item) => count + item.quantity,
+						0,
+					),
+				0,
+			),
+			items: paidOrder.groups.flatMap((orderPackage) =>
+				orderPackage.items.map((item) => ({
+					name: item.name,
+					image: item.image,
+					sku: item.sku,
+					size: item.size,
+					quantity: item.quantity,
+					unitPrice: item.price,
+					totalPrice: item.totalPrice,
+					storeName: orderPackage.store.name,
+				})),
+			),
 		},
 	});
 
-	const packages = await tx.orderGroup.findMany({
-		where: { orderId: input.orderId },
-		select: {
-			id: true,
-			storeId: true,
-			store: { select: { url: true } },
-		},
-	});
-
-	for (const orderPackage of packages) {
+	for (const orderPackage of paidOrder.groups) {
 		await publishDomainEvent(tx, {
 			eventKey: `package:paid-ready:${input.provider}:${input.providerPaymentId}:${orderPackage.id}`,
 			eventType: DOMAIN_EVENT_TYPES.PAID_PACKAGE_READY,
@@ -191,8 +249,28 @@ export async function publishPaidOrderNotifications(
 				orderId: input.orderId,
 				orderGroupId: orderPackage.id,
 				storeUrl: orderPackage.store.url,
+				storeName: orderPackage.store.name,
 				providerPaymentId: input.providerPaymentId,
 				provider: input.provider,
+				subTotal: orderPackage.subTotal,
+				shippingFees: orderPackage.shippingFees,
+				total: orderPackage.total,
+				currency: input.currency,
+				itemCount: orderPackage.items.reduce(
+					(count, item) => count + item.quantity,
+					0,
+				),
+				items: orderPackage.items.map((item) => ({
+					name: item.name,
+					image: item.image,
+					sku: item.sku,
+					size: item.size,
+					quantity: item.quantity,
+					unitPrice: item.price,
+					totalPrice: item.totalPrice,
+					storeName: orderPackage.store.name,
+				})),
+				nextStatus: 'Awaiting acceptance',
 			},
 		});
 	}

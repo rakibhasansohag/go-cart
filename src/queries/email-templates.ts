@@ -1,6 +1,6 @@
 'use server';
 
-import { auth } from '@clerk/nextjs/server';
+import { auth, currentUser } from '@clerk/nextjs/server';
 import { Role } from '@prisma/client';
 import { z } from 'zod';
 import { db } from '@/lib/db';
@@ -70,6 +70,8 @@ export async function getEmailTemplates() {
 			name: definition.name,
 			category: definition.category,
 			description: definition.description,
+			audience: definition.audience,
+			trigger: definition.trigger,
 			allowedVariables: [...definition.allowedVariables],
 			draft: {
 				subject: override?.draftSubject ?? definition.subject,
@@ -180,10 +182,31 @@ export async function sendTestEmailTemplate(input: {
 	recipientEmail?: string;
 }) {
 	const admin = await requireAdmin();
-	const recipientEmail = z
-		.string()
-		.email()
-		.parse(input.recipientEmail?.trim() || admin.email);
+	const emailSchema = z.string().trim().email();
+	const explicitRecipient = input.recipientEmail?.trim();
+	if (explicitRecipient) {
+		const parsed = emailSchema.safeParse(explicitRecipient);
+		if (!parsed.success) {
+			throw new Error('Enter a valid recipient email address.');
+		}
+	}
+	let recipientEmail = explicitRecipient;
+	if (!recipientEmail) {
+		const databaseEmail = emailSchema.safeParse(admin.email);
+		if (databaseEmail.success) recipientEmail = databaseEmail.data;
+	}
+	if (!recipientEmail) {
+		const clerkUser = await currentUser();
+		const clerkEmail = emailSchema.safeParse(
+			clerkUser?.primaryEmailAddress?.emailAddress,
+		);
+		if (clerkEmail.success) recipientEmail = clerkEmail.data;
+	}
+	if (!recipientEmail) {
+		throw new Error(
+			'Your admin account has no valid email address. Enter a test recipient.',
+		);
+	}
 	const template = normalizeTemplateInput(input.template);
 	const rendered = await renderEmailTemplate({
 		templateKey: template.templateKey,

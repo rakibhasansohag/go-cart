@@ -12,7 +12,7 @@ export default async function AdminEmailTemplatesPage() {
 	const templates = await getEmailTemplates();
 
 	return (
-		<div className='mx-auto w-full max-w-[1600px] space-y-6'>
+		<div className='mx-auto flex w-full max-w-[1600px] flex-col gap-6 xl:h-[calc(100dvh-129px)] xl:min-h-0 xl:overflow-hidden'>
 			<header>
 				<h1 className='text-2xl font-bold tracking-tight'>Email templates</h1>
 				<p className='mt-1 text-sm text-muted-foreground'>

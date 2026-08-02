@@ -32,4 +32,73 @@ describe('renderEmailTemplate', () => {
 			expect(email.text).not.toContain('evil.example');
 		}
 	});
+
+	it('renders a detailed payment receipt from trusted order snapshots', async () => {
+		process.env.APP_URL = 'https://gocart.example';
+		const email = await renderEmailTemplate({
+			templateKey: 'payment.succeeded',
+			payload: {
+				message: 'Your payment was successful.',
+				orderId: 'b8810f34-efed-4c68-8b59-c6dc5ca8304b',
+				paymentMethod: 'Stripe',
+				paymentReference: 'pi_test_123',
+				paidAt: '2026-08-02T04:30:00.000Z',
+				subTotal: 999.98,
+				shippingFees: 5,
+				total: 1004.98,
+				currency: 'USD',
+				itemCount: 2,
+				items: [
+					{
+						name: 'Apex Chronos Premium Timepiece',
+						image: 'https://cdn.example.com/watch.jpg',
+						sku: 'CAP-001',
+						size: 'Standard',
+						quantity: 2,
+						unitPrice: 499.99,
+						totalPrice: 999.98,
+						storeName: 'The Crafted Compass',
+					},
+				],
+				actionUrl: '/order/b8810f34-efed-4c68-8b59-c6dc5ca8304b',
+			},
+		});
+
+		expect(email.subject).toContain('#ORD-CA8304B');
+		expect(email.html).toContain('Apex Chronos Premium Timepiece');
+		expect(email.html).toContain('Qty 2');
+		expect(email.html).toContain('$1,004.98');
+		expect(email.html).toContain('https://cdn.example.com/watch.jpg');
+		expect(email.text).toContain('Total paid: $1,004.98');
+	});
+
+	it.each([
+		['package.paid_ready', 'Products to prepare'],
+		['package.status_changed', 'Products in this package'],
+		['shipment.status_changed', 'Products in this shipment'],
+		['return.requested', 'Requested return item'],
+	])('renders product details for the %s operational email', async (templateKey, heading) => {
+		const email = await renderEmailTemplate({ templateKey });
+
+		expect(email.html).toContain(heading);
+		expect(email.html).toContain('Apex Chronos Premium Timepiece');
+		expect(email.html).toContain('CAP-OBE-2024-001');
+		expect(email.html).toContain('Qty 2');
+	});
+
+	it('adds delivery context to shipment emails and request context to return emails', async () => {
+		const shipment = await renderEmailTemplate({
+			templateKey: 'shipment.status_changed',
+		});
+		expect(shipment.html).toContain('International Delivery');
+		expect(shipment.html).toContain('August 7–12, 2026');
+
+		const returnEmail = await renderEmailTemplate({
+			templateKey: 'return.requested',
+		});
+		expect(returnEmail.html).toContain('Item arrived damaged');
+		expect(returnEmail.html).toContain('Estimated refund');
+		expect(returnEmail.html).toContain('Customer note');
+		expect(returnEmail.html).toContain('visible damage near the clasp');
+	});
 });

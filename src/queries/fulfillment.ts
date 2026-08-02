@@ -121,7 +121,14 @@ export async function updatePackageStatus(input: {
 
 		const group = await tx.orderGroup.findFirst({
 			where: { id: input.groupId, storeId: store.id },
-			include: { shipment: true },
+			include: {
+				shipment: true,
+				store: { select: { name: true, url: true } },
+				items: true,
+				order: {
+					select: { paymentDetails: { select: { currency: true } } },
+				},
+			},
 		});
 		if (!group) throw new Error('Package not found.');
 
@@ -163,9 +170,26 @@ export async function updatePackageStatus(input: {
 			storeId: store.id,
 			payload: {
 				orderId: group.orderId,
-				groupId: group.id,
+				orderGroupId: group.id,
+				storeUrl: group.store.url,
+				storeName: group.store.name,
 				previousStatus: PACKAGE_STATUS_LABELS[group.packageStatus],
 				nextStatus: PACKAGE_STATUS_LABELS[input.nextStatus],
+				subTotal: group.subTotal,
+				shippingFees: group.shippingFees,
+				total: group.total,
+				currency: group.order.paymentDetails?.currency?.toUpperCase() ?? 'USD',
+				itemCount: group.items.reduce((count, item) => count + item.quantity, 0),
+				items: group.items.map((item) => ({
+					name: item.name,
+					image: item.image,
+					sku: item.sku,
+					size: item.size,
+					quantity: item.quantity,
+					unitPrice: item.price,
+					totalPrice: item.totalPrice,
+					storeName: group.store.name,
+				})),
 			},
 		});
 
@@ -203,7 +227,14 @@ export async function updateShipmentStatus(input: {
 
 		const group = await tx.orderGroup.findUnique({
 			where: { id: input.groupId },
-			include: { shipment: true, store: { select: { url: true } } },
+			include: {
+				shipment: true,
+				store: { select: { name: true, url: true } },
+				items: true,
+				order: {
+					select: { paymentDetails: { select: { currency: true } } },
+				},
+			},
 		});
 		if (!group?.shipment) throw new Error('Shipment not found.');
 
@@ -261,11 +292,33 @@ export async function updateShipmentStatus(input: {
 			storeId: group.storeId,
 			payload: {
 				orderId: group.orderId,
-				groupId: group.id,
+				orderGroupId: group.id,
 				shipmentId: group.shipment.id,
 				storeUrl: group.store.url,
+				storeName: group.store.name,
+				shippingService: group.shippingService,
+				deliveryEstimate: `${group.shippingDeliveryMin}-${group.shippingDeliveryMax} days after dispatch`,
 				previousStatus: SHIPMENT_STATUS_LABELS[group.shipment.status],
 				nextStatus: SHIPMENT_STATUS_LABELS[input.nextStatus],
+				failureReason:
+					input.nextStatus === ShipmentStatus.DELIVERY_ATTEMPT_FAILED
+						? input.message?.trim() || input.reasonCode?.trim() || ''
+						: '',
+				subTotal: group.subTotal,
+				shippingFees: group.shippingFees,
+				total: group.total,
+				currency: group.order.paymentDetails?.currency?.toUpperCase() ?? 'USD',
+				itemCount: group.items.reduce((count, item) => count + item.quantity, 0),
+				items: group.items.map((item) => ({
+					name: item.name,
+					image: item.image,
+					sku: item.sku,
+					size: item.size,
+					quantity: item.quantity,
+					unitPrice: item.price,
+					totalPrice: item.totalPrice,
+					storeName: group.store.name,
+				})),
 			},
 		});
 

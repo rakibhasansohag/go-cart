@@ -119,6 +119,9 @@ export async function reconcilePaymentEvent(input: ReconcilePaymentInput) {
 						orderId: order.id,
 						provider: input.provider,
 						providerPaymentId: input.providerPaymentId,
+						amount: storedAmount,
+						currency: normalizedCurrency,
+						paidAt: paymentDetails.updatedAt,
 					});
 				}
 

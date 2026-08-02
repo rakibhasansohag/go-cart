@@ -398,14 +398,21 @@ its visible-tab background poll remains the 30-second free-tier fallback.
 
 #### SMTP email and admin-controlled templates
 
-- **Template-management checkpoint (August 1, 2026):** The SMTP outbox now uses
+- **Template-management checkpoint (August 2, 2026):** The SMTP outbox now uses
       a responsive code-owned MJML 4 shell and records the source/version used
       for each successful send. Admins can edit a sanitized Jodit body, save a
       draft, preview desktop/mobile output, test-send, publish a versioned
       override, or restore the immutable default. The five currently emitted
       payment, paid-package, preparation, shipment, and return events have
-      defaults; the remaining event families, locale support, preferences, and
-      template activity history remain intentionally open.
+      distinct event-specific defaults and realistic previews. Payment,
+      paid-package, preparation, shipment, and return emails now include the
+      relevant immutable item snapshots, quantities, SKU/size, safe product
+      images, store, and applicable totals. Shipment messages also include the
+      current service, delivery estimate, and failure note; return messages include
+      the reason, requested resolution/refund, and customer note. The desktop
+      template workspace keeps its template list in place while only the editor
+      and preview pane scrolls. The remaining event families, locale support,
+      preferences, and template activity history remain intentionally open.
 
 - [x] Add `nodemailer` and `mjml` server dependencies and their required type
       declarations; reuse the already-installed `jodit-react` package for admin

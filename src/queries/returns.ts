@@ -68,6 +68,7 @@ const returnCandidateInclude = Prisma.validator<Prisma.OrderItemInclude>()({
 			store: {
 				select: {
 					id: true,
+					name: true,
 					url: true,
 					returnPolicy: true,
 					returnsAccepted: true,
@@ -485,11 +486,30 @@ export async function createReturnRequest(input: CreateReturnRequestInput) {
 				payload: {
 					returnRequestId: request.id,
 					orderId: order.id,
-					groupId: item.orderGroupId,
+					orderGroupId: item.orderGroupId,
 					storeUrl: store.url,
+					storeName: store.name,
+					returnReason: input.reason,
 					resolution: input.resolution,
+					customerNote: note || '',
 					requestedAmount: breakdown.total,
+					subTotal: breakdown.itemSubtotal,
+					shippingFees: breakdown.shipping,
+					total: breakdown.total,
 					currency: order.paymentDetails?.currency?.toUpperCase() ?? 'USD',
+					itemCount: input.quantity,
+					items: [
+						{
+							name: item.name,
+							image: item.image,
+							sku: item.sku,
+							size: item.size,
+							quantity: input.quantity,
+							unitPrice: item.price,
+							totalPrice: breakdown.itemSubtotal,
+							storeName: store.name,
+						},
+					],
 				},
 			});
 

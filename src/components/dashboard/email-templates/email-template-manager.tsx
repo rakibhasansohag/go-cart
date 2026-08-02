@@ -56,6 +56,17 @@ function formFromTemplate(template: Templates[number]): EmailTemplateInput {
 	return { templateKey: template.templateKey, ...template.draft };
 }
 
+function centerPreviewDocument(html: string) {
+	const previewStyles = `<style id="gocart-preview-canvas">
+		html, body { min-height: 100% !important; }
+		body { min-height: 100vh !important; margin: 0 !important; padding: 32px 0 !important; box-sizing: border-box !important; display: grid !important; place-items: center !important; }
+		body > div { width: 100% !important; }
+	</style>`;
+	return html.includes('</head>')
+		? html.replace('</head>', `${previewStyles}</head>`)
+		: `${previewStyles}${html}`;
+}
+
 export default function EmailTemplateManager({
 	initialTemplates,
 }: {
@@ -101,6 +112,10 @@ export default function EmailTemplateManager({
 				.includes(query),
 		);
 	}, [search, templates]);
+	const centeredPreviewHtml = useMemo(
+		() => (previewHtml ? centerPreviewDocument(previewHtml) : ''),
+		[previewHtml],
+	);
 
 	const editorConfig = useMemo(
 		() => ({
@@ -172,6 +187,17 @@ export default function EmailTemplateManager({
 			toast.success(`Test email sent to ${result.recipientEmail}.`),
 		onError: (error) => toast.error(error.message),
 	});
+	const sendTest = () => {
+		const recipient = testRecipient.trim();
+		if (recipient && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipient)) {
+			toast.error('Enter a valid test recipient email address.');
+			return;
+		}
+		testMutation.mutate({
+			template: form!,
+			recipientEmail: recipient || undefined,
+		});
+	};
 
 	if (!selected || !form) {
 		return (
@@ -188,8 +214,8 @@ export default function EmailTemplateManager({
 		testMutation.isPending;
 
 	return (
-		<div className='grid gap-6 xl:grid-cols-[320px_minmax(0,1fr)]'>
-			<aside aria-label='Email template list' className='space-y-3'>
+		<div className='grid gap-6 xl:min-h-0 xl:flex-1 xl:grid-cols-[320px_minmax(0,1fr)] xl:overflow-hidden'>
+			<aside aria-label='Email template list' className='space-y-3 xl:min-h-0 xl:overflow-y-auto xl:overscroll-contain xl:pr-2'>
 				<div className='relative'>
 					<Search className='pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground' />
 					<Input
@@ -217,7 +243,7 @@ export default function EmailTemplateManager({
 								<span>
 									<span className='block font-semibold'>{template.name}</span>
 									<span className='mt-1 block text-xs text-muted-foreground'>
-										{template.category}
+										{template.category} &middot; {template.audience}
 									</span>
 								</span>
 								<Badge variant={template.hasPublishedOverride ? 'default' : 'secondary'}>
@@ -231,7 +257,7 @@ export default function EmailTemplateManager({
 				</nav>
 			</aside>
 
-			<section aria-labelledby='template-editor-heading' className='min-w-0 space-y-5'>
+			<section aria-labelledby='template-editor-heading' className='min-w-0 space-y-5 xl:min-h-0 xl:overflow-y-auto xl:overscroll-contain xl:pr-2'>
 				<Card>
 					<CardHeader className='border-b'>
 						<div className='flex flex-wrap items-start justify-between gap-4'>
@@ -239,6 +265,13 @@ export default function EmailTemplateManager({
 								<CardTitle id='template-editor-heading'>{selected.name}</CardTitle>
 								<p className='mt-1 max-w-3xl text-sm text-muted-foreground'>
 									{selected.description}
+								</p>
+								<p className='mt-2 text-xs text-muted-foreground'>
+									<span className='font-semibold text-foreground'>Audience:</span>{' '}
+									{selected.audience}
+									<span aria-hidden='true'> &middot; </span>
+									<span className='font-semibold text-foreground'>Sent:</span>{' '}
+									{selected.trigger}
 								</p>
 							</div>
 							<div className='flex items-center gap-2'>
@@ -329,7 +362,7 @@ export default function EmailTemplateManager({
 							<Button variant='outline' disabled={previewMutation.isPending} onClick={() => previewMutation.mutate(form)}>
 								<Eye /> Preview
 							</Button>
-							<Button variant='outline' disabled={busy} onClick={() => testMutation.mutate({ template: form, recipientEmail: testRecipient || undefined })}>
+							<Button variant='outline' disabled={busy} onClick={sendTest}>
 								<Send /> Send test
 							</Button>
 
@@ -389,10 +422,10 @@ export default function EmailTemplateManager({
 									<TabsTrigger value='mobile'>Mobile</TabsTrigger>
 								</TabsList>
 								<TabsContent value='desktop'>
-									<iframe title='Desktop email preview' sandbox='' srcDoc={previewHtml} className='h-[680px] w-full rounded-lg border bg-white' />
+									<iframe title='Desktop email preview' sandbox='' srcDoc={centeredPreviewHtml} className='h-[720px] w-full rounded-lg border bg-white' />
 								</TabsContent>
 								<TabsContent value='mobile'>
-									<div className='mx-auto max-w-[390px]'><iframe title='Mobile email preview' sandbox='' srcDoc={previewHtml} className='h-[680px] w-full rounded-lg border bg-white' /></div>
+									<div className='mx-auto max-w-[390px]'><iframe title='Mobile email preview' sandbox='' srcDoc={centeredPreviewHtml} className='h-[720px] w-full rounded-lg border bg-white' /></div>
 								</TabsContent>
 							</Tabs>
 						) : (
