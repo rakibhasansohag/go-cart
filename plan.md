@@ -426,6 +426,9 @@ its visible-tab background poll remains the 30-second free-tier fallback.
       per-customer limits, normalize codes case-insensitively, enforce store
       ownership, revalidate limits/store scope during cart persistence, and
       refresh the seller coupon query after mutations
+- [x] Reduce cart-to-checkout latency by using lightweight auth for cart saves,
+      fetching checkout cart/address/country data concurrently, caching the
+      country catalog, prefetching the route, and showing a route-level skeleton
 
 - **Template-management checkpoint (August 2, 2026):** The SMTP outbox now uses
       a responsive code-owned MJML 4 shell and records the source/version used

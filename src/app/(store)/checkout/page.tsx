@@ -2,45 +2,44 @@ import CheckoutContainer from '@/components/store/checkout-page/container';
 import Header from '@/components/store/layout/header/header';
 import { db } from '@/lib/db';
 import { Country } from '@/lib/types';
-import { getUserShippingAddresses } from '@/queries/user';
 import { auth } from '@clerk/nextjs/server';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { unstable_cache } from 'next/cache';
 
 export const dynamic = 'force-dynamic';
+
+const getCheckoutCountries = unstable_cache(
+	() => db.country.findMany({ orderBy: { name: 'desc' } }),
+	['checkout-countries'],
+	{ revalidate: 24 * 60 * 60 },
+);
 
 export default async function CheckoutPage() {
 	const { userId } = await auth();
 	if (!userId) redirect('/sign-in?redirect_url=/checkout');
 
-	// Get user cart
-	const cart = await db.cart.findFirst({
-		where: {
-			userId,
-		},
-		include: {
-			cartItems: true,
-			coupon: {
-				include: {
-					store: true,
+	const [cart, addresses, countries, cookieStore] = await Promise.all([
+		db.cart.findUnique({
+			where: { userId },
+			include: {
+				cartItems: true,
+				coupon: {
+					include: { store: true },
 				},
 			},
-		},
-	});
+		}),
+		db.shippingAddress.findMany({
+			where: { userId },
+			include: { country: true, user: true },
+		}),
+		getCheckoutCountries(),
+		cookies(),
+	]);
 
 	if (!cart) redirect('/cart');
 
-	// Get user shipping address
-	const addresses = await getUserShippingAddresses();
-
-	// Get list of countries
-	const countries = await db.country.findMany({
-		orderBy: { name: 'desc' },
-	});
-
-	// Get cookies from the store
-	const cookieStore = cookies();
-	const userCountryCookie = (await cookieStore).get('userCountry');
+	const userCountryCookie = cookieStore.get('userCountry');
 
 	// Set default country if cookie is missing
 	let userCountry: Country = {

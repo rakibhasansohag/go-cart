@@ -256,13 +256,8 @@ export const saveUserCart = async (
 	cartProducts: CartProductType[],
 	couponCode?: string,
 ): Promise<boolean> => {
-	// Get current user
-	const user = await currentUser();
-
-	// Ensure user is authenticated
-	if (!user) throw new Error('Unauthenticated.');
-
-	const userId = user.id;
+	const { userId } = await auth();
+	if (!userId) throw new Error('Unauthenticated.');
 
 	// Search for existing user cart
 	const userCart = await db.cart.findFirst({

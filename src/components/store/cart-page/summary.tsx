@@ -26,6 +26,8 @@ const CartSummary: FC<Props> = ({ cartItems, selectedItems = [], shippingFees })
 	} | null>(null);
 
 	useEffect(() => {
+		router.prefetch('/checkout');
+
 		let isMounted = true;
 		getUserCartCoupon().then((coupon) => {
 			if (isMounted && coupon) {
@@ -35,7 +37,7 @@ const CartSummary: FC<Props> = ({ cartItems, selectedItems = [], shippingFees })
 		return () => {
 			isMounted = false;
 		};
-	}, []);
+	}, [router]);
 
 	const saveCartMutation = useMutation({
 		mutationFn: () =>
