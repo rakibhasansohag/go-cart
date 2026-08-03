@@ -562,7 +562,7 @@ Phase 11 shipment UI → resume Phase 10.4–10.7 returns/refunds`.
 
 - [ ] **Phase 10.6 — Provider refunds**
   - [x] Execute full or partial Stripe refunds from approved requests
-  - [ ] Execute full or partial PayPal refunds from approved requests
+  - [x] Execute full or partial PayPal refunds from approved requests
   - [x] Use idempotency keys and verified provider responses/events
   - [x] Reconcile `PaymentStatus`, order totals, return status, and refund audit records
   - **Test**: Retried refund requests cannot issue duplicate refunds
