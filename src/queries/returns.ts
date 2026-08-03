@@ -730,6 +730,12 @@ export async function transitionReturnRequest(
 			storeOwnerId: request.store.userId,
 		});
 		assertReturnTransition(request.status, input.toStatus, actorRole);
+		if (input.toStatus === 'REFUND_PENDING' && request.resolution !== 'REFUND') {
+			throw new Error('This return request is configured for an exchange, not a refund.');
+		}
+		if (input.toStatus === 'EXCHANGE_PENDING' && request.resolution !== 'EXCHANGE') {
+			throw new Error('This return request is configured for a refund, not an exchange.');
+		}
 
 		if (
 			['MORE_INFO_REQUIRED', 'REJECTED', 'ESCALATED'].includes(
@@ -750,6 +756,9 @@ export async function transitionReturnRequest(
 		}
 		if (input.toStatus === 'MORE_INFO_REQUIRED') {
 			data.respondBy = addDays(now, RETURN_RESPONSE_DAYS);
+		}
+		if (input.toStatus === 'REFUND_PENDING') {
+			data.approvedAmount = request.requestedAmount;
 		}
 		if (input.toStatus === 'ESCALATED') data.escalatedAt = now;
 		if (

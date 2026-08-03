@@ -5,6 +5,7 @@ import type { ReturnRequestStatus } from '@prisma/client';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { ChevronDown, ChevronLeft, ChevronRight, Search } from 'lucide-react';
 import { getAdminReturns, transitionReturnRequest } from '@/queries/returns';
+import { issueReturnRefund } from '@/queries/refunds';
 import { queryKeys } from '@/lib/query-keys';
 import { getAllowedReturnTransitions } from '@/lib/returns/domain';
 import ReturnStatus, { getReturnStatusLabel } from '@/components/store/profile/returns/return-status';
@@ -43,6 +44,10 @@ export default function AdminReturnsTable({ initialData }: Props) {
 			transitionReturnRequest({ returnRequestId: input.id, toStatus: input.toStatus, note: `Admin moved request to ${getReturnStatusLabel(input.toStatus)}.` }),
 		onSuccess: () => query.refetch(),
 	});
+	const refundMutation = useMutation({
+		mutationFn: (returnRequestId: string) => issueReturnRefund(returnRequestId),
+		onSuccess: () => query.refetch(),
+	});
 	const data = query.data ?? initialData;
 
 	return (
@@ -68,7 +73,7 @@ export default function AdminReturnsTable({ initialData }: Props) {
 								<td className='p-3'><div className='max-w-64 font-medium'>{item?.name || 'Order item'}</div><div className='text-xs text-muted-foreground'>{item?.sku || ''} · Qty {request.items.reduce((sum, entry) => sum + entry.quantity, 0)}</div></td>
 								<td className='p-3 font-semibold'>{request.currency} {request.requestedAmount.toFixed(2)}</td>
 								<td className='p-3'><ReturnStatus status={request.status} /></td>
-								<td className='p-3'>{actions.length === 0 ? <span className='text-xs text-muted-foreground'>No admin action</span> : <DropdownMenu><DropdownMenuTrigger asChild><button type='button' disabled={mutation.isPending} className='inline-flex cursor-pointer items-center gap-1 rounded-lg border border-border bg-background px-3 py-2 text-xs font-semibold hover:bg-muted disabled:cursor-wait disabled:opacity-60'>Choose next step<ChevronDown className='size-3.5' /></button></DropdownMenuTrigger><DropdownMenuContent align='end' className='z-[100000] w-56'><DropdownMenuLabel>Admin resolution steps</DropdownMenuLabel><DropdownMenuSeparator />{actions.map((next) => <DropdownMenuItem key={next} disabled={mutation.isPending} onSelect={() => mutation.mutate({ id: request.id, toStatus: next })}>{getReturnStatusLabel(next)}</DropdownMenuItem>)}</DropdownMenuContent></DropdownMenu>}</td>
+								<td className='p-3'>{actions.length === 0 && request.status !== 'REFUND_PENDING' ? <span className='text-xs text-muted-foreground'>No admin action</span> : <DropdownMenu><DropdownMenuTrigger asChild><button type='button' disabled={mutation.isPending || refundMutation.isPending} className='inline-flex cursor-pointer items-center gap-1 rounded-lg border border-border bg-background px-3 py-2 text-xs font-semibold hover:bg-muted disabled:cursor-wait disabled:opacity-60'>Choose next step<ChevronDown className='size-3.5' /></button></DropdownMenuTrigger><DropdownMenuContent align='end' className='z-[100000] w-56'><DropdownMenuLabel>Admin resolution steps</DropdownMenuLabel><DropdownMenuSeparator />{actions.map((next) => <DropdownMenuItem key={next} disabled={mutation.isPending || refundMutation.isPending} onSelect={() => mutation.mutate({ id: request.id, toStatus: next })}>{getReturnStatusLabel(next)}</DropdownMenuItem>)}{request.status === 'REFUND_PENDING' && <DropdownMenuItem disabled={refundMutation.isPending} onSelect={() => refundMutation.mutate(request.id)}>Issue Stripe refund</DropdownMenuItem>}</DropdownMenuContent></DropdownMenu>}</td>
 							</tr>;
 						})}</tbody>
 					</table>
