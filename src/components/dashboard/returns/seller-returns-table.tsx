@@ -3,13 +3,21 @@
 import { useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import type { ReturnRequestStatus } from '@prisma/client';
-import { Search, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, ChevronLeft, ChevronRight, ChevronDown } from 'lucide-react';
 import { getSellerReturns, transitionReturnRequest } from '@/queries/returns';
 import { queryKeys } from '@/lib/query-keys';
 import { getAllowedReturnTransitions } from '@/lib/returns/domain';
 import ReturnStatus, { getReturnStatusLabel } from '@/components/store/profile/returns/return-status';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuLabel,
+	DropdownMenuSeparator,
+	DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 const FILTERS: Array<{ value: ReturnRequestStatus | 'ALL'; label: string }> = [
 	{ value: 'ALL', label: 'All requests' },
@@ -69,8 +77,23 @@ export default function SellerReturnsTable({ storeUrl, initialData }: Props) {
 								<td className='p-3'><div className='font-medium'>{request.customer.name || 'Customer'}</div><div className='text-xs text-muted-foreground'>{request.customer.email}</div></td>
 								<td className='p-3'><div className='font-medium'>{item?.name || 'Order item'}</div><div className='text-xs text-muted-foreground'>{item?.sku} · Qty {request.items.reduce((sum, entry) => sum + entry.quantity, 0)}</div></td>
 								<td className='p-3 font-semibold'>{request.currency} {request.requestedAmount.toFixed(2)}</td>
-								<td className='p-3'><ReturnStatus status={request.status} /></td>
-								<td className='p-3'><div className='flex flex-wrap gap-2'>{actions.map((next) => <Button key={next} type='button' size='sm' variant='outline' disabled={mutation.isPending} onClick={() => mutation.mutate({ id: request.id, toStatus: next })}>{getReturnStatusLabel(next)}</Button>)}{actions.length === 0 && <span className='text-xs text-muted-foreground'>No seller action</span>}</div></td>
+								<td className='p-3'>
+									{actions.length === 0 ? <ReturnStatus status={request.status} /> : (
+										<DropdownMenu>
+											<DropdownMenuTrigger asChild>
+												<button type='button' disabled={mutation.isPending} className='inline-flex cursor-pointer items-center gap-1 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-wait disabled:opacity-60' aria-label={`Change return status from ${getReturnStatusLabel(request.status)}`}>
+													<ReturnStatus status={request.status} /><ChevronDown className='size-3.5' aria-hidden='true' />
+												</button>
+											</DropdownMenuTrigger>
+											<DropdownMenuContent align='start' className='z-[100000] w-64'>
+												<DropdownMenuLabel>Return next steps</DropdownMenuLabel>
+												<DropdownMenuSeparator />
+												{actions.map((next) => <DropdownMenuItem key={next} disabled={mutation.isPending} onSelect={() => mutation.mutate({ id: request.id, toStatus: next })}>{getReturnStatusLabel(next)}</DropdownMenuItem>)}
+											</DropdownMenuContent>
+										</DropdownMenu>
+									)}
+								</td>
+								<td className='p-3 text-xs text-muted-foreground'>{actions.length > 0 ? 'Choose the next return step from the status menu.' : 'No seller action'}</td>
 							</tr>;
 						})}</tbody>
 					</table>

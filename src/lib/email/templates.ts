@@ -122,6 +122,20 @@ export const EMAIL_TEMPLATE_DEFINITIONS: EmailTemplateDefinition[] = [
 		allowedVariables: commonVariables,
 	},
 	{
+		key: 'return.status_changed',
+		name: 'Return request updated',
+		category: 'Returns',
+		description: 'Sent to a customer when a seller or admin changes a return request.',
+		audience: 'Customer',
+		trigger: 'Immediately after a seller or admin makes a return decision',
+		subject: 'Return request update: {{nextStatus}}',
+		preheader: 'Your GoCart return request status changed.',
+		bodyHtml:
+			'<p>{{message}}</p><p>Open GoCart to review the latest return timeline and next steps.</p>',
+		ctaLabel: 'View return request',
+		allowedVariables: commonVariables,
+	},
+	{
 		key: 'checkout.abandoned',
 		name: 'Abandoned checkout reminder',
 		category: 'Cart',
@@ -225,6 +239,13 @@ export function getEmailTemplateTestPayload(templateKey: string) {
 				message:
 					'A customer requested a refund for one delivered item and attached return details.',
 				nextStatus: 'Requested',
+			};
+		case 'return.status_changed':
+			return {
+				...basePayload,
+				message: 'The seller reviewed your return request and updated its status.',
+				nextStatus: 'Approved',
+				actionUrl: '/profile/returns/RET-DEMO789',
 			};
 		case 'checkout.abandoned':
 			return {

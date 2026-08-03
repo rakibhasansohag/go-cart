@@ -625,7 +625,26 @@ export async function transitionReturnRequest(
 			where: { id: input.returnRequestId },
 			include: {
 				store: {
-					select: { userId: true, returnWindowDays: true },
+					select: {
+						userId: true,
+						returnWindowDays: true,
+						name: true,
+						url: true,
+					},
+				},
+				items: {
+					include: {
+						orderItem: {
+							select: {
+								name: true,
+								image: true,
+								sku: true,
+								size: true,
+								price: true,
+								totalPrice: true,
+							},
+						},
+					},
 				},
 			},
 		});
@@ -697,7 +716,7 @@ export async function transitionReturnRequest(
 			});
 		}
 
-		await tx.returnEvent.create({
+		const returnEvent = await tx.returnEvent.create({
 			data: {
 				returnRequestId: request.id,
 				actorRole,
@@ -709,12 +728,50 @@ export async function transitionReturnRequest(
 			},
 		});
 
-		return tx.returnRequest.findUniqueOrThrow({
-			where: { id: request.id },
-			include: {
-				items: true,
-				events: { orderBy: { createdAt: 'asc' } },
+		const statusEvent = await publishDomainEvent(tx, {
+			eventKey: `return.status_changed:${returnEvent.id}`,
+			eventType: DOMAIN_EVENT_TYPES.RETURN_STATUS_CHANGED,
+			aggregateType: 'RETURN_REQUEST',
+			aggregateId: request.id,
+			actorUserId: userId,
+			orderId: request.orderId,
+			storeId: request.storeId,
+			payload: {
+				returnRequestId: request.id,
+				orderId: request.orderId,
+				orderGroupId: request.orderGroupId,
+				storeName: request.store.name ?? '',
+				storeUrl: request.store.url,
+				returnReason: request.reason,
+				resolution: request.resolution,
+				requestedAmount: Number(request.requestedAmount),
+				currency: request.currency,
+				nextStatus: input.toStatus,
+				customerNote: note || '',
+				items: (request.items ?? []).map((entry) => ({
+					name: entry.orderItem.name,
+					image: entry.orderItem.image,
+					sku: entry.orderItem.sku,
+					size: entry.orderItem.size,
+					quantity: entry.quantity,
+					unitPrice: Number(entry.orderItem.price),
+					totalPrice: Number(entry.orderItem.totalPrice),
+					storeName: request.store.name ?? '',
+				})),
 			},
 		});
+
+		return {
+			request: await tx.returnRequest.findUniqueOrThrow({
+				where: { id: request.id },
+				include: {
+					items: true,
+					events: { orderBy: { createdAt: 'asc' } },
+				},
+			}),
+			sourceEventId: statusEvent.id,
+		};
 	}, RETURN_TRANSACTION_OPTIONS);
+	scheduleEmailOutboxDispatch([result.sourceEventId]);
+	return result.request;
 }

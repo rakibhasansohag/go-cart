@@ -10,6 +10,7 @@ export const DOMAIN_EVENT_TYPES = {
 	PACKAGE_STATUS_CHANGED: 'package.status_changed',
 	SHIPMENT_STATUS_CHANGED: 'shipment.status_changed',
 	RETURN_REQUESTED: 'return.requested',
+	RETURN_STATUS_CHANGED: 'return.status_changed',
 	CHECKOUT_ABANDONED: 'checkout.abandoned',
 } as const;
 
@@ -50,7 +51,8 @@ async function resolveRecipients(
 		input.orderId &&
 		(input.eventType === DOMAIN_EVENT_TYPES.PAYMENT_SUCCEEDED ||
 			input.eventType === DOMAIN_EVENT_TYPES.PACKAGE_STATUS_CHANGED ||
-			input.eventType === DOMAIN_EVENT_TYPES.SHIPMENT_STATUS_CHANGED)
+			input.eventType === DOMAIN_EVENT_TYPES.SHIPMENT_STATUS_CHANGED ||
+			input.eventType === DOMAIN_EVENT_TYPES.RETURN_STATUS_CHANGED)
 	) {
 		const order = await tx.order.findUnique({
 			where: { id: input.orderId },
@@ -176,11 +178,20 @@ function notificationFor(input: PublishDomainEventInput, recipient: Recipient) {
 					};
 		case DOMAIN_EVENT_TYPES.RETURN_REQUESTED:
 			return {
-				category: NotificationCategory.RETURN,
-				title: 'New return request',
+					category: NotificationCategory.RETURN,
+					title: 'New return request',
 				message: `A customer submitted a return request for ${packageReference || 'a package'}${orderReference ? ` in ${orderReference}` : ''}.`,
-				actionUrl: storeUrl
-					? `/dashboard/seller/stores/${storeUrl}/orders`
+					actionUrl: storeUrl
+						? `/dashboard/seller/stores/${storeUrl}/returns`
+						: null,
+			};
+		case DOMAIN_EVENT_TYPES.RETURN_STATUS_CHANGED:
+			return {
+				category: NotificationCategory.RETURN,
+				title: `Return request ${nextStatus || 'updated'}`,
+				message: `${packageReference || 'Your return request'} is now ${nextStatus || 'updated'}.`,
+				actionUrl: payloadText(input.payload, 'returnRequestId')
+					? `/profile/returns/${payloadText(input.payload, 'returnRequestId')}`
 					: null,
 			};
 		case DOMAIN_EVENT_TYPES.CHECKOUT_ABANDONED:

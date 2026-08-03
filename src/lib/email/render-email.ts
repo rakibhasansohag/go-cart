@@ -287,7 +287,8 @@ export async function renderEmailTemplate(input: {
 						['Cart', payload.cartId],
 						['Status', payload.nextStatus],
 					]
-				: input.templateKey === 'return.requested'
+				: input.templateKey === 'return.requested' ||
+					  input.templateKey === 'return.status_changed'
 				? [
 						['Return request', payload.returnRequestId],
 						['Order', payload.orderId],
@@ -343,7 +344,8 @@ export async function renderEmailTemplate(input: {
 					? { heading: 'Products in this package', totalLabel: 'Package total' }
 					: input.templateKey === 'shipment.status_changed'
 						? { heading: 'Products in this shipment', totalLabel: 'Shipment value' }
-						: input.templateKey === 'return.requested'
+						: input.templateKey === 'return.requested' ||
+							  input.templateKey === 'return.status_changed'
 							? {
 									heading: 'Requested return item',
 									totalLabel: 'Estimated refund',
@@ -360,7 +362,8 @@ export async function renderEmailTemplate(input: {
 			? commerceItemsMarkup(payload, itemSummaryOptions)
 			: null;
 	const customerNote =
-		input.templateKey === 'return.requested' &&
+		(input.templateKey === 'return.requested' ||
+			input.templateKey === 'return.status_changed') &&
 		typeof payload.customerNote === 'string' &&
 		payload.customerNote.trim()
 			? payload.customerNote.trim()
