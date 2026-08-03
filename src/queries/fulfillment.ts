@@ -213,6 +213,7 @@ export async function updatePackageStatus(input: {
 export async function updateShipmentStatus(input: {
 	groupId: string;
 	nextStatus: ShipmentStatus;
+	skipIntermediate?: boolean;
 	reasonCode?: string;
 	message?: string;
 	idempotencyKey: string;
@@ -255,6 +256,7 @@ export async function updateShipmentStatus(input: {
 			mode: group.fulfillmentMode,
 			packageStatus: group.packageStatus,
 			reasonCode: input.reasonCode,
+			allowSkip: input.skipIntermediate === true,
 		});
 
 		const changed = await tx.shipment.updateMany({

@@ -84,6 +84,43 @@ describe('centralized fulfillment state machine', () => {
 		).not.toThrow();
 	});
 
+	it('allows an explicitly confirmed admin skip but keeps default transitions stepwise', () => {
+		expect(
+			getAllowedShipmentTransitions({
+				current: ShipmentStatus.AWAITING_RECEIPT,
+				actorRole: FulfillmentActorRole.ADMIN,
+				mode: FulfillmentMode.PLATFORM,
+			}),
+		).toEqual([ShipmentStatus.RECEIVED_AT_HUB]);
+		expect(
+			getAllowedShipmentTransitions({
+				current: ShipmentStatus.AWAITING_RECEIPT,
+				actorRole: FulfillmentActorRole.ADMIN,
+				mode: FulfillmentMode.PLATFORM,
+				allowSkip: true,
+			}),
+		).toContain(ShipmentStatus.OUT_FOR_DELIVERY);
+		expect(() =>
+			assertShipmentTransition({
+				current: ShipmentStatus.AWAITING_RECEIPT,
+				next: ShipmentStatus.OUT_FOR_DELIVERY,
+				actorRole: FulfillmentActorRole.ADMIN,
+				mode: FulfillmentMode.PLATFORM,
+				packageStatus: PackageStatus.HANDED_OFF,
+			}),
+		).toThrow(/cannot move/i);
+		expect(() =>
+			assertShipmentTransition({
+				current: ShipmentStatus.AWAITING_RECEIPT,
+				next: ShipmentStatus.OUT_FOR_DELIVERY,
+				actorRole: FulfillmentActorRole.ADMIN,
+				mode: FulfillmentMode.PLATFORM,
+				packageStatus: PackageStatus.HANDED_OFF,
+				allowSkip: true,
+			}),
+		).not.toThrow();
+	});
+
 	it('requires a reason for a failed delivery and exposes only exception routes', () => {
 		expect(() =>
 			assertShipmentTransition({

@@ -91,20 +91,29 @@ export default function ShipmentStatusSelect({
 		current: currentStatus,
 		actorRole: FulfillmentActorRole.ADMIN,
 		mode,
+		allowSkip: true,
+	});
+	const immediateNext = getAllowedShipmentTransitions({
+		current: currentStatus,
+		actorRole: FulfillmentActorRole.ADMIN,
+		mode,
 	});
 	const mutation = useMutation({
 		mutationFn: ({
 			nextStatus,
+			skipIntermediate,
 			reason,
 			note,
 		}: {
 			nextStatus: ShipmentStatus;
+			skipIntermediate?: boolean;
 			reason?: string;
 			note?: string;
 		}) =>
 			updateShipmentStatus({
 				groupId,
 				nextStatus,
+				skipIntermediate,
 				reasonCode: reason,
 				message: note,
 				idempotencyKey: crypto.randomUUID(),
@@ -140,8 +149,30 @@ export default function ShipmentStatusSelect({
 			setFailureOpen(true);
 			return;
 		}
+		if (immediateNext.includes(nextStatus)) {
+			mutation.mutate({ nextStatus });
+			return;
+		}
 		setConfirmStatus(nextStatus);
 	};
+
+	const isTerminal = [
+		ShipmentStatus.DELIVERED,
+		ShipmentStatus.PICKED_UP,
+		ShipmentStatus.RETURNED_TO_SELLER,
+		ShipmentStatus.CANCELLED,
+	].includes(currentStatus);
+
+	if (isTerminal) {
+		return (
+			<span
+				title='Shipment is complete and cannot be changed'
+				aria-label={`Shipment complete: ${SHIPMENT_STATUS_LABELS[currentStatus]}`}
+			>
+				<ShipmentStatusTag status={currentStatus} />
+			</span>
+		);
+	}
 
 	return (
 		<>
@@ -227,7 +258,7 @@ export default function ShipmentStatusSelect({
 							<strong>
 								{confirmStatus ? SHIPMENT_STATUS_LABELS[confirmStatus] : ''}
 							</strong>
-							? This step cannot be reversed.
+							? This skips one or more logistics steps and cannot be reversed.
 						</DialogDescription>
 					</DialogHeader>
 					<DialogFooter>
@@ -238,7 +269,10 @@ export default function ShipmentStatusSelect({
 							disabled={mutation.isPending || !confirmStatus}
 							onClick={() => {
 								if (confirmStatus)
-									mutation.mutate({ nextStatus: confirmStatus });
+									mutation.mutate({
+										nextStatus: confirmStatus,
+										skipIntermediate: true,
+									});
 							}}
 						>
 							Confirm update

@@ -68,6 +68,18 @@ const SHIPMENT_FORWARD_TRANSITIONS: Record<
 	[ShipmentStatus.CANCELLED]: [],
 };
 
+function reachableShipmentStatuses(current: ShipmentStatus): ShipmentStatus[] {
+	const seen = new Set<ShipmentStatus>();
+	const queue = [...SHIPMENT_FORWARD_TRANSITIONS[current]];
+	while (queue.length > 0) {
+		const next = queue.shift();
+		if (!next || seen.has(next)) continue;
+		seen.add(next);
+		queue.push(...SHIPMENT_FORWARD_TRANSITIONS[next]);
+	}
+	return [...seen];
+}
+
 const PACKAGE_ACTORS = new Set<FulfillmentActorRole>([
 	FulfillmentActorRole.SELLER,
 	FulfillmentActorRole.ADMIN,
@@ -109,10 +121,12 @@ export function getAllowedShipmentTransitions({
 	current,
 	actorRole,
 	mode,
+	allowSkip = false,
 }: {
 	current: ShipmentStatus;
 	actorRole: FulfillmentActorRole;
 	mode: FulfillmentMode;
+	allowSkip?: boolean;
 }): ShipmentStatus[] {
 	const actorCanAdvance =
 		LOGISTICS_ACTORS.has(actorRole) ||
@@ -122,7 +136,9 @@ export function getAllowedShipmentTransitions({
 					current === ShipmentStatus.AWAITING_PICKUP)));
 
 	if (!actorCanAdvance) return [];
-	return [...SHIPMENT_FORWARD_TRANSITIONS[current]];
+	return allowSkip
+		? reachableShipmentStatuses(current)
+		: [...SHIPMENT_FORWARD_TRANSITIONS[current]];
 }
 
 export function assertShipmentTransition({
@@ -132,6 +148,7 @@ export function assertShipmentTransition({
 	mode,
 	packageStatus,
 	reasonCode,
+	allowSkip = false,
 }: {
 	current: ShipmentStatus;
 	next: ShipmentStatus;
@@ -139,6 +156,7 @@ export function assertShipmentTransition({
 	mode: FulfillmentMode;
 	packageStatus: PackageStatus;
 	reasonCode?: string;
+	allowSkip?: boolean;
 }): void {
 	if (
 		current === ShipmentStatus.AWAITING_RECEIPT &&
@@ -157,9 +175,12 @@ export function assertShipmentTransition({
 	}
 
 	if (
-		!getAllowedShipmentTransitions({ current, actorRole, mode }).includes(
-			next,
-		)
+		!getAllowedShipmentTransitions({
+			current,
+			actorRole,
+			mode,
+			allowSkip,
+		}).includes(next)
 	) {
 		throw new Error(
 			`${actorRole.toLowerCase()} cannot move a shipment from ${SHIPMENT_STATUS_LABELS[current]} to ${SHIPMENT_STATUS_LABELS[next]}.`,
