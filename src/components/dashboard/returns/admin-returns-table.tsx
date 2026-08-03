@@ -2,15 +2,18 @@
 
 import { useState } from 'react';
 import type { ReturnRequestStatus } from '@prisma/client';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ChevronDown, ChevronLeft, ChevronRight, Search } from 'lucide-react';
-import { getAdminReturns, transitionReturnRequest } from '@/queries/returns';
+import { getAdminReturns, reconcileReturnInventory, transitionReturnRequest } from '@/queries/returns';
 import { issueReturnRefund } from '@/queries/refunds';
 import { queryKeys } from '@/lib/query-keys';
 import { getAllowedReturnTransitions } from '@/lib/returns/domain';
 import ReturnStatus, { getReturnStatusLabel } from '@/components/store/profile/returns/return-status';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { toast } from 'sonner';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 const FILTERS: Array<{ value: ReturnRequestStatus | 'ALL'; label: string }> = [
@@ -33,6 +36,9 @@ export default function AdminReturnsTable({ initialData }: Props) {
 	const [status, setStatus] = useState<ReturnRequestStatus | 'ALL'>('ALL');
 	const [search, setSearch] = useState('');
 	const [page, setPage] = useState(1);
+	const [restockRequest, setRestockRequest] = useState<(typeof initialData.requests)[number] | null>(null);
+	const [restockChoices, setRestockChoices] = useState<Record<string, boolean>>({});
+	const queryClient = useQueryClient();
 	const filters = { status, page, pageSize: 10, search };
 	const query = useQuery({
 		queryKey: queryKeys.dashboard.adminReturns(filters),
@@ -47,6 +53,14 @@ export default function AdminReturnsTable({ initialData }: Props) {
 	const refundMutation = useMutation({
 		mutationFn: (returnRequestId: string) => issueReturnRefund(returnRequestId),
 		onSuccess: () => query.refetch(),
+	});
+	const restockMutation = useMutation({
+		mutationFn: () => reconcileReturnInventory({
+			returnRequestId: restockRequest!.id,
+			items: restockRequest!.items.map((item) => ({ returnItemId: item.id, restockable: restockChoices[item.id] ?? false, quantity: item.receivedQuantity || item.quantity })),
+		}),
+		onSuccess: (result) => { toast.success(`${result.restocked} item(s) added back to inventory.`); const storeUrl = restockRequest?.store.url; setRestockRequest(null); query.refetch(); queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.adminOrders() }); queryClient.invalidateQueries({ queryKey: ['dashboard', 'inventory'] }); if (storeUrl) queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.inventory(storeUrl) }); },
+		onError: (error) => toast.error(error instanceof Error ? error.message : 'Inventory reconciliation failed.'),
 	});
 	const data = query.data ?? initialData;
 
@@ -73,13 +87,20 @@ export default function AdminReturnsTable({ initialData }: Props) {
 								<td className='p-3'><div className='max-w-64 font-medium'>{item?.name || 'Order item'}</div><div className='text-xs text-muted-foreground'>{item?.sku || ''} · Qty {request.items.reduce((sum, entry) => sum + entry.quantity, 0)}</div></td>
 								<td className='p-3 font-semibold'>{request.currency} {request.requestedAmount.toFixed(2)}</td>
 								<td className='p-3'><ReturnStatus status={request.status} /></td>
-								<td className='p-3'>{actions.length === 0 && request.status !== 'REFUND_PENDING' ? <span className='text-xs text-muted-foreground'>No admin action</span> : <DropdownMenu><DropdownMenuTrigger asChild><button type='button' disabled={mutation.isPending || refundMutation.isPending} className='inline-flex cursor-pointer items-center gap-1 rounded-lg border border-border bg-background px-3 py-2 text-xs font-semibold hover:bg-muted disabled:cursor-wait disabled:opacity-60'>Choose next step<ChevronDown className='size-3.5' /></button></DropdownMenuTrigger><DropdownMenuContent align='end' className='z-[100000] w-56'><DropdownMenuLabel>Admin resolution steps</DropdownMenuLabel><DropdownMenuSeparator />{actions.map((next) => <DropdownMenuItem key={next} disabled={mutation.isPending || refundMutation.isPending} onSelect={() => mutation.mutate({ id: request.id, toStatus: next })}>{getReturnStatusLabel(next)}</DropdownMenuItem>)}{request.status === 'REFUND_PENDING' && <DropdownMenuItem disabled={refundMutation.isPending} onSelect={() => refundMutation.mutate(request.id)}>Issue Stripe refund</DropdownMenuItem>}</DropdownMenuContent></DropdownMenu>}</td>
-							</tr>;
+								<td className='p-3'><div className='flex flex-wrap items-center gap-2'>{actions.length === 0 && request.status !== 'REFUND_PENDING' && !['RECEIVED', 'REFUNDED', 'EXCHANGED'].includes(request.status) ? <span className='text-xs text-muted-foreground'>No admin action</span> : <DropdownMenu><DropdownMenuTrigger asChild><button type='button' disabled={mutation.isPending || refundMutation.isPending || restockMutation.isPending} className='inline-flex cursor-pointer items-center gap-1 rounded-lg border border-border bg-background px-3 py-2 text-xs font-semibold hover:bg-muted disabled:cursor-wait disabled:opacity-60'>Choose next step<ChevronDown className='size-3.5' /></button></DropdownMenuTrigger><DropdownMenuContent align='end' className='z-[100000] w-56'><DropdownMenuLabel>Admin resolution steps</DropdownMenuLabel><DropdownMenuSeparator />{actions.map((next) => <DropdownMenuItem key={next} disabled={mutation.isPending || refundMutation.isPending} onSelect={() => mutation.mutate({ id: request.id, toStatus: next })}>{getReturnStatusLabel(next)}</DropdownMenuItem>)}{request.status === 'REFUND_PENDING' && <DropdownMenuItem disabled={refundMutation.isPending} onSelect={() => refundMutation.mutate(request.id)}>Issue payment refund</DropdownMenuItem>}</DropdownMenuContent></DropdownMenu>}{['RECEIVED', 'REFUNDED', 'EXCHANGED'].includes(request.status) && <button type='button' className='cursor-pointer rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-xs font-semibold text-emerald-700 hover:bg-emerald-500/20 dark:text-emerald-300' onClick={() => { setRestockRequest(request); setRestockChoices(Object.fromEntries(request.items.map((item) => [item.id, item.restockable ?? false]))); }}>Reconcile inventory</button>}</div></td>
+			</tr>;
 						})}</tbody>
 					</table>
 				</div>
 			)}
 			<div className='flex items-center justify-between'><span className='text-sm text-muted-foreground'>Showing {data.totalCount} request(s)</span>{data.totalPages > 1 && <div className='flex items-center gap-2'><Button type='button' variant='outline' size='sm' disabled={page <= 1} onClick={() => setPage((value) => value - 1)}><ChevronLeft className='size-4' />Previous</Button><span className='text-sm text-muted-foreground'>Page {data.currentPage} of {data.totalPages}</span><Button type='button' variant='outline' size='sm' disabled={page >= data.totalPages} onClick={() => setPage((value) => value + 1)}>Next<ChevronRight className='size-4' /></Button></div>}</div>
+			<Dialog open={Boolean(restockRequest)} onOpenChange={(open) => !open && setRestockRequest(null)}>
+				<DialogContent>
+					<DialogHeader><DialogTitle>Reconcile returned inventory</DialogTitle><DialogDescription>Choose only units that are clean and ready to sell again. Damaged units stay out of stock.</DialogDescription></DialogHeader>
+					<div className='space-y-3'>{restockRequest?.items.map((item) => { const received = item.receivedQuantity || item.quantity; const already = item.restockedQuantity; return <label key={item.id} className='flex cursor-pointer items-start gap-3 rounded-lg border border-border p-3'><Checkbox checked={restockChoices[item.id] ?? false} onCheckedChange={(checked) => setRestockChoices((current) => ({ ...current, [item.id]: checked === true }))} /><span className='min-w-0 text-sm'><span className='block font-medium'>{item.orderItem.name}</span><span className='block text-xs text-muted-foreground'>Received {received} · Already restocked {already}</span></span></label>; })}</div>
+					<DialogFooter><Button type='button' variant='outline' onClick={() => setRestockRequest(null)}>Cancel</Button><Button type='button' disabled={restockMutation.isPending} onClick={() => restockMutation.mutate()}>{restockMutation.isPending ? 'Saving…' : 'Save inventory changes'}</Button></DialogFooter>
+				</DialogContent>
+			</Dialog>
 		</div>
 	);
 }

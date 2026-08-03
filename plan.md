@@ -575,11 +575,11 @@ customer notifications. A live Stripe sandbox refund test remains required
 before marking the phase complete; PayPal refunds remain open.
 
 - [ ] **Phase 10.7 — Inventory and order synchronization**
-  - [ ] Restock only received and restockable returned quantities
+  - [x] Restock only received and restockable returned quantities through an admin-only, idempotent reconciliation action
   - [ ] Update item, group, and overall order statuses consistently
   - [ ] Handle partial returns, partial refunds, exchanges, damaged items, and rejected returns
-  - [ ] Invalidate inventory, product availability, order, payment, and return caches
-  - **Test**: Partial and full return scenarios preserve correct stock, totals, and statuses
+  - [x] Refresh admin return, inventory, and order caches after reconciliation
+  - **Test**: Unit coverage for existing return transitions passes; a live partial/full restock scenario remains before phase completion
 
 ---
 

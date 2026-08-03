@@ -48,6 +48,15 @@ export type TransitionReturnRequestInput = {
 	note?: string;
 };
 
+export type ReconcileReturnInventoryInput = {
+	returnRequestId: string;
+	items: Array<{
+		returnItemId: string;
+		restockable: boolean;
+		quantity?: number;
+	}>;
+};
+
 const RETURN_TRANSACTION_OPTIONS = {
 	maxWait: 10_000,
 	timeout: 30_000,
@@ -405,7 +414,11 @@ export async function getSellerReturns(
 				customer: { select: { id: true, name: true, email: true, picture: true } },
 				order: { select: { id: true } },
 				orderGroup: { select: { id: true } },
-				items: { include: { orderItem: { select: { name: true, image: true, sku: true, size: true } } } },
+				items: {
+					include: {
+						orderItem: { select: { name: true, image: true, sku: true, size: true, sizeId: true } },
+					},
+				},
 				evidence: { orderBy: { createdAt: 'asc' } },
 				events: { orderBy: { createdAt: 'desc' }, take: 5 },
 			},
@@ -760,6 +773,14 @@ export async function transitionReturnRequest(
 		if (input.toStatus === 'REFUND_PENDING') {
 			data.approvedAmount = request.requestedAmount;
 		}
+		if (input.toStatus === 'RECEIVED') {
+			for (const item of request.items) {
+				await tx.returnItem.update({
+					where: { id: item.id },
+					data: { receivedQuantity: item.quantity },
+				});
+			}
+		}
 		if (input.toStatus === 'ESCALATED') data.escalatedAt = now;
 		if (
 			['REJECTED', 'REFUNDED', 'EXCHANGED', 'CANCELLED'].includes(
@@ -849,4 +870,73 @@ export async function transitionReturnRequest(
 	}, RETURN_TRANSACTION_OPTIONS);
 	scheduleEmailOutboxDispatch([result.sourceEventId]);
 	return result.request;
+}
+
+/**
+ * Reconcile stock only after a return has physically been received. The
+ * operation is idempotent: a second submission only applies the quantity
+ * delta that has not already been restocked.
+ */
+export async function reconcileReturnInventory(
+	input: ReconcileReturnInventoryInput,
+) {
+	const { userId } = await auth();
+	if (!userId) throw new Error('Please sign in to reconcile returned stock.');
+	const actor = await db.user.findUnique({ where: { id: userId }, select: { role: true } });
+	if (actor?.role !== 'ADMIN') throw new Error('Admin access required.');
+	if (!input.items.length) throw new Error('Select at least one returned item.');
+
+	return db.$transaction(async (tx) => {
+		const request = await tx.returnRequest.findUnique({
+			where: { id: input.returnRequestId },
+			include: {
+				items: {
+					include: {
+						orderItem: { select: { id: true, sizeId: true, quantity: true, status: true } },
+					},
+				},
+			},
+		});
+		if (!request) throw new Error('Return request not found.');
+		if (!['RECEIVED', 'REFUNDED', 'EXCHANGED'].includes(request.status)) {
+			throw new Error('Stock can only be reconciled after the return is received.');
+		}
+
+		const decisions = new Map(input.items.map((item) => [item.returnItemId, item]));
+		const deltas: Array<{ returnItemId: string; sizeId: string; quantity: number }> = [];
+		for (const item of request.items) {
+			const decision = decisions.get(item.id);
+			if (!decision) continue;
+			const received = item.receivedQuantity > 0 ? item.receivedQuantity : item.quantity;
+			const requested = decision.quantity ?? received;
+			if (!Number.isInteger(requested) || requested < 0 || requested > received) {
+				throw new Error('Restock quantities must be whole numbers within the received quantity.');
+			}
+			const target = decision.restockable ? requested : 0;
+			const delta = target - item.restockedQuantity;
+			if (delta < 0) throw new Error('Restocked quantities cannot be reduced.');
+			if (delta > 0) deltas.push({ returnItemId: item.id, sizeId: item.orderItem.sizeId, quantity: delta });
+			await tx.returnItem.update({
+				where: { id: item.id },
+				data: {
+					restockable: decision.restockable,
+					receivedQuantity: received,
+					restockedQuantity: item.restockedQuantity + delta,
+				},
+			});
+		}
+		for (const delta of deltas) {
+			await tx.size.update({ where: { id: delta.sizeId }, data: { quantity: { increment: delta.quantity } } });
+		}
+		await tx.returnEvent.create({
+			data: {
+				returnRequestId: request.id,
+				actorRole: 'ADMIN',
+				actorId: userId,
+				eventType: 'return.inventory_reconciled',
+				metadata: { deltas },
+			},
+		});
+		return { returnRequestId: request.id, restocked: deltas.reduce((sum, delta) => sum + delta.quantity, 0), deltas };
+	});
 }
