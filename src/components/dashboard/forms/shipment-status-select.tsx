@@ -156,12 +156,13 @@ export default function ShipmentStatusSelect({
 		setConfirmStatus(nextStatus);
 	};
 
-	const isTerminal = [
+	const terminalStatuses: ShipmentStatus[] = [
 		ShipmentStatus.DELIVERED,
 		ShipmentStatus.PICKED_UP,
 		ShipmentStatus.RETURNED_TO_SELLER,
 		ShipmentStatus.CANCELLED,
-	].includes(currentStatus);
+	];
+	const isTerminal = terminalStatuses.includes(currentStatus);
 
 	if (isTerminal) {
 		return (

@@ -1,5 +1,8 @@
 import { db } from '@/lib/db';
 import { reconcilePaymentEvent } from './reconcile';
+import { RefundTransactionStatus, ReturnRequestStatus } from '@prisma/client';
+import { publishDomainEvent } from '@/lib/notifications/domain-events';
+import { scheduleEmailOutboxDispatch } from '@/lib/email/schedule';
 import type { PaymentStatus } from '@prisma/client';
 import type Stripe from 'stripe';
 
@@ -75,7 +78,7 @@ export async function handleStripeEvent(event: Stripe.Event) {
 		if (!orderId) return { ignored: true };
 
 		const fullyRefunded = charge.amount_refunded >= charge.amount;
-		return reconcilePaymentEvent({
+		const paymentResult = await reconcilePaymentEvent({
 			orderId,
 			provider: 'Stripe',
 			providerEventId: event.id,
@@ -87,8 +90,67 @@ export async function handleStripeEvent(event: Stripe.Event) {
 			currency: charge.currency,
 			metadata: { fullyRefunded },
 		});
+
+		const payment = await db.paymentDetails.findUnique({
+			where: { paymentInetntId: paymentIntentId },
+			select: { id: true },
+		});
+		if (!payment) return paymentResult;
+
+		const pendingRefund = await db.refundTransaction.findFirst({
+			where: {
+				paymentDetailsId: payment.id,
+				status: { in: [RefundTransactionStatus.PENDING, RefundTransactionStatus.PROCESSING] },
+			},
+			orderBy: { createdAt: 'asc' },
+			select: { id: true, returnRequestId: true },
+		});
+		if (!pendingRefund) return paymentResult;
+
+		const result = await db.$transaction(async (tx) => {
+			await tx.refundTransaction.update({
+				where: { id: pendingRefund.id },
+				data: {
+					status: RefundTransactionStatus.SUCCEEDED,
+					providerResponse: event.data.object as unknown as object,
+					processedAt: new Date(),
+				},
+			});
+			const request = await tx.returnRequest.findUnique({
+				where: { id: pendingRefund.returnRequestId },
+				include: { store: { select: { url: true } } },
+			});
+			if (!request || request.status === ReturnRequestStatus.REFUNDED) {
+				return { sourceEventId: null };
+			}
+			const domainEvent = await publishDomainEvent(tx, {
+				eventKey: `return.refunded:${event.id}`,
+				eventType: 'return.status_changed',
+				aggregateType: 'RETURN_REQUEST',
+				aggregateId: request.id,
+				orderId: request.orderId,
+				storeId: request.storeId,
+				payload: {
+					returnRequestId: request.id,
+					orderId: request.orderId,
+					orderGroupId: request.orderGroupId,
+					storeUrl: request.store.url,
+					nextStatus: 'Refunded',
+					requestedAmount: request.requestedAmount,
+					approvedAmount: request.approvedAmount ?? request.requestedAmount,
+					currency: request.currency,
+					message: 'Your refund was confirmed by Stripe.',
+				},
+			});
+			await tx.returnRequest.updateMany({
+				where: { id: request.id, status: { not: ReturnRequestStatus.REFUNDED } },
+				data: { status: ReturnRequestStatus.REFUNDED, resolvedAt: new Date() },
+			});
+			return { sourceEventId: domainEvent.id };
+		}, { maxWait: 10_000, timeout: 30_000 });
+		if (result.sourceEventId) scheduleEmailOutboxDispatch([result.sourceEventId]);
+		return paymentResult;
 	}
 
 	return { ignored: true };
 }
-

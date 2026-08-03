@@ -561,11 +561,18 @@ Phase 11 shipment UI → resume Phase 10.4–10.7 returns/refunds`.
   - **Test**: Admin decisions are permission-protected, auditable, and reflected in all affected views
 
 - [ ] **Phase 10.6 — Provider refunds**
-  - [ ] Execute full or partial Stripe refunds from approved requests
+  - [x] Execute full or partial Stripe refunds from approved requests
   - [ ] Execute full or partial PayPal refunds from approved requests
-  - [ ] Use idempotency keys and verified provider responses/events
-  - [ ] Reconcile `PaymentStatus`, order totals, return status, and refund audit records
+  - [x] Use idempotency keys and verified provider responses/events
+  - [x] Reconcile `PaymentStatus`, order totals, return status, and refund audit records
   - **Test**: Retried refund requests cannot issue duplicate refunds
+
+**Phase 10.6 Stripe implementation checkpoint (August 4, 2026):** Admins can
+issue an idempotent Stripe refund for a refund-pending request. The durable
+`RefundTransaction` records provider state and the signed `charge.refunded`
+webhook reconciles pending transactions, return status, payment status, and
+customer notifications. A live Stripe sandbox refund test remains required
+before marking the phase complete; PayPal refunds remain open.
 
 - [ ] **Phase 10.7 — Inventory and order synchronization**
   - [ ] Restock only received and restockable returned quantities

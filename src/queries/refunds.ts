@@ -56,14 +56,16 @@ export async function issueReturnRefund(returnRequestId: string) {
 			{ idempotencyKey },
 		);
 		const succeeded = refund.status === 'succeeded';
+		const failed = refund.status === 'failed' || refund.status === 'canceled';
 		const updated = await db.$transaction(async (tx) => {
 			await tx.refundTransaction.update({
 				where: { id: transaction.id },
 				data: {
 					providerRefundId: refund.id,
-					status: succeeded ? RefundTransactionStatus.SUCCEEDED : RefundTransactionStatus.PROCESSING,
+					status: succeeded ? RefundTransactionStatus.SUCCEEDED : failed ? RefundTransactionStatus.FAILED : RefundTransactionStatus.PROCESSING,
 					providerResponse: refund as unknown as Prisma.InputJsonValue,
-					processedAt: succeeded ? new Date() : null,
+					failureReason: failed ? `Stripe refund ended with status ${refund.status}.` : null,
+					processedAt: succeeded || failed ? new Date() : null,
 				},
 			});
 			if (!succeeded) return { request: null, eventId: null };
@@ -91,7 +93,7 @@ export async function issueReturnRefund(returnRequestId: string) {
 			return { request: updatedRequest, eventId: event.id };
 		}, REFUND_TRANSACTION_OPTIONS);
 		if (updated.eventId) scheduleEmailOutboxDispatch([updated.eventId]);
-		return transaction;
+		return db.refundTransaction.findUniqueOrThrow({ where: { id: transaction.id } });
 	} catch (error) {
 		await db.refundTransaction.update({
 			where: { id: transaction.id },
