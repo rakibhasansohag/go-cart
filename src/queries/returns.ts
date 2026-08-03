@@ -53,6 +53,13 @@ const RETURN_TRANSACTION_OPTIONS = {
 	timeout: 30_000,
 } as const;
 
+function formatReturnStatus(status: ReturnRequestStatus) {
+	return status
+		.toLowerCase()
+		.replaceAll('_', ' ')
+		.replace(/\b\w/g, (character) => character.toUpperCase());
+}
+
 const returnCandidateInclude = Prisma.validator<Prisma.OrderItemInclude>()({
 	returnItems: {
 		where: {
@@ -620,7 +627,7 @@ export async function transitionReturnRequest(
 		throw new Error('Return note must be 2,000 characters or fewer.');
 	}
 
-	return db.$transaction(async (tx) => {
+	const result = await db.$transaction(async (tx) => {
 		const request = await tx.returnRequest.findUnique({
 			where: { id: input.returnRequestId },
 			include: {
@@ -746,7 +753,7 @@ export async function transitionReturnRequest(
 				resolution: request.resolution,
 				requestedAmount: Number(request.requestedAmount),
 				currency: request.currency,
-				nextStatus: input.toStatus,
+				nextStatus: formatReturnStatus(input.toStatus),
 				customerNote: note || '',
 				items: (request.items ?? []).map((entry) => ({
 					name: entry.orderItem.name,

@@ -40,6 +40,13 @@ function payloadText(payload: Prisma.InputJsonObject, key: string) {
 	return typeof value === 'string' ? value : '';
 }
 
+function humanizeStatus(value: string) {
+	return value
+		.toLowerCase()
+		.replaceAll('_', ' ')
+		.replace(/\b\w/g, (character) => character.toUpperCase());
+}
+
 async function resolveRecipients(
 	tx: TransactionClient,
 	input: PublishDomainEventInput,
@@ -178,22 +185,25 @@ function notificationFor(input: PublishDomainEventInput, recipient: Recipient) {
 					};
 		case DOMAIN_EVENT_TYPES.RETURN_REQUESTED:
 			return {
-					category: NotificationCategory.RETURN,
+				category: NotificationCategory.RETURN,
 					title: 'New return request',
 				message: `A customer submitted a return request for ${packageReference || 'a package'}${orderReference ? ` in ${orderReference}` : ''}.`,
-					actionUrl: storeUrl
+				actionUrl: storeUrl
 						? `/dashboard/seller/stores/${storeUrl}/returns`
 						: null,
 			};
 		case DOMAIN_EVENT_TYPES.RETURN_STATUS_CHANGED:
-			return {
-				category: NotificationCategory.RETURN,
-				title: `Return request ${nextStatus || 'updated'}`,
-				message: `${packageReference || 'Your return request'} is now ${nextStatus || 'updated'}.`,
-				actionUrl: payloadText(input.payload, 'returnRequestId')
-					? `/profile/returns/${payloadText(input.payload, 'returnRequestId')}`
-					: null,
-			};
+			{
+				const statusLabel = humanizeStatus(nextStatus || 'updated');
+				return {
+					category: NotificationCategory.RETURN,
+					title: `Return request ${statusLabel}`,
+					message: `${packageReference || 'Your return request'} is now ${statusLabel}.`,
+					actionUrl: payloadText(input.payload, 'returnRequestId')
+						? `/profile/returns/${payloadText(input.payload, 'returnRequestId')}`
+						: null,
+				};
+			}
 		case DOMAIN_EVENT_TYPES.CHECKOUT_ABANDONED:
 			return {
 				category: NotificationCategory.ORDER,
