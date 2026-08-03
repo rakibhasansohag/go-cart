@@ -17,6 +17,11 @@ export const adminDashboardSidebarOptions: DashboardSidebarMenuInterface[] = [
 		link: '/dashboard/admin/orders',
 	},
 	{
+		label: 'Returns & Refunds',
+		icon: 'box-list',
+		link: '/dashboard/admin/returns',
+	},
+	{
 		label: 'Categories',
 		icon: 'categories',
 		link: '/dashboard/admin/categories',

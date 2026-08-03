@@ -424,6 +424,65 @@ export async function getSellerReturns(
 	};
 }
 
+export async function getAdminReturns(
+	status: ReturnRequestStatus | 'ALL' = 'ALL',
+	page = 1,
+	pageSize = 10,
+	search = '',
+) {
+	const { userId } = await auth();
+	if (!userId) throw new Error('Please sign in to view admin returns.');
+	const admin = await db.user.findUnique({ where: { id: userId }, select: { role: true } });
+	if (admin?.role !== 'ADMIN') throw new Error('Admin access required.');
+
+	const safePage = Math.max(1, Math.floor(page));
+	const safePageSize = Math.min(25, Math.max(1, Math.floor(pageSize)));
+	const normalizedStatus =
+		status === 'ALL' || Object.values(ReturnRequestStatus).includes(status) ? status : 'ALL';
+	const term = search.trim();
+	const where: Prisma.ReturnRequestWhereInput = {
+		...(normalizedStatus === 'ALL' ? {} : { status: normalizedStatus }),
+		...(term
+			? {
+				OR: [
+					{ id: { contains: term, mode: 'insensitive' } },
+					{ order: { id: { contains: term, mode: 'insensitive' } } },
+					{ orderGroup: { id: { contains: term, mode: 'insensitive' } } },
+					{ store: { name: { contains: term, mode: 'insensitive' } } },
+					{ customer: { email: { contains: term, mode: 'insensitive' } } },
+					{ customer: { name: { contains: term, mode: 'insensitive' } } },
+					{ items: { some: { orderItem: { name: { contains: term, mode: 'insensitive' } } } } },
+				],
+			}
+			: {}),
+	};
+	const [requests, totalCount] = await Promise.all([
+		db.returnRequest.findMany({
+			where,
+			include: {
+				customer: { select: { id: true, name: true, email: true } },
+				store: { select: { id: true, name: true, url: true, user: { select: { name: true, email: true } } } },
+				order: { select: { id: true } },
+				orderGroup: { select: { id: true } },
+				items: { include: { orderItem: { select: { name: true, image: true, sku: true, size: true } } } },
+				evidence: { orderBy: { createdAt: 'asc' } },
+				events: { orderBy: { createdAt: 'desc' }, take: 5 },
+			},
+			orderBy: { updatedAt: 'desc' },
+			skip: (safePage - 1) * safePageSize,
+			take: safePageSize,
+		}),
+		db.returnRequest.count({ where }),
+	]);
+	return {
+		requests,
+		totalCount,
+		totalPages: Math.max(1, Math.ceil(totalCount / safePageSize)),
+		currentPage: safePage,
+		pageSize: safePageSize,
+	};
+}
+
 export async function createReturnRequest(input: CreateReturnRequestInput) {
 	const { userId } = await auth();
 
