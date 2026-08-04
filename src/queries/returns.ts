@@ -26,6 +26,7 @@ import {
 	DOMAIN_EVENT_TYPES,
 	publishDomainEvent,
 } from '@/lib/notifications/domain-events';
+import { deriveGroupStatus, deriveOrderStatus } from '@/lib/orders/status-sync';
 
 export type ReturnEvidenceInput = {
 	type: ReturnEvidenceType;
@@ -927,6 +928,31 @@ export async function reconcileReturnInventory(
 		}
 		for (const delta of deltas) {
 			await tx.size.update({ where: { id: delta.sizeId }, data: { quantity: { increment: delta.quantity } } });
+		}
+		if (request.status === 'REFUNDED' || request.status === 'EXCHANGED') {
+			for (const item of request.items) {
+				const fullyReturned = item.quantity >= item.orderItem.quantity;
+				if (!fullyReturned) continue;
+				await tx.orderItem.update({
+					where: { id: item.orderItem.id },
+					data: { status: request.status === 'REFUNDED' ? 'Refunded' : 'Returned' },
+				});
+			}
+		}
+		const group = await tx.orderGroup.findUnique({
+			where: { id: request.orderGroupId },
+			select: { orderId: true, items: { select: { status: true } } },
+		});
+		if (group) {
+			await tx.orderGroup.update({
+				where: { id: request.orderGroupId },
+				data: { status: deriveGroupStatus(group.items.map((item) => item.status)) },
+			});
+			const groups = await tx.orderGroup.findMany({ where: { orderId: group.orderId }, select: { status: true } });
+			await tx.order.update({
+				where: { id: group.orderId },
+				data: { orderStatus: deriveOrderStatus(groups.map((entry) => entry.status)) },
+			});
 		}
 		await tx.returnEvent.create({
 			data: {

@@ -583,7 +583,7 @@ before marking the phase complete; PayPal refunds remain open.
 
 - [ ] **Phase 10.7 — Inventory and order synchronization**
   - [x] Restock only received and restockable returned quantities through an admin-only, idempotent reconciliation action
-  - [ ] Update item, group, and overall order statuses consistently
+  - [x] Update fully returned/refunded item, group, and overall order statuses consistently; preserve delivered aggregate status for partial returns
   - [ ] Handle partial returns, partial refunds, exchanges, damaged items, and rejected returns
   - [x] Refresh admin return, inventory, and order caches after reconciliation
   - **Test**: Unit coverage for existing return transitions passes; a live partial/full restock scenario remains before phase completion

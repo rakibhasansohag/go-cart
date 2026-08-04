@@ -82,6 +82,25 @@ export function deriveOrderStatus(
 		return OrderStatus.Delivered;
 	}
 
+	// A partial return must not appear as a shipment still in transit. Keep the
+	// parent delivered while some units remain delivered, and expose Returned
+	// only when every child has reached a return terminal state.
+	const deliveryAndReturnStatuses = new Set<OrderStatus>([
+		OrderStatus.Delivered,
+		OrderStatus.PickedUp,
+		OrderStatus.Returned,
+		OrderStatus.Refunded,
+	]);
+	if (statuses.every((status) => deliveryAndReturnStatuses.has(status))) {
+		return statuses.every(
+			(status) => status === OrderStatus.Returned || status === OrderStatus.Refunded,
+		)
+			? statuses.every((status) => status === OrderStatus.Refunded)
+				? OrderStatus.Refunded
+				: OrderStatus.Returned
+			: OrderStatus.Delivered;
+	}
+
 	if (statuses.some((status) => IN_TRANSIT_STATUSES.has(status))) {
 		return OrderStatus.PartiallyShipped;
 	}
