@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 // Table components
 import {
@@ -272,24 +273,19 @@ export default function DataTable<TData, TValue>({
 				<div className='flex items-center gap-6'>
 					<div className='flex items-center gap-2'>
 						<span className='text-sm font-medium'>Rows per page</span>
-						<select
-							value={isServerMode ? effectivePageSize : table.getState().pagination.pageSize}
-							onChange={(e) => {
-								const newSize = Number(e.target.value);
-								if (isServerMode) {
-									onPageSizeChange?.(newSize);
-								} else {
-									table.setPageSize(newSize);
-								}
+						<Select
+							value={String(isServerMode ? effectivePageSize : table.getState().pagination.pageSize)}
+							onValueChange={(value) => {
+								const newSize = Number(value);
+								if (isServerMode) onPageSizeChange?.(newSize);
+								else table.setPageSize(newSize);
 							}}
-							className='h-9 w-[70px] rounded-md border border-input bg-background px-2 text-xs focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer'
 						>
-							{[5, 10, 20, 50].map((size) => (
-								<option key={size} value={size}>
-									{size}
-								</option>
-							))}
-						</select>
+							<SelectTrigger size='sm' className='w-[70px] bg-background text-xs'><SelectValue /></SelectTrigger>
+							<SelectContent>
+								{[5, 10, 20, 50].map((size) => <SelectItem key={size} value={String(size)}>{size}</SelectItem>)}
+							</SelectContent>
+						</Select>
 					</div>
 
 					<div className='text-sm font-medium'>
