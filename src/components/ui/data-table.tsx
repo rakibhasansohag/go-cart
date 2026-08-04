@@ -6,6 +6,8 @@ import { useEffect, useState } from 'react';
 // Custom components
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
+import { cn } from '@/lib/utils';
 
 // Table components
 import {
@@ -185,7 +187,7 @@ export default function DataTable<TData, TValue>({
 			)}
 
 			{/* Table */}
-			<div className='overflow-x-auto border bg-background rounded-lg relative'>
+			<div className='overflow-x-auto border bg-background rounded-lg relative' aria-busy={isLoading}>
 				<Table className=''>
 					{/* Table header */}
 					<TableHeader>
@@ -209,7 +211,22 @@ export default function DataTable<TData, TValue>({
 
 					{/* Table body */}
 					<TableBody>
-						{data.length ? (
+						{isLoading ? (
+							Array.from({ length: Math.min(Math.max(pageSize ?? 5, 5), 10) }).map((_, rowIndex) => (
+								<TableRow key={`loading-row-${rowIndex}`} aria-label='Loading row'>
+									{columns.map((_, columnIndex) => (
+										<TableCell key={`loading-cell-${rowIndex}-${columnIndex}`} className='max-w-[400px]'>
+											<Skeleton
+												className={cn(
+													'h-4',
+													columnIndex === 0 ? 'w-24' : columnIndex === 1 ? 'w-28' : columnIndex === columns.length - 1 ? 'w-20' : 'w-32',
+												)}
+											/>
+										</TableCell>
+									))}
+								</TableRow>
+							))
+						) : data.length ? (
 							table.getRowModel().rows.map((row) => {
 								return (
 									<TableRow
@@ -238,7 +255,7 @@ export default function DataTable<TData, TValue>({
 									colSpan={columns.length}
 									className='h-24 text-center'
 								>
-									{isLoading ? 'Loading...' : 'No Results.'}
+									No Results.
 								</TableCell>
 							</TableRow>
 						)}
