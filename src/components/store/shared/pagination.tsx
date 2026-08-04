@@ -13,6 +13,17 @@ interface Props {
 const Pagination: FC<Props> = ({ page, setPage, totalPages, pageSize, setPageSize }) => {
 	const hasMultiplePages = !!(totalPages && totalPages > 1);
 	const hasPageSizeSelector = !!(pageSize && setPageSize);
+	const effectivePageSize = [5, 10, 20, 50].includes(pageSize ?? 10) ? pageSize ?? 10 : 10;
+	const visiblePages: Array<number | 'ellipsis'> = totalPages <= 7
+		? Array.from({ length: totalPages }, (_, index) => index + 1)
+		: (() => {
+			const pages: Array<number | 'ellipsis'> = [1];
+			if (page > 3) pages.push('ellipsis');
+			for (let value = Math.max(2, page - 1); value <= Math.min(totalPages - 1, page + 1); value += 1) pages.push(value);
+			if (page < totalPages - 2) pages.push('ellipsis');
+			pages.push(totalPages);
+			return pages;
+		})();
 
 	if (!hasMultiplePages && !hasPageSizeSelector) return null;
 
@@ -35,7 +46,7 @@ const Pagination: FC<Props> = ({ page, setPage, totalPages, pageSize, setPageSiz
 						<span>Items per page:</span>
 						<div className='relative w-16 h-7 flex items-center'>
 							<select
-								value={pageSize}
+								value={effectivePageSize}
 								onChange={(e) => {
 									setPageSize(Number(e.target.value));
 									setPage(1);
@@ -63,21 +74,20 @@ const Pagination: FC<Props> = ({ page, setPage, totalPages, pageSize, setPageSiz
 							<MoveLeft className='w-3' />
 							<p className='text-sm ml-3 font-medium leading-none'>Previous</p>
 						</div>
-						<div className='flex flex-wrap'>
-							{Array.from({ length: totalPages }).map((_, i) => (
-								<span
-									key={i}
-									className={cn(
-										'text-sm font-medium leading-none cursor-pointer text-gray-600  hover:text-orange-background  border-t border-transparent pt-3 mr-4 px-2',
-										{
-											'text-orange-background border-orange-background':
-												i + 1 === page,
-										},
-									)}
-									onClick={() => setPage(i + 1)}
+						<div className='flex items-center gap-1 pt-3' aria-label='Pagination'>
+							{visiblePages.map((value, index) => value === 'ellipsis' ? (
+								<span key={`ellipsis-${index}`} className='px-1 text-sm text-muted-foreground' aria-hidden='true'>…</span>
+							) : (
+								<button
+									type='button'
+									key={value}
+									aria-label={`Go to page ${value}`}
+									aria-current={value === page ? 'page' : undefined}
+									onClick={() => setPage(value)}
+									className={cn('min-w-8 rounded-md px-2 py-1 text-sm font-medium transition-colors cursor-pointer', value === page ? 'bg-orange-background text-white' : 'text-gray-600 hover:bg-secondary hover:text-orange-background')}
 								>
-									{i + 1}
-								</span>
+									{value}
+								</button>
 							))}
 						</div>
 						<div

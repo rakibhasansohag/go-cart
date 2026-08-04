@@ -35,14 +35,15 @@ const STATUS_TABS = [
 
 export default function OrdersTable({ storeUrl, initialData }: OrdersTableProps) {
 	const [page, setPage] = useState(initialData?.page ?? 1);
-	const [pageSize, setPageSize] = useState(initialData?.limit ?? 10);
+	const initialPageSize = [5, 10, 20, 50].includes(initialData?.limit ?? 10) ? initialData?.limit ?? 10 : 10;
+	const [pageSize, setPageSize] = useState(initialPageSize);
 	const [search, setSearch] = useState('');
 	const [status, setStatus] = useState('ALL');
 
 	const { data, isPending } = useQuery({
 		queryKey: queryKeys.dashboard.orders(storeUrl, page, pageSize, search, status),
 		queryFn: () => getStoreOrders(storeUrl, { page, limit: pageSize, search, status }),
-		initialData: page === 1 && pageSize === 10 && !search && status === 'ALL' ? initialData : undefined,
+		initialData: page === 1 && pageSize === 10 && !search && status === 'ALL' && initialData?.limit === 10 ? initialData : undefined,
 	});
 
 	const baseOrders = data?.orders ?? [];

@@ -22,13 +22,14 @@ interface AdminCouponsTableProps {
 
 export default function AdminCouponsTable({ initialData }: AdminCouponsTableProps) {
 	const [page, setPage] = useState(initialData?.page ?? 1);
-	const [pageSize, setPageSize] = useState(initialData?.limit ?? 10);
+	const initialPageSize = [5, 10, 20, 50].includes(initialData?.limit ?? 10) ? initialData?.limit ?? 10 : 10;
+	const [pageSize, setPageSize] = useState(initialPageSize);
 	const [search, setSearch] = useState('');
 
 	const { data, isFetching } = useQuery({
 		queryKey: ['dashboard', 'adminCoupons', page, pageSize, search],
 		queryFn: () => getAllAdminCoupons({ page, limit: pageSize, search }),
-		initialData: page === 1 && pageSize === 10 && !search ? initialData : undefined,
+		initialData: page === 1 && pageSize === 10 && !search && initialData?.limit === 10 ? initialData : undefined,
 	});
 
 	const coupons = data?.coupons ?? [];

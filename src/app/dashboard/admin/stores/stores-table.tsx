@@ -20,13 +20,14 @@ interface StoresTableProps {
 
 export default function StoresTable({ initialData }: StoresTableProps) {
 	const [page, setPage] = useState(initialData?.page ?? 1);
-	const [pageSize, setPageSize] = useState(initialData?.limit ?? 10);
+	const initialPageSize = [5, 10, 20, 50].includes(initialData?.limit ?? 10) ? initialData?.limit ?? 10 : 10;
+	const [pageSize, setPageSize] = useState(initialPageSize);
 	const [search, setSearch] = useState('');
 
 	const { data, isFetching } = useQuery({
 		queryKey: queryKeys.dashboard.stores(page, pageSize, search),
 		queryFn: () => getAllStores({ page, limit: pageSize, search }),
-		initialData: page === 1 && pageSize === 10 && !search ? initialData : undefined,
+		initialData: page === 1 && pageSize === 10 && !search && initialData?.limit === 10 ? initialData : undefined,
 	});
 
 	const stores = data?.stores ?? [];

@@ -84,6 +84,7 @@ export default function DataTable<TData, TValue>({
 	searchValue = '',
 	isLoading = false,
 }: DataTableProps<TData, TValue>) {
+	const effectivePageSize = [5, 10, 20, 50].includes(pageSize) ? pageSize : 10;
 	// Modal state
 	const { setOpen } = useModal();
 
@@ -115,7 +116,7 @@ export default function DataTable<TData, TValue>({
 		getPaginationRowModel: isServerMode ? undefined : getPaginationRowModel(),
 		initialState: {
 			pagination: {
-				pageSize,
+				pageSize: effectivePageSize,
 			},
 		},
 		manualPagination: isServerMode,
@@ -272,7 +273,7 @@ export default function DataTable<TData, TValue>({
 					<div className='flex items-center gap-2'>
 						<span className='text-sm font-medium'>Rows per page</span>
 						<select
-							value={isServerMode ? pageSize : table.getState().pagination.pageSize}
+							value={isServerMode ? effectivePageSize : table.getState().pagination.pageSize}
 							onChange={(e) => {
 								const newSize = Number(e.target.value);
 								if (isServerMode) {
@@ -311,6 +312,27 @@ export default function DataTable<TData, TValue>({
 						>
 							<ChevronLeft className='h-4 w-4 me-1' /> Previous
 						</Button>
+						{totalPages > 1 && (
+							<div className='hidden items-center gap-1 sm:flex' aria-label='Pagination'>
+								{(() => {
+									const pages: Array<number | 'ellipsis'> = totalPages <= 7
+										? Array.from({ length: totalPages }, (_, index) => index + 1)
+										: (() => {
+											const compact: Array<number | 'ellipsis'> = [1];
+											if (currentPageIndex + 1 > 3) compact.push('ellipsis');
+											for (let value = Math.max(2, currentPageIndex); value <= Math.min(totalPages - 1, currentPageIndex + 2); value += 1) compact.push(value);
+											if (currentPageIndex + 1 < totalPages - 2) compact.push('ellipsis');
+											compact.push(totalPages);
+											return compact;
+										})();
+									return pages.map((value, index) => value === 'ellipsis' ? (
+										<span key={`page-ellipsis-${index}`} className='px-1 text-sm text-muted-foreground' aria-hidden='true'>…</span>
+									) : (
+										<Button key={value} type='button' variant={value === currentPageIndex + 1 ? 'default' : 'ghost'} size='sm' className='h-9 min-w-9 px-2' onClick={() => isServerMode ? onPageChange?.(value) : table.setPageIndex(value - 1)} disabled={isLoading} aria-current={value === currentPageIndex + 1 ? 'page' : undefined}>{value}</Button>
+									));
+								})()}
+							</div>
+						)}
 						<Button
 							variant='outline'
 							size='sm'

@@ -178,13 +178,14 @@ interface AdminOrdersTableProps {
 
 export default function AdminOrdersTable({ initialData }: AdminOrdersTableProps) {
 	const [page, setPage] = useState(initialData?.page ?? 1);
-	const [pageSize, setPageSize] = useState(initialData?.limit ?? 10);
+	const initialPageSize = [5, 10, 20, 50].includes(initialData?.limit ?? 10) ? initialData?.limit ?? 10 : 10;
+	const [pageSize, setPageSize] = useState(initialPageSize);
 	const [search, setSearch] = useState('');
 
 	const { data, isPending } = useQuery({
 		queryKey: queryKeys.dashboard.adminOrders(page, pageSize, search),
 		queryFn: () => getAllAdminOrders({ page, limit: pageSize, search }),
-		initialData: page === 1 && pageSize === 10 && !search ? initialData : undefined,
+		initialData: page === 1 && pageSize === 10 && !search && initialData?.limit === 10 ? initialData : undefined,
 	});
 
 	const baseOrders = data?.orders ?? [];
