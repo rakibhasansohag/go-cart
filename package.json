@@ -8,6 +8,7 @@
 		"dev:fresh": "bun run clean:next && bun dev",
 		"clean:next": "bun -e \"require('fs').rmSync('.next',{recursive:true,force:true})\"",
 		"db:prepare": "bun --no-env-file x prisma generate && bun --no-env-file x prisma migrate deploy",
+		"db:seed:demo": "bun prisma/seed-demo.ts",
 		"build": "bun prisma generate && next build",
 		"start": "next start",
 		"lint": "eslint .",

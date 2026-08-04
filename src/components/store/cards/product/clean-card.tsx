@@ -3,6 +3,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useState } from 'react';
 import StarRating from '@/components/StarRating';
+import { Image as ImageIcon } from 'lucide-react';
 
 export default function ProductCardClean({
 	product,
@@ -27,7 +28,14 @@ export default function ProductCardClean({
 		<Link href={`/product/${product.slug}?variant=${variant.variantSlug}`}>
 			<div className='card'>
 				<div className='image-container'>
-					<Image src={variant.images[0].url} alt='' width={300} height={300} />
+					{variant.images[0]?.url ? (
+						<Image src={variant.images[0].url} alt={product.name} width={300} height={300} />
+					) : (
+						<div className='flex h-full min-h-[240px] w-full flex-col items-center justify-center gap-2 bg-muted/40 text-muted-foreground dark:bg-slate-800/40'>
+							<ImageIcon className='h-10 w-10 opacity-45' aria-hidden='true' />
+							<span className='text-xs'>Image unavailable</span>
+						</div>
+					)}
 					<div className='price'>${size.price}</div>
 				</div>
 				<div className='content'>

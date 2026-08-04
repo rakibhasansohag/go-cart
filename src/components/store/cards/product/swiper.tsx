@@ -10,15 +10,16 @@ const CYCLE_INTERVAL = 1200; // ms between slides
 export default function ProductCardImageSwiper({
 	images,
 }: {
-	images: ProductVariantImage[];
+	images?: ProductVariantImage[] | null;
 }) {
+	const safeImages = images?.filter((image) => image.url?.trim()) ?? [];
 	const [index, setIndex] = useState(0);
 	const [isLoaded, setIsLoaded] = useState(false);
 	const loadedUrlsRef = useRef<Set<string>>(new Set());
 	const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 	const currentIndexRef = useRef(0);
 
-	const currentUrl = images[index]?.url;
+	const currentUrl = safeImages[index]?.url;
 
 	useEffect(() => {
 		if (currentUrl && loadedUrlsRef.current.has(currentUrl)) {
@@ -36,13 +37,13 @@ export default function ProductCardImageSwiper({
 	};
 
 	const advance = () => {
-		const to = (currentIndexRef.current + 1) % images.length;
+		const to = (currentIndexRef.current + 1) % safeImages.length;
 		currentIndexRef.current = to;
 		setIndex(to);
 	};
 
 	const startCycle = () => {
-		if (images.length <= 1) return;
+		if (safeImages.length <= 1) return;
 		intervalRef.current = setInterval(advance, CYCLE_INTERVAL);
 	};
 
@@ -55,7 +56,14 @@ export default function ProductCardImageSwiper({
 		setIndex(0);
 	};
 
-	if (!images[index]) return null;
+	if (!safeImages.length) {
+		return (
+			<div className='relative w-full h-[240px] overflow-hidden rounded-2xl mb-2 bg-muted/40 dark:bg-slate-800/40 border border-border/50 flex flex-col items-center justify-center gap-2 text-muted-foreground'>
+				<ImageIcon className='w-10 h-10 opacity-45' aria-hidden='true' />
+				<span className='text-xs'>Image unavailable</span>
+			</div>
+		);
+	}
 
 	return (
 		<div
@@ -71,9 +79,9 @@ export default function ProductCardImageSwiper({
 			)}
 
 			{/* Dot indicators */}
-			{images.length > 1 && (
+				{safeImages.length > 1 && (
 				<div className='absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1 z-20'>
-					{images.map((_, i) => (
+						{safeImages.map((_, i) => (
 						<span
 							key={i}
 							className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${

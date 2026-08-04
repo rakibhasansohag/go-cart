@@ -644,6 +644,8 @@ Goal: protect the critical marketplace workflows before production deployment.
 
 - [ ] **Phase 12.1 — Test infrastructure**
   - [ ] Add unit/integration test tooling, isolated test environment variables, and deterministic fixtures
+  - [x] Add a repeatable deterministic demo fixture generator for 1,000 orders across the admin, seller, and customer test accounts
+  - [x] Seed realistic generic catalog names, three variant image views, and stable empty-image fallbacks for visual QA
   - [ ] Add browser end-to-end testing for customer, seller, and admin roles
   - [ ] Add `test`, `test:integration`, and `test:e2e` scripts
   - **Test**: All suites run locally from documented commands
