@@ -27,6 +27,7 @@ import {
 	publishDomainEvent,
 } from '@/lib/notifications/domain-events';
 import { deriveGroupStatus, deriveOrderStatus } from '@/lib/orders/status-sync';
+import { settledQuantityForOrderItem, terminalStatusForSettledLine } from '@/lib/returns/reconciliation';
 
 export type ReturnEvidenceInput = {
 	type: ReturnEvidenceType;
@@ -930,12 +931,21 @@ export async function reconcileReturnInventory(
 			await tx.size.update({ where: { id: delta.sizeId }, data: { quantity: { increment: delta.quantity } } });
 		}
 		if (request.status === 'REFUNDED' || request.status === 'EXCHANGED') {
+			const settledLines = await tx.returnItem.findMany({
+				where: {
+					orderItemId: { in: request.items.map((item) => item.orderItem.id) },
+					returnRequest: { status: { in: ['REFUNDED', 'EXCHANGED'] } },
+				},
+				select: { orderItemId: true, quantity: true, returnRequest: { select: { status: true, resolution: true } } },
+			});
+			const lines = settledLines.map((line) => ({ orderItemId: line.orderItemId, quantity: line.quantity, status: line.returnRequest.status, resolution: line.returnRequest.resolution }));
 			for (const item of request.items) {
-				const fullyReturned = item.quantity >= item.orderItem.quantity;
-				if (!fullyReturned) continue;
+				const settledQuantity = settledQuantityForOrderItem(lines, item.orderItem.id);
+				const terminalStatus = terminalStatusForSettledLine({ originalQuantity: item.orderItem.quantity, settledQuantity, lines, orderItemId: item.orderItem.id });
+				if (!terminalStatus) continue;
 				await tx.orderItem.update({
 					where: { id: item.orderItem.id },
-					data: { status: request.status === 'REFUNDED' ? 'Refunded' : 'Returned' },
+					data: { status: terminalStatus },
 				});
 			}
 		}
