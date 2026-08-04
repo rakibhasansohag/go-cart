@@ -57,12 +57,18 @@ export default function NotificationPreferences({ initialPreferences }: { initia
 							<p className='font-medium'>{category.label}</p>
 							<p className='text-sm text-muted-foreground'>{category.description}</p>
 						</div>
-						<Switch checked={emailEnabled[category.value]} disabled={saving === category.value} onCheckedChange={(checked) => update(category.value, checked)} aria-label={`Email ${category.label}`} />
+						<div className='flex items-center gap-2'>
+							<span className='min-w-7 text-right text-xs font-semibold text-muted-foreground'>{emailEnabled[category.value] ? 'On' : 'Off'}</span>
+							<Switch checked={emailEnabled[category.value]} disabled={saving === category.value} onCheckedChange={(checked) => update(category.value, checked)} aria-label={`Email ${category.label}`} />
+						</div>
 					</div>
 				))}
 				<div className='grid grid-cols-[1fr_auto] items-center gap-4 bg-muted/20 px-5 py-4'>
 					<div><p className='font-medium'>Payment and refund receipts</p><p className='text-sm text-muted-foreground'>Required transactional emails stay enabled for account and payment safety.</p></div>
-					<Switch checked disabled aria-label='Payment and refund receipts are required' />
+					<div className='flex items-center gap-2'>
+						<span className='text-xs font-semibold text-emerald-700 dark:text-emerald-400'>Required</span>
+						<Switch checked disabled aria-label='Payment and refund receipts are required' />
+					</div>
 				</div>
 			</div>
 		</section>
