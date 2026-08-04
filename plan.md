@@ -510,12 +510,14 @@ implemented payment, package, shipment, and return events, but there is no
 per-user preference model or settings UI yet. `EMAIL_NOTIFICATIONS_ENABLED` is
 only a global safety switch; it does not replace category/channel preferences.
 
-- [ ] Add per-user notification preferences by category and channel for
+- [x] Add per-user notification preferences by category and channel for
       customers, sellers, and admins, with sensible role-based defaults
+- [x] Validate known domain-event payloads through typed Zod contracts before
+      persisting events, while preserving provider-specific unknown events
 - [ ] Keep visual template selection admin-owned: recipients choose whether an
       optional category may use email/in-app channels, while the system/admin chooses
       the published default or custom template used for that event
-- [ ] Keep required security and critical transaction notices enabled; allow
+- [x] Keep required security and critical transaction notices enabled; allow
       optional email categories to be disabled while preserving essential in-app
       audit information
 - [ ] Customer events: payment, package progress, shipment/delivery, cancellation,

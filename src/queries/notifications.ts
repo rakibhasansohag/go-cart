@@ -2,7 +2,19 @@
 
 import { db } from '@/lib/db';
 import { auth } from '@clerk/nextjs/server';
-import { NotificationCategory, Prisma } from '@prisma/client';
+import { NotificationCategory, NotificationChannel, Prisma } from '@prisma/client';
+import { z } from 'zod';
+
+const preferenceInput = z.object({
+	category: z.nativeEnum(NotificationCategory),
+	channel: z.literal(NotificationChannel.EMAIL),
+	enabled: z.boolean(),
+});
+
+const requiredEmailCategories = new Set<NotificationCategory>([
+	NotificationCategory.PAYMENT,
+	NotificationCategory.REFUND,
+]);
 
 function emptyNotificationPage(page: number, limit: number) {
 	return {
@@ -88,5 +100,48 @@ export async function markAllNotificationsRead() {
 	return db.notification.updateMany({
 		where: { recipientId: userId, readAt: null },
 		data: { readAt: new Date() },
+	});
+}
+
+export async function getNotificationPreferences() {
+	const { userId } = await auth();
+	if (!userId) return [];
+
+	const rows = await db.notificationPreference.findMany({
+		where: { userId },
+		orderBy: [{ category: 'asc' }, { channel: 'asc' }],
+	});
+	return rows.map((row) => ({
+		...row,
+		// In-app notifications are always available for auditability. Critical
+		// payment/refund email cannot be disabled by an optional preference.
+		enabled: row.channel === NotificationChannel.IN_APP ||
+			(requiredEmailCategories.has(row.category) ? true : row.enabled),
+	}));
+}
+
+export async function updateNotificationEmailPreference(input: unknown) {
+	const { userId } = await auth();
+	if (!userId) throw new Error('Unauthenticated.');
+	const parsed = preferenceInput.parse(input);
+	if (requiredEmailCategories.has(parsed.category)) {
+		throw new Error('Payment and refund emails are required for account safety.');
+	}
+
+	return db.notificationPreference.upsert({
+		where: {
+			userId_category_channel: {
+				userId,
+				category: parsed.category,
+				channel: parsed.channel,
+			},
+		},
+		update: { enabled: parsed.enabled },
+		create: {
+			userId,
+			category: parsed.category,
+			channel: parsed.channel,
+			enabled: parsed.enabled,
+		},
 	});
 }

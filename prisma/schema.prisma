@@ -20,25 +20,26 @@ model User {
   picture String @db.Text
   role    Role   @default(USER)
 
-  stores                Store[]                 @relation("UserStores")
-  following             Store[]                 @relation("UserFollowingStore")
-  reviews               Review[]                @relation("ReviewToUser")
-  cart                  Cart?                   @relation("UserCart")
-  shippingAddresses     ShippingAddress[]       @relation("UserShippingAddresses")
-  orders                Order[]                 @relation("UserOrders")
-  wishlist              Wishlist[]              @relation("WishlistToUser")
-  payments              PaymentDetails[]        @relation("PaymentDetailsToUser")
-  coupons               Coupon[]                @relation("CouponToUser")
-  returnRequests        ReturnRequest[]         @relation("ReturnCustomer")
-  returnEvidence        ReturnEvidence[]        @relation("ReturnEvidenceUploader")
-  returnEvents          ReturnEvent[]           @relation("ReturnEventActor")
-  fulfillmentEvents     FulfillmentTransition[] @relation("FulfillmentTransitionActor")
-  cancellationRequests  CancellationRequest[]   @relation("CancellationRequestCustomer")
-  cancellationDecisions CancellationRequest[]   @relation("CancellationRequestDecider")
-  domainEvents          DomainEvent[]           @relation("DomainEventActor")
-  notifications         Notification[]          @relation("NotificationRecipient")
-  emailOutboxJobs       EmailOutbox[]           @relation("EmailOutboxRecipient")
-  emailTemplatesEdited  EmailTemplate[]         @relation("EmailTemplateEditor")
+  stores                  Store[]                  @relation("UserStores")
+  following               Store[]                  @relation("UserFollowingStore")
+  reviews                 Review[]                 @relation("ReviewToUser")
+  cart                    Cart?                    @relation("UserCart")
+  shippingAddresses       ShippingAddress[]        @relation("UserShippingAddresses")
+  orders                  Order[]                  @relation("UserOrders")
+  wishlist                Wishlist[]               @relation("WishlistToUser")
+  payments                PaymentDetails[]         @relation("PaymentDetailsToUser")
+  coupons                 Coupon[]                 @relation("CouponToUser")
+  returnRequests          ReturnRequest[]          @relation("ReturnCustomer")
+  returnEvidence          ReturnEvidence[]         @relation("ReturnEvidenceUploader")
+  returnEvents            ReturnEvent[]            @relation("ReturnEventActor")
+  fulfillmentEvents       FulfillmentTransition[]  @relation("FulfillmentTransitionActor")
+  cancellationRequests    CancellationRequest[]    @relation("CancellationRequestCustomer")
+  cancellationDecisions   CancellationRequest[]    @relation("CancellationRequestDecider")
+  domainEvents            DomainEvent[]            @relation("DomainEventActor")
+  notifications           Notification[]           @relation("NotificationRecipient")
+  notificationPreferences NotificationPreference[] @relation("NotificationPreferenceUser")
+  emailOutboxJobs         EmailOutbox[]            @relation("EmailOutboxRecipient")
+  emailTemplatesEdited    EmailTemplate[]          @relation("EmailTemplateEditor")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -811,6 +812,25 @@ enum NotificationCategory {
   RETURN
   REFUND
   SYSTEM
+}
+
+enum NotificationChannel {
+  IN_APP
+  EMAIL
+}
+
+model NotificationPreference {
+  id        String               @id @default(uuid())
+  category  NotificationCategory
+  channel   NotificationChannel
+  enabled   Boolean              @default(true)
+  userId    String
+  user      User                 @relation("NotificationPreferenceUser", fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime             @default(now())
+  updatedAt DateTime             @updatedAt
+
+  @@unique([userId, category, channel])
+  @@index([userId, channel, enabled])
 }
 
 enum EmailOutboxStatus {

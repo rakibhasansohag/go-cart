@@ -179,7 +179,7 @@ const extraLinks = [
 	},
 	{
 		title: 'Settings',
-		link: '/',
+		link: '/profile/settings',
 	},
 	{
 		title: 'Help Center',

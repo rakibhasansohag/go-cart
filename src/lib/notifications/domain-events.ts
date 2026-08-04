@@ -1,6 +1,7 @@
-import { NotificationCategory, Prisma, Role } from '@prisma/client';
+import { NotificationCategory, NotificationChannel, Prisma, Role } from '@prisma/client';
 import { formatOrderId, formatPackageId } from '@/lib/orders/references';
 import { demoFulfillmentAutomationEnabled, demoFulfillmentStepHours } from '@/lib/orders/demo-config';
+import { validateDomainEventPayload } from './contracts';
 
 type TransactionClient = Prisma.TransactionClient;
 
@@ -384,6 +385,7 @@ export async function publishDomainEvent(
 	tx: TransactionClient,
 	input: PublishDomainEventInput,
 ) {
+	validateDomainEventPayload(input.eventType, input.payload);
 	const event = await tx.domainEvent.upsert({
 		where: { eventKey: input.eventKey },
 		update: {},
@@ -398,9 +400,18 @@ export async function publishDomainEvent(
 	});
 
 	const recipients = await resolveRecipients(tx, input);
+	const preferenceRows = await tx.notificationPreference.findMany({
+		where: { userId: { in: recipients.map((recipient) => recipient.id) } },
+		select: { userId: true, category: true, channel: true, enabled: true },
+	});
+	const preferences = new Map(
+		preferenceRows.map((row) => [`${row.userId}:${row.category}:${row.channel}`, row.enabled]),
+	);
 	for (const recipient of recipients) {
 		const content = notificationFor(input, recipient);
-		await tx.notification.upsert({
+		const inAppEnabled = preferences.get(`${recipient.id}:${content.category}:${NotificationChannel.IN_APP}`) ?? true;
+		const emailEnabled = preferences.get(`${recipient.id}:${content.category}:${NotificationChannel.EMAIL}`) ?? true;
+		if (inAppEnabled) await tx.notification.upsert({
 			where: {
 				sourceEventId_recipientId: {
 					sourceEventId: event.id,
@@ -415,7 +426,7 @@ export async function publishDomainEvent(
 				...content,
 			},
 		});
-		if (!hasDeliverableEmail(recipient.email)) continue;
+		if (!emailEnabled || !hasDeliverableEmail(recipient.email)) continue;
 		await tx.emailOutbox.upsert({
 			where: {
 				sourceEventId_recipientId: {
