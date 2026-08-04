@@ -731,6 +731,7 @@ model OrderItem {
   deliveredAt DateTime?
 
   returnItems ReturnItem[] @relation("ReturnItemToOrderItem")
+  shipmentItems ShipmentItem[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -743,6 +744,13 @@ model Shipment {
   id     String         @id @default(uuid())
   status ShipmentStatus @default(AWAITING_RECEIPT)
 
+  carrier             String?
+  trackingNumber      String?
+  serviceLevel        String?
+  estimatedDeliveryAt DateTime?
+  proofOfDeliveryUrl  String?   @db.Text
+  proofOfDeliveryAt   DateTime?
+
   failureReasonCode String?
   failureMessage    String? @db.Text
 
@@ -750,11 +758,60 @@ model Shipment {
   orderGroup   OrderGroup @relation(fields: [orderGroupId], references: [id], onDelete: Cascade)
 
   fulfillmentEvents FulfillmentTransition[] @relation("FulfillmentTransitionToShipment")
+  items             ShipmentItem[]
+  trackingEvents    TrackingEvent[]
+  deliveryAttempts  DeliveryAttempt[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([status])
+  @@index([carrier, trackingNumber])
+}
+
+model ShipmentItem {
+  id         String   @id @default(uuid())
+  shipmentId String
+  orderItemId String
+  quantity   Int
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  shipment  Shipment  @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+  orderItem OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Restrict)
+
+  @@unique([shipmentId, orderItemId])
+  @@index([orderItemId])
+}
+
+model TrackingEvent {
+  id              String   @id @default(uuid())
+  shipmentId      String
+  providerEventId String?  @unique
+  status          ShipmentStatus
+  location        String?
+  description     String?  @db.Text
+  occurredAt      DateTime
+  createdAt       DateTime @default(now())
+
+  shipment Shipment @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+
+  @@index([shipmentId, occurredAt])
+}
+
+model DeliveryAttempt {
+  id            String   @id @default(uuid())
+  shipmentId    String
+  attemptNumber Int
+  outcome       String
+  reasonCode    String?
+  message       String?  @db.Text
+  occurredAt    DateTime @default(now())
+
+  shipment Shipment @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+
+  @@unique([shipmentId, attemptNumber])
+  @@index([shipmentId, occurredAt])
 }
 
 model FulfillmentTransition {

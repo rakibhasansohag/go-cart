@@ -600,8 +600,8 @@ then expand the Phase 10.3.3 notification foundation across the complete
 post-purchase workflow.
 
 - [ ] **Phase 11.1 — Shipment tracking model**
-  - [ ] Add shipment, carrier, tracking number, shipment item, tracking event,
-        delivery attempt, and proof-of-delivery records
+  - [x] Add shipment carrier/tracking metadata, shipment items, tracking events,
+        delivery attempts, and proof-of-delivery fields
   - [ ] Support split and partial shipments per order group
   - [ ] Allow compatible packages to be consolidated without forcing a ready
         package to wait indefinitely for another store
