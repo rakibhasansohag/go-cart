@@ -337,20 +337,21 @@ verification races. The bell lazily fetches its five most recent records and
 reuses the fresh TanStack Query cache when reopened; its visible-tab background
 summary poll remains the free-tier fallback.
 
-- [ ] Add a provider-neutral domain-event/outbox model written in the same
-      transaction as each status, payment, return, dispute, and refund mutation
-- [ ] Add unique event/idempotency keys so retries cannot create duplicate
+- [x] Add a provider-neutral domain-event/outbox model written in the same
+      transaction as payment, fulfillment/status, return, and refund mutations
+      (dispute events remain open because dispute mutation workflows do not exist yet)
+- [x] Add unique event/idempotency keys so retries cannot create duplicate
       in-app notifications or emails
-- [ ] Create the in-app notification and email outbox job in the business
+- [x] Create the in-app notification and email outbox job in the business
       transaction, then use Next.js `after()` to attempt SMTP immediately after the
       response; retain failed email jobs for scheduled retry
-- [ ] Make immediate dispatch safe to retry and best-effort: a crash after the
+- [x] Make immediate dispatch safe to retry and best-effort: a crash after the
       response leaves the durable outbox job pending for recovery instead of losing
       the email or rolling back the successful business action
-- [ ] Store delivery attempts, last error, attempt count, next attempt time, and
+- [x] Store delivery attempts, last error, attempt count, next attempt time, and
       sent time without allowing an email failure to roll back a valid order update
-- [ ] Define typed event payloads and a centralized recipient resolver instead
-      of sending messages directly from page components or status dropdowns
+- [ ] Replace the remaining JSON payload boundary with generated typed event
+      payload schemas; the centralized recipient resolver is already in place
 
 #### Demo-only automatic fulfillment
 
@@ -390,20 +391,20 @@ demand, keeps fresh results for one minute and cached results for five minutes,
 and updates read state in-place instead of refetching every time the popover is
 closed and reopened.
 
-- [ ] Add persisted notifications for customers, sellers, and admins with type,
+- [x] Add persisted notifications for customers, sellers, and admins with type,
       title, message, safe internal action URL, created time, read time, and source
       event
-- [ ] Add a shared header bell with unread count and a small recent-notification
+- [x] Add a shared header bell with unread count and a small recent-notification
       popover; also add a complete `/notifications` page reachable from customer,
       seller, and admin navigation
-- [ ] Mark one notification read when its action is opened, support **Mark all
+- [x] Mark one notification read when its action is opened, support **Mark all
       as read**, and navigate only to validated internal role-authorized routes
-- [ ] Add server-side pagination, unread/read state, category, role-relevant
+- [x] Add server-side pagination, unread/read state, category, role-relevant
       event type, and date filters
-- [ ] Server-prefetch the full page; use stable query keys, targeted invalidation,
+- [x] Server-prefetch the full page; use stable query keys, targeted invalidation,
       and 15–30 second polling only while the tab is visible instead of requiring a
       paid realtime service
-- [ ] Use native buttons/links, visible focus, useful accessible labels, a
+- [x] Use native buttons/links, visible focus, useful accessible labels, a
       restrained unread announcement, responsive layout, and light/dark theme tokens
 
 #### SMTP email and admin-controlled templates
@@ -504,6 +505,11 @@ closed and reopened.
 
 #### Preferences and recipient rules
 
+**Current gap (August 4, 2026):** Recipient routing is centralized for the
+implemented payment, package, shipment, and return events, but there is no
+per-user preference model or settings UI yet. `EMAIL_NOTIFICATIONS_ENABLED` is
+only a global safety switch; it does not replace category/channel preferences.
+
 - [ ] Add per-user notification preferences by category and channel for
       customers, sellers, and admins, with sensible role-based defaults
 - [ ] Keep visual template selection admin-owned: recipients choose whether an
@@ -543,9 +549,10 @@ and confirm **Request return** appears only for the delivered item. Verify the m
 fulfillment audit, notification, outbox/email attempt, and automation-run records
 in Prisma Studio.
 
-**Priority execution order:** `10.3.1 centralized state machine → 10.3.3 event
-outbox and in-app foundation → SMTP/templates/preferences → demo automation →
-Phase 11 shipment UI → resume Phase 10.4–10.7 returns/refunds`.
+**Priority execution order (current):** `finish 10.7 inventory/status
+synchronization → finish 10.3.3 typed events and preferences → close 10.4/10.5
+return operations → complete live 10.6 provider verification → Phase 11
+shipment tracking → Phase 12 CI and end-to-end coverage`.
 
 - [ ] **Phase 10.4 — Seller return queue**
   - [x] Add store-scoped return list, filters, detail review, and evidence display
