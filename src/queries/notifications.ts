@@ -146,7 +146,11 @@ export async function updateNotificationEmailPreference(input: unknown) {
 	});
 }
 
-export async function getAdminDeliveryHealth() {
+export async function getAdminDeliveryHealth(input?: {
+	statusFilter?: 'ALL' | 'PENDING' | 'FAILED' | 'SENT';
+	page?: number;
+	pageSize?: number;
+}) {
 	const { userId } = await auth();
 	if (!userId) throw new Error('Unauthenticated.');
 	const user = await db.user.findUnique({
@@ -157,19 +161,35 @@ export async function getAdminDeliveryHealth() {
 		throw new Error('Admin privileges required.');
 	}
 
-	const [sentCount, pendingCount, failedCount, failedOutbox, sentOutbox, automationRuns] =
+	const statusFilter = input?.statusFilter || 'ALL';
+	const page = Math.max(1, input?.page || 1);
+	const pageSize = Math.min(100, Math.max(5, input?.pageSize || 10));
+	const skip = (page - 1) * pageSize;
+
+	const whereOutboxFilter: Prisma.EmailOutboxWhereInput =
+		statusFilter === 'SENT'
+			? { status: 'SENT' }
+			: statusFilter === 'FAILED'
+			? { status: 'FAILED' }
+			: statusFilter === 'PENDING'
+			? { status: 'PENDING' }
+			: { status: { in: ['FAILED', 'PENDING'] } };
+
+	const [sentCount, pendingCount, failedCount, totalOutboxCount, outboxItems, sentOutbox, automationRuns] =
 		await Promise.all([
 			db.emailOutbox.count({ where: { status: 'SENT' } }),
 			db.emailOutbox.count({ where: { status: 'PENDING' } }),
 			db.emailOutbox.count({ where: { status: 'FAILED' } }),
+			db.emailOutbox.count({ where: whereOutboxFilter }),
 			db.emailOutbox.findMany({
-				where: { status: { in: ['FAILED', 'PENDING'] } },
+				where: whereOutboxFilter,
 				include: {
 					recipient: { select: { name: true, email: true } },
 					sourceEvent: { select: { eventType: true, aggregateType: true } },
 				},
 				orderBy: { updatedAt: 'desc' },
-				take: 50,
+				skip,
+				take: pageSize,
 			}),
 			db.emailOutbox.findMany({
 				where: { status: 'SENT' },
@@ -177,7 +197,7 @@ export async function getAdminDeliveryHealth() {
 					recipient: { select: { name: true, email: true } },
 					sourceEvent: { select: { eventType: true, aggregateType: true } },
 				},
-				orderBy: { sentAt: 'desc' },
+				orderBy: { updatedAt: 'desc' },
 				take: 50,
 			}),
 			db.automationRun.findMany({
@@ -188,7 +208,14 @@ export async function getAdminDeliveryHealth() {
 
 	return {
 		stats: { sentCount, pendingCount, failedCount },
-		failedOutbox,
+		pagination: {
+			page,
+			pageSize,
+			totalCount: totalOutboxCount,
+			totalPages: Math.ceil(totalOutboxCount / pageSize) || 1,
+		},
+		outboxItems,
+		failedOutbox: outboxItems,
 		sentOutbox,
 		automationRuns,
 	};

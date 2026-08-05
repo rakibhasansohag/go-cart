@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Mail, Clock, AlertTriangle, RefreshCw, CheckCircle2, Server, CheckSquare, Square, SendHorizontal } from 'lucide-react';
+import { Mail, Clock, AlertTriangle, RefreshCw, CheckCircle2, Server, CheckSquare, Square, SendHorizontal, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { getAdminDeliveryHealth, retryOutboxJob, retryMultipleOutboxJobs } from '@/queries/notifications';
 import { Button } from '@/components/ui/button';
@@ -15,12 +15,16 @@ type ActiveTab = 'QUEUE' | 'SENT' | 'CRON';
 
 export default function AdminDeliveryHealth({ initialData }: Props) {
 	const [activeTab, setActiveTab] = useState<ActiveTab>('QUEUE');
+	const [page, setPage] = useState(1);
+	const [pageSize, setPageSize] = useState(10);
 	const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 	const [retryingId, setRetryingId] = useState<string | null>(null);
 
+	const statusFilter = activeTab === 'SENT' ? 'SENT' : 'ALL';
+
 	const query = useQuery({
-		queryKey: ['admin', 'delivery-health'],
-		queryFn: getAdminDeliveryHealth,
+		queryKey: ['admin', 'delivery-health', statusFilter, page, pageSize],
+		queryFn: () => getAdminDeliveryHealth({ statusFilter, page, pageSize }),
 		initialData,
 		refetchInterval: 30_000,
 	});
@@ -53,7 +57,7 @@ export default function AdminDeliveryHealth({ initialData }: Props) {
 	const data = query.data;
 	if (!data) return null;
 
-	const { stats, failedOutbox, sentOutbox = [], automationRuns } = data;
+	const { stats, pagination, failedOutbox, sentOutbox = [], automationRuns } = data;
 
 	const toggleSelectAll = () => {
 		if (selectedIds.size === failedOutbox.length) {
@@ -87,12 +91,18 @@ export default function AdminDeliveryHealth({ initialData }: Props) {
 		bulkRetryMutation.mutate(failedIds);
 	};
 
+	const handleTabChange = (tab: ActiveTab) => {
+		setActiveTab(tab);
+		setPage(1);
+		setSelectedIds(new Set());
+	};
+
 	return (
 		<div className='space-y-6 text-sm'>
 			{/* Stat Widgets */}
 			<div className='grid grid-cols-1 sm:grid-cols-3 gap-4'>
 				<button
-					onClick={() => setActiveTab('SENT')}
+					onClick={() => handleTabChange('SENT')}
 					className={`rounded-xl border p-4 flex items-center gap-3.5 text-left transition-all ${
 						activeTab === 'SENT'
 							? 'border-emerald-500/50 bg-emerald-500/5 ring-2 ring-emerald-500/20'
@@ -109,7 +119,7 @@ export default function AdminDeliveryHealth({ initialData }: Props) {
 				</button>
 
 				<button
-					onClick={() => setActiveTab('QUEUE')}
+					onClick={() => handleTabChange('QUEUE')}
 					className={`rounded-xl border p-4 flex items-center gap-3.5 text-left transition-all ${
 						activeTab === 'QUEUE'
 							? 'border-amber-500/50 bg-amber-500/5 ring-2 ring-amber-500/20'
@@ -126,7 +136,7 @@ export default function AdminDeliveryHealth({ initialData }: Props) {
 				</button>
 
 				<button
-					onClick={() => setActiveTab('QUEUE')}
+					onClick={() => handleTabChange('QUEUE')}
 					className={`rounded-xl border p-4 flex items-center gap-3.5 text-left transition-all ${
 						activeTab === 'QUEUE' && stats.failedCount > 0
 							? 'border-destructive/50 bg-destructive/5 ring-2 ring-destructive/20'
@@ -147,7 +157,7 @@ export default function AdminDeliveryHealth({ initialData }: Props) {
 			<div className='flex flex-wrap items-center justify-between gap-3 border-b border-border pb-2'>
 				<div className='flex items-center gap-1 border border-border/60 bg-muted/40 p-1 rounded-xl text-xs font-semibold'>
 					<button
-						onClick={() => setActiveTab('QUEUE')}
+						onClick={() => handleTabChange('QUEUE')}
 						className={`px-3 py-1.5 rounded-lg transition-colors flex items-center gap-2 ${
 							activeTab === 'QUEUE'
 								? 'bg-background text-foreground shadow-xs'
@@ -155,10 +165,10 @@ export default function AdminDeliveryHealth({ initialData }: Props) {
 						}`}
 					>
 						<Mail className='size-3.5 text-primary' />
-						Needs Attention ({failedOutbox.length})
+						Needs Attention ({stats.pendingCount + stats.failedCount})
 					</button>
 					<button
-						onClick={() => setActiveTab('SENT')}
+						onClick={() => handleTabChange('SENT')}
 						className={`px-3 py-1.5 rounded-lg transition-colors flex items-center gap-2 ${
 							activeTab === 'SENT'
 								? 'bg-background text-foreground shadow-xs'
@@ -166,10 +176,10 @@ export default function AdminDeliveryHealth({ initialData }: Props) {
 						}`}
 					>
 						<CheckCircle2 className='size-3.5 text-emerald-600' />
-						Sent Emails History ({sentOutbox.length})
+						Sent Emails History ({stats.sentCount})
 					</button>
 					<button
-						onClick={() => setActiveTab('CRON')}
+						onClick={() => handleTabChange('CRON')}
 						className={`px-3 py-1.5 rounded-lg transition-colors flex items-center gap-2 ${
 							activeTab === 'CRON'
 								? 'bg-background text-foreground shadow-xs'
@@ -245,93 +255,144 @@ export default function AdminDeliveryHealth({ initialData }: Props) {
 							No failed or pending email jobs in queue.
 						</p>
 					) : (
-						<div className='overflow-x-auto'>
-							<table className='w-full min-w-[750px] text-xs text-left'>
-								<thead className='border-b border-border bg-muted/30 text-muted-foreground uppercase text-[11px] font-semibold'>
-									<tr>
-										<th className='p-2.5 w-10 text-center'>
-											<button
-												onClick={toggleSelectAll}
-												className='text-muted-foreground hover:text-primary transition-colors mt-0.5'
-												title='Select All'
-											>
-												{selectedIds.size > 0 && selectedIds.size === failedOutbox.length ? (
-													<CheckSquare className='size-4 text-primary' />
-												) : (
-													<Square className='size-4' />
-												)}
-											</button>
-										</th>
-										<th className='p-2.5'>Recipient / Template</th>
-										<th className='p-2.5'>Event</th>
-										<th className='p-2.5'>Attempts</th>
-										<th className='p-2.5'>Status / Error</th>
-										<th className='p-2.5 text-right'>Action</th>
-									</tr>
-								</thead>
-								<tbody>
-									{failedOutbox.map((job) => {
-										const isSelected = selectedIds.has(job.id);
-										return (
-											<tr
-												key={job.id}
-												className={`border-b border-border/40 last:border-0 align-top transition-colors ${
-													isSelected ? 'bg-primary/5' : 'hover:bg-muted/20'
-												}`}
-											>
-												<td className='p-2.5 text-center'>
-													<button
-														onClick={() => toggleSelectOne(job.id)}
-														className='text-muted-foreground hover:text-primary transition-colors mt-0.5'
-													>
-														{isSelected ? (
-															<CheckSquare className='size-4 text-primary' />
-														) : (
-															<Square className='size-4' />
-														)}
-													</button>
-												</td>
-												<td className='p-2.5'>
-													<div className='font-medium text-foreground'>{job.recipient.email}</div>
-													<div className='text-[11px] text-muted-foreground'>Template: {job.templateKey}</div>
-												</td>
-												<td className='p-2.5'>
-													<span className='capitalize font-medium text-foreground'>
-														{job.sourceEvent.eventType.replaceAll('.', ' ')}
-													</span>
-												</td>
-												<td className='p-2.5 font-semibold'>{job.attemptCount}</td>
-												<td className='p-2.5 max-w-xs'>
-													<span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold ${
-														job.status === 'FAILED'
-															? 'bg-destructive/10 text-destructive'
-															: 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
-													}`}>
-														{job.status}
-													</span>
-													{job.lastError && (
-														<p className='text-[11px] text-muted-foreground truncate max-w-xs mt-0.5' title={job.lastError}>
-															{job.lastError}
-														</p>
+						<>
+							<div className='overflow-x-auto'>
+								<table className='w-full min-w-[750px] text-xs text-left'>
+									<thead className='border-b border-border bg-muted/30 text-muted-foreground uppercase text-[11px] font-semibold'>
+										<tr>
+											<th className='p-2.5 w-10 text-center'>
+												<button
+													onClick={toggleSelectAll}
+													className='text-muted-foreground hover:text-primary transition-colors mt-0.5'
+													title='Select All'
+												>
+													{selectedIds.size > 0 && selectedIds.size === failedOutbox.length ? (
+														<CheckSquare className='size-4 text-primary' />
+													) : (
+														<Square className='size-4' />
 													)}
-												</td>
-												<td className='p-2.5 text-right'>
-													<Button
-														size='sm'
-														variant='outline'
-														disabled={retryingId === job.id || singleRetryMutation.isPending}
-														onClick={() => singleRetryMutation.mutate(job.id)}
-														className='h-7 text-[11px] px-2.5'
-													>
-														{retryingId === job.id ? 'Retrying…' : 'Retry'}
-													</Button>
-												</td>
-											</tr>
-										);
-									})}
-								</tbody>
-							</table>
-						</div>
+												</button>
+											</th>
+											<th className='p-2.5'>Recipient / Template</th>
+											<th className='p-2.5'>Event</th>
+											<th className='p-2.5'>Attempts</th>
+											<th className='p-2.5'>Status / Error</th>
+											<th className='p-2.5 text-right'>Action</th>
+										</tr>
+									</thead>
+									<tbody>
+										{failedOutbox.map((job) => {
+											const isSelected = selectedIds.has(job.id);
+											return (
+												<tr
+													key={job.id}
+													className={`border-b border-border/40 last:border-0 align-top transition-colors ${
+														isSelected ? 'bg-primary/5' : 'hover:bg-muted/20'
+													}`}
+												>
+													<td className='p-2.5 text-center'>
+														<button
+															onClick={() => toggleSelectOne(job.id)}
+															className='text-muted-foreground hover:text-primary transition-colors mt-0.5'
+														>
+															{isSelected ? (
+																<CheckSquare className='size-4 text-primary' />
+															) : (
+																<Square className='size-4' />
+															)}
+														</button>
+													</td>
+													<td className='p-2.5'>
+														<div className='font-medium text-foreground'>{job.recipient.email}</div>
+														<div className='text-[11px] text-muted-foreground'>Template: {job.templateKey}</div>
+													</td>
+													<td className='p-2.5'>
+														<span className='capitalize font-medium text-foreground'>
+															{job.sourceEvent.eventType.replaceAll('.', ' ')}
+														</span>
+													</td>
+													<td className='p-2.5 font-semibold'>{job.attemptCount}</td>
+													<td className='p-2.5 max-w-xs'>
+														<span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold ${
+															job.status === 'FAILED'
+																? 'bg-destructive/10 text-destructive'
+																: 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
+														}`}>
+															{job.status}
+														</span>
+														{job.lastError && (
+															<p className='text-[11px] text-muted-foreground truncate max-w-xs mt-0.5' title={job.lastError}>
+																{job.lastError}
+															</p>
+														)}
+													</td>
+													<td className='p-2.5 text-right'>
+														<Button
+															size='sm'
+															variant='outline'
+															disabled={retryingId === job.id || singleRetryMutation.isPending}
+															onClick={() => singleRetryMutation.mutate(job.id)}
+															className='h-7 text-[11px] px-2.5'
+														>
+															{retryingId === job.id ? 'Retrying…' : 'Retry'}
+														</Button>
+													</td>
+												</tr>
+											);
+										})}
+									</tbody>
+								</table>
+							</div>
+
+							{/* Pagination Controls */}
+							{pagination && (
+								<div className='flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-border/40 text-xs'>
+									<div className='flex items-center gap-2 text-muted-foreground'>
+										<span>Per page:</span>
+										<select
+											value={pageSize}
+											onChange={(e) => {
+												setPageSize(Number(e.target.value));
+												setPage(1);
+											}}
+											className='bg-background border border-border/60 rounded px-2 py-1 text-foreground font-medium text-xs focus:ring-1 focus:ring-primary'
+										>
+											<option value={10}>10</option>
+											<option value={25}>25</option>
+											<option value={50}>50</option>
+											<option value={100}>100</option>
+										</select>
+										<span className='ml-2 font-medium text-foreground'>
+											Showing {Math.min(pagination.totalCount, (page - 1) * pageSize + 1)} - {Math.min(page * pageSize, pagination.totalCount)} of {pagination.totalCount} items
+										</span>
+									</div>
+
+									<div className='flex items-center gap-1.5'>
+										<Button
+											variant='outline'
+											size='sm'
+											disabled={page <= 1}
+											onClick={() => setPage((p) => Math.max(1, p - 1))}
+											className='h-7 text-xs px-2.5 gap-1'
+										>
+											<ChevronLeft className='size-3' /> Previous
+										</Button>
+										<span className='text-muted-foreground font-medium px-2'>
+											Page {pagination.page} of {pagination.totalPages}
+										</span>
+										<Button
+											variant='outline'
+											size='sm'
+											disabled={page >= pagination.totalPages}
+											onClick={() => setPage((p) => Math.min(pagination.totalPages, p + 1))}
+											className='h-7 text-xs px-2.5 gap-1'
+										>
+											Next <ChevronRight className='size-3' />
+										</Button>
+									</div>
+								</div>
+							)}
+						</>
 					)}
 				</div>
 			)}
@@ -344,7 +405,7 @@ export default function AdminDeliveryHealth({ initialData }: Props) {
 							<CheckCircle2 className='size-4 text-emerald-600' />
 							<h3 className='font-semibold text-foreground text-sm'>Successfully Sent Emails History</h3>
 						</div>
-						<span className='text-xs text-muted-foreground'>Showing recent 50 delivered records</span>
+						<span className='text-xs text-muted-foreground'>Total Delivered: {stats.sentCount}</span>
 					</div>
 
 					{sentOutbox.length === 0 ? (
@@ -359,7 +420,7 @@ export default function AdminDeliveryHealth({ initialData }: Props) {
 										<th className='p-2.5'>Recipient / Email</th>
 										<th className='p-2.5'>Template</th>
 										<th className='p-2.5'>Event</th>
-										<th className='p-2.5'>Sent Date</th>
+										<th className='p-2.5'>Delivered Date</th>
 										<th className='p-2.5 text-right'>Status</th>
 									</tr>
 								</thead>
@@ -376,7 +437,7 @@ export default function AdminDeliveryHealth({ initialData }: Props) {
 												{job.sourceEvent.eventType.replaceAll('.', ' ')}
 											</td>
 											<td className='p-2.5 text-muted-foreground'>
-												{job.sentAt ? new Date(job.sentAt).toLocaleString() : 'Delivered'}
+												{job.sentAt ? new Date(job.sentAt).toLocaleString() : job.updatedAt ? new Date(job.updatedAt).toLocaleString() : 'Delivered'}
 											</td>
 											<td className='p-2.5 text-right'>
 												<span className='inline-block bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded text-[10px] font-bold'>

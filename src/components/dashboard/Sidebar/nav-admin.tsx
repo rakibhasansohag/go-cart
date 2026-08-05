@@ -84,7 +84,7 @@ export default function SidebarNavAdmin({
 		} else if (link === '/dashboard/admin/delivery-health') {
 			queryClient.prefetchQuery({
 				queryKey: ['admin', 'delivery-health'],
-				queryFn: getAdminDeliveryHealth,
+				queryFn: () => getAdminDeliveryHealth(),
 				staleTime: 30 * 1000,
 			});
 		}
