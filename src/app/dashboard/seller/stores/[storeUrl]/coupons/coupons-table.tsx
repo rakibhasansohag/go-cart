@@ -10,7 +10,7 @@ import { queryKeys } from '@/lib/query-keys';
 
 interface CouponsTableProps {
 	storeUrl: string;
-	initialCoupons?: any[];
+	initialCoupons?: Awaited<ReturnType<typeof getStoreCoupons>>;
 }
 
 export default function CouponsTable({ storeUrl, initialCoupons }: CouponsTableProps) {

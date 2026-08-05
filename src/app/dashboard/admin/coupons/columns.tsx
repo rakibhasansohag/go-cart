@@ -169,7 +169,7 @@ const CellActions = ({ coupon }: CellActionsProps) => {
 			toast.success('Coupon deleted successfully.');
 			router.refresh();
 		},
-		onError: (error: any) => {
+		onError: (error: Error) => {
 			toast.error(error?.message || 'Failed to delete coupon.');
 		},
 	});

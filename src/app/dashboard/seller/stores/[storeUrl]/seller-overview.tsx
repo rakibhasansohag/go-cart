@@ -42,7 +42,7 @@ export default function SellerOverview({ storeUrl }: SellerOverviewProps) {
 						{data.storeName} Overview
 					</h1>
 					<p className='text-sm text-muted-foreground'>
-						Monitor your store's sales, product inventory, and customer activity.
+						Monitor your store&apos;s sales, product inventory, and customer activity.
 					</p>
 				</div>
 

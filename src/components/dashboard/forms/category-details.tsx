@@ -84,7 +84,7 @@ const CategoryDetails = ({ data, cloudinary_key }: CategoryDetailsProps) => {
 				router.push('/dashboard/admin/categories');
 			}
 		},
-		onError: (error: any) => {
+		onError: (error: Error) => {
 			console.error('Full error details:', {
 				error,
 				formState: form.getValues(),

@@ -22,8 +22,8 @@ export default function ApplyOrderCouponForm({ orderId }: { orderId: string }) {
 			toast.success(res.message);
 			setCode('');
 			router.refresh();
-		} catch (error: any) {
-			toast.error(error.message || 'Failed to apply coupon.');
+		} catch (error) {
+			toast.error(error instanceof Error ? error.message : 'Failed to apply coupon.');
 		} finally {
 			setLoading(false);
 		}

@@ -10,7 +10,7 @@ import { queryKeys } from '@/lib/query-keys';
 
 interface CategoriesTableProps {
 	cloudinary_key: string;
-	initialCategories?: any[];
+	initialCategories?: Awaited<ReturnType<typeof getAllCategories>>;
 }
 
 export default function CategoriesTable({

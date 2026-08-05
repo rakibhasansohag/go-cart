@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 import { Form, FormControl, FormField, FormItem } from '@/components/ui/form';
 import { AddReviewSchema } from '@/lib/schemas';

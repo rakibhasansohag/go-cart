@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { ShippingAddressPayload, UserShippingAddressType } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { Country } from '@prisma/client';

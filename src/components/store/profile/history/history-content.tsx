@@ -8,6 +8,7 @@ interface HistoryContentProps {
 	initialPage: number;
 }
 
+import { ProductType } from '@/lib/types';
 import { useQuery } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/query-keys';
 
@@ -42,7 +43,7 @@ const HistoryContent: FC<HistoryContentProps> = ({ initialPage }) => {
 
 	// Remove duplicates
 	const seenIds = new Set<string>();
-	const uniqueProducts = (products || []).filter((product: any) => {
+	const uniqueProducts = (products || []).filter((product): product is NonNullable<typeof product> => {
 		if (!product) return false;
 		const isDuplicate = seenIds.has(product.id);
 		seenIds.add(product.id);
@@ -74,7 +75,7 @@ const HistoryContent: FC<HistoryContentProps> = ({ initialPage }) => {
 				</div>
 			) : uniqueProducts.length > 0 ? (
 				<div className='pb-16'>
-					<ProductList products={uniqueProducts as any} />
+					<ProductList products={uniqueProducts as unknown as ProductType[]} />
 					<div className='mt-2'>
 						<Pagination
 							page={currentPage}

@@ -10,8 +10,8 @@ import { columns } from './columns';
 import { queryKeys } from '@/lib/query-keys';
 
 interface SubCategoriesTableProps {
-	initialSubCategories?: any[];
-	initialCategories?: any[];
+	initialSubCategories?: Awaited<ReturnType<typeof getAllSubCategories>>;
+	initialCategories?: Awaited<ReturnType<typeof getAllCategories>>;
 }
 
 export default function SubCategoriesTable({

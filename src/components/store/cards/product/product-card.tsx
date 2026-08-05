@@ -47,8 +47,8 @@ export default function ProductCard({
 			toast.success(data.message);
 			queryClient.invalidateQueries({ queryKey: queryKeys.profile.wishlist(1) });
 		},
-		onError: (error: any) => {
-			toast.error(error.message || error.toString());
+		onError: (error: Error) => {
+			toast.error(error.message || String(error));
 		},
 	});
 

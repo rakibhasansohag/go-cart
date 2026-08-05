@@ -147,7 +147,7 @@ export default function InventoryView({ storeUrl, initialData }: InventoryViewPr
 					{/* Status Tabs */}
 					<Tabs
 						value={statusFilter}
-						onValueChange={(val) => setStatusFilter(val as any)}
+						onValueChange={(val) => setStatusFilter(val as 'all' | 'in_stock' | 'low_stock' | 'out_of_stock')}
 						className='w-full sm:w-auto'
 					>
 						<TabsList className='grid grid-cols-4 w-full sm:w-auto h-9 p-1 bg-muted/50'>

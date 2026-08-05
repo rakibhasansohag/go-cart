@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Button } from '@/components/store/ui/button';
 import { useCartStore } from '@/cart-store/useCartStore';
 import { CartProductType, Country } from '@/lib/types';

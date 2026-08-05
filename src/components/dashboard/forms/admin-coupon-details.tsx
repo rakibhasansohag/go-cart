@@ -70,7 +70,7 @@ export const AdminCouponDetails: FC<AdminCouponDetailsProps> = ({ data }) => {
 	const isEditing = Boolean(data?.id);
 
 	const upsertMutation = useMutation({
-		mutationFn: (couponData: any) => upsertAdminCoupon(couponData),
+		mutationFn: (couponData: Parameters<typeof upsertAdminCoupon>[0]) => upsertAdminCoupon(couponData),
 		onSuccess: (response) => {
 			toast.success(
 				data?.id
@@ -83,7 +83,7 @@ export const AdminCouponDetails: FC<AdminCouponDetailsProps> = ({ data }) => {
 			router.refresh();
 			setClose();
 		},
-		onError: (error: any) => {
+		onError: (error: Error) => {
 			toast.error(error.message || 'Failed to save coupon.');
 		},
 	});
@@ -107,9 +107,9 @@ export const AdminCouponDetails: FC<AdminCouponDetailsProps> = ({ data }) => {
 			await upsertMutation.mutateAsync({
 				id: data?.id ? data.id : v4(),
 				code: values.code,
-				discount: values.discount,
-				maxUses: values.maxUses ?? 0,
-				maxUsesPerUser: values.maxUsesPerUser ?? 1,
+				discount: Number(values.discount),
+				maxUses: values.maxUses ? Number(values.maxUses) : 0,
+				maxUsesPerUser: values.maxUsesPerUser ? Number(values.maxUsesPerUser) : 1,
 				startDate: values.startDate,
 				endDate: values.endDate,
 				storeId: data?.storeId || null,

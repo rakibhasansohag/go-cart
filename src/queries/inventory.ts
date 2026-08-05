@@ -120,8 +120,8 @@ export const getStoreInventory = async (
 				totalSKUs: items.length,
 			},
 		};
-	} catch (error: any) {
-		throw new Error(error.message || 'Failed to fetch inventory.');
+	} catch (error) {
+		throw new Error(error instanceof Error ? error.message : 'Failed to fetch inventory.');
 	}
 };
 
@@ -141,7 +141,7 @@ export const updateSizeQuantity = async (
 		});
 
 		return updatedSize;
-	} catch (error: any) {
-		throw new Error(error.message || 'Failed to update stock quantity.');
+	} catch (error) {
+		throw new Error(error instanceof Error ? error.message : 'Failed to update stock quantity.');
 	}
 };

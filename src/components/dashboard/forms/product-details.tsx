@@ -523,10 +523,6 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 		};
 	}, [isSaleValue]);
 
-	if (isDataLoading) {
-		return <ProductDetailsFormSkeleton />;
-	}
-
 	// Reset form values when data changes — guarded by a ref so it only fires
 	// when the underlying data identity actually changes (not on every render).
 	const prevDataRef = useRef<typeof data | null>(null);
@@ -538,8 +534,31 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 				variantImage: data.variantImage ? [{ url: data.variantImage }] : [],
 			});
 		}
-	// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [data]);
+	}, [data, form]);
+
+	const [keywords, setKeywords] = useState<string[]>(data?.keywords || []);
+
+	// Whenever colors, sizes, keywords changes we update the form values
+	useEffect(() => {
+		form.setValue('colors', colors);
+		form.setValue('sizes', sizes);
+		form.setValue('keywords', keywords);
+		form.setValue('product_specs', productSpecs);
+		form.setValue('variant_specs', variantSpecs);
+		form.setValue('questions', questions);
+	}, [
+		colors,
+		sizes,
+		keywords,
+		productSpecs,
+		variantSpecs,
+		questions,
+		form,
+	]);
+
+	if (isDataLoading) {
+		return <ProductDetailsFormSkeleton />;
+	}
 
 	// Submit handler for form submission
 	const handleSubmit = async () => {
@@ -710,9 +729,25 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 		}
 	};
 
-	// Handle Ai Generated content
+	interface AIGeneratedProductData {
+		categoryId?: string;
+		subCategoryId?: string;
+		name?: string;
+		description?: string;
+		brand?: string;
+		variantName?: string;
+		variantDescription?: string;
+		sku?: string;
+		weight?: number;
+		colors?: { color: string }[];
+		sizes?: { size: string; price: number; quantity: number; discount: number }[];
+		product_specs?: { name: string; value: string }[];
+		variant_specs?: { name: string; value: string }[];
+		keywords?: string[];
+		questions?: { question: string; answer: string }[];
+	}
 
-	const handleAIGenerate = async (generatedData: Record<string, any>) => {
+	const handleAIGenerate = async (generatedData: AIGeneratedProductData) => {
 		setIsAIGenerated(true);
 		// set categories
 		if (generatedData.categoryId) {
@@ -725,21 +760,21 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 		}
 
 		// product fields
-		form.setValue('name', generatedData.name);
-		form.setValue('description', generatedData.description);
-		form.setValue('brand', generatedData.brand);
+		if (generatedData.name) form.setValue('name', generatedData.name);
+		if (generatedData.description) form.setValue('description', generatedData.description);
+		if (generatedData.brand) form.setValue('brand', generatedData.brand);
 		form.setValue('variantName', generatedData.variantName || '');
 		form.setValue('variantDescription', generatedData.variantDescription || '');
-		form.setValue('sku', generatedData.sku);
-		form.setValue('weight', generatedData.weight);
+		if (generatedData.sku) form.setValue('sku', generatedData.sku);
+		if (generatedData.weight !== undefined) form.setValue('weight', generatedData.weight);
 
 		// arrays
-		setColors(generatedData.colors || []);
-		setSizes(generatedData.sizes || []);
-		setProductSpecs(generatedData.product_specs || []);
-		setVariantSpecs(generatedData.variant_specs || []);
-		setKeywords(generatedData.keywords || []);
-		setQuestions(generatedData.questions || []);
+		if (generatedData.colors) setColors(generatedData.colors);
+		if (generatedData.sizes) setSizes(generatedData.sizes);
+		if (generatedData.product_specs) setProductSpecs(generatedData.product_specs);
+		if (generatedData.variant_specs) setVariantSpecs(generatedData.variant_specs);
+		if (generatedData.keywords) setKeywords(generatedData.keywords);
+		if (generatedData.questions) setQuestions(generatedData.questions);
 
 		// build default image prompt
 		const promptParts = [
@@ -783,9 +818,6 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 	};
 
 	// ERROR :  GOT SOME PROBLEM in here
-	// Handle keywords input
-	const [keywords, setKeywords] = useState<string[]>(data?.keywords || []);
-
 	interface Keyword {
 		id: string;
 		text: string;
@@ -799,25 +831,6 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 	const handleDeleteKeyword = (i: number) => {
 		setKeywords(keywords.filter((_, index) => index !== i));
 	};
-
-	// Whenever colors, sizes, keywords changes we update the form values
-	useEffect(() => {
-		form.setValue('colors', colors);
-		form.setValue('sizes', sizes);
-		form.setValue('keywords', keywords);
-		form.setValue('product_specs', productSpecs);
-		form.setValue('variant_specs', variantSpecs);
-		form.setValue('questions', questions);
-	}, [
-		colors,
-		sizes,
-		keywords,
-		productSpecs,
-		questions,
-		variantSpecs,
-		data,
-		form,
-	]);
 
 	//Countries options
 	type CountryOption = {

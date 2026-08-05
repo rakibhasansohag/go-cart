@@ -13,10 +13,10 @@ import { queryKeys } from '@/lib/query-keys';
 
 interface ProductsTableProps {
 	storeUrl: string;
-	initialProducts: any[];
-	categories: any[];
-	offerTags: any[];
-	countries: any[];
+	initialProducts: Awaited<ReturnType<typeof getAllStoreProducts>>['products'];
+	categories: Awaited<ReturnType<typeof getAllCategoriesWithSubs>>;
+	offerTags: Awaited<ReturnType<typeof getAllOfferTags>>;
+	countries: Awaited<ReturnType<typeof getAllCountries>>;
 }
 
 export default function ProductsTable({

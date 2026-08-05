@@ -9,7 +9,7 @@ import { columns } from './columns';
 import { queryKeys } from '@/lib/query-keys';
 
 interface OfferTagsTableProps {
-	initialOfferTags?: any[];
+	initialOfferTags?: Awaited<ReturnType<typeof getAllOfferTags>>;
 }
 
 export default function OfferTagsTable({ initialOfferTags }: OfferTagsTableProps) {

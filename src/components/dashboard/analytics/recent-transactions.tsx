@@ -69,7 +69,7 @@ export default function RecentTransactions({
 												${order.total.toFixed(2)}
 											</p>
 										</div>
-										<OrderStatusTag status={order.status as any} />
+										<OrderStatusTag status={order.status as unknown as import('@/lib/types').OrderStatus} />
 									</div>
 								</div>
 							);

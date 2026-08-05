@@ -33,7 +33,7 @@ function QuickStockUpdater({ item }: { item: InventoryItem }) {
 				queryKey: queryKeys.dashboard.products(item.storeUrl),
 			});
 		},
-		onError: (error: any) => {
+		onError: (error: Error) => {
 			toast.error(error.message || 'Failed to update stock');
 		},
 	});
