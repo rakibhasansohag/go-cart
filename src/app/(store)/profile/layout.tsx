@@ -2,6 +2,9 @@ import { ReactNode } from 'react';
 import Header from '@/components/store/layout/header/header';
 import ProfileSidebar from '@/components/store/layout/profile-sidebar/sidebar';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export default function ProfileLayout({ children }: { children: ReactNode }) {
 	return (
 		<div className='min-h-screen bg-f5 '>
