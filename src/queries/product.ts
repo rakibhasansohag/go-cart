@@ -348,8 +348,8 @@ const handleProductCreate = async (
 		freeShipping: product.freeShippingForAllCountries
 			? undefined
 			: product.freeShippingCountriesIds &&
-			  product.freeShippingCountriesIds.length > 0
-			? {
+				product.freeShippingCountriesIds.length > 0
+				? {
 					create: {
 						eligibaleCountries: {
 							create: product.freeShippingCountriesIds.map((country) => ({
@@ -357,8 +357,8 @@ const handleProductCreate = async (
 							})),
 						},
 					},
-			  }
-			: undefined,
+				}
+				: undefined,
 		createdAt: product.createdAt,
 		updatedAt: product.updatedAt,
 	};
@@ -623,9 +623,9 @@ export const getAllStoreProducts = async (
 			take: limit + 1,
 			...(cursor
 				? {
-						cursor: { id: cursor },
-						skip: 1,
-				  }
+					cursor: { id: cursor },
+					skip: 1,
+				}
 				: {}),
 			orderBy: { createdAt: 'desc' },
 			include: {
@@ -883,9 +883,9 @@ export const getProducts = async (
 		take: limit + 1,
 		...(cursor
 			? {
-					cursor: { id: cursor },
-					skip: 1,
-			  }
+				cursor: { id: cursor },
+				skip: 1,
+			}
 			: {}),
 		include: {
 			variants: {
@@ -1117,12 +1117,12 @@ export const retrieveProductDetails = async (
 	};
 };
 
-const getUserCountry =  async () => {
+const getUserCountry = async () => {
 	const userCountryCookie = await getCookie('userCountry', { cookies }) || '';
 	const defaultCountry = { name: 'United States', code: 'US' };
 
 	try {
-		const parsedCountry =  JSON.parse(userCountryCookie);
+		const parsedCountry = JSON.parse(userCountryCookie);
 		if (
 			parsedCountry &&
 			typeof parsedCountry === 'object' &&
@@ -1424,8 +1424,8 @@ export const getProductFilteredReviews = async (
 		sort && sort.orderBy === 'latest'
 			? { createdAt: 'desc' }
 			: sort && sort.orderBy === 'oldest'
-			? { createdAt: 'asc' }
-			: { rating: 'desc' };
+				? { createdAt: 'asc' }
+				: { rating: 'desc' };
 
 	// Calculate pagination parameters
 	const skip = (page - 1) * pageSize;

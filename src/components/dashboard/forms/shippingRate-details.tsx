@@ -95,7 +95,8 @@ const ShippingRateDetails: FC<ShippingRateDetailsProps> = ({
 	const isEditing = Boolean(data?.shippingRate?.id);
 
 	const upsertMutation = useMutation({
-		mutationFn: (rateData: any) => upsertShippingRate(storeUrl, rateData),
+		mutationFn: (rateData: z.infer<typeof ShippingRateFormSchema>) =>
+			upsertShippingRate(storeUrl, rateData),
 		onSuccess: (response) => {
 			if (response?.id) {
 				toast.success('Shipping rates updated successfully !');
@@ -105,8 +106,8 @@ const ShippingRateDetails: FC<ShippingRateDetailsProps> = ({
 				});
 			}
 		},
-		onError: (error: any) => {
-			toast.error(error.message);
+		onError: (error) => {
+			toast.error(error instanceof Error ? error.message : String(error));
 		},
 	});
 

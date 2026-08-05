@@ -139,7 +139,7 @@ Generate NOW:`;
 		];
 
 		let text = '';
-		let lastError: any = null;
+		let lastError: Error | null = null;
 
 		for (const modelName of MODELS_TO_TRY) {
 			try {
@@ -148,12 +148,13 @@ Generate NOW:`;
 				const response = await result.response;
 				text = response.text();
 				if (text) break;
-			} catch (err: any) {
+			} catch (err) {
+				const msg = err instanceof Error ? err.message : String(err);
 				console.warn(
 					`Gemini model ${modelName} failed or quota limit hit:`,
-					err?.message,
+					msg,
 				);
-				lastError = err;
+				lastError = err instanceof Error ? err : new Error(msg);
 			}
 		}
 
@@ -184,12 +185,13 @@ Generate NOW:`;
 			success: true,
 			data: productData,
 		});
-	} catch (error: any) {
+	} catch (error) {
 		console.error('Error generating product:', error);
+		const message = error instanceof Error ? error.message : String(error);
 		return NextResponse.json(
 			{
 				error: 'Failed to generate product details',
-				details: error.message,
+				details: message,
 			},
 			{ status: 500 },
 		);

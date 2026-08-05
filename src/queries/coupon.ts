@@ -329,7 +329,7 @@ export const applyCoupon = async (
 			message: `Coupon "${coupon.code}" (${coupon.discount}% OFF) applied successfully to ${scopeLabel}!`,
 			cart: updatedCart,
 		};
-	} catch (error: any) {
+	} catch (error) {
 		throw error;
 	}
 };
@@ -465,8 +465,9 @@ export const applyCouponToOrder = async (
 			message: `Coupon "${coupon.code}" (${coupon.discount}% OFF) applied successfully!`,
 			order: updatedOrder,
 		};
-	} catch (error: any) {
-		throw new Error(error.message || 'Failed to apply coupon to order.');
+	} catch (error) {
+		const message = error instanceof Error ? error.message : 'Failed to apply coupon to order.';
+		throw new Error(message);
 	}
 };
 
@@ -791,7 +792,7 @@ export const upsertAdminCoupon = async (couponData: {
 			where: { id: couponId },
 		});
 
-		const payload: any = {
+		const payload = {
 			code: cleanCode,
 			discount: Number(couponData.discount),
 			maxUses: Number(couponData.maxUses ?? 0),
@@ -814,7 +815,8 @@ export const upsertAdminCoupon = async (couponData: {
 				},
 			});
 		}
-	} catch (error: any) {
-		throw new Error(error.message || 'Failed to save admin coupon.');
+	} catch (error) {
+		const message = error instanceof Error ? error.message : 'Failed to save admin coupon.';
+		throw new Error(message);
 	}
 };

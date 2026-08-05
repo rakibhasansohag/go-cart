@@ -188,8 +188,8 @@ const CartProduct: FC<Props> = ({
 			toast.success(data.message);
 			queryClient.invalidateQueries({ queryKey: queryKeys.profile.wishlist(1) });
 		},
-		onError: (error: any) => {
-			toast.error(error.message || error.toString());
+		onError: (error) => {
+			toast.error(error instanceof Error ? error.message : String(error));
 		},
 	});
 

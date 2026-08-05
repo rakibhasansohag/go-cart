@@ -83,7 +83,7 @@ const OfferTagDetails: FC<OfferTagDetailsProps> = ({ data }) => {
 				router.push('/dashboard/admin/offer-tags');
 			}
 		},
-		onError: (error: any) => {
+		onError: (error) => {
 			toast.error('Oops!', {
 				description: error.toString(),
 			});

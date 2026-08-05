@@ -39,7 +39,7 @@ const ShippingAddressCard: FC<Props> = ({
 				zip_code: address.zip_code,
 
 				countryId:
-					(address as any).countryId ?? (address as any).country?.id ?? '',
+					address.countryId ?? address.country?.id ?? '',
 				default: true,
 			};
 

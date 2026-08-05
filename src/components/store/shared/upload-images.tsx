@@ -36,8 +36,10 @@ const ImageUploadStore: FC<ImageUploadProps> = ({
 		return null;
 	}
 
-	const onUpload = (result: any) => {
-		onChange(result.info.secure_url);
+	const onUpload = (result: { info?: { secure_url?: string } | string }) => {
+		if (typeof result.info === 'object' && result.info?.secure_url) {
+			onChange(result.info.secure_url);
+		}
 	};
 	return (
 		<div>
@@ -100,7 +102,7 @@ const ImageUploadStore: FC<ImageUploadProps> = ({
 								type='button'
 								variant='unstyled'
 								disabled={disabled}
-								ref={btnRef as any}
+								ref={btnRef}
 								onClick={onClick}
 								className='hidden'
 							/>

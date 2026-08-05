@@ -74,7 +74,8 @@ const StoreDefaultShippingDetails: FC<StoreDefaultShippingDetailsProps> = ({
 	const isEditing = Boolean(data?.id);
 
 	const updateMutation = useMutation({
-		mutationFn: (values: any) => updateStoreDefaultShippingDetails(storeUrl, values),
+		mutationFn: (values: z.infer<typeof StoreDefaultShippingFormSchema>) =>
+			updateStoreDefaultShippingDetails(storeUrl, values),
 		onSuccess: (response) => {
 			if (response?.id) {
 				toast.success('Store Default shipping details has been updated.');
@@ -84,9 +85,9 @@ const StoreDefaultShippingDetails: FC<StoreDefaultShippingDetailsProps> = ({
 				});
 			}
 		},
-		onError: (error: any) => {
+		onError: (error) => {
 			toast.error('Oops!', {
-				description: error.toString(),
+				description: String(error),
 			});
 		},
 	});

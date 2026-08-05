@@ -54,8 +54,8 @@ export async function POST() {
 
 		if (bulkResponse.errors) {
 			const errorDetails = bulkResponse.items
-				.filter((item: any) => item.index?.error)
-				.map((item: any) => item.index.error);
+				.filter((item: { index?: { error?: unknown } }) => item.index?.error)
+				.map((item: { index?: { error?: unknown } }) => item.index?.error);
 
 			console.error('Elasticsearch errors:', errorDetails);
 
@@ -81,8 +81,9 @@ export async function POST() {
 			},
 			{ status: 200 },
 		);
-	} catch (error: any) {
+	} catch (error) {
 		console.error('Error indexing products:', error);
-		return NextResponse.json({ message: error.message }, { status: 500 });
+		const message = error instanceof Error ? error.message : 'Error indexing products';
+		return NextResponse.json({ message }, { status: 500 });
 	}
 }

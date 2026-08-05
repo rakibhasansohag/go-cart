@@ -223,7 +223,7 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 			// Force Jodit popup containers to attach to document.body instead of
 			// the nearest position:fixed ancestor (Radix Dialog), which would
 			// cause transform-offset miscalculation and misaligned dropdowns.
-			popupRoot: typeof document !== 'undefined' ? document.body : null,
+			popupRoot: (typeof document !== 'undefined' ? document.body : undefined) as unknown as HTMLElement,
 		}),
 		[currentTheme],
 	);
@@ -284,7 +284,7 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 	>(data?.questions || [{ question: '', answer: '' }]);
 
 	// Form hook for managing form state and validation
-	const form = useForm<z.infer<typeof ProductFormSchema>>({
+	const form = useForm({
 		mode: 'onChange', // Form validation mode
 		resolver: zodResolver(ProductFormSchema), // Resolver for form validation
 		defaultValues: {
@@ -686,7 +686,10 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 					sku: values.sku,
 					weight: values.weight,
 					colors: values.colors,
-					sizes: values.sizes,
+					sizes: values.sizes.map((s) => ({
+						...s,
+						discount: s.discount ?? 0,
+					})),
 					product_specs: values.product_specs,
 					variant_specs: values.variant_specs,
 					keywords: values.keywords,
@@ -843,7 +846,7 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 
 	const handleDeleteCountryFreeShipping = (index: number) => {
 		const currentValues = form.getValues().freeShippingCountriesIds;
-		const updatedValues = currentValues.filter((_, i) => i !== index);
+		const updatedValues = (currentValues || []).filter((_, i) => i !== index);
 		form.setValue('freeShippingCountriesIds', updatedValues);
 	};
 
@@ -1086,7 +1089,7 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 													<FormControl>
 														<JoditEditor
 															ref={productDescEditor}
-															config={config}
+															config={config as Record<string, unknown>}
 															value={form.getValues().description}
 															onBlur={(content) => {
 																form.setValue('description', content);
@@ -1109,7 +1112,7 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 													<FormControl>
 														<JoditEditor
 															ref={variantDescEditor}
-															config={config}
+															config={config as Record<string, unknown>}
 															value={form.getValues().variantDescription || ''}
 															onBlur={(content) => {
 																form.setValue('variantDescription', content);
@@ -1682,7 +1685,7 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 																			'w-full rounded-md px-2 py-1 text-sm'
 																		}
 																		options={countryOptions}
-																		value={field.value}
+																		value={field.value ?? []}
 																		onChange={(selected: CountryOption[]) => {
 																			field.onChange(selected);
 																		}}
@@ -1698,17 +1701,18 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 													List of countries you offer free shipping for this
 													product:&nbsp;
 													{(!form.getValues().freeShippingCountriesIds ||
-														form.getValues().freeShippingCountriesIds.length ===
+														form.getValues().freeShippingCountriesIds?.length ===
 														0) &&
 														'None'}
 												</p>
 
 												{/* Free shipping countries chips */}
 												<div className='flex flex-wrap gap-2 mt-2'>
-													{form.getValues().freeShippingCountriesIds?.length ? (
+													{form.getValues().freeShippingCountriesIds &&
+													form.getValues().freeShippingCountriesIds!.length > 0 ? (
 														form
 															.getValues()
-															.freeShippingCountriesIds.map(
+															.freeShippingCountriesIds!.map(
 																(country, index) => (
 																	<div
 																		key={`${country?.value ?? country?.id ?? index

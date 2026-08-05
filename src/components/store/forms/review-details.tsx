@@ -52,15 +52,10 @@ export default function ReviewDetails({
 	// State for sizes
 	const [sizes, setSizes] = useState<{ name: string; value: string }[]>([]);
 
-	const resolver = zodResolver(AddReviewSchema) as unknown as Resolver<
-		AddReviewForm,
-		any
-	>;
-
 	// Form hook for managing form state and validation
 	const form = useForm<z.infer<typeof AddReviewSchema>>({
 		mode: 'onChange', // Form validation mode
-		resolver,
+		resolver: zodResolver(AddReviewSchema),
 		defaultValues: {
 			// Setting default form values from data (if available)
 			variantName: data?.variant || activeVariant.variantName,
@@ -118,8 +113,8 @@ export default function ReviewDetails({
 				toast.error(response.message);
 			}
 		},
-		onError: (error: any) => {
-			toast.error(error?.toString() ?? 'Something went wrong');
+		onError: (error) => {
+			toast.error(error instanceof Error ? error.message : 'Something went wrong');
 		},
 	});
 

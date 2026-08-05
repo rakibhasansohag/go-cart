@@ -27,10 +27,11 @@ async function generateWithGoogle(
 
 	const images: string[] = [];
 	// helper to extract inline images from a chunk of text
-	const extractInlineImagesFromChunk = (chunk: any) => {
+	const extractInlineImagesFromChunk = (chunk: unknown) => {
 		const found: string[] = [];
 		try {
-			const candidates = chunk?.candidates ?? [];
+			const typedChunk = chunk as { candidates?: { content?: { parts?: { inlineData?: { data?: string; mimeType?: string }; content?: string }[] } }[] };
+			const candidates = typedChunk?.candidates ?? [];
 			for (const cand of candidates) {
 				const parts = cand?.content?.parts ?? [];
 				for (const p of parts) {
@@ -120,8 +121,9 @@ export async function POST(req: NextRequest) {
 						fallback: false,
 					});
 				}
-			} catch (err: any) {
-				console.warn('Google Gemini image generation failed, falling back to Pollinations AI...', err?.message);
+			} catch (err) {
+				const msg = err instanceof Error ? err.message : String(err);
+				console.warn('Google Gemini image generation failed, falling back to Pollinations AI...', msg);
 			}
 		}
 
@@ -142,10 +144,11 @@ export async function POST(req: NextRequest) {
 			provider: 'fallback',
 			fallback: true,
 		});
-	} catch (err: any) {
+	} catch (err) {
 		console.error('generate-image internal error:', err);
+		const message = err instanceof Error ? err.message : 'failed to generate images';
 		return NextResponse.json(
-			{ error: err?.message || 'failed to generate images' },
+			{ error: message },
 			{ status: 500 },
 		);
 	}

@@ -10,7 +10,7 @@ import {
 } from '@/lib/types';
 
 import { currentUser } from '@clerk/nextjs/server';
-import { Store } from '@prisma/client';
+import { Prisma, Store } from '@prisma/client';
 import { getRatingStatistics } from './product';
 
 /**
@@ -452,7 +452,7 @@ export const getProductFilteredReviews = async (
   page: number = 1,
   pageSize: number = 4,
 ) => {
-  const reviewFilter: any = { productId };
+  const reviewFilter: Prisma.ReviewWhereInput = { productId };
 
   if (filters.rating) {
     const rating = filters.rating;

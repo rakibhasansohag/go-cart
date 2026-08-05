@@ -183,7 +183,7 @@ const fetchUserPaymentsFromDb = unstable_cache(
 		pageSize: number,
 	) => {
 		const skip = (page - 1) * pageSize;
-		const whereClause: { AND: Prisma.PaymentWhereInput[] } = {
+		const whereClause: { AND: Prisma.PaymentDetailsWhereInput[] } = {
 			AND: [
 				{
 					userId,

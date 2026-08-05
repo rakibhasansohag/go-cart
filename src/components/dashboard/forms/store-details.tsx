@@ -99,7 +99,7 @@ const StoreDetails: FC<StoreDetailsProps> = ({ data }) => {
 				router.push(`/dashboard/seller/stores/`);
 			}
 		},
-		onError: (error: any) => {
+		onError: (error) => {
 			console.dir(error);
 			toast.error(error.toString());
 		},

@@ -15,6 +15,19 @@ import {
 } from '@/components/ui/select';
 import { motion } from 'framer-motion';
 
+declare global {
+	interface Window {
+		puter?: {
+			ai?: {
+				txt2img?: (
+					prompt: string,
+					options?: { model: string },
+				) => Promise<{ src?: string } | HTMLImageElement>;
+			};
+		};
+	}
+}
+
 interface Props {
 	initialPrompt?: string;
 	productDetails: {
@@ -126,9 +139,10 @@ const ImagePromptSection: FC<Props> = ({
 			if (!res.ok) throw new Error(json?.error || json?.details || 'Failed');
 			setPrompt(json.imagePrompt || '');
 			toast.success('Image prompt generated');
-		} catch (err: any) {
+		} catch (err) {
 			console.error(err);
-			toast.error(err?.message || 'Failed to generate prompt');
+			const message = err instanceof Error ? err.message : 'Failed to generate prompt';
+			toast.error(message);
 		} finally {
 			setIsGeneratingPrompt(false);
 		}
@@ -150,7 +164,7 @@ const ImagePromptSection: FC<Props> = ({
 		}, 300000); // 5 minute timeout
 
 		try {
-			if (!(window as any).puter) {
+			if (!window.puter) {
 				const script = document.createElement('script');
 				script.src = 'https://js.puter.com/v2/';
 				script.async = true;
@@ -165,8 +179,8 @@ const ImagePromptSection: FC<Props> = ({
 				await scriptLoadPromise;
 			}
 
-			const puter = (window as any).puter;
-			if (!puter || !puter.ai) {
+			const puter = window.puter;
+			if (!puter || !puter.ai || !puter.ai.txt2img) {
 				throw new Error('Puter.js not available');
 			}
 
@@ -202,7 +216,7 @@ const ImagePromptSection: FC<Props> = ({
 						setGeneratedImages([...images]);
 						console.log(`Image ${i + 1} displayed`);
 					}
-				} catch (err: any) {
+				} catch (err) {
 					console.error(`Image ${i + 1} error:`, err);
 					toast.error(`Image ${i + 1} failed`);
 				}
@@ -218,7 +232,7 @@ const ImagePromptSection: FC<Props> = ({
 			images.forEach((img) => (map[img.url] = false));
 			setSelectedMap(map);
 			toast.success(`${images.length} images generated!`);
-		} catch (err: any) {
+		} catch (err) {
 			clearTimeout(timeoutId);
 			console.warn('Puter error, falling back to AI generator:', err);
 			toast.info('Switching to AI image generator...');
@@ -268,7 +282,7 @@ const ImagePromptSection: FC<Props> = ({
 						setGeneratedImages([...images]);
 						console.log(`Image ${i + 1} displayed`);
 					}
-				} catch (err: any) {
+				} catch (err) {
 					console.error(`Image ${i + 1} error:`, err);
 				}
 			}
@@ -281,9 +295,10 @@ const ImagePromptSection: FC<Props> = ({
 			images.forEach((img) => (map[img.url] = false));
 			setSelectedMap(map);
 			toast.success(`${images.length} images generated!`);
-		} catch (err: any) {
+		} catch (err) {
 			console.error(err);
-			toast.error(err?.message || 'Failed to generate images');
+			const message = err instanceof Error ? err.message : 'Failed to generate images';
+			toast.error(message);
 		} finally {
 			setIsGeneratingImages(false);
 		}
