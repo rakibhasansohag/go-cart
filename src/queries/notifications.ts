@@ -157,7 +157,7 @@ export async function getAdminDeliveryHealth() {
 		throw new Error('Admin privileges required.');
 	}
 
-	const [sentCount, pendingCount, failedCount, failedOutbox, automationRuns] =
+	const [sentCount, pendingCount, failedCount, failedOutbox, sentOutbox, automationRuns] =
 		await Promise.all([
 			db.emailOutbox.count({ where: { status: 'SENT' } }),
 			db.emailOutbox.count({ where: { status: 'PENDING' } }),
@@ -169,17 +169,27 @@ export async function getAdminDeliveryHealth() {
 					sourceEvent: { select: { eventType: true, aggregateType: true } },
 				},
 				orderBy: { updatedAt: 'desc' },
-				take: 20,
+				take: 50,
+			}),
+			db.emailOutbox.findMany({
+				where: { status: 'SENT' },
+				include: {
+					recipient: { select: { name: true, email: true } },
+					sourceEvent: { select: { eventType: true, aggregateType: true } },
+				},
+				orderBy: { sentAt: 'desc' },
+				take: 50,
 			}),
 			db.automationRun.findMany({
 				orderBy: { startedAt: 'desc' },
-				take: 10,
+				take: 15,
 			}),
 		]);
 
 	return {
 		stats: { sentCount, pendingCount, failedCount },
 		failedOutbox,
+		sentOutbox,
 		automationRuns,
 	};
 }
@@ -216,4 +226,42 @@ export async function retryOutboxJob(outboxId: string) {
 
 	return updated;
 }
+
+export async function retryMultipleOutboxJobs(outboxIds: string[]) {
+	const { userId } = await auth();
+	if (!userId) throw new Error('Unauthenticated.');
+	const user = await db.user.findUnique({
+		where: { id: userId },
+		select: { role: true },
+	});
+	if (user?.role !== 'ADMIN') {
+		throw new Error('Admin privileges required.');
+	}
+
+	if (!outboxIds.length) return { updatedCount: 0 };
+
+	const items = await db.emailOutbox.findMany({
+		where: { id: { in: outboxIds } },
+		select: { id: true, sourceEventId: true },
+	});
+
+	await db.emailOutbox.updateMany({
+		where: { id: { in: outboxIds } },
+		data: {
+			status: 'PENDING',
+			nextAttemptAt: new Date(),
+			lastError: null,
+		},
+	});
+
+	try {
+		const { scheduleEmailOutboxDispatch } = await import('@/lib/email/schedule');
+		scheduleEmailOutboxDispatch(items.map((i) => i.sourceEventId));
+	} catch (err) {
+		console.error('Outbox batch dispatch retry error:', err);
+	}
+
+	return { updatedCount: items.length };
+}
+
 
