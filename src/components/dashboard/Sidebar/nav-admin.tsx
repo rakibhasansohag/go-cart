@@ -18,6 +18,7 @@ import { getAllOfferTags } from '@/queries/offer-tag';
 import { getAllStores } from '@/queries/store';
 import { getEmailTemplates } from '@/queries/email-templates';
 import { getAdminReturns } from '@/queries/returns';
+import { getAdminDeliveryHealth } from '@/queries/notifications';
 
 interface SidebarNavAdminProps {
 	menuLinks: DashboardSidebarMenuInterface[];
@@ -79,6 +80,12 @@ export default function SidebarNavAdmin({
 				queryKey: queryKeys.dashboard.emailTemplates(),
 				queryFn: getEmailTemplates,
 				staleTime: 5 * 60 * 1000,
+			});
+		} else if (link === '/dashboard/admin/delivery-health') {
+			queryClient.prefetchQuery({
+				queryKey: ['admin', 'delivery-health'],
+				queryFn: getAdminDeliveryHealth,
+				staleTime: 30 * 1000,
 			});
 		}
 	};

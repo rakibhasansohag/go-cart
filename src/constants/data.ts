@@ -46,6 +46,11 @@ export const adminDashboardSidebarOptions: DashboardSidebarMenuInterface[] = [
 		icon: 'settings',
 		link: '/dashboard/admin/email-templates',
 	},
+	{
+		label: 'Delivery Health',
+		icon: 'shipping',
+		link: '/dashboard/admin/delivery-health',
+	},
 ];
 
 export const SellerDashboardSidebarOptions: DashboardSidebarMenuInterface[] = [
