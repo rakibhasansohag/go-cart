@@ -50,14 +50,18 @@ export type TransitionReturnRequestInput = {
 	note?: string;
 };
 
+export type ReturnItemDisposition = 'RESTOCKABLE' | 'DAMAGED' | 'DISPOSED' | 'REJECTED';
+
 export type ReconcileReturnInventoryInput = {
 	returnRequestId: string;
 	items: Array<{
 		returnItemId: string;
 		restockable: boolean;
+		disposition?: ReturnItemDisposition;
 		quantity?: number;
 	}>;
 };
+
 
 const RETURN_TRANSACTION_OPTIONS = {
 	maxWait: 10_000,
@@ -605,11 +609,11 @@ export async function createReturnRequest(input: CreateReturnRequestInput) {
 					evidence:
 						evidence.length > 0
 							? {
-									create: evidence.map((file) => ({
-										...file,
-										uploadedById: userId,
-									})),
-								}
+								create: evidence.map((file) => ({
+									...file,
+									uploadedById: userId,
+								})),
+							}
 							: undefined,
 				},
 				include: {
@@ -905,7 +909,7 @@ export async function reconcileReturnInventory(
 		}
 
 		const decisions = new Map(input.items.map((item) => [item.returnItemId, item]));
-		const deltas: Array<{ returnItemId: string; sizeId: string; quantity: number }> = [];
+		const deltas: Array<{ returnItemId: string; sizeId: string; quantity: number; disposition: ReturnItemDisposition }> = [];
 		for (const item of request.items) {
 			const decision = decisions.get(item.id);
 			if (!decision) continue;
@@ -914,14 +918,16 @@ export async function reconcileReturnInventory(
 			if (!Number.isInteger(requested) || requested < 0 || requested > received) {
 				throw new Error('Restock quantities must be whole numbers within the received quantity.');
 			}
-			const target = decision.restockable ? requested : 0;
+			const disposition: ReturnItemDisposition = decision.disposition ?? (decision.restockable ? 'RESTOCKABLE' : 'DAMAGED');
+			const isRestockable = decision.restockable && disposition === 'RESTOCKABLE';
+			const target = isRestockable ? requested : 0;
 			const delta = target - item.restockedQuantity;
 			if (delta < 0) throw new Error('Restocked quantities cannot be reduced.');
-			if (delta > 0) deltas.push({ returnItemId: item.id, sizeId: item.orderItem.sizeId, quantity: delta });
+			if (delta > 0) deltas.push({ returnItemId: item.id, sizeId: item.orderItem.sizeId, quantity: delta, disposition });
 			await tx.returnItem.update({
 				where: { id: item.id },
 				data: {
-					restockable: decision.restockable,
+					restockable: isRestockable,
 					receivedQuantity: received,
 					restockedQuantity: item.restockedQuantity + delta,
 				},
@@ -970,9 +976,10 @@ export async function reconcileReturnInventory(
 				actorRole: 'ADMIN',
 				actorId: userId,
 				eventType: 'return.inventory_reconciled',
-				metadata: { deltas },
+				metadata: { deltas, dispositions: input.items.map((item) => ({ returnItemId: item.returnItemId, restockable: item.restockable, disposition: item.disposition })) },
 			},
 		});
 		return { returnRequestId: request.id, restocked: deltas.reduce((sum, delta) => sum + delta.quantity, 0), deltas };
 	});
 }
+

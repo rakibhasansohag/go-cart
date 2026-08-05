@@ -587,7 +587,7 @@ before marking the phase complete; PayPal refunds remain open.
   - [x] Restock only received and restockable returned quantities through an admin-only, idempotent reconciliation action
   - [x] Update fully returned/refunded item, group, and overall order statuses consistently; preserve delivered aggregate status for partial returns
   - [x] Aggregate terminal partial-return quantities across requests and finalize an order line only when its full quantity is refunded or exchanged
-  - [ ] Handle damaged-item disposition and rejected-return inventory outcomes
+  - [x] Handle damaged-item disposition and rejected-return inventory outcomes
   - [x] Refresh admin return, inventory, and order caches after reconciliation
   - **Test**: Unit coverage for existing return transitions passes; a live partial/full restock scenario remains before phase completion
 
