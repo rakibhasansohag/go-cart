@@ -145,3 +145,75 @@ export async function updateNotificationEmailPreference(input: unknown) {
 		},
 	});
 }
+
+export async function getAdminDeliveryHealth() {
+	const { userId } = await auth();
+	if (!userId) throw new Error('Unauthenticated.');
+	const user = await db.user.findUnique({
+		where: { id: userId },
+		select: { role: true },
+	});
+	if (user?.role !== 'ADMIN') {
+		throw new Error('Admin privileges required.');
+	}
+
+	const [sentCount, pendingCount, failedCount, failedOutbox, automationRuns] =
+		await Promise.all([
+			db.emailOutbox.count({ where: { status: 'SENT' } }),
+			db.emailOutbox.count({ where: { status: 'PENDING' } }),
+			db.emailOutbox.count({ where: { status: 'FAILED' } }),
+			db.emailOutbox.findMany({
+				where: { status: { in: ['FAILED', 'PENDING'] } },
+				include: {
+					recipient: { select: { name: true, email: true } },
+					sourceEvent: { select: { eventType: true, aggregateType: true } },
+				},
+				orderBy: { updatedAt: 'desc' },
+				take: 20,
+			}),
+			db.automationRun.findMany({
+				orderBy: { startedAt: 'desc' },
+				take: 10,
+			}),
+		]);
+
+	return {
+		stats: { sentCount, pendingCount, failedCount },
+		failedOutbox,
+		automationRuns,
+	};
+}
+
+export async function retryOutboxJob(outboxId: string) {
+	const { userId } = await auth();
+	if (!userId) throw new Error('Unauthenticated.');
+	const user = await db.user.findUnique({
+		where: { id: userId },
+		select: { role: true },
+	});
+	if (user?.role !== 'ADMIN') {
+		throw new Error('Admin privileges required.');
+	}
+
+	const item = await db.emailOutbox.findUnique({ where: { id: outboxId } });
+	if (!item) throw new Error('Outbox job not found.');
+
+	const updated = await db.emailOutbox.update({
+		where: { id: outboxId },
+		data: {
+			status: 'PENDING',
+			nextAttemptAt: new Date(),
+			lastError: null,
+		},
+	});
+
+	try {
+		const { scheduleEmailOutboxDispatch } = await import('@/lib/email/schedule');
+		scheduleEmailOutboxDispatch([updated.sourceEventId]);
+	} catch (err) {
+		console.error('Outbox dispatch retry error:', err);
+	}
+
+	return updated;
+}
+

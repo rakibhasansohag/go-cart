@@ -626,15 +626,15 @@ post-purchase workflow.
   - [x] Prefetch tracking data and invalidate affected order/tracking queries after updates
   - **Test**: Customers can track every shipment associated with their order
 
-- [ ] **Phase 11.4 — Notification coverage and operations**
-  - [ ] Reuse the Phase 10.3.3 event/outbox pipeline for shipment, delivery
+- [x] **Phase 11.4 — Notification coverage and operations**
+  - [x] Reuse the Phase 10.3.3 event/outbox pipeline for shipment, delivery
         attempts, return deadlines, dispute escalation, refund, exchange, and
         inventory-reconciliation events
-  - [ ] Add an admin delivery-health view for pending/failed email jobs,
+  - [x] Add an admin delivery-health view for pending/failed email jobs,
         automation failures, retries, and notification audit records
-  - [ ] Add retention rules for notification bodies and delivery logs without
+  - [x] Add retention rules for notification bodies and delivery logs without
         deleting immutable business audit events
-  - [ ] Document how to replace Gmail SMTP or the database outbox with a
+  - [x] Document how to replace Gmail SMTP or the database outbox with a
         dedicated provider/queue without changing domain mutation code
   - **Test**: Each event reaches only its intended customer, seller, or admin
     once, and operational failures can be retried and audited safely
