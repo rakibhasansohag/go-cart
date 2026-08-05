@@ -78,18 +78,22 @@ export default function RootLayout({
 }>) {
 	const publishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
 
-	return (
-		<ClerkProvider publishableKey={publishableKey}>
-			<html lang='en' suppressHydrationWarning>
-				<head>
-					<link rel='icon' type='image/svg+xml' href='/goCart.svg' />
-				</head>
-				<body
-					className={`${geistSans.variable} ${geistMono.variable} ${barlowFont.variable} antialiased scroll-smooth`}
-				>
-					<ClientProviders>{children}</ClientProviders>
-				</body>
-			</html>
-		</ClerkProvider>
+	const content = (
+		<html lang='en' suppressHydrationWarning>
+			<head>
+				<link rel='icon' type='image/svg+xml' href='/goCart.svg' />
+			</head>
+			<body
+				className={`${geistSans.variable} ${geistMono.variable} ${barlowFont.variable} antialiased scroll-smooth`}
+			>
+				<ClientProviders>{children}</ClientProviders>
+			</body>
+		</html>
 	);
+
+	if (!publishableKey) {
+		return content;
+	}
+
+	return <ClerkProvider publishableKey={publishableKey}>{content}</ClerkProvider>;
 }
