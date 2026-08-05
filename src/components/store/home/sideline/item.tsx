@@ -5,7 +5,7 @@ import { FC, ReactNode } from 'react';
 
 interface Props {
 	link: string;
-	image: StaticImageData;
+	image: StaticImageData | string;
 	children?: ReactNode;
 	className?: string;
 	arrowClassName?: string;
