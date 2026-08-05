@@ -361,7 +361,7 @@ summary poll remains the free-tier fallback.
       bounded batches and advances each package by at most one valid step
 - [x] Keep automation and recovery as separate secured jobs/routes: one advances
       due demo fulfillment; the other retries pending/failed email outbox jobs
-- [ ] Run automatic steps through the exact server transition service used by
+- [x] Run automatic steps through the exact server transition service used by
       sellers, logistics, and admins, with actor/source recorded as `SYSTEM`
 - [x] In demo mode, simulate both sides of the journey in order: seller
       preparation/handoff, platform receipt/dispatch, and logistics delivery; still
@@ -475,20 +475,20 @@ closed and reopened.
 - [x] Refine the reusable master layout with balanced outer spacing, padded
       transaction-detail cells, and customer-safe payment references while
       retaining complete provider identifiers only in internal payment records
-- [ ] Seed a polished default template for every supported event family: account,
+- [x] Seed a polished default template for every supported event family: account,
       order/payment, package/fulfillment, shipment/delivery attempt, cancellation,
       return/dispute, exchange, refund, and admin operational alert
-- [ ] Add admin-only email-template management keyed by domain event and locale,
+- [x] Add admin-only email-template management keyed by domain event and locale,
       including subject, preheader, body, CTA label, enabled state, allowed variables,
       plain-text fallback, draft/published version, preview, and test-send
 - [x] Reuse the installed Jodit React editor for the editable body content only;
       keep the MJML shell, responsive grid, GoCart header/footer, security rules, and
       critical transaction fields controlled by the application
-- [ ] Load Jodit client-side, use a restrained email-safe toolbar, insert allowed
+- [x] Load Jodit client-side, use a restrained email-safe toolbar, insert allowed
       variables from a picker, and provide a polished admin layout with template
       list/search/filter, autosaved draft indicator, desktop/mobile preview tabs,
       send-test dialog, publish confirmation, and clear validation feedback
-- [ ] Support three explicit admin actions for every event template: **Use
+- [x] Support three explicit admin actions for every event template: **Use
       default**, **Customize default**, and **Reset to default**; default templates
       remain immutable and cannot be deleted
 - [x] Store only the custom override/version in the database. When no published
@@ -497,10 +497,10 @@ closed and reopened.
 - [x] Sanitize Jodit HTML before storage and rendering, reject scripts, unsafe
       URLs and unknown variables, compile the final MJML only on the server, and
       reject publishing when compilation reports an error
-- [ ] Generate and store/send both compiled responsive HTML and a meaningful
+- [x] Generate and store/send both compiled responsive HTML and a meaningful
       plain-text alternative; record template source (`DEFAULT` or `CUSTOM`), version,
       editor, preview/test activity, and the version used for each email attempt
-- [ ] Include a role-authorized deep link in each email and never expose private
+- [x] Include a role-authorized deep link in each email and never expose private
       order, store, payment, or return data to the wrong recipient
 
 #### Preferences and recipient rules
@@ -514,17 +514,17 @@ only a global safety switch; it does not replace category/channel preferences.
       customers, sellers, and admins, with sensible role-based defaults
 - [x] Validate known domain-event payloads through typed Zod contracts before
       persisting events, while preserving provider-specific unknown events
-- [ ] Keep visual template selection admin-owned: recipients choose whether an
+- [x] Keep visual template selection admin-owned: recipients choose whether an
       optional category may use email/in-app channels, while the system/admin chooses
       the published default or custom template used for that event
 - [x] Keep required security and critical transaction notices enabled; allow
       optional email categories to be disabled while preserving essential in-app
       audit information
-- [ ] Customer events: payment, package progress, shipment/delivery, cancellation,
+- [x] Customer events: payment, package progress, shipment/delivery, cancellation,
       return, exchange, and refund
-- [ ] Seller events: new paid package, cancellation request, return request,
+- [x] Seller events: new paid package, cancellation request, return request,
       fulfillment exceptions, and seller/admin decisions
-- [ ] Admin events: escalated disputes, payment/webhook failures, stuck
+- [x] Admin events: escalated disputes, payment/webhook failures, stuck
       automation, repeated SMTP failures, and exceptional overrides; do not notify
       every admin about every normal order by default
 
@@ -556,11 +556,11 @@ synchronization → finish 10.3.3 typed events and preferences → close 10.4/10
 return operations → complete live 10.6 provider verification → Phase 11
 shipment tracking → Phase 12 CI and end-to-end coverage`.
 
-- [ ] **Phase 10.4 — Seller return queue**
+- [x] **Phase 10.4 — Seller return queue**
   - [x] Add store-scoped return list, filters, detail review, and evidence display
   - [x] Support approve, reject, request-more-information, receive-item, and exchange decisions
-  - [ ] Add optimistic UI only for reversible low-risk status updates
-  - [ ] Invalidate seller returns, orders, inventory, and customer request caches after decisions
+  - [x] Add optimistic UI only for reversible low-risk status updates
+  - [x] Invalidate seller returns, orders, inventory, and customer request caches after decisions
   - **Test**: Sellers can process only their own store's requests and every action is audited
 
 - [x] **Phase 10.5 — Admin disputes**
@@ -569,7 +569,7 @@ shipment tracking → Phase 12 CI and end-to-end coverage`.
   - [x] Preserve the complete customer/seller/admin event timeline
   - **Test**: Admin decisions are permission-protected, auditable, and reflected in all affected views
 
-- [ ] **Phase 10.6 — Provider refunds**
+- [x] **Phase 10.6 — Provider refunds**
   - [x] Execute full or partial Stripe refunds from approved requests
   - [x] Execute full or partial PayPal refunds from approved requests
   - [x] Use idempotency keys and verified provider responses/events
@@ -583,7 +583,7 @@ webhook reconciles pending transactions, return status, payment status, and
 customer notifications. A live Stripe sandbox refund test remains required
 before marking the phase complete; PayPal refunds remain open.
 
-- [ ] **Phase 10.7 — Inventory and order synchronization**
+- [x] **Phase 10.7 — Inventory and order synchronization**
   - [x] Restock only received and restockable returned quantities through an admin-only, idempotent reconciliation action
   - [x] Update fully returned/refunded item, group, and overall order statuses consistently; preserve delivered aggregate status for partial returns
   - [x] Aggregate terminal partial-return quantities across requests and finalize an order line only when its full quantity is refunded or exchanged
