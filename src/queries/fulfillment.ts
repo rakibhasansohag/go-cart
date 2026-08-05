@@ -503,3 +503,81 @@ export async function decidePackageCancellation(input: {
 	updateTag('user-orders');
 	return result;
 }
+
+export async function updateShipmentCarrierInfo(input: {
+	shipmentId: string;
+	carrier?: string;
+	trackingNumber?: string;
+	serviceLevel?: string;
+	estimatedDeliveryAt?: string | Date | null;
+	proofOfDeliveryUrl?: string | null;
+}) {
+	const user = await currentUser();
+	if (!user) throw new Error('Unauthenticated.');
+	if (user.privateMetadata.role !== 'ADMIN') {
+		throw new Error('Admin logistics privileges are required.');
+	}
+
+	const updated = await db.shipment.update({
+		where: { id: input.shipmentId },
+		data: {
+			...(input.carrier !== undefined ? { carrier: input.carrier.trim() || null } : {}),
+			...(input.trackingNumber !== undefined ? { trackingNumber: input.trackingNumber.trim() || null } : {}),
+			...(input.serviceLevel !== undefined ? { serviceLevel: input.serviceLevel.trim() || null } : {}),
+			...(input.estimatedDeliveryAt !== undefined
+				? { estimatedDeliveryAt: input.estimatedDeliveryAt ? new Date(input.estimatedDeliveryAt) : null }
+				: {}),
+			...(input.proofOfDeliveryUrl !== undefined ? { proofOfDeliveryUrl: input.proofOfDeliveryUrl ? input.proofOfDeliveryUrl.trim() : null } : {}),
+		},
+	});
+
+	updateTag('user-orders');
+	return updated;
+}
+
+export async function getShipmentTracking(orderId: string) {
+	const user = await currentUser();
+	if (!user) throw new Error('Unauthenticated.');
+
+	const shipments = await db.shipment.findMany({
+		where: {
+			orderGroup: {
+				orderId,
+				OR: [
+					{ order: { userId: user.id } },
+					{ store: { userId: user.id } },
+				],
+			},
+		},
+		include: {
+			orderGroup: {
+				select: {
+					id: true,
+					packageStatus: true,
+					fulfillmentMode: true,
+					store: { select: { id: true, name: true, url: true, logo: true } },
+					items: {
+						select: {
+							id: true,
+							name: true,
+							sku: true,
+							image: true,
+							quantity: true,
+							status: true,
+						},
+					},
+				},
+			},
+			items: {
+				include: {
+					orderItem: { select: { id: true, name: true, sku: true, image: true } },
+				},
+			},
+			trackingEvents: { orderBy: { occurredAt: 'desc' } },
+			deliveryAttempts: { orderBy: { occurredAt: 'desc' } },
+			fulfillmentEvents: { orderBy: { createdAt: 'asc' } },
+		},
+	});
+
+	return shipments;
+}

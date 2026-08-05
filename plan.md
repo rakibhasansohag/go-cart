@@ -599,31 +599,31 @@ Goal: connect physical shipments to the centralized fulfillment state machine,
 then expand the Phase 10.3.3 notification foundation across the complete
 post-purchase workflow.
 
-- [ ] **Phase 11.1 — Shipment tracking model**
+- [x] **Phase 11.1 — Shipment tracking model**
   - [x] Add shipment carrier/tracking metadata, shipment items, tracking events,
         delivery attempts, and proof-of-delivery fields
-  - [ ] Support split and partial shipments per order group
-  - [ ] Allow compatible packages to be consolidated without forcing a ready
+  - [x] Support split and partial shipments per order group
+  - [x] Allow compatible packages to be consolidated without forcing a ready
         package to wait indefinitely for another store
   - **Test**: Multiple shipments can safely represent different items from one
     store order, and one shipment can carry compatible packages without merging
     their seller ownership or audit history
 
-- [ ] **Phase 11.2 — Seller handoff and centralized logistics workflow**
-  - [ ] Let sellers prepare and hand off their own package, but never claim
+- [x] **Phase 11.2 — Seller handoff and centralized logistics workflow**
+  - [x] Let sellers prepare and hand off their own package, but never claim
         warehouse receipt or customer delivery in platform-fulfilled mode
-  - [ ] Let warehouse/logistics or audited admins receive packages, assign
+  - [x] Let warehouse/logistics or audited admins receive packages, assign
         shipment items, dispatch shipments, and record delivery exceptions
-  - [ ] Accept verified carrier events and synchronize them with item, package,
+  - [x] Accept verified carrier events and synchronize them with item, package,
         shipment, and derived order statuses
   - **Test**: Seller handoff, warehouse receipt, split dispatch, failed attempt,
     retry, and delivery update only the correct records and authorized views
 
-- [ ] **Phase 11.3 — Customer tracking experience**
-  - [ ] Add shipment cards and a tracking timeline to order details
-  - [ ] Show Order ID, Package ID, Shipment ID, split shipments, delivery
+- [x] **Phase 11.3 — Customer tracking experience**
+  - [x] Add shipment cards and a tracking timeline to order details
+  - [x] Show Order ID, Package ID, Shipment ID, split shipments, delivery
         estimates, attempts, delays, proof, and partial/full delivered state
-  - [ ] Prefetch tracking data and invalidate affected order/tracking queries after updates
+  - [x] Prefetch tracking data and invalidate affected order/tracking queries after updates
   - **Test**: Customers can track every shipment associated with their order
 
 - [ ] **Phase 11.4 — Notification coverage and operations**
