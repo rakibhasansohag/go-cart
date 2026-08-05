@@ -53,7 +53,7 @@ export default function ReviewDetails({
 	const [sizes, setSizes] = useState<{ name: string; value: string }[]>([]);
 
 	// Form hook for managing form state and validation
-	const form = useForm<z.infer<typeof AddReviewSchema>>({
+	const form = useForm({
 		mode: 'onChange', // Form validation mode
 		resolver: zodResolver(AddReviewSchema),
 		defaultValues: {

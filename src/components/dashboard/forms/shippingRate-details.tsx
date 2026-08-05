@@ -1,5 +1,7 @@
 'use client';
 
+import { ShippingRate } from '@prisma/client';
+
 // React
 import { FC, useEffect } from 'react';
 
@@ -95,7 +97,7 @@ const ShippingRateDetails: FC<ShippingRateDetailsProps> = ({
 	const isEditing = Boolean(data?.shippingRate?.id);
 
 	const upsertMutation = useMutation({
-		mutationFn: (rateData: z.infer<typeof ShippingRateFormSchema>) =>
+		mutationFn: (rateData: Partial<ShippingRate> & { countryId?: string }) =>
 			upsertShippingRate(storeUrl, rateData),
 		onSuccess: (response) => {
 			if (response?.id) {
@@ -127,7 +129,6 @@ const ShippingRateDetails: FC<ShippingRateDetailsProps> = ({
 		}
 	}, [data, form]);
 
-	// Submit handler for form submission
 	const handleSubmit = async () => {
 		const values = form.getValues();
 		await upsertMutation.mutateAsync({
@@ -141,9 +142,6 @@ const ShippingRateDetails: FC<ShippingRateDetailsProps> = ({
 			deliveryTimeMin: values.deliveryTimeMin,
 			deliveryTimeMax: values.deliveryTimeMax,
 			returnPolicy: values.returnPolicy,
-			storeId: '',
-			createdAt: new Date(),
-			updatedAt: new Date(),
 		});
 	};
 

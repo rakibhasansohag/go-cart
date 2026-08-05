@@ -1,5 +1,7 @@
 'use server';
 
+import { v4 } from 'uuid';
+
 import { currentUser } from '@clerk/nextjs/server';
 import { PackageStatus, Prisma, ShippingRate, Store } from '@prisma/client';
 import { db } from '@/lib/db';
@@ -157,7 +159,7 @@ export const getStoreDefaultShippingDetails = async (storeUrl: string) => {
 // Returns: The updated store object with the new default shipping details.
 export const updateStoreDefaultShippingDetails = async (
 	storeUrl: string,
-	details: StoreDefaultShippingType,
+	details: Prisma.StoreUpdateInput,
 ) => {
 	try {
 		// Get current user
@@ -294,7 +296,7 @@ export const getStoreShippingRates = async (storeUrl: string) => {
 // Returns: Updated or newly created shipping rate details.
 export const upsertShippingRate = async (
 	storeUrl: string,
-	shippingRate: ShippingRate,
+	shippingRate: Partial<ShippingRate> & { countryId?: string },
 ) => {
 	try {
 		// Get current user
@@ -338,13 +340,38 @@ export const upsertShippingRate = async (
 		});
 		if (!store) throw new Error('Please provide a valid store URL.');
 
+		const rateId = shippingRate.id || v4();
+
 		// Upsert the shipping rate into the database
 		const shippingRateDetails = await db.shippingRate.upsert({
 			where: {
-				id: shippingRate.id,
+				id: rateId,
 			},
-			update: { ...shippingRate, storeId: store.id },
-			create: { ...shippingRate, storeId: store.id },
+			update: {
+				shippingService: shippingRate.shippingService ?? '',
+				shippingFeePerItem: shippingRate.shippingFeePerItem ?? 0,
+				shippingFeeForAdditionalItem: shippingRate.shippingFeeForAdditionalItem ?? 0,
+				shippingFeePerKg: shippingRate.shippingFeePerKg ?? 0,
+				shippingFeeFixed: shippingRate.shippingFeeFixed ?? 0,
+				deliveryTimeMin: shippingRate.deliveryTimeMin ?? 1,
+				deliveryTimeMax: shippingRate.deliveryTimeMax ?? 1,
+				returnPolicy: shippingRate.returnPolicy ?? '',
+				countryId: shippingRate.countryId,
+				storeId: store.id,
+			},
+			create: {
+				id: rateId,
+				shippingService: shippingRate.shippingService ?? '',
+				shippingFeePerItem: shippingRate.shippingFeePerItem ?? 0,
+				shippingFeeForAdditionalItem: shippingRate.shippingFeeForAdditionalItem ?? 0,
+				shippingFeePerKg: shippingRate.shippingFeePerKg ?? 0,
+				shippingFeeFixed: shippingRate.shippingFeeFixed ?? 0,
+				deliveryTimeMin: shippingRate.deliveryTimeMin ?? 1,
+				deliveryTimeMax: shippingRate.deliveryTimeMax ?? 1,
+				returnPolicy: shippingRate.returnPolicy ?? '',
+				countryId: shippingRate.countryId,
+				storeId: store.id,
+			},
 		});
 
 		return shippingRateDetails;

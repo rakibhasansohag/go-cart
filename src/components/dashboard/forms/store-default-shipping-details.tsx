@@ -74,7 +74,7 @@ const StoreDefaultShippingDetails: FC<StoreDefaultShippingDetailsProps> = ({
 	const isEditing = Boolean(data?.id);
 
 	const updateMutation = useMutation({
-		mutationFn: (values: z.infer<typeof StoreDefaultShippingFormSchema>) =>
+		mutationFn: (values: z.infer<typeof StoreShippingFormSchema>) =>
 			updateStoreDefaultShippingDetails(storeUrl, values),
 		onSuccess: (response) => {
 			if (response?.id) {
