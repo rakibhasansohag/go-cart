@@ -670,3 +670,133 @@ Goal: protect the critical marketplace workflows before production deployment.
   - [x] Cache dependencies safely and upload useful failure artifacts
   - [x] Block merging when required checks fail
   - **Test**: A deliberately failing check prevents the pull request from passing
+
+---
+
+## Phase 13: PostgreSQL Full-Text Search (Elasticsearch Replacement)
+
+Goal: replace the paid Elasticsearch dependency with zero-cost native PostgreSQL
+full-text search using `pg_trgm`, `tsvector`, and `unaccent` — all confirmed
+available on the Neon goCart project. The existing `/api/search-products` and
+`/api/index-products` routes and `src/lib/elasticsearch.ts` are the only
+Elasticsearch consumers. The header search UI (`search.tsx` → `/api/search?q=`)
+hits a route that does not exist yet; this phase creates it and wires it end-to-end.
+
+**Why PostgreSQL over a third-party search service:**
+- `pg_trgm` + `tsvector` run inside Neon — zero extra infra, zero cost
+- `unaccent` removes accent sensitivity (important for international product names)
+- `pg_trgm` provides trigram similarity for typo-tolerance
+- Combined ranked weighted search covers name, brand, and description fields
+- Neon PG 18 is already running on the goCart project
+
+- [ ] **Phase 13.1 — Database: enable extensions and add search vector column**
+  - [ ] Enable `pg_trgm` and `unaccent` via a Prisma migration (`CREATE EXTENSION IF NOT EXISTS`)
+  - [ ] Add a `searchVector tsvector` generated column to `Product` using `to_tsvector('english', unaccent(coalesce(name,'') || ' ' || coalesce(brand,'') || ' ' || coalesce(description,'')))`
+  - [ ] Add a GIN index on the `searchVector` column for fast `@@` queries
+  - [ ] Add a GIN trigram index on `Product.name` for autocomplete/prefix suggestions
+  - [ ] Add a GIN trigram index on `ProductVariant.variantName` for variant-level search
+  - **Test**: `EXPLAIN ANALYZE` on a sample query confirms GIN index is used; `tsc --noEmit` passes
+
+- [ ] **Phase 13.2 — Remove Elasticsearch and create the search service**
+  - [ ] Delete `src/lib/elasticsearch.ts` and remove `@elastic/elasticsearch` from `package.json`
+  - [ ] Create `src/lib/search.ts` — a typed server-only search service using `db.$queryRaw` with:
+    - Ranked full-text search: `ts_rank(searchVector, query)` for relevance sorting
+    - Trigram similarity fallback: `similarity(name, $query)` for short/partial queries
+    - `unaccent` normalization applied to both stored and runtime query tokens
+    - Result shape: `{ id, name, slug, image, link, rank }` — matches existing `SearchResult` type
+    - Maximum 20 results, configurable `minSimilarity` threshold
+  - [ ] Create `src/app/api/search/route.ts` (the route `search.tsx` already calls but doesn't exist):
+    - Accept `?q=` query param; validate min 1, max 100 chars
+    - Call the search service; return `SearchResult[]` JSON
+    - Mark `export const dynamic = 'force-dynamic'`
+  - [ ] Delete `src/app/api/search-products/route.ts` (replaced by above)
+  - [ ] Delete `src/app/api/index-products/route.ts` (no external index needed — PG maintains `tsvector` automatically via generated column)
+  - **Test**: `GET /api/search?q=phone` returns relevant results; `GET /api/search?q=` returns 400
+
+- [ ] **Phase 13.3 — Browse page: integrate ranked search with filters**
+  - [ ] Update `src/queries/product.ts` browse query to use `searchVector @@ websearch_to_tsquery` when a search term is present, falling back to `similarity` for very short terms
+  - [ ] Order results by `ts_rank` DESC when a search term is present, otherwise by existing sort options
+  - [ ] Ensure all existing browse filters (category, price, rating, shipping) compose correctly with the FTS `WHERE` clause
+  - **Test**: Browse with `?search=laptop` returns ranked results; filters still narrow results correctly
+
+- [ ] **Phase 13.4 — Search UI: debounced autocomplete suggestions**
+  - [ ] Update `search.tsx` to correctly call `/api/search?q=` (it currently calls `/api/search?q=` — confirm and keep or fix URL)
+  - [ ] Add keyboard navigation to `SearchSuggestions`: arrow up/down selects, Enter navigates, Escape closes
+  - [ ] Add accessible `role="combobox"` / `aria-expanded` / `aria-activedescendant` attributes to the search input
+  - [ ] Show a "No results for …" empty state in the suggestions dropdown
+  - [ ] Debounce is already 300 ms — verify it works after URL change; add `AbortController` to cancel in-flight requests on rapid typing
+  - **Test**: Typing "samsun" returns Samsung products; backspacing clears suggestions; keyboard navigation works
+
+- [ ] **Phase 13.5 — Clean up environment and CI**
+  - [ ] Remove `ELASTICSEARCH_URL` and `ELASTICSEARCH_API_KEY` from `.env.example` and documentation
+  - [ ] Remove any Elasticsearch references from CI workflow
+  - [ ] Verify `bun run build` and `bun run typecheck` pass with zero Elasticsearch imports remaining
+  - **Test**: `grep -r 'elasticsearch' src/` returns zero matches
+
+---
+
+## Phase 14: New Features Backlog
+
+### Phase 14.1 — Seller & Admin Analytics Dashboard
+
+Goal: give sellers actionable revenue, order, and product insights without a
+third-party analytics service — computed directly from the existing Prisma models.
+
+- [ ] **Phase 14.1.1 — Seller analytics**
+  - [ ] Revenue over time chart (daily/weekly/monthly toggle) using order + payment data
+  - [ ] Top-selling products and variants by revenue and unit count
+  - [ ] Average order value and repeat-customer rate per store
+  - [ ] Return rate and refund rate per product
+  - [ ] Prefetch on the server, render with a lightweight charting library (Recharts — already commonly installed, or add it)
+  - **Test**: Charts render with demo fixture data; empty state shows when no orders exist
+
+- [ ] **Phase 14.1.2 — Admin platform analytics**
+  - [ ] Platform GMV, order count, and active-store count over time
+  - [ ] Top stores by revenue; flagged stores by return/refund rate
+  - [ ] SMTP delivery health metrics surfaced on the existing delivery-health page
+  - **Test**: Admin-only route; seller role receives 403
+
+### Phase 14.2 — Product Q&A
+
+Goal: let customers ask questions on product pages; sellers and any verified
+buyer can answer publicly.
+
+- [ ] Add `ProductQuestion` and `ProductAnswer` Prisma models with author, body, helpful votes, and visibility
+- [ ] Customer-facing question form and answer thread on the product detail page
+- [ ] Seller can mark an official answer; admin can hide spam
+- [ ] Notify the seller of new questions via the existing notification + email pipeline
+- [ ] Server prefetch questions; `useSuspenseQuery` for client updates
+- **Test**: A logged-in customer can submit a question; the seller receives a notification and can answer
+
+### Phase 14.3 — Loyalty & Rewards Points
+
+Goal: reward repeat customers with points redeemable at checkout.
+
+- [ ] Add `LoyaltyAccount`, `LoyaltyTransaction`, and `LoyaltyRedemption` Prisma models
+- [ ] Award points on confirmed payment (e.g. 1 pt per currency unit spent)
+- [ ] Redeem points at checkout as a discount; enforce minimum redemption threshold
+- [ ] Show points balance and history on the customer profile
+- [ ] Points are voided if the order is fully refunded
+- **Test**: Points are awarded after payment confirmation and deducted on valid redemption; refund voids the earned points
+
+### Phase 14.4 — Low Stock & Restock Alerts
+
+Goal: help sellers avoid stockouts with proactive notifications.
+
+- [ ] Add `lowStockThreshold` field to `ProductVariant` (default 5)
+- [ ] After each order placement, check if any variant's `quantity` falls below its threshold
+- [ ] Emit a `LOW_STOCK` domain event and create a seller notification + email outbox job
+- [ ] Seller can configure per-variant threshold from the inventory page
+- [ ] Admin dashboard shows a low-stock overview across all stores
+- **Test**: Placing an order that brings a variant to or below threshold triggers exactly one seller notification
+
+### Phase 14.5 — Multi-Currency Display
+
+Goal: show prices in the customer's local currency using exchange rates (display
+only — charge in base currency to avoid payment complexity).
+
+- [ ] Add an exchange-rate cache (updated once daily via a cron job hitting a free open API)
+- [ ] Detect the customer's currency from the existing country cookie
+- [ ] Display converted prices on product, browse, and cart pages with a clear "Charged in [base currency]" note
+- [ ] Allow manual currency selection from the existing country/lang/currency selector header component
+- **Test**: Switching currency updates displayed prices; checkout always charges in the base currency
