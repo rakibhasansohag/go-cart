@@ -4,8 +4,8 @@ import Image from 'next/image';
 
 // Assets
 import { AppIcon } from '@/components/store/icons';
-import AppStoreIcon from '@/components/store/icons/app-store.webp';
-import GooglePlayIcon from '@/components/store/icons/google-play.webp';
+import AppStoreIcon from '@/public/assets/icons/app-store.webp';
+import GooglePlayIcon from '@/public/assets/icons/google-play.webp';
 
 export default function DownloadApp() {
 	return (
