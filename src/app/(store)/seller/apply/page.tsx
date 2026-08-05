@@ -1,3 +1,6 @@
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 import MinimalHeader from '@/components/store/layout/minimal-header/header';
 import ApplySellerMultiForm from '@/components/store/forms/apply-seller/apply-seller';
 

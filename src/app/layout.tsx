@@ -76,9 +76,7 @@ export default function RootLayout({
 }: Readonly<{
 	children: React.ReactNode;
 }>) {
-	const publishableKey =
-		process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY ||
-		'pk_test_Y2xlcmstcGxhY2Vob2xkZXItZm9yLWJ1aWxkLWNoZWNrJDA';
+	const publishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
 
 	return (
 		<ClerkProvider publishableKey={publishableKey}>
