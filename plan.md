@@ -645,28 +645,28 @@ post-purchase workflow.
 
 Goal: protect the critical marketplace workflows before production deployment.
 
-- [ ] **Phase 12.1 — Test infrastructure**
-  - [ ] Add unit/integration test tooling, isolated test environment variables, and deterministic fixtures
+- [x] **Phase 12.1 — Test infrastructure**
+  - [x] Add unit/integration test tooling, isolated test environment variables, and deterministic fixtures
   - [x] Add a repeatable deterministic demo fixture generator for 1,000 orders across the admin, seller, and customer test accounts
   - [x] Seed realistic generic catalog names, three variant image views, and stable empty-image fallbacks for visual QA
-  - [ ] Add browser end-to-end testing for customer, seller, and admin roles
-  - [ ] Add `test`, `test:integration`, and `test:e2e` scripts
+  - [x] Add browser end-to-end testing for customer, seller, and admin roles
+  - [x] Add `test`, `test:integration`, and `test:e2e` scripts
   - **Test**: All suites run locally from documented commands
 
-- [ ] **Phase 12.2 — Critical integration coverage**
-  - [ ] Cover permissions, totals, coupon usage, inventory changes, order transitions, and query invalidation
-  - [ ] Cover payment webhook verification, idempotency, retries, and refund reconciliation
-  - [ ] Cover return eligibility, partial returns, disputes, and restocking
+- [x] **Phase 12.2 — Critical integration coverage**
+  - [x] Cover permissions, totals, coupon usage, inventory changes, order transitions, and query invalidation
+  - [x] Cover payment webhook verification, idempotency, retries, and refund reconciliation
+  - [x] Cover return eligibility, partial returns, disputes, and restocking
   - **Test**: Critical server workflows pass against an isolated test database
 
-- [ ] **Phase 12.3 — End-to-end commerce journeys**
-  - [ ] Cover browse → cart → checkout → payment → order history
-  - [ ] Cover seller fulfillment → shipment tracking → delivery
-  - [ ] Cover delivered item → return request → decision → refund/restock
+- [x] **Phase 12.3 — End-to-end commerce journeys**
+  - [x] Cover browse → cart → checkout → payment → order history
+  - [x] Cover seller fulfillment → shipment tracking → delivery
+  - [x] Cover delivered item → return request → decision → refund/restock
   - **Test**: The complete customer, seller, and admin journeys pass in supported browsers
 
-- [ ] **Phase 12.4 — Continuous integration**
-  - [ ] Run formatting/linting, TypeScript, tests, and production build for every pull request
-  - [ ] Cache dependencies safely and upload useful failure artifacts
-  - [ ] Block merging when required checks fail
+- [x] **Phase 12.4 — Continuous integration**
+  - [x] Run formatting/linting, TypeScript, tests, and production build for every pull request
+  - [x] Cache dependencies safely and upload useful failure artifacts
+  - [x] Block merging when required checks fail
   - **Test**: A deliberately failing check prevents the pull request from passing

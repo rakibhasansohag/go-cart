@@ -1,0 +1,41 @@
+name: GoCart Continuous Integration
+
+on:
+  push:
+    branches: [ main, dev ]
+  pull_request:
+    branches: [ main, dev ]
+
+jobs:
+  validate-and-test:
+    name: Build, Typecheck & Test Suite
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Bun Environment
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install Dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Generate Prisma Client
+        run: bun prisma generate
+
+      - name: Run ESLint
+        run: bun run lint
+
+      - name: Run TypeScript Typecheck
+        run: bun run typecheck
+
+      - name: Run Whole-Project Vitest Test Suite
+        run: bun run test
+
+      - name: Validate Next.js Production Build
+        run: bun run build
+        env:
+          NEXT_TELEMETRY_DISABLED: 1
