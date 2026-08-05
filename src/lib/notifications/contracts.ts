@@ -38,6 +38,18 @@ export const DOMAIN_EVENT_PAYLOAD_SCHEMAS = {
 		returnRequestId: z.string().min(1),
 		nextStatus: z.string().min(1),
 	}),
+	'return.inventory_reconciled': commonPayload.extend({
+		returnRequestId: z.string().min(1),
+	}),
+	'return.dispute_resolved': commonPayload.extend({
+		returnRequestId: z.string().min(1),
+	}),
+	'cancellation.requested': commonPayload.extend({
+		orderGroupId: z.string().min(1),
+	}),
+	'cancellation.decided': commonPayload.extend({
+		orderGroupId: z.string().min(1),
+	}),
 	'checkout.abandoned': commonPayload,
 } as const;
 

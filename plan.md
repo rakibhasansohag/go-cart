@@ -350,7 +350,7 @@ summary poll remains the free-tier fallback.
       the email or rolling back the successful business action
 - [x] Store delivery attempts, last error, attempt count, next attempt time, and
       sent time without allowing an email failure to roll back a valid order update
-- [ ] Replace the remaining JSON payload boundary with generated typed event
+- [x] Replace the remaining JSON payload boundary with generated typed event
       payload schemas; the centralized recipient resolver is already in place
 
 #### Demo-only automatic fulfillment
