@@ -1,3 +1,6 @@
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 import client from '@/lib/elasticsearch';
 import { NextResponse } from 'next/server';
 

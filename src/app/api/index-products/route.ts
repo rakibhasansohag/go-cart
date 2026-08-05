@@ -1,4 +1,5 @@
-'use server';
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 import { db } from '@/lib/db';
 import client from '@/lib/elasticsearch';
