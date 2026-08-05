@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import type { ReturnRequestStatus } from '@prisma/client';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ChevronDown, ChevronLeft, ChevronRight, Search } from 'lucide-react';
+import { Eye, ChevronDown, ChevronLeft, ChevronRight, Search } from 'lucide-react';
 import { getAdminReturns, reconcileReturnInventory, transitionReturnRequest } from '@/queries/returns';
 import { issueReturnRefund } from '@/queries/refunds';
 import { queryKeys } from '@/lib/query-keys';
@@ -16,8 +16,9 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { toast } from 'sonner';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
-const FILTERS: Array<{ value: ReturnRequestStatus | 'ALL'; label: string }> = [
+const FILTERS: Array<{ value: ReturnRequestStatus | 'ALL' | 'DISPUTED'; label: string }> = [
 	{ value: 'ALL', label: 'All requests' },
+	{ value: 'DISPUTED', label: 'Disputes / Escalated' },
 	{ value: 'REQUESTED', label: 'Requested' },
 	{ value: 'UNDER_REVIEW', label: 'Under review' },
 	{ value: 'AWAITING_SHIPMENT', label: 'Awaiting shipment' },
@@ -33,13 +34,14 @@ const FILTERS: Array<{ value: ReturnRequestStatus | 'ALL'; label: string }> = [
 type Props = { initialData: Awaited<ReturnType<typeof getAdminReturns>> };
 
 export default function AdminReturnsTable({ initialData }: Props) {
-	const [status, setStatus] = useState<ReturnRequestStatus | 'ALL'>('ALL');
+	const [status, setStatus] = useState<ReturnRequestStatus | 'ALL' | 'DISPUTED'>('ALL');
 	const [search, setSearch] = useState('');
 	const [page, setPage] = useState(1);
 	const [restockRequest, setRestockRequest] = useState<(typeof initialData.requests)[number] | null>(null);
+	const [timelineRequest, setTimelineRequest] = useState<(typeof initialData.requests)[number] | null>(null);
 	const [restockChoices, setRestockChoices] = useState<Record<string, boolean>>({});
 	const queryClient = useQueryClient();
-	const filters = { status, page, pageSize: 10, search };
+	const filters = { status: status as ReturnRequestStatus | 'ALL', page, pageSize: 10, search };
 	const query = useQuery({
 		queryKey: queryKeys.dashboard.adminReturns(filters),
 		queryFn: () => getAdminReturns(status, page, 10, search),
@@ -87,7 +89,7 @@ export default function AdminReturnsTable({ initialData }: Props) {
 								<td className='p-3'><div className='max-w-64 font-medium'>{item?.name || 'Order item'}</div><div className='text-xs text-muted-foreground'>{item?.sku || ''} · Qty {request.items.reduce((sum, entry) => sum + entry.quantity, 0)}</div></td>
 								<td className='p-3 font-semibold'>{request.currency} {request.requestedAmount.toFixed(2)}</td>
 								<td className='p-3'><ReturnStatus status={request.status} /></td>
-								<td className='p-3'><div className='flex flex-wrap items-center gap-2'>{actions.length === 0 && request.status !== 'REFUND_PENDING' && !['RECEIVED', 'REFUNDED', 'EXCHANGED'].includes(request.status) ? <span className='text-xs text-muted-foreground'>No admin action</span> : <DropdownMenu><DropdownMenuTrigger asChild><button type='button' disabled={mutation.isPending || refundMutation.isPending || restockMutation.isPending} className='inline-flex cursor-pointer items-center gap-1 rounded-lg border border-border bg-background px-3 py-2 text-xs font-semibold hover:bg-muted disabled:cursor-wait disabled:opacity-60'>Choose next step<ChevronDown className='size-3.5' /></button></DropdownMenuTrigger><DropdownMenuContent align='end' className='z-[100000] w-56'><DropdownMenuLabel>Admin resolution steps</DropdownMenuLabel><DropdownMenuSeparator />{actions.map((next) => <DropdownMenuItem key={next} disabled={mutation.isPending || refundMutation.isPending} onSelect={() => mutation.mutate({ id: request.id, toStatus: next })}>{getReturnStatusLabel(next)}</DropdownMenuItem>)}{request.status === 'REFUND_PENDING' && <DropdownMenuItem disabled={refundMutation.isPending} onSelect={() => refundMutation.mutate(request.id)}>Issue payment refund</DropdownMenuItem>}</DropdownMenuContent></DropdownMenu>}{['RECEIVED', 'REFUNDED', 'EXCHANGED'].includes(request.status) && <button type='button' className='cursor-pointer rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-xs font-semibold text-emerald-700 hover:bg-emerald-500/20 dark:text-emerald-300' onClick={() => { setRestockRequest(request); setRestockChoices(Object.fromEntries(request.items.map((item) => [item.id, item.restockable ?? false]))); }}>Reconcile inventory</button>}</div></td>
+								<td className='p-3'><div className='flex flex-wrap items-center gap-2'><button type='button' className='inline-flex cursor-pointer items-center gap-1 rounded-lg border border-border bg-muted/50 px-2.5 py-1.5 text-xs font-medium hover:bg-muted' onClick={() => setTimelineRequest(request)}><Eye className='size-3.5' />Timeline</button>{actions.length === 0 && request.status !== 'REFUND_PENDING' && !['RECEIVED', 'REFUNDED', 'EXCHANGED'].includes(request.status) ? <span className='text-xs text-muted-foreground'>No admin action</span> : <DropdownMenu><DropdownMenuTrigger asChild><button type='button' disabled={mutation.isPending || refundMutation.isPending || restockMutation.isPending} className='inline-flex cursor-pointer items-center gap-1 rounded-lg border border-border bg-background px-3 py-2 text-xs font-semibold hover:bg-muted disabled:cursor-wait disabled:opacity-60'>Choose next step<ChevronDown className='size-3.5' /></button></DropdownMenuTrigger><DropdownMenuContent align='end' className='z-[100000] w-56'><DropdownMenuLabel>Admin resolution steps</DropdownMenuLabel><DropdownMenuSeparator />{actions.map((next) => <DropdownMenuItem key={next} disabled={mutation.isPending || refundMutation.isPending} onSelect={() => mutation.mutate({ id: request.id, toStatus: next })}>{getReturnStatusLabel(next)}</DropdownMenuItem>)}{request.status === 'REFUND_PENDING' && <DropdownMenuItem disabled={refundMutation.isPending} onSelect={() => refundMutation.mutate(request.id)}>Issue payment refund</DropdownMenuItem>}</DropdownMenuContent></DropdownMenu>}{['RECEIVED', 'REFUNDED', 'EXCHANGED'].includes(request.status) && <button type='button' className='cursor-pointer rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-xs font-semibold text-emerald-700 hover:bg-emerald-500/20 dark:text-emerald-300' onClick={() => { setRestockRequest(request); setRestockChoices(Object.fromEntries(request.items.map((item) => [item.id, item.restockable ?? false]))); }}>Reconcile inventory</button>}</div></td>
 			</tr>;
 						})}</tbody>
 					</table>
@@ -101,6 +103,60 @@ export default function AdminReturnsTable({ initialData }: Props) {
 					<DialogFooter><Button type='button' variant='outline' onClick={() => setRestockRequest(null)}>Cancel</Button><Button type='button' disabled={restockMutation.isPending} onClick={() => restockMutation.mutate()}>{restockMutation.isPending ? 'Saving…' : 'Save inventory changes'}</Button></DialogFooter>
 				</DialogContent>
 			</Dialog>
+			<Dialog open={Boolean(timelineRequest)} onOpenChange={(open) => !open && setTimelineRequest(null)}>
+				<DialogContent className='max-w-2xl max-h-[85vh] overflow-y-auto'>
+					<DialogHeader>
+						<DialogTitle>Return Request Timeline &amp; Evidence</DialogTitle>
+						<DialogDescription>
+							Review customer notes, evidence uploads, and complete history for Return #{timelineRequest?.id.slice(-8).toUpperCase()}
+						</DialogDescription>
+					</DialogHeader>
+					{timelineRequest && (
+						<div className='space-y-4 py-2 text-sm'>
+							{timelineRequest.customerNote && (
+								<div className='rounded-lg bg-muted/50 p-3 border border-border/60'>
+									<span className='font-semibold text-xs text-muted-foreground block mb-1'>Customer Reason Note:</span>
+									<p className='text-xs italic text-foreground'>{timelineRequest.customerNote}</p>
+								</div>
+							)}
+							{timelineRequest.evidence && timelineRequest.evidence.length > 0 && (
+								<div>
+									<span className='font-semibold text-xs text-muted-foreground block mb-2'>Uploaded Evidence ({timelineRequest.evidence.length}):</span>
+									<div className='grid grid-cols-2 sm:grid-cols-3 gap-2'>
+										{timelineRequest.evidence.map((item) => (
+											<a key={item.id} href={item.url} target='_blank' rel='noreferrer' className='block overflow-hidden rounded-lg border border-border bg-muted group'>
+												<img src={item.url} alt={item.alt || 'Evidence'} className='h-24 w-full object-cover group-hover:scale-105 transition-transform' />
+											</a>
+										))}
+									</div>
+								</div>
+							)}
+							<div>
+								<span className='font-semibold text-xs text-muted-foreground block mb-2'>Event Audit History:</span>
+								<div className='space-y-2 border-l-2 border-primary/30 pl-4'>
+									{timelineRequest.events && timelineRequest.events.length > 0 ? (
+										timelineRequest.events.map((event) => (
+											<div key={event.id} className='text-xs space-y-0.5'>
+												<div className='flex items-center justify-between font-semibold text-foreground'>
+													<span className='capitalize'>{event.eventType.replaceAll('.', ' ').replaceAll('_', ' ')}</span>
+													<span className='text-[10px] text-muted-foreground'>{new Date(event.createdAt).toLocaleString()}</span>
+												</div>
+												<div className='text-muted-foreground text-[11px]'>Actor: <span className='font-medium text-foreground'>{event.actorRole}</span> ({event.actorId})</div>
+											</div>
+										))
+									) : (
+										<p className='text-xs text-muted-foreground'>No audit events logged yet.</p>
+									)}
+								</div>
+							</div>
+						</div>
+					)}
+					<DialogFooter>
+						<Button type='button' variant='outline' onClick={() => setTimelineRequest(null)}>Close</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
 		</div>
 	);
 }
+

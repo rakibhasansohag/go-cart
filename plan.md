@@ -563,10 +563,10 @@ shipment tracking → Phase 12 CI and end-to-end coverage`.
   - [ ] Invalidate seller returns, orders, inventory, and customer request caches after decisions
   - **Test**: Sellers can process only their own store's requests and every action is audited
 
-- [ ] **Phase 10.5 — Admin disputes**
-  - [ ] Add an admin queue for escalated, overdue, and high-risk requests
-  - [ ] Support evidence review, final decisions, internal notes, and actor attribution
-  - [ ] Preserve the complete customer/seller/admin event timeline
+- [x] **Phase 10.5 — Admin disputes**
+  - [x] Add an admin queue for escalated, overdue, and high-risk requests
+  - [x] Support evidence review, final decisions, internal notes, and actor attribution
+  - [x] Preserve the complete customer/seller/admin event timeline
   - **Test**: Admin decisions are permission-protected, auditable, and reflected in all affected views
 
 - [ ] **Phase 10.6 — Provider refunds**

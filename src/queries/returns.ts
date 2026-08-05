@@ -444,7 +444,7 @@ export async function getSellerReturns(
 }
 
 export async function getAdminReturns(
-	status: ReturnRequestStatus | 'ALL' = 'ALL',
+	status: ReturnRequestStatus | 'ALL' | 'DISPUTED' = 'ALL',
 	page = 1,
 	pageSize = 10,
 	search = '',
@@ -456,23 +456,27 @@ export async function getAdminReturns(
 
 	const safePage = Math.max(1, Math.floor(page));
 	const safePageSize = Math.min(25, Math.max(1, Math.floor(pageSize)));
-	const normalizedStatus =
-		status === 'ALL' || Object.values(ReturnRequestStatus).includes(status) ? status : 'ALL';
 	const term = search.trim();
 	const where: Prisma.ReturnRequestWhereInput = {
-		...(normalizedStatus === 'ALL' ? {} : { status: normalizedStatus }),
+		...(status === 'DISPUTED'
+			? {
+					status: { in: ['REQUESTED', 'UNDER_REVIEW', 'REFUND_PENDING', 'EXCHANGE_PENDING'] },
+			  }
+			: status === 'ALL' || !Object.values(ReturnRequestStatus).includes(status as ReturnRequestStatus)
+			? {}
+			: { status }),
 		...(term
 			? {
-				OR: [
-					{ id: { contains: term, mode: 'insensitive' } },
-					{ order: { id: { contains: term, mode: 'insensitive' } } },
-					{ orderGroup: { id: { contains: term, mode: 'insensitive' } } },
-					{ store: { name: { contains: term, mode: 'insensitive' } } },
-					{ customer: { email: { contains: term, mode: 'insensitive' } } },
-					{ customer: { name: { contains: term, mode: 'insensitive' } } },
-					{ items: { some: { orderItem: { name: { contains: term, mode: 'insensitive' } } } } },
-				],
-			}
+					OR: [
+						{ id: { contains: term, mode: 'insensitive' } },
+						{ order: { id: { contains: term, mode: 'insensitive' } } },
+						{ orderGroup: { id: { contains: term, mode: 'insensitive' } } },
+						{ store: { name: { contains: term, mode: 'insensitive' } } },
+						{ customer: { email: { contains: term, mode: 'insensitive' } } },
+						{ customer: { name: { contains: term, mode: 'insensitive' } } },
+						{ items: { some: { orderItem: { name: { contains: term, mode: 'insensitive' } } } } },
+					],
+			  }
 			: {}),
 	};
 	const [requests, totalCount] = await Promise.all([
@@ -485,7 +489,7 @@ export async function getAdminReturns(
 				orderGroup: { select: { id: true } },
 				items: { include: { orderItem: { select: { name: true, image: true, sku: true, size: true } } } },
 				evidence: { orderBy: { createdAt: 'asc' } },
-				events: { orderBy: { createdAt: 'desc' }, take: 5 },
+				events: { orderBy: { createdAt: 'asc' }, take: 20 },
 			},
 			orderBy: { updatedAt: 'desc' },
 			skip: (safePage - 1) * safePageSize,
@@ -501,6 +505,7 @@ export async function getAdminReturns(
 		pageSize: safePageSize,
 	};
 }
+
 
 export async function createReturnRequest(input: CreateReturnRequestInput) {
 	const { userId } = await auth();
