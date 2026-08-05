@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { CartProductType } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { FC, useEffect, useState } from 'react';
@@ -15,7 +14,7 @@ interface Props {
 	sizeId?: string | undefined;
 	sizes: SimplifiedSize[];
 	isCard?: boolean;
-	handleChange: (property: keyof CartProductType, value: any) => void;
+	handleChange: <K extends keyof CartProductType>(property: K, value: CartProductType[K]) => void;
 	weight?: number;
 }
 

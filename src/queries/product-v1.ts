@@ -1,7 +1,7 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 'use server';
 
 import { currentUser } from '@clerk/nextjs/server';
+import { Prisma } from '@prisma/client';
 
 // Slugify
 import slugify from 'slugify';
@@ -431,7 +431,7 @@ export const deleteProduct = async (productId: string) => {
 //   - pageSize: The number of products per page (default = 10).
 // Returns: An object containing paginated products, filtered variants, and pagination metadata (totalPages, currentPage, pageSize, totalCount).
 export const getProducts = async (
-	filters: any = {},
+	filters: Record<string, unknown> = {},
 	sortBy = '',
 	page: number = 1,
 	pageSize: number = 10,
@@ -442,7 +442,7 @@ export const getProducts = async (
 	const skip = (currentPage - 1) * limit;
 
 	// Construct the base query
-	const wherClause: any = {
+	const wherClause: Prisma.ProductWhereInput = {
 		AND: [],
 	};
 
@@ -620,7 +620,7 @@ export const getProducts = async (
 	// Product price sorting
 	products.sort((a, b) => {
 		// Helper function to get the minimum price from a product's variants
-		const getMinPrice = (product: any) =>
+		const getMinPrice = (product: ProductWithVariantType) =>
 			Math.min(
 				...product.variants.flatMap((variant: VariantWithSizes) =>
 					variant.sizes.map((size) => {
@@ -1138,7 +1138,7 @@ export const getProductFilteredReviews = async (
 	page: number = 1,
 	pageSize: number = 4,
 ) => {
-	const reviewFilter: any = {
+	const reviewFilter: Prisma.ReviewWhereInput = {
 		productId,
 	};
 

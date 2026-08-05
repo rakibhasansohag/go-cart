@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { CartProductType } from '@/lib/types';
 import { Size } from '@prisma/client';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
@@ -7,7 +6,7 @@ import { Dispatch, FC, SetStateAction, useEffect } from 'react';
 interface Props {
 	sizes: Size[];
 	sizeId: string | undefined;
-	handleChange: (property: keyof CartProductType, value: any) => void;
+	handleChange: <K extends keyof CartProductType>(property: K, value: CartProductType[K]) => void;
 	setSizeId: Dispatch<SetStateAction<string>>;
 }
 

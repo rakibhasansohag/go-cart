@@ -217,7 +217,6 @@ export const getCouponRedemptions = async (couponId: string) => {
 	}
 };
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * Applies a coupon to a cart for items belonging to the coupon's store.
  *

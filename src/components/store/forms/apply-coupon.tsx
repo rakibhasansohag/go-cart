@@ -43,10 +43,9 @@ export default function ApplyCouponForm({
 			const res = await applyCoupon(values.coupon, cartId);
 			setCartData(res.cart);
 			toast.success(res.message);
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		} catch (error: any) {
+		} catch (error) {
 			// Handling form submission errors
-			toast.error(error.toString());
+			toast.error(error instanceof Error ? error.message : String(error));
 		}
 	};
 

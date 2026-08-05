@@ -9,8 +9,7 @@ interface Props {
 	variants: ProductVariantDataType[];
 	slug: string;
 	setActiveImage: Dispatch<SetStateAction<{ url: string } | null>>;
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	handleChange: (property: keyof CartProductType, value: any) => void;
+	handleChange: <K extends keyof CartProductType>(property: K, value: CartProductType[K]) => void;
 	setSizeId: Dispatch<SetStateAction<string>>;
 	setVariant: Dispatch<SetStateAction<ProductVariantDataType>>;
 }

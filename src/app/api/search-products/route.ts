@@ -36,10 +36,10 @@ export async function GET(req: Request) {
 			.filter((s): s is Product => typeof s !== 'undefined');
 
 		return NextResponse.json(results);
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	} catch (error: any) {
-		const errMsg = error?.message ?? String(error);
-		const esType = error?.meta?.body?.error?.type || error?.body?.error?.type;
+	} catch (error) {
+		const err = error as { message?: string; meta?: { body?: { error?: { type?: string } } }; body?: { error?: { type?: string } } };
+		const errMsg = err?.message ?? String(error);
+		const esType = err?.meta?.body?.error?.type || err?.body?.error?.type;
 
 		if (
 			esType === 'index_not_found_exception' ||

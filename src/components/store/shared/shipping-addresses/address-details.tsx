@@ -133,10 +133,9 @@ const AddressDetails: FC<AddressDetailsProps> = ({
 			});
 			router.refresh();
 			setShow(false);
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		} catch (error: any) {
+		} catch (error) {
 			// Handling form submission errors
-			toast.error(error.toString());
+			toast.error(error instanceof Error ? error.message : String(error));
 		}
 	};
 

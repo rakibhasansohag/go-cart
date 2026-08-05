@@ -66,9 +66,10 @@ const ImageUpload = ({
 		return null;
 	}
 
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const onUpload = (result: any) => {
-		onChange(result.info.secure_url);
+	const onUpload = (result: { info?: { secure_url?: string } | string }) => {
+		if (typeof result.info === 'object' && result.info?.secure_url) {
+			onChange(result.info.secure_url);
+		}
 	};
 
 	const widgetOptions = {

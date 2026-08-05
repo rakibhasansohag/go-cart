@@ -26,8 +26,7 @@ interface Props {
 	quantity: number;
 	sizeId: string | undefined;
 	setSizeId: Dispatch<SetStateAction<string>>;
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	handleChange: (property: keyof CartProductType, value: any) => void;
+	handleChange: <K extends keyof CartProductType>(property: K, value: CartProductType[K]) => void;
 	setActiveImage: Dispatch<SetStateAction<{ url: string } | null>>;
 	variantSlug: string;
 }

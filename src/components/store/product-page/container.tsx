@@ -91,8 +91,7 @@ const ProductPageContainer: FC<Props> = ({
 
 	const [isProductValid, setIsProductValid] = useState<boolean>(false);
 
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const handleChange = (property: keyof CartProductType, value: any) => {
+	const handleChange = <K extends keyof CartProductType>(property: K, value: CartProductType[K]) => {
 		setProductToBeAddedToCart((prevProduct) => ({
 			...prevProduct,
 			[property]: value,

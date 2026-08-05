@@ -65,10 +65,8 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
 						? className
 						: cn(buttonVariants({ variant, size, width, rounded, className }))
 				}
-				// eslint-disable-next-line @typescript-eslint/no-explicit-any
-				ref={ref as any}
-				// eslint-disable-next-line @typescript-eslint/no-explicit-any
-				{...(props as any)}
+				ref={ref as React.Ref<HTMLButtonElement>}
+				{...(props as React.ComponentPropsWithoutRef<typeof motion.button>)}
 			/>
 		);
 	},

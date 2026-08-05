@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenAI } from '@google/genai';
 import crypto from 'crypto';
@@ -6,7 +5,7 @@ import crypto from 'crypto';
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY!;
 const MODEL = process.env.GOOGLE_IMAGE_MODEL ?? 'gemini-2.5-flash-image';
 
-let ai: any = null;
+let ai: InstanceType<typeof GoogleGenAI> | null = null;
 try {
 	ai = new GoogleGenAI({
 		apiKey: GEMINI_API_KEY,

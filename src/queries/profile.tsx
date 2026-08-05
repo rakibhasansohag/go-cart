@@ -1,7 +1,7 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 'use server';
 
 import { db } from '@/lib/db';
+import { Prisma } from '@prisma/client';
 import {
 	OrderStatus,
 	OrderTableDateFilter,
@@ -28,7 +28,7 @@ const fetchUserOrdersFromDb = unstable_cache(
 		pageSize: number,
 	) => {
 		const skip = (page - 1) * pageSize;
-		const whereClause: any = {
+		const whereClause: { AND: Prisma.OrderWhereInput[] } = {
 			AND: [
 				{
 					userId,
@@ -183,7 +183,7 @@ const fetchUserPaymentsFromDb = unstable_cache(
 		pageSize: number,
 	) => {
 		const skip = (page - 1) * pageSize;
-		const whereClause: any = {
+		const whereClause: { AND: Prisma.PaymentWhereInput[] } = {
 			AND: [
 				{
 					userId,
@@ -269,7 +269,7 @@ const fetchUserReviewsFromDb = unstable_cache(
 		pageSize: number,
 	) => {
 		const skip = (page - 1) * pageSize;
-		const whereClause: any = {
+		const whereClause: { AND: Prisma.ReviewWhereInput[] } = {
 			AND: [
 				{
 					userId,

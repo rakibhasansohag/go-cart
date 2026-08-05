@@ -71,9 +71,8 @@ export default function Step3({
 			if (response.id) {
 				setStep((prev) => prev + 1);
 			}
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		} catch (error: any) {
-			toast.error(error.toString());
+		} catch (error) {
+			toast.error(error instanceof Error ? error.message : String(error));
 		}
 	};
 	interface FormData {

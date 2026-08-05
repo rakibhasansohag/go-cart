@@ -8,7 +8,7 @@ import {
 	VariantSimplified,
 } from '@/lib/types';
 import { getRatingStatistics } from './product';
-import { Store } from '@prisma/client';
+import { Prisma, Store } from '@prisma/client';
 import { currentUser } from '@clerk/nextjs/server';
 import { cookies } from 'next/headers';
 
@@ -110,8 +110,7 @@ export const getProductFilteredReviews = async (
 	page: number = 1,
 	pageSize: number = 4,
 ) => {
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const reviewFilter: any = {
+	const reviewFilter: Prisma.ReviewWhereInput = {
 		productId,
 	};
 

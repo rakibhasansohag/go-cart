@@ -212,8 +212,7 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 	const { theme, resolvedTheme } = useTheme();
 	const currentTheme = resolvedTheme || theme;
 
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const config: any = useMemo(
+	const config = useMemo(
 		() => ({
 			theme: currentTheme === 'dark' ? 'dark' : 'default',
 			askBeforePasteHTML: false,
@@ -287,8 +286,7 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 	// Form hook for managing form state and validation
 	const form = useForm<z.infer<typeof ProductFormSchema>>({
 		mode: 'onChange', // Form validation mode
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		resolver: zodResolver(ProductFormSchema as any), // Resolver for form validation
+		resolver: zodResolver(ProductFormSchema), // Resolver for form validation
 		defaultValues: {
 			// Setting default form values from data (if available)
 			name: data?.name || '',

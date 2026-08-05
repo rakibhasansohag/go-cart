@@ -13,8 +13,7 @@ interface QuantitySelectorProps {
 	sizeId: string | null;
 	quantity: number;
 	stock: number;
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	handleChange: (property: keyof CartProductType, value: any) => void;
+	handleChange: <K extends keyof CartProductType>(property: K, value: CartProductType[K]) => void;
 	sizes: Size[];
 }
 
