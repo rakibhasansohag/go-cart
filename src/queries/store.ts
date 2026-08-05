@@ -5,7 +5,7 @@ import { v4 } from 'uuid';
 import { currentUser } from '@clerk/nextjs/server';
 import { PackageStatus, Prisma, ShippingRate, Store } from '@prisma/client';
 import { db } from '@/lib/db';
-import { StoreDefaultShippingType, StoreStatus, StoreType } from '@/lib/types';
+import { StoreStatus, StoreType } from '@/lib/types';
 import { checkIfUserFollowingStore } from './product';
 import { normalizeCommerceReference } from '@/lib/orders/references';
 
