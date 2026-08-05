@@ -45,6 +45,20 @@ async function resolveOutboxRecipient(job: {
 }) {
 	if (hasDeliverableEmail(job.recipientEmail)) return job.recipientEmail;
 
+	// Recover from linked User.email (Clerk authenticated email)
+	const outboxRow = await db.emailOutbox.findUnique({
+		where: { id: job.id },
+		select: { recipient: { select: { email: true } } },
+	});
+	const userEmail = outboxRow?.recipient.email?.trim() ?? '';
+	if (hasDeliverableEmail(userEmail)) {
+		await db.emailOutbox.update({
+			where: { id: job.id },
+			data: { recipientEmail: userEmail },
+		});
+		return userEmail;
+	}
+
 	// Recover legacy paid-package jobs whose seller User.email was once populated
 	// with a display name. The package's store contact is the operational address.
 	const sourceEvent = await db.domainEvent.findUnique({

@@ -303,8 +303,16 @@ export default function AdminDeliveryHealth({ initialData }: Props) {
 														</button>
 													</td>
 													<td className='p-2.5'>
-														<div className='font-medium text-foreground'>{job.recipient.email}</div>
-														<div className='text-[11px] text-muted-foreground'>Template: {job.templateKey}</div>
+														<div className='font-semibold text-foreground'>
+															{job.recipient.name?.trim() || 'User'}
+														</div>
+														<div className='text-xs font-medium text-primary flex items-center gap-1.5 mt-0.5'>
+															<Mail className='size-3.5 text-muted-foreground shrink-0' />
+															<span>{job.recipient.email?.trim() || job.recipientEmail?.trim() || 'No email address'}</span>
+														</div>
+														<div className='text-[11px] text-muted-foreground mt-0.5'>
+															Template: {job.templateKey}
+														</div>
 													</td>
 													<td className='p-2.5'>
 														<span className='capitalize font-medium text-foreground'>
@@ -427,8 +435,17 @@ export default function AdminDeliveryHealth({ initialData }: Props) {
 								<tbody>
 									{sentOutbox.map((job) => (
 										<tr key={job.id} className='border-b border-border/40 last:border-0 hover:bg-muted/20'>
-											<td className='p-2.5 font-medium text-foreground'>
-												{job.recipient.email}
+											<td className='p-2.5'>
+												<div className='font-semibold text-foreground'>
+													{job.recipient.name?.trim() || 'User'}
+												</div>
+												<div className='text-xs font-medium text-primary flex items-center gap-1.5 mt-0.5'>
+													<Mail className='size-3.5 text-muted-foreground shrink-0' />
+													<span>{job.recipient.email?.trim() || job.recipientEmail?.trim() || 'No email address'}</span>
+												</div>
+												<div className='text-[11px] text-muted-foreground mt-0.5'>
+													Template: {job.templateKey}
+												</div>
 											</td>
 											<td className='p-2.5 text-muted-foreground font-mono text-[11px]'>
 												{job.templateKey}
