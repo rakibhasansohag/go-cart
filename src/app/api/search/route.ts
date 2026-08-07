@@ -10,7 +10,11 @@ export async function GET(req: NextRequest) {
 		const q = searchParams.get('q') || searchParams.get('search') || '';
 
 		if (!q || typeof q !== 'string' || q.trim().length === 0) {
-			return NextResponse.json([]);
+			return NextResponse.json([], {
+				headers: {
+					'Cache-Control': 'public, max-age=60, s-maxage=60, stale-while-revalidate=300',
+				},
+			});
 		}
 
 		if (q.length > 100) {
@@ -21,7 +25,11 @@ export async function GET(req: NextRequest) {
 		}
 
 		const results = await searchProducts(q);
-		return NextResponse.json(results);
+		return NextResponse.json(results, {
+			headers: {
+				'Cache-Control': 'public, max-age=60, s-maxage=60, stale-while-revalidate=300',
+			},
+		});
 	} catch (error) {
 		console.error('Search API error:', error);
 		return NextResponse.json(
