@@ -280,3 +280,23 @@ export const printPDF = (blob: Blob) => {
 		});
 	}
 };
+
+export function getFriendlyErrorMessage(
+	error: unknown,
+	fallbackMessage = 'Something went wrong. Please try again.',
+): string {
+	const message = error instanceof Error ? error.message : String(error);
+	if (!message) return fallbackMessage;
+
+	if (message.includes('Unauthenticated') || message.includes('Unauthorized')) {
+		return 'Please sign in to complete this action.';
+	}
+	if (message.includes('Cart not found')) {
+		return 'Your cart could not be found. Please try refreshing.';
+	}
+	if (message.includes('Select a shipping address')) {
+		return 'Please select a shipping address first.';
+	}
+
+	return message;
+}

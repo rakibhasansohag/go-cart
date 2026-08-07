@@ -6,7 +6,7 @@ import { SecurityPrivacyCard } from '../product-page/returns-security-privacy-ca
 import { toast } from 'sonner';
 import { placeOrder } from '@/queries/user';
 import { useCartStore } from '@/cart-store/useCartStore';
-import { cn } from '@/lib/utils';
+import { cn, getFriendlyErrorMessage } from '@/lib/utils';
 import { CartWithCartItemsType } from '@/lib/types';
 import ApplyCouponForm from '../forms/apply-coupon';
 import { PulseLoader } from 'react-spinners';
@@ -65,8 +65,8 @@ const PlaceOrderCard: FC<Props> = ({
 		onError: (error: unknown) => {
 			submissionStarted.current = false;
 			setIsRedirecting(false);
-			const message = error instanceof Error ? error.message : String(error);
-			toast.error(message || 'Unable to place the order.', {
+			const message = getFriendlyErrorMessage(error, 'Unable to place the order.');
+			toast.error(message, {
 				id: orderToastId,
 			});
 		},
