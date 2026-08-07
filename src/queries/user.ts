@@ -22,6 +22,11 @@ import {
 	FulfillmentSource,
 	ShippingAddress,
 } from '@prisma/client';
+import {
+	coinsToDiscount,
+	redeemCoins,
+	validateRedemption,
+} from '@/lib/loyalty/coins';
 
 /** Point: Function addToWishlist
  * Add a product to the user's wishlist.
@@ -1011,6 +1016,7 @@ export const upsertShippingAddress = async (
 export const placeOrder = async (
 	shippingAddress: ShippingAddress,
 	cartId: string,
+	coinsToRedeem: number = 0,
 ): Promise<{ orderId: string }> => {
 	// Ensure the user is authenticated
 	const { userId } = await auth();
@@ -1197,6 +1203,29 @@ export const placeOrder = async (
 		return acc;
 	}, {} as GroupedItems);
 
+	// Calculate product subtotal for GoCoins 30% cap validation
+	const productSubTotal = validatedCartItems.reduce(
+		(acc, item) => acc + item.price * item.quantity,
+		0,
+	);
+
+	let coinDiscount = 0;
+	if (coinsToRedeem > 0) {
+		const loyaltyAccount = await db.loyaltyAccount.findUnique({
+			where: { userId },
+		});
+		const userBalance = loyaltyAccount?.balance ?? 0;
+		const validation = validateRedemption(
+			userBalance,
+			coinsToRedeem,
+			productSubTotal,
+		);
+		if (!validation.valid) {
+			throw new Error(validation.error || 'Invalid GoCoins redemption.');
+		}
+		coinDiscount = coinsToDiscount(coinsToRedeem);
+	}
+
 	// Create the order
 	const order = await db.order.create({
 		data: {
@@ -1204,6 +1233,7 @@ export const placeOrder = async (
 			shippingAddressId: shippingAddress.id,
 			orderStatus: 'Pending',
 			paymentStatus: 'Pending',
+			coinDiscount: coinDiscount,
 			subTotal: 0, // Will calculate below
 			shippingFees: 0, // Will calculate below
 			total: 0, // Will calculate below
@@ -1318,15 +1348,26 @@ export const placeOrder = async (
 		orderShippingFee += groupShippingFees;
 	}
 
+	// Redeem GoCoins if requested
+	if (coinsToRedeem > 0) {
+		await redeemCoins(db, {
+			userId,
+			orderId: order.id,
+			coins: coinsToRedeem,
+			idempotencyKey: `redeem:${order.id}`,
+		});
+	}
+
 	// Update the main order with the final totals
+	const finalTotal = Math.max(0, orderTotalPrice - coinDiscount);
 	await db.order.update({
 		where: {
 			id: order.id,
 		},
 		data: {
-			subTotal: orderTotalPrice - orderShippingFee,
+			subTotal: Math.max(0, orderTotalPrice - orderShippingFee),
 			shippingFees: orderShippingFee,
-			total: orderTotalPrice,
+			total: finalTotal,
 		},
 	});
 

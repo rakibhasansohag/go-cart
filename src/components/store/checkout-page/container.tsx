@@ -15,6 +15,7 @@ interface Props {
 	countries: Country[];
 	addresses: UserShippingAddressType[];
 	userCountry: CountryType;
+	coinBalance?: number;
 }
 
 const CheckoutContainer: FC<Props> = ({
@@ -22,6 +23,7 @@ const CheckoutContainer: FC<Props> = ({
 	countries,
 	addresses,
 	userCountry,
+	coinBalance = 0,
 }) => {
 	const [cartData, setCartData] = useState<CartWithCartItemsType>(cart);
 
@@ -73,6 +75,7 @@ const CheckoutContainer: FC<Props> = ({
 				cartData={cartData}
 				setCartData={setCartData}
 				shippingAddress={selectedAddress}
+				coinBalance={coinBalance}
 			/>
 		</div>
 	);

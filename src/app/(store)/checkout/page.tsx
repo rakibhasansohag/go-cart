@@ -19,7 +19,7 @@ export default async function CheckoutPage() {
 	const { userId } = await auth();
 	if (!userId) redirect('/sign-in?redirect_url=/checkout');
 
-	const [cart, addresses, countries, cookieStore] = await Promise.all([
+	const [cart, addresses, countries, cookieStore, loyaltyAccount] = await Promise.all([
 		db.cart.findUnique({
 			where: { userId },
 			include: {
@@ -35,6 +35,10 @@ export default async function CheckoutPage() {
 		}),
 		getCheckoutCountries(),
 		cookies(),
+		db.loyaltyAccount.findUnique({
+			where: { userId },
+			select: { balance: true },
+		}),
 	]);
 
 	if (!cart) redirect('/cart');
@@ -64,6 +68,7 @@ export default async function CheckoutPage() {
 						countries={countries}
 						addresses={addresses}
 						userCountry={userCountry}
+						coinBalance={loyaltyAccount?.balance ?? 0}
 					/>
 				</div>
 			</div>

@@ -14,6 +14,7 @@ import {
 	getUserFollowedStores,
 } from '@/queries/profile';
 import { getCustomerReturns } from '@/queries/returns';
+import { getUserLoyaltyAccount } from '@/queries/loyalty';
 
 export default function ProfileSidebar() {
 	const pathname = usePathname();
@@ -32,6 +33,11 @@ export default function ProfileSidebar() {
 			queryClient.prefetchQuery({
 				queryKey: queryKeys.profile.payments({ filter: '', period: '', search: '', page: 1, pageSize: 10 }),
 				queryFn: () => getUserPayments('', '', '', 1, 10),
+			});
+		} else if (link === '/profile/rewards') {
+			queryClient.prefetchQuery({
+				queryKey: queryKeys.profile.loyalty(1),
+				queryFn: () => getUserLoyaltyAccount(1, 10),
 			});
 		} else if (link === '/profile/reviews') {
 			queryClient.prefetchQuery({
@@ -173,6 +179,10 @@ const menu = [
 	{
 		title: 'Payment',
 		link: '/profile/payment',
+	},
+	{
+		title: 'GoCoins',
+		link: '/profile/rewards',
 	},
 	{
 		title: 'Returns',

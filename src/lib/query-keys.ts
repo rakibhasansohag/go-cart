@@ -29,6 +29,7 @@ export const queryKeys = {
 			['profile', 'returns', 'detail', returnId] as const,
 		returnCandidate: (orderItemId: string) =>
 			['profile', 'returns', 'candidate', orderItemId] as const,
+		loyalty: (page: number) => ['profile', 'loyalty', page] as const,
 	},
 	orders: {
 		detail: (orderId: string) => ['orders', 'detail', orderId] as const,

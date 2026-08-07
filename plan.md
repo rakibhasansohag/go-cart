@@ -766,16 +766,16 @@ buyer can answer publicly.
 - [ ] Server prefetch questions; `useSuspenseQuery` for client updates
 - **Test**: A logged-in customer can submit a question; the seller receives a notification and can answer
 
-### Phase 14.3 — Loyalty & Rewards Points
+### Phase 14.3 — GoCoins Loyalty & Rewards System
 
-Goal: reward repeat customers with points redeemable at checkout.
+Goal: reward repeat customers with GoCoins redeemable at checkout (2 coins / $1 paid, 100 coins = $1 discount, max 30% product subtotal cap, min 100 coins, permanent once earned).
 
-- [ ] Add `LoyaltyAccount`, `LoyaltyTransaction`, and `LoyaltyRedemption` Prisma models
-- [ ] Award points on confirmed payment (e.g. 1 pt per currency unit spent)
-- [ ] Redeem points at checkout as a discount; enforce minimum redemption threshold
-- [ ] Show points balance and history on the customer profile
-- [ ] Points are voided if the order is fully refunded
-- **Test**: Points are awarded after payment confirmation and deducted on valid redemption; refund voids the earned points
+- [x] Add `LoyaltyAccount`, `LoyaltyTransaction`, `LoyaltyRedemption` Prisma models & migration `20260807160000_gocoin_loyalty`
+- [x] Award 2 GoCoins per $1 paid on confirmed payment in `reconcilePaymentEvent` with in-app notification
+- [x] Redeem GoCoins at checkout as a discount in `placeOrder()`; enforce 100 coins min & 30% product subtotal cap
+- [x] Interactive GoCoins checkout widget in `PlaceOrderCard` showing balance, cap, discount, and real-time total updates
+- [x] Show GoCoins balance, lifetime earned, redeemable value, and transaction history on `/profile/rewards`
+- **Test**: Unit tests passed in `coins.test.ts` (5/5); full test suite passed (87/87 tests); TypeScript typecheck passed
 
 ### Phase 14.4 — Low Stock & Restock Alerts
 

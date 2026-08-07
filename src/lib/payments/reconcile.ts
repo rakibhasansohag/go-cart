@@ -4,6 +4,7 @@ import { assertPaymentAmount } from './security';
 import { resolvePaymentStatus } from './status';
 import { publishPaidOrderNotifications } from '@/lib/notifications/domain-events';
 import { scheduleEmailOutboxDispatch } from '@/lib/email/schedule';
+import { awardCoins } from '@/lib/loyalty/coins';
 
 export type ReconcilePaymentInput = {
 	orderId: string;
@@ -123,6 +124,13 @@ export async function reconcilePaymentEvent(input: ReconcilePaymentInput) {
 						amount: storedAmount,
 						currency: normalizedCurrency,
 						paidAt: paymentDetails.updatedAt,
+					});
+
+					await awardCoins(tx, {
+						userId: order.userId,
+						orderId: order.id,
+						amountPaid: storedAmount,
+						idempotencyKey: `earn:${input.providerEventId}`,
 					});
 				}
 
