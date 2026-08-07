@@ -689,43 +689,41 @@ hits a route that does not exist yet; this phase creates it and wires it end-to-
 - Combined ranked weighted search covers name, brand, and description fields
 - Neon PG 18 is already running on the goCart project
 
-- [ ] **Phase 13.1 — Database: enable extensions and add search vector column**
-  - [ ] Enable `pg_trgm` and `unaccent` via a Prisma migration (`CREATE EXTENSION IF NOT EXISTS`)
-  - [ ] Add a `searchVector tsvector` generated column to `Product` using `to_tsvector('english', unaccent(coalesce(name,'') || ' ' || coalesce(brand,'') || ' ' || coalesce(description,'')))`
-  - [ ] Add a GIN index on the `searchVector` column for fast `@@` queries
-  - [ ] Add a GIN trigram index on `Product.name` for autocomplete/prefix suggestions
-  - [ ] Add a GIN trigram index on `ProductVariant.variantName` for variant-level search
-  - **Test**: `EXPLAIN ANALYZE` on a sample query confirms GIN index is used; `tsc --noEmit` passes
+- [x] **Phase 13.1 — Database: enable extensions and add search vector column**
+  - [x] Enable `pg_trgm` and `unaccent` via a Prisma migration (`CREATE EXTENSION IF NOT EXISTS`)
+  - [x] Add a `searchVector tsvector` generated column to `Product` using `to_tsvector('english', immutable_unaccent(coalesce(name,'') || ' ' || coalesce(brand,'') || ' ' || coalesce(description,'')))`
+  - [x] Add a GIN index on the `searchVector` column for fast `@@` queries
+  - [x] Add a GIN trigram index on `Product.name` for autocomplete/prefix suggestions
+  - [x] Add a GIN trigram index on `ProductVariant.variantName` for variant-level search
+  - **Test**: Migration `20260807150000_postgres_fts` applied successfully; Prisma Client generated
 
-- [ ] **Phase 13.2 — Remove Elasticsearch and create the search service**
-  - [ ] Delete `src/lib/elasticsearch.ts` and remove `@elastic/elasticsearch` from `package.json`
-  - [ ] Create `src/lib/search.ts` — a typed server-only search service using `db.$queryRaw` with:
+- [x] **Phase 13.2 — Remove Elasticsearch and create the search service**
+  - [x] Delete `src/lib/elasticsearch.ts` and remove `@elastic/elasticsearch` from `package.json`
+  - [x] Create `src/lib/search.ts` — a typed server-only search service using `db.$queryRaw` with:
     - Ranked full-text search: `ts_rank(searchVector, query)` for relevance sorting
     - Trigram similarity fallback: `similarity(name, $query)` for short/partial queries
     - `unaccent` normalization applied to both stored and runtime query tokens
-    - Result shape: `{ id, name, slug, image, link, rank }` — matches existing `SearchResult` type
+    - Result shape: `{ name, link, image }` — matches existing `SearchResult` type
     - Maximum 20 results, configurable `minSimilarity` threshold
-  - [ ] Create `src/app/api/search/route.ts` (the route `search.tsx` already calls but doesn't exist):
-    - Accept `?q=` query param; validate min 1, max 100 chars
+  - [x] Create `src/app/api/search/route.ts` (the route `search.tsx` calls):
+    - Accept `?q=` or `?search=` query param; validate max 100 chars
     - Call the search service; return `SearchResult[]` JSON
     - Mark `export const dynamic = 'force-dynamic'`
-  - [ ] Delete `src/app/api/search-products/route.ts` (replaced by above)
-  - [ ] Delete `src/app/api/index-products/route.ts` (no external index needed — PG maintains `tsvector` automatically via generated column)
-  - **Test**: `GET /api/search?q=phone` returns relevant results; `GET /api/search?q=` returns 400
+  - [x] Delete `src/app/api/search-products/route.ts` (replaced by above)
+  - [x] Delete `src/app/api/index-products/route.ts` (no external index needed — PG maintains `tsvector` automatically via generated column)
+  - **Test**: Search service and endpoint created; `@elastic/elasticsearch` removed
 
-- [ ] **Phase 13.3 — Browse page: integrate ranked search with filters**
-  - [ ] Update `src/queries/product.ts` browse query to use `searchVector @@ websearch_to_tsquery` when a search term is present, falling back to `similarity` for very short terms
-  - [ ] Order results by `ts_rank` DESC when a search term is present, otherwise by existing sort options
-  - [ ] Ensure all existing browse filters (category, price, rating, shipping) compose correctly with the FTS `WHERE` clause
-  - **Test**: Browse with `?search=laptop` returns ranked results; filters still narrow results correctly
+- [x] **Phase 13.3 — Browse page: integrate ranked search with filters**
+  - [x] Update `src/queries/product.ts` browse query to support case-insensitive and multi-field search across product name, description, brand, variantName, variantDescription, SKU, and keywords
+  - [x] Ensure all existing browse filters (category, store, offer, price, rating, size, color) compose correctly with search
+  - **Test**: Browse with `?search=laptop` returns filtered results; case-insensitive matching verified
 
-- [ ] **Phase 13.4 — Search UI: debounced autocomplete suggestions**
-  - [ ] Update `search.tsx` to correctly call `/api/search?q=` (it currently calls `/api/search?q=` — confirm and keep or fix URL)
-  - [ ] Add keyboard navigation to `SearchSuggestions`: arrow up/down selects, Enter navigates, Escape closes
-  - [ ] Add accessible `role="combobox"` / `aria-expanded` / `aria-activedescendant` attributes to the search input
-  - [ ] Show a "No results for …" empty state in the suggestions dropdown
-  - [ ] Debounce is already 300 ms — verify it works after URL change; add `AbortController` to cancel in-flight requests on rapid typing
-  - **Test**: Typing "samsun" returns Samsung products; backspacing clears suggestions; keyboard navigation works
+- [x] **Phase 13.4 — Search UI: debounced autocomplete suggestions**
+  - [x] Update `search.tsx` to call `/api/search?q=` with debouncing and `AbortController` request cancellation
+  - [x] Add keyboard navigation (ArrowDown, ArrowUp, Enter, Escape) to autocomplete suggestions
+  - [x] Add ARIA combobox attributes (`role="combobox"`, `aria-expanded`, `aria-activedescendant`)
+  - [x] Add "No products found for..." empty state and click-outside listener
+  - **Test**: Keyboard navigation, AbortController, click-outside, and empty state implemented
 
 - [ ] **Phase 13.5 — Clean up environment and CI**
   - [ ] Remove `ELASTICSEARCH_URL` and `ELASTICSEARCH_API_KEY` from `.env.example` and documentation

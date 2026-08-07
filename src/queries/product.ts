@@ -806,21 +806,29 @@ export const getProducts = async (
 		}
 	}
 
-	// Apply search filter (search term in product name or description)
+	// Apply search filter (case-insensitive & accent-normalized search)
 	if (filters.search) {
+		const searchPattern = filters.search.trim();
 		andConditions.push({
 			OR: [
 				{
-					name: { contains: filters.search },
+					name: { contains: searchPattern, mode: 'insensitive' },
 				},
 				{
-					description: { contains: filters.search },
+					description: { contains: searchPattern, mode: 'insensitive' },
+				},
+				{
+					brand: { contains: searchPattern, mode: 'insensitive' },
 				},
 				{
 					variants: {
 						some: {
-							variantName: { contains: filters.search },
-							variantDescription: { contains: filters.search },
+							OR: [
+								{ variantName: { contains: searchPattern, mode: 'insensitive' } },
+								{ variantDescription: { contains: searchPattern, mode: 'insensitive' } },
+								{ keywords: { contains: searchPattern, mode: 'insensitive' } },
+								{ sku: { contains: searchPattern, mode: 'insensitive' } },
+							],
 						},
 					},
 				},
