@@ -170,8 +170,8 @@ export default function CheckInCalendar({
 				})}
 			</div>
 
-			{/* Desktop View: Full 7 Column Monthly Grid */}
-			<div className='hidden sm:grid sm:grid-cols-7 gap-2.5'>
+			{/* Desktop & Tablet View: Adaptable Grid (4 cols on tablet, 7 cols on laptop) */}
+			<div className='hidden sm:grid sm:grid-cols-4 md:grid-cols-7 gap-2 sm:gap-3'>
 				{daysArray.map((dayNum) => {
 					const isClaimed = claimedRecords.some((c) => c.dayIndex === dayNum);
 					const isToday = !claimedState && dayNum === todayDayIndex;
@@ -184,7 +184,7 @@ export default function CheckInCalendar({
 							whileHover={{ scale: 1.04 }}
 							whileTap={{ scale: 0.98 }}
 							className={cn(
-								'relative flex flex-col items-center justify-between p-2.5 sm:p-3 rounded-2xl border transition-all duration-300 min-h-[88px]',
+								'relative flex flex-col items-center justify-between p-2 sm:p-2.5 rounded-2xl border transition-all duration-300 min-h-[84px] sm:min-h-[90px]',
 								{
 									// Claimed state
 									'bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400': isClaimed,
@@ -213,13 +213,13 @@ export default function CheckInCalendar({
 								) : null}
 							</div>
 
-							<div className='my-1 text-center flex flex-col items-center justify-center gap-y-0.5'>
-								<div className='flex items-center justify-center gap-x-1 text-base font-black text-main-primary'>
+							<div className='my-0.5 text-center flex flex-col items-center justify-center gap-y-0.5'>
+								<div className='flex items-center justify-center gap-x-1 text-sm sm:text-base font-black text-main-primary'>
 									<Coins className='w-4 h-4 text-amber-500 shrink-0' />
 									<span>+{reward.coins}</span>
 								</div>
 								{reward.couponDiscount && (
-									<span className='text-xs font-black text-amber-700 dark:text-amber-300 bg-amber-500/15 px-1.5 py-0.5 rounded-full border border-amber-500/30 block leading-tight'>
+									<span className='text-[10px] sm:text-xs font-black text-amber-700 dark:text-amber-300 bg-amber-500/15 px-1.5 py-0.5 rounded-full border border-amber-500/30 block leading-tight'>
 										{reward.couponDiscount}% OFF
 									</span>
 								)}
