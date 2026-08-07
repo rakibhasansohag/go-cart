@@ -7,38 +7,31 @@ import CheckInCalendar from './checkin-calendar';
 import { X, Sparkles, Trophy } from 'lucide-react';
 import { useUser } from '@clerk/nextjs';
 
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+
 export default function CheckInModal() {
 	const { isLoaded, isSignedIn } = useUser();
 	const [isOpen, setIsOpen] = useState(false);
-	const [statusData, setStatusData] = useState<Awaited<ReturnType<typeof getDailyCheckInStatus>> | null>(null);
+	const queryClient = useQueryClient();
+
+	const { data: statusData } = useQuery({
+		queryKey: ['daily-checkin-status'],
+		queryFn: () => getDailyCheckInStatus(),
+		enabled: Boolean(isLoaded && isSignedIn),
+		staleTime: 1000 * 60 * 60 * 4, // 4 hours cache
+		gcTime: 1000 * 60 * 60 * 24,
+	});
 
 	useEffect(() => {
-		if (!isLoaded || !isSignedIn) return;
+		if (!statusData) return;
 
-		let isCancelled = false;
-		async function checkStatus() {
-			try {
-				const status = await getDailyCheckInStatus();
-				if (isCancelled) return;
-				setStatusData(status);
+		const dismissedKey = `gocart_checkin_dismissed_${statusData.todayDateStr}`;
+		const isDismissed = localStorage.getItem(dismissedKey);
 
-				const dismissedKey = `gocart_checkin_dismissed_${status.todayDateStr}`;
-				const isDismissed = localStorage.getItem(dismissedKey);
-
-				// Auto-open modal if user hasn't claimed today and hasn't dismissed it today
-				if (status.isAuthenticated && !status.hasClaimedToday && !isDismissed) {
-					setIsOpen(true);
-				}
-			} catch (err) {
-				console.warn('Failed to fetch daily check-in status:', err);
-			}
+		if (statusData.isAuthenticated && !statusData.hasClaimedToday && !isDismissed) {
+			setIsOpen(true);
 		}
-
-		checkStatus();
-		return () => {
-			isCancelled = true;
-		};
-	}, [isLoaded, isSignedIn]);
+	}, [statusData]);
 
 	const handleClose = () => {
 		if (statusData?.todayDateStr) {
@@ -96,7 +89,7 @@ export default function CheckInModal() {
 								todayDateStr={statusData.todayDateStr}
 								checkIns={statusData.checkIns}
 								onClaimSuccess={() => {
-									setStatusData((prev) => (prev ? { ...prev, hasClaimedToday: true } : null));
+									queryClient.invalidateQueries({ queryKey: ['daily-checkin-status'] });
 								}}
 							/>
 						</div>

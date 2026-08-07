@@ -22,9 +22,11 @@ export default function RewardsContent({ initialPage = 1 }: Props) {
 		queryFn: () => getUserLoyaltyAccount(page, 10),
 	});
 
-	const { data: checkInStatus, refetch: refetchCheckIn } = useQuery({
+	const { data: checkInStatus, isLoading: isCheckInLoading, refetch: refetchCheckIn } = useQuery({
 		queryKey: ['daily-checkin-status'],
 		queryFn: () => getDailyCheckInStatus(),
+		staleTime: 1000 * 60 * 60 * 4, // Cache check-in status for 4 hours
+		gcTime: 1000 * 60 * 60 * 24, // Retain in memory for 24 hours
 	});
 
 	const { balance, lifetimeEarned, transactions, totalPages, currentPage } = data;
@@ -81,8 +83,20 @@ export default function RewardsContent({ initialPage = 1 }: Props) {
 				</Link>
 			</div>
 
-			{/* Embedded Daily Check-In Calendar Widget */}
-			{checkInStatus && checkInStatus.isAuthenticated && (
+			{/* Embedded Daily Check-In Calendar Widget with Skeleton Fallback */}
+			{isCheckInLoading ? (
+				<div className='w-full rounded-3xl bg-background border border-border/15 p-6 shadow-sm space-y-5 animate-pulse min-h-[300px]'>
+					<div className='flex items-center justify-between border-b border-border/10 pb-4'>
+						<div className='h-6 w-48 bg-muted rounded-md' />
+						<div className='h-7 w-32 bg-muted rounded-full' />
+					</div>
+					<div className='grid grid-cols-4 sm:grid-cols-7 gap-2.5'>
+						{Array.from({ length: 14 }).map((_, i) => (
+							<div key={i} className='h-20 bg-muted/40 rounded-2xl' />
+						))}
+					</div>
+				</div>
+			) : checkInStatus && checkInStatus.isAuthenticated ? (
 				<CheckInCalendar
 					hasClaimedToday={checkInStatus.hasClaimedToday}
 					claimedDaysCount={checkInStatus.claimedDaysCount}
@@ -93,7 +107,7 @@ export default function RewardsContent({ initialPage = 1 }: Props) {
 						refetchCheckIn();
 					}}
 				/>
-			)}
+			) : null}
 
 			{/* Transaction History */}
 			<div className='rounded-xl bg-background p-6 border border-border/10 shadow-sm space-y-4'>
@@ -118,11 +132,10 @@ export default function RewardsContent({ initialPage = 1 }: Props) {
 								<div key={tx.id} className='py-3.5 flex items-center justify-between text-sm gap-4'>
 									<div className='flex items-center gap-x-3 min-w-0'>
 										<div
-											className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${
-												isEarn
+											className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${isEarn
 													? 'bg-emerald-500/10 text-emerald-500'
 													: 'bg-amber-500/10 text-amber-500'
-											}`}
+												}`}
 										>
 											{isEarn ? (
 												<ArrowDownLeft className='w-5 h-5' />
@@ -148,9 +161,8 @@ export default function RewardsContent({ initialPage = 1 }: Props) {
 
 									<div className='text-right shrink-0'>
 										<span
-											className={`font-bold text-base ${
-												isEarn ? 'text-emerald-500' : 'text-amber-500'
-											}`}
+											className={`font-bold text-base ${isEarn ? 'text-emerald-500' : 'text-amber-500'
+												}`}
 										>
 											{isEarn ? `+${tx.points}` : tx.points}
 										</span>
