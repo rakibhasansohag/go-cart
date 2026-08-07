@@ -1,15 +1,24 @@
 import { cn } from '@/lib/utils';
 import { OfferTag } from '@prisma/client';
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
 import { useMediaQuery } from 'react-responsive';
 
-// Custom hook to calculate split point
+// Custom hook to calculate split point safely across SSR and client hydration
 function useBreakpoints() {
+	const [isMounted, setIsMounted] = useState(false);
+
+	useEffect(() => {
+		setIsMounted(true);
+	}, []);
+
 	const mobile = useMediaQuery({ query: '(max-width: 640px)' });
 	const sm = useMediaQuery({ query: '(min-width: 640px)' });
 	const md = useMediaQuery({ query: '(min-width: 768px)' });
 	const lg = useMediaQuery({ query: '(min-width: 1024px)' });
 	const xl = useMediaQuery({ query: '(min-width: 1536px)' });
+
+	if (!isMounted) return 6; // Stable SSR default matching desktop header layout
 
 	if (xl) return 7;
 	if (lg) return 6;
@@ -17,7 +26,7 @@ function useBreakpoints() {
 	if (sm) return 3;
 	if (mobile) return 2;
 
-	return 1; // Default split point
+	return 6;
 }
 
 export default function OfferTagsLinks({
