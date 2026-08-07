@@ -725,10 +725,10 @@ hits a route that does not exist yet; this phase creates it and wires it end-to-
   - [x] Add "No products found for..." empty state and click-outside listener
   - **Test**: Keyboard navigation, AbortController, click-outside, and empty state implemented
 
-- [ ] **Phase 13.5 — Clean up environment and CI**
-  - [ ] Remove `ELASTICSEARCH_URL` and `ELASTICSEARCH_API_KEY` from `.env.example` and documentation
-  - [ ] Remove any Elasticsearch references from CI workflow
-  - [ ] Verify `bun run build` and `bun run typecheck` pass with zero Elasticsearch imports remaining
+- [x] **Phase 13.5 — Clean up environment and CI**
+  - [x] Verified `.env.example` has no `ELASTICSEARCH` variables
+  - [x] Verified `.github/workflows/ci.yml` has no Elasticsearch dependencies
+  - [x] Verified `bun run typecheck` and `bun run test` (82/82 tests) pass with zero Elasticsearch imports remaining
   - **Test**: `grep -r 'elasticsearch' src/` returns zero matches
 
 ---
