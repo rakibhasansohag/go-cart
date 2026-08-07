@@ -47,8 +47,8 @@ export default function RewardsContent({ initialPage = 1 }: Props) {
 								GoCoins Balance
 							</span>
 						</div>
-						<span className='text-xs font-semibold bg-amber-900/40 border border-amber-300/30 px-3 py-1 rounded-full text-amber-100 backdrop-blur-sm'>
-							2% Cashback Rate
+						<span className='text-xs font-bold bg-amber-900/40 border border-amber-300/30 px-3 py-1 rounded-full text-amber-100 backdrop-blur-sm uppercase tracking-wider'>
+							Active Member Perks
 						</span>
 					</div>
 
@@ -57,16 +57,19 @@ export default function RewardsContent({ initialPage = 1 }: Props) {
 							{balance.toLocaleString()}
 						</span>
 						<span className='text-lg font-medium text-amber-200'>GoCoins</span>
+						<span className='text-xs font-bold bg-white/20 border border-white/20 px-2.5 py-1 rounded-full text-white backdrop-blur-sm ml-auto sm:ml-2'>
+							Worth ${redeemableValue.toFixed(2)} Off
+						</span>
 					</div>
 
 					<div className='pt-2 border-t border-amber-400/20 flex flex-wrap items-center justify-between text-sm text-amber-100/90 gap-2'>
 						<div>
-							<span>Redeemable Value: </span>
-							<strong className='text-white font-bold'>${redeemableValue.toFixed(2)}</strong>
+							<span>Checkout Discount: </span>
+							<strong className='text-white font-bold'>${redeemableValue.toFixed(2)} Savings</strong>
 						</div>
 						<div>
 							<span>Lifetime Earned: </span>
-							<strong className='text-white font-bold'>{lifetimeEarned.toLocaleString()} coins</strong>
+							<strong className='text-white font-bold'>{lifetimeEarned.toLocaleString()} GoCoins</strong>
 						</div>
 					</div>
 				</div>
@@ -133,8 +136,8 @@ export default function RewardsContent({ initialPage = 1 }: Props) {
 									<div className='flex items-center gap-x-3 min-w-0'>
 										<div
 											className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${isEarn
-													? 'bg-emerald-500/10 text-emerald-500'
-													: 'bg-amber-500/10 text-amber-500'
+												? 'bg-emerald-500/10 text-emerald-500'
+												: 'bg-amber-500/10 text-amber-500'
 												}`}
 										>
 											{isEarn ? (

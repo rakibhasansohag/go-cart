@@ -116,13 +116,15 @@ export async function claimDailyCheckIn() {
 				},
 			});
 
+			const monthName = new Date().toLocaleString('default', { month: 'short', timeZone: 'UTC' });
+
 			await tx.loyaltyTransaction.create({
 				data: {
 					accountId: account.id,
 					type: 'EARN',
 					points: rewardSpec.coins,
 					idempotencyKey: `checkin:${userId}:${dateStr}`,
-					note: `Daily Check In Reward Day ${dayIndex}`,
+					note: `Daily Check In Reward (${monthName} Day ${dayIndex})`,
 				},
 			});
 
