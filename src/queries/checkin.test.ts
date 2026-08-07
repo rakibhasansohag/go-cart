@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { CHECKIN_REWARDS } from './checkin';
+import { describe, it, expect } from 'vitest';
+import { CHECKIN_REWARDS } from '@/lib/checkin-constants';
 
 describe('Daily Check-In Reward Schedule & Anti-Abuse Logic', () => {
 	it('defines 31 days in reward schedule', () => {

@@ -86,6 +86,7 @@ export default function RewardsContent({ initialPage = 1 }: Props) {
 				<CheckInCalendar
 					hasClaimedToday={checkInStatus.hasClaimedToday}
 					claimedDaysCount={checkInStatus.claimedDaysCount}
+					daysInMonth={checkInStatus.daysInMonth}
 					todayDateStr={checkInStatus.todayDateStr}
 					checkIns={checkInStatus.checkIns}
 					onClaimSuccess={() => {

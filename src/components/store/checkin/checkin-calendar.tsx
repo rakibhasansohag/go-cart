@@ -2,7 +2,8 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CHECKIN_REWARDS, claimDailyCheckIn } from '@/queries/checkin';
+import { CHECKIN_REWARDS } from '@/lib/checkin-constants';
+import { claimDailyCheckIn } from '@/queries/checkin';
 import { Check, Gift, Coins, Sparkles, AlertCircle, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn, getFriendlyErrorMessage } from '@/lib/utils';
@@ -20,6 +21,7 @@ interface CheckInRecord {
 interface Props {
 	hasClaimedToday: boolean;
 	claimedDaysCount: number;
+	daysInMonth?: number;
 	todayDateStr: string;
 	checkIns: CheckInRecord[];
 	onClaimSuccess?: (data: { coinsEarned: number; rewardTitle: string; couponCode?: string | null }) => void;
@@ -28,6 +30,7 @@ interface Props {
 export default function CheckInCalendar({
 	hasClaimedToday,
 	claimedDaysCount,
+	daysInMonth = 31,
 	todayDateStr,
 	checkIns,
 	onClaimSuccess,
@@ -38,7 +41,7 @@ export default function CheckInCalendar({
 	const [claimedRecords, setClaimedRecords] = useState<CheckInRecord[]>(checkIns);
 
 	// Today's claimable day index is current claimed count + 1 (if not claimed today)
-	const todayDayIndex = claimedState ? countState : countState + 1;
+	const todayDayIndex = claimedState ? countState : Math.min(daysInMonth, countState + 1);
 
 	const handleClaim = async () => {
 		if (loading || claimedState) return;
@@ -73,8 +76,8 @@ export default function CheckInCalendar({
 		}
 	};
 
-	// Generate 31 day slots for the calendar
-	const daysArray = Array.from({ length: 31 }, (_, i) => i + 1);
+	// Generate dynamic days array matching active month (28, 29, 30, or 31)
+	const daysArray = Array.from({ length: daysInMonth }, (_, i) => i + 1);
 
 	return (
 		<div className='w-full bg-background/95 backdrop-blur-xl border border-border/20 rounded-3xl p-6 shadow-2xl space-y-6'>
@@ -92,7 +95,7 @@ export default function CheckInCalendar({
 				<div className='flex items-center gap-x-2 bg-amber-500/10 px-3.5 py-1.5 rounded-full border border-amber-500/20'>
 					<Coins className='w-4 h-4 text-amber-500' />
 					<span className='text-xs font-semibold text-amber-600 dark:text-amber-400'>
-						{countState} / 31 Days Checked In
+						{countState} / {daysInMonth} Days Checked In
 					</span>
 				</div>
 			</div>

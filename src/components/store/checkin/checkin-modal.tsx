@@ -91,6 +91,7 @@ export default function CheckInModal() {
 							<CheckInCalendar
 								hasClaimedToday={statusData.hasClaimedToday}
 								claimedDaysCount={statusData.claimedDaysCount}
+								daysInMonth={statusData.daysInMonth}
 								todayDateStr={statusData.todayDateStr}
 								checkIns={statusData.checkIns}
 								onClaimSuccess={() => {
