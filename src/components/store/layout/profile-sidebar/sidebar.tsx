@@ -67,7 +67,7 @@ export default function ProfileSidebar() {
 	};
 
 	return (
-		<div className='w-full lg:w-[296px]'>
+		<div className='w-full lg:w-[296px] shrink-0 lg:sticky lg:top-[88px] self-start z-10'>
 			{/* Breadcrumbs */}
 			<div className='w-full p-4 text-xs text-main-secondary'>
 				<span>
