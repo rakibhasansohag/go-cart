@@ -52,42 +52,43 @@ export default function CheckInModal() {
 	return (
 		<AnimatePresence>
 			{isOpen && (
-				<div className='fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-md overflow-y-auto'>
+				<div className='fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-6 bg-black/60 backdrop-blur-md overflow-y-auto'>
 					<motion.div
-						initial={{ opacity: 0, scale: 0.9, y: 20 }}
+						initial={{ opacity: 0, scale: 0.92, y: 15 }}
 						animate={{ opacity: 1, scale: 1, y: 0 }}
-						exit={{ opacity: 0, scale: 0.9, y: 20 }}
+						exit={{ opacity: 0, scale: 0.92, y: 15 }}
 						transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-						className='relative w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-3xl shadow-2xl border border-white/10'
+						className='relative w-full max-w-3xl max-h-[94vh] sm:max-h-[90vh] overflow-y-auto rounded-2xl sm:rounded-3xl shadow-2xl border border-white/10 my-auto'
 					>
 						{/* Close Button */}
 						<button
 							onClick={handleClose}
-							className='absolute top-4 right-4 z-10 w-9 h-9 rounded-full bg-black/20 hover:bg-black/40 text-white flex items-center justify-center backdrop-blur-md transition-colors'
+							aria-label='Close modal'
+							className='absolute top-3 right-3 sm:top-4 sm:right-4 z-10 w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-black/30 hover:bg-black/50 text-white flex items-center justify-center backdrop-blur-md transition-colors'
 						>
-							<X className='w-5 h-5' />
+							<X className='w-4 h-4 sm:w-5 sm:h-5' />
 						</button>
 
 						{/* Top Banner */}
-						<div className='bg-gradient-to-r from-red-600 via-orange-500 to-amber-500 p-6 text-white text-center relative overflow-hidden'>
+						<div className='bg-gradient-to-r from-red-600 via-orange-500 to-amber-500 p-4 sm:p-6 text-white text-center relative overflow-hidden'>
 							<div className='absolute -right-10 -bottom-10 opacity-20 pointer-events-none'>
-								<Trophy className='w-48 h-48 text-white' />
+								<Trophy className='w-36 h-36 sm:w-48 sm:h-48 text-white' />
 							</div>
-							<div className='relative z-10 flex flex-col items-center justify-center gap-y-1.5'>
-								<div className='inline-flex items-center gap-x-2 bg-white/20 backdrop-blur-md px-4 py-1 rounded-full text-xs font-bold uppercase tracking-wider'>
-									<Sparkles className='w-3.5 h-3.5' /> Daily Visitor Reward
+							<div className='relative z-10 flex flex-col items-center justify-center gap-y-1 sm:gap-y-1.5'>
+								<div className='inline-flex items-center gap-x-1.5 bg-white/20 backdrop-blur-md px-3 py-0.5 sm:px-4 sm:py-1 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-wider'>
+									<Sparkles className='w-3 h-3 sm:w-3.5 sm:h-3.5' /> Daily Visitor Reward
 								</div>
-								<h1 className='text-2xl sm:text-3xl font-extrabold tracking-tight'>
+								<h1 className='text-lg sm:text-2xl font-extrabold tracking-tight'>
 									Claim Your Daily GoCoins & Coupons!
 								</h1>
-								<p className='text-xs sm:text-sm text-white/90 max-w-lg'>
+								<p className='text-[11px] sm:text-xs text-white/90 max-w-lg hidden sm:block'>
 									Welcome back! Check in each day of the month to unlock GoCoins balance, free shipping perks, and personal promo codes.
 								</p>
 							</div>
 						</div>
 
 						{/* Calendar Container */}
-						<div className='bg-background p-4 sm:p-6'>
+						<div className='bg-background p-3 sm:p-5'>
 							<CheckInCalendar
 								hasClaimedToday={statusData.hasClaimedToday}
 								claimedDaysCount={statusData.claimedDaysCount}
