@@ -268,6 +268,11 @@ export const applyCoupon = async (
 			throw new Error('Cart not found.');
 		}
 
+		// Ensure user-bound coupons can only be applied by the target user
+		if (coupon.targetUserId && coupon.targetUserId !== cart.userId) {
+			throw new Error('This coupon is not valid for your account.');
+		}
+
 		// Step 4: Ensure no coupon is already applied to the cart
 		if (cart.couponId) {
 			throw new Error('A coupon is already applied to this cart.');
@@ -383,6 +388,10 @@ export const applyCouponToOrder = async (
 
 		if (!coupon) {
 			throw new Error('Invalid coupon code.');
+		}
+
+		if (coupon.targetUserId && coupon.targetUserId !== user.id) {
+			throw new Error('This coupon is not valid for your account.');
 		}
 
 		const currentDate = new Date();

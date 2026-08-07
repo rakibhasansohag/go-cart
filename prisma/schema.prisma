@@ -41,9 +41,55 @@ model User {
   emailOutboxJobs         EmailOutbox[]            @relation("EmailOutboxRecipient")
   emailTemplatesEdited    EmailTemplate[]          @relation("EmailTemplateEditor")
   loyaltyAccount          LoyaltyAccount?
+  personalCoupons         Coupon[]                 @relation("UserPersonalCoupons")
+  dailyCheckIns           DailyCheckIn[]           @relation("UserDailyCheckIns")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model DailyCheckIn {
+  id          String   @id @default(uuid())
+  userId      String
+  date        String   // "YYYY-MM-DD"
+  yearMonth   String   // "YYYY-MM"
+  dayIndex    Int      // 1 to 31 (monthly check-in count)
+  coinsEarned Int      @default(0)
+  rewardType  String   @default("COINS") // "COINS" | "COINS_COUPON" | "FREE_SHIPPING"
+  couponId    String?
+  createdAt   DateTime @default(now())
+
+  user User @relation("UserDailyCheckIns", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+  @@index([userId, yearMonth])
+}
+
+model Coupon {
+  id             String @id @default(uuid())
+  code           String @unique
+  startDate      String
+  endDate        String
+  discount       Int
+  maxUses        Int    @default(0)
+  maxUsesPerUser Int    @default(1)
+
+  targetUserId String?
+  targetUser   User?   @relation("UserPersonalCoupons", fields: [targetUserId], references: [id], onDelete: Cascade)
+
+  storeId String?
+  store   Store?  @relation("CouponToStore", fields: [storeId], references: [id], onDelete: Cascade)
+
+  orders OrderGroup[] @relation("CouponToOrderGroup")
+  users  User[]       @relation("CouponToUser")
+
+  carts Cart[] @relation("CouponToCart")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([storeId])
+  @@index([targetUserId])
 }
 
 model Category {
@@ -1058,28 +1104,7 @@ model Wishlist {
   @@index([sizeId])
 }
 
-model Coupon {
-  id             String @id @default(uuid())
-  code           String @unique
-  startDate      String
-  endDate        String
-  discount       Int
-  maxUses        Int    @default(0)
-  maxUsesPerUser Int    @default(1)
 
-  storeId String?
-  store   Store?  @relation("CouponToStore", fields: [storeId], references: [id], onDelete: Cascade)
-
-  orders OrderGroup[] @relation("CouponToOrderGroup")
-  users  User[]       @relation("CouponToUser")
-
-  carts Cart[] @relation("CouponToCart")
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([storeId])
-}
 
 model PaymentDetails {
   id String @id @default(uuid())

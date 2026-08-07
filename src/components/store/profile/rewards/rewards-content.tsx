@@ -2,11 +2,13 @@
 
 import { queryKeys } from '@/lib/query-keys';
 import { getUserLoyaltyAccount, UserLoyaltyDataType } from '@/queries/loyalty';
-import { useSuspenseQuery } from '@tanstack/react-query';
+import { getDailyCheckInStatus } from '@/queries/checkin';
+import { useQuery, useSuspenseQuery } from '@tanstack/react-query';
 import { Coins, ArrowUpRight, ArrowDownLeft, Clock, History } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
 import { coinsToDiscount } from '@/lib/loyalty/coins';
+import CheckInCalendar from '@/components/store/checkin/checkin-calendar';
 
 interface Props {
 	initialPage?: number;
@@ -18,6 +20,11 @@ export default function RewardsContent({ initialPage = 1 }: Props) {
 	const { data } = useSuspenseQuery<UserLoyaltyDataType>({
 		queryKey: queryKeys.profile.loyalty(page),
 		queryFn: () => getUserLoyaltyAccount(page, 10),
+	});
+
+	const { data: checkInStatus, refetch: refetchCheckIn } = useQuery({
+		queryKey: ['daily-checkin-status'],
+		queryFn: () => getDailyCheckInStatus(),
 	});
 
 	const { balance, lifetimeEarned, transactions, totalPages, currentPage } = data;
@@ -73,6 +80,19 @@ export default function RewardsContent({ initialPage = 1 }: Props) {
 					Shop & Earn
 				</Link>
 			</div>
+
+			{/* Embedded Daily Check-In Calendar Widget */}
+			{checkInStatus && checkInStatus.isAuthenticated && (
+				<CheckInCalendar
+					hasClaimedToday={checkInStatus.hasClaimedToday}
+					claimedDaysCount={checkInStatus.claimedDaysCount}
+					todayDateStr={checkInStatus.todayDateStr}
+					checkIns={checkInStatus.checkIns}
+					onClaimSuccess={() => {
+						refetchCheckIn();
+					}}
+				/>
+			)}
 
 			{/* Transaction History */}
 			<div className='rounded-xl bg-background p-6 border border-border/10 shadow-sm space-y-4'>

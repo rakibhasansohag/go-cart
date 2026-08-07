@@ -775,7 +775,8 @@ Goal: reward repeat customers with GoCoins redeemable at checkout (2 coins / $1 
 - [x] Redeem GoCoins at checkout as a discount in `placeOrder()`; enforce 100 coins min & 30% product subtotal cap
 - [x] Interactive GoCoins checkout widget in `PlaceOrderCard` showing balance, cap, discount, and real-time total updates
 - [x] Show GoCoins balance, lifetime earned, redeemable value, and transaction history on `/profile/rewards`
-- **Test**: Unit tests passed in `coins.test.ts` (5/5); full test suite passed (87/87 tests); TypeScript typecheck passed
+- [x] Daily Check-In & Monthly Rewards Calendar: `DailyCheckIn` model + `migration.sql`, anti-abuse `@@unique([userId, date])`, user-bound milestone coupons (`targetUserId`), auto-popup modal, & embedded `/profile/rewards` calendar widget
+- **Test**: Unit tests passed in `checkin.test.ts` (4/4); full test suite passed (91/91 tests); TypeScript typecheck passed
 
 ### Phase 14.4 — Low Stock & Restock Alerts
 
