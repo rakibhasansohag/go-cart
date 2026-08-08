@@ -681,6 +681,8 @@ Goal: protect the critical marketplace workflows before production deployment.
   - [x] Add a fail-closed E2E runtime guard that rejects production APP_ENV,
         database URL mismatches, live payment keys, non-sandbox PayPal, enabled
         email/automation, or non-test auth configuration
+  - [x] Add a guarded one-command staging anonymizer that preserves IDs, roles,
+        relationships, statuses, and totals while replacing personal/provider data
   - [x] Add `test:unit` and `test:e2e` scripts while retaining `test` as the
         complete non-browser suite; `test:integration` remains pending
   - [ ] **Test**: All suites run locally from documented commands
