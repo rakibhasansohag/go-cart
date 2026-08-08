@@ -599,44 +599,63 @@ Goal: connect physical shipments to the centralized fulfillment state machine,
 then expand the Phase 10.3.3 notification foundation across the complete
 post-purchase workflow.
 
-- [x] **Phase 11.1 — Shipment tracking model**
+- **Audit status (2026-08-08)**: Reopened. The metadata foundation is present,
+  but `Shipment.orderGroupId @unique` still enforces one shipment per package.
+  That cannot represent split shipments or a consolidated shipment containing
+  packages from multiple stores.
+
+- [ ] **Phase 11.1 — Shipment tracking model**
   - [x] Add shipment carrier/tracking metadata, shipment items, tracking events,
         delivery attempts, and proof-of-delivery fields
-  - [x] Support split and partial shipments per order group
-  - [x] Allow compatible packages to be consolidated without forcing a ready
+  - [ ] Replace the one-to-one package/shipment relation with an explicit
+        package-to-shipment assignment model that supports quantities
+  - [ ] Support split and partial shipments per order group without assigning
+        more than the unshipped quantity of an order item
+  - [ ] Allow compatible packages to be consolidated without forcing a ready
         package to wait indefinitely for another store
-  - **Test**: Multiple shipments can safely represent different items from one
+  - [ ] **Test**: Multiple shipments can safely represent different items from one
     store order, and one shipment can carry compatible packages without merging
     their seller ownership or audit history
 
-- [x] **Phase 11.2 — Seller handoff and centralized logistics workflow**
+- [ ] **Phase 11.2 — Seller handoff and centralized logistics workflow**
   - [x] Let sellers prepare and hand off their own package, but never claim
         warehouse receipt or customer delivery in platform-fulfilled mode
-  - [x] Let warehouse/logistics or audited admins receive packages, assign
-        shipment items, dispatch shipments, and record delivery exceptions
-  - [x] Accept verified carrier events and synchronize them with item, package,
+  - [x] Let audited admins receive and dispatch the current one-package shipment
+        through the centralized state machine
+  - [ ] Add transactional shipment-item assignment, delivery-attempt creation,
+        tracking-event creation, and proof-of-delivery audit mutations
+  - [ ] Accept authenticated and idempotent carrier webhook events and
+        synchronize them with item, package,
         shipment, and derived order statuses
-  - **Test**: Seller handoff, warehouse receipt, split dispatch, failed attempt,
+  - [ ] **Test**: Seller handoff, warehouse receipt, split dispatch, failed attempt,
     retry, and delivery update only the correct records and authorized views
 
-- [x] **Phase 11.3 — Customer tracking experience**
-  - [x] Add shipment cards and a tracking timeline to order details
-  - [x] Show Order ID, Package ID, Shipment ID, split shipments, delivery
+- [ ] **Phase 11.3 — Customer tracking experience**
+  - [x] Add a shipment status card and fulfillment-transition history to order details
+  - [ ] Render the persisted tracking-event and delivery-attempt timeline instead
+        of only a static status milestone bar
+  - [ ] Show Order ID, Package ID, Shipment ID, shipment contents, split shipments, delivery
         estimates, attempts, delays, proof, and partial/full delivered state
-  - [x] Prefetch tracking data and invalidate affected order/tracking queries after updates
-  - **Test**: Customers can track every shipment associated with their order
+  - [ ] Add a centralized tracking query key, server prefetch/hydration, and
+        targeted order/tracking invalidation after mutations
+  - [ ] **Test**: Customers can track every shipment associated with their order
 
-- [x] **Phase 11.4 — Notification coverage and operations**
-  - [x] Reuse the Phase 10.3.3 event/outbox pipeline for shipment, delivery
+- [ ] **Phase 11.4 — Notification coverage and operations**
+  - [x] Reuse the Phase 10.3.3 event/outbox pipeline for package, shipment, and
+        return-status changes
+  - [ ] Add typed, recipient-scoped events for delivery
         attempts, return deadlines, dispute escalation, refund, exchange, and
         inventory-reconciliation events
   - [x] Add an admin delivery-health view for pending/failed email jobs,
-        automation failures, retries, and notification audit records
-  - [x] Add retention rules for notification bodies and delivery logs without
+        automation failures, sent jobs, and retries
+  - [ ] Add notification audit records to the health view and protect retries
+        with status eligibility plus idempotent compare-and-set updates
+  - [ ] Add retention rules and a secured cleanup job for notification bodies
+        and delivery logs without
         deleting immutable business audit events
-  - [x] Document how to replace Gmail SMTP or the database outbox with a
+  - [ ] Document how to replace Gmail SMTP or the database outbox with a
         dedicated provider/queue without changing domain mutation code
-  - **Test**: Each event reaches only its intended customer, seller, or admin
+  - [ ] **Test**: Each event reaches only its intended customer, seller, or admin
     once, and operational failures can be retried and audited safely
 
 ---
@@ -645,31 +664,52 @@ post-purchase workflow.
 
 Goal: protect the critical marketplace workflows before production deployment.
 
-- [x] **Phase 12.1 — Test infrastructure**
-  - [x] Add unit/integration test tooling, isolated test environment variables, and deterministic fixtures
+- **Audit status (2026-08-08)**: Reopened. The repository has 91 passing Vitest
+  tests and a deterministic demo seed, but no browser test runner, E2E specs,
+  isolated integration database configuration, or `test:integration`/`test:e2e`
+  scripts.
+
+- [ ] **Phase 12.1 — Test infrastructure**
+  - [x] Add Vitest unit-test tooling and deterministic fixtures
+  - [ ] Add an isolated PostgreSQL integration-test database, environment
+        contract, migration/reset helper, and deterministic cleanup
   - [x] Add a repeatable deterministic demo fixture generator for 1,000 orders across the admin, seller, and customer test accounts
   - [x] Seed realistic generic catalog names, three variant image views, and stable empty-image fallbacks for visual QA
-  - [x] Add browser end-to-end testing for customer, seller, and admin roles
-  - [x] Add `test`, `test:integration`, and `test:e2e` scripts
-  - **Test**: All suites run locally from documented commands
+  - [ ] Add Playwright browser end-to-end testing for customer, seller, and admin roles
+  - [ ] Add `test:unit`, `test:integration`, and `test:e2e` scripts while
+        retaining `test` as the complete non-browser suite
+  - [ ] **Test**: All suites run locally from documented commands
 
-- [x] **Phase 12.2 — Critical integration coverage**
-  - [x] Cover permissions, totals, coupon usage, inventory changes, order transitions, and query invalidation
-  - [x] Cover payment webhook verification, idempotency, retries, and refund reconciliation
-  - [x] Cover return eligibility, partial returns, disputes, and restocking
-  - **Test**: Critical server workflows pass against an isolated test database
+- [ ] **Phase 12.2 — Critical integration coverage**
+  - [x] Keep the existing focused unit coverage for payment security/status,
+        fulfillment transitions, return rules/reconciliation, notifications,
+        email rendering/outbox, and loyalty helpers
+  - [ ] Cover real database permissions, totals, coupon usage, inventory changes,
+        order transitions, and query invalidation
+  - [ ] Cover payment webhook signature verification, event idempotency, retries,
+        provider reconciliation, and refund reconciliation against the database
+  - [ ] Cover return eligibility, concurrent partial returns, disputes, and restocking
+  - [ ] Cover split/consolidated shipment invariants and carrier-event idempotency
+  - [ ] Cover concurrent GoCoins award/redemption invariants
+  - [ ] **Test**: Critical server workflows pass against an isolated test database
 
-- [x] **Phase 12.3 — End-to-end commerce journeys**
-  - [x] Cover browse → cart → checkout → payment → order history
-  - [x] Cover seller fulfillment → shipment tracking → delivery
-  - [x] Cover delivered item → return request → decision → refund/restock
-  - **Test**: The complete customer, seller, and admin journeys pass in supported browsers
+- [ ] **Phase 12.3 — End-to-end commerce journeys**
+  - [ ] Cover browse → cart → checkout → payment → order history
+  - [ ] Cover seller fulfillment → shipment tracking → delivery
+  - [ ] Cover delivered item → return request → decision → refund/restock
+  - [ ] Cover keyboard-only search, checkout, and critical admin/seller actions
+  - [ ] **Test**: The complete customer, seller, and admin journeys pass in supported browsers
 
-- [x] **Phase 12.4 — Continuous integration**
-  - [x] Run formatting/linting, TypeScript, tests, and production build for every pull request
-  - [x] Cache dependencies safely and upload useful failure artifacts
-  - [x] Block merging when required checks fail
-  - **Test**: A deliberately failing check prevents the pull request from passing
+- [ ] **Phase 12.4 — Continuous integration**
+  - [x] Run linting, TypeScript, Vitest, and a production build for pull requests
+        targeting `main` or `dev`
+  - [ ] Add an explicit formatting check and decide whether lint warnings are a
+        tracked baseline or fail the build (current audit: 0 errors, 103 warnings)
+  - [ ] Run database integration tests and Playwright in CI with isolated services
+  - [ ] Cache Bun dependencies safely and upload Playwright traces/screenshots,
+        test reports, and useful build artifacts on failure
+  - [ ] Configure GitHub branch protection so required checks block merging
+  - [ ] **Test**: A deliberately failing required check prevents the pull request from passing
 
 ---
 
@@ -677,10 +717,17 @@ Goal: protect the critical marketplace workflows before production deployment.
 
 Goal: replace the paid Elasticsearch dependency with zero-cost native PostgreSQL
 full-text search using `pg_trgm`, `tsvector`, and `unaccent` — all confirmed
-available on the Neon goCart project. The existing `/api/search-products` and
-`/api/index-products` routes and `src/lib/elasticsearch.ts` are the only
-Elasticsearch consumers. The header search UI (`search.tsx` → `/api/search?q=`)
-hits a route that does not exist yet; this phase creates it and wires it end-to-end.
+available on the Neon goCart project. The legacy Elasticsearch client and index
+routes have now been removed, and the header search UI is wired to
+`/api/search?q=`. The remaining work is browse relevance, query normalization,
+and automated search coverage.
+
+- **Audit status (2026-08-08)**: Reopened for search correctness and coverage.
+  Elasticsearch is removed, the migration is applied, autocomplete uses native
+  PostgreSQL search, and the UI is wired. Browse results still use Prisma
+  `contains` filters ordered mainly by views rather than PostgreSQL relevance;
+  runtime query normalization also strips accented characters instead of using
+  the same unaccented text-search pipeline.
 
 **Why PostgreSQL over a third-party search service:**
 - `pg_trgm` + `tsvector` run inside Neon — zero extra infra, zero cost
@@ -697,105 +744,234 @@ hits a route that does not exist yet; this phase creates it and wires it end-to-
   - [x] Add a GIN trigram index on `ProductVariant.variantName` for variant-level search
   - **Test**: Migration `20260807150000_postgres_fts` applied successfully; Prisma Client generated
 
-- [x] **Phase 13.2 — Remove Elasticsearch and create the search service**
+- [ ] **Phase 13.2 — Remove Elasticsearch and create the search service**
   - [x] Delete `src/lib/elasticsearch.ts` and remove `@elastic/elasticsearch` from `package.json`
   - [x] Create `src/lib/search.ts` — a typed server-only search service using `db.$queryRaw` with:
     - Ranked full-text search: `ts_rank(searchVector, query)` for relevance sorting
     - Trigram similarity fallback: `similarity(name, $query)` for short/partial queries
-    - `unaccent` normalization applied to both stored and runtime query tokens
+    - [ ] Apply `unaccent` normalization to runtime query tokens as well as the stored vector
     - Result shape: `{ name, link, image }` — matches existing `SearchResult` type
-    - Maximum 20 results, configurable `minSimilarity` threshold
+    - [x] Maximum 20 results by default
+    - [ ] Add a bounded configurable `minSimilarity` threshold and deterministic
+          ranking across product and variant matches
   - [x] Create `src/app/api/search/route.ts` (the route `search.tsx` calls):
     - Accept `?q=` or `?search=` query param; validate max 100 chars
     - Call the search service; return `SearchResult[]` JSON
     - Mark `export const dynamic = 'force-dynamic'`
   - [x] Delete `src/app/api/search-products/route.ts` (replaced by above)
   - [x] Delete `src/app/api/index-products/route.ts` (no external index needed — PG maintains `tsvector` automatically via generated column)
-  - **Test**: Search service and endpoint created; `@elastic/elasticsearch` removed
+  - [ ] **Test**: Search service and endpoint cover empty, overlong, accented,
+        typo, short-prefix, duplicate-variant, and database-error cases
 
-- [x] **Phase 13.3 — Browse page: integrate ranked search with filters**
+- [ ] **Phase 13.3 — Browse page: integrate ranked search with filters**
   - [x] Update `src/queries/product.ts` browse query to support case-insensitive and multi-field search across product name, description, brand, variantName, variantDescription, SKU, and keywords
   - [x] Ensure all existing browse filters (category, store, offer, price, rating, size, color) compose correctly with search
-  - **Test**: Browse with `?search=laptop` returns filtered results; case-insensitive matching verified
+  - [ ] Use PostgreSQL full-text/trigram candidate IDs and relevance as the
+        default browse ordering while preserving explicit user-selected sorts
+  - [ ] Keep cursor pagination stable when relevance scores tie
+  - [ ] **Test**: Browse search composes with every filter and returns stable,
+        accent-insensitive, typo-tolerant ranked pages
 
 - [x] **Phase 13.4 — Search UI: debounced autocomplete suggestions**
   - [x] Update `search.tsx` to call `/api/search?q=` with debouncing and `AbortController` request cancellation
   - [x] Add keyboard navigation (ArrowDown, ArrowUp, Enter, Escape) to autocomplete suggestions
   - [x] Add ARIA combobox attributes (`role="combobox"`, `aria-expanded`, `aria-activedescendant`)
   - [x] Add "No products found for..." empty state and click-outside listener
-  - **Test**: Keyboard navigation, AbortController, click-outside, and empty state implemented
+  - [ ] Add component/E2E tests for keyboard navigation, focus behavior,
+        AbortController cancellation, click-outside, loading, failure, and empty states
 
 - [x] **Phase 13.5 — Clean up environment and CI**
   - [x] Verified `.env.example` has no `ELASTICSEARCH` variables
   - [x] Verified `.github/workflows/ci.yml` has no Elasticsearch dependencies
-  - [x] Verified `bun run typecheck` and `bun run test` (82/82 tests) pass with zero Elasticsearch imports remaining
-  - **Test**: `grep -r 'elasticsearch' src/` returns zero matches
+  - [x] Verified `bun run typecheck` and `bun run test` (91/91 tests) pass with zero Elasticsearch imports remaining
+  - [x] **Test**: `rg -i 'elasticsearch' src` returns zero matches
 
 ---
 
-## Phase 14: New Features Backlog
+## Phase 14: Marketplace Funds Flow & Seller Settlement Decision
 
-### Phase 14.1 — Seller & Admin Analytics Dashboard
+Goal: decide and implement how a real multi-vendor order moves money from the
+customer to each seller before adding more optional growth features.
 
-Goal: give sellers actionable revenue, order, and product insights without a
-third-party analytics service — computed directly from the existing Prisma models.
+- **Audit status (2026-08-08)**: No connected-account onboarding, platform-fee,
+  transfer, payout, or transfer-reversal implementation was found. This phase is
+  a product-owner decision gate; do not select a charge or settlement pattern
+  until the owner confirms the business relationship and payout timing.
 
-- [ ] **Phase 14.1.1 — Seller analytics**
-  - [ ] Revenue over time chart (daily/weekly/monthly toggle) using order + payment data
-  - [ ] Top-selling products and variants by revenue and unit count
-  - [ ] Average order value and repeat-customer rate per store
-  - [ ] Return rate and refund rate per product
-  - [ ] Prefetch on the server, render with a lightweight charting library (Recharts — already commonly installed, or add it)
-  - **Test**: Charts render with demo fixture data; empty state shows when no orders exist
+- [ ] **Phase 14.1 — Business and responsibility decisions**
+  - [ ] Confirm whether goCart or each seller is the merchant the customer is
+        paying, including whose name appears on receipts/statements
+  - [ ] Confirm whether one checkout may contain multiple sellers and whether
+        seller funds release immediately or only after delivery/return-risk gates
+  - [ ] Define commission, payment-fee, tax, shipping, coupon, GoCoins, refund,
+        dispute, negative-balance, and chargeback ownership
+  - [ ] Confirm launch countries/currencies and seller payout eligibility
+  - [ ] Produce and approve a dedicated marketplace payments recommendation
 
-- [ ] **Phase 14.1.2 — Admin platform analytics**
-  - [ ] Platform GMV, order count, and active-store count over time
-  - [ ] Top stores by revenue; flagged stores by return/refund rate
-  - [ ] SMTP delivery health metrics surfaced on the existing delivery-health page
-  - **Test**: Admin-only route; seller role receives 403
+- [ ] **Phase 14.2 — Seller financial onboarding**
+  - [ ] Add connected-account identity, onboarding status, capability status,
+        requirements, and payout-readiness fields without storing sensitive KYC data
+  - [ ] Add hosted/embedded onboarding, account management, requirement alerts,
+        and seller earnings/payout access based on the approved configuration
+  - [ ] Process authenticated account/capability webhooks idempotently
+  - [ ] Prevent selling or settlement when required capabilities are inactive
 
-### Phase 14.2 — Product Q&A
+- [ ] **Phase 14.3 — Marketplace ledger, commissions, and settlement**
+  - [ ] Add immutable per-order-group ledger entries for gross amount, discounts,
+        shipping, tax, provider fees, platform commission, refunds, reversals,
+        seller payable, and payout status using decimal/minor-unit-safe arithmetic
+  - [ ] Allocate multi-seller order discounts and GoCoins deterministically
+  - [ ] Create idempotent transfers/settlements only after the approved release gate
+  - [ ] Reconcile provider balances, transfers, payouts, and internal ledger totals
 
-Goal: let customers ask questions on product pages; sellers and any verified
-buyer can answer publicly.
+- [ ] **Phase 14.4 — Reversals and operations**
+  - [ ] Reverse or adjust seller settlement for cancellations, partial refunds,
+        returns, disputes, chargebacks, failed asynchronous payments, and fraud holds
+  - [ ] Add admin/seller views for pending, blocked, paid, reversed, and failed settlements
+  - [ ] Add retry, alerting, audit, and manual-review flows without duplicating money movement
+  - [ ] **Test**: Multi-seller payment, partial refund, dispute, failed transfer,
+        retry, and payout reconciliation preserve exact ledger/provider equality
 
-- [ ] Add `ProductQuestion` and `ProductAnswer` Prisma models with author, body, helpful votes, and visibility
-- [ ] Customer-facing question form and answer thread on the product detail page
-- [ ] Seller can mark an official answer; admin can hide spam
-- [ ] Notify the seller of new questions via the existing notification + email pipeline
-- [ ] Server prefetch questions; `useSuspenseQuery` for client updates
-- **Test**: A logged-in customer can submit a question; the seller receives a notification and can answer
+---
 
-### Phase 14.3 — GoCoins Loyalty & Rewards System
+## Phase 15: Production Security, Reliability & Operations
 
-Goal: reward repeat customers with GoCoins redeemable at checkout (2 coins / $1 paid, 100 coins = $1 discount, max 30% product subtotal cap, min 100 coins, permanent once earned).
+Goal: make the application safe and operable under real customer traffic.
 
-- [x] Add `LoyaltyAccount`, `LoyaltyTransaction`, `LoyaltyRedemption` Prisma models & migration `20260807160000_gocoin_loyalty`
-- [x] Award 2 GoCoins per $1 paid on confirmed payment in `reconcilePaymentEvent` with in-app notification
-- [x] Redeem GoCoins at checkout as a discount in `placeOrder()`; enforce 100 coins min & 30% product subtotal cap
-- [x] Interactive GoCoins checkout widget in `PlaceOrderCard` showing balance, cap, discount, and real-time total updates
-- [x] Show GoCoins balance, lifetime earned, redeemable value, and transaction history on `/profile/rewards`
-- [x] Daily Check-In & Monthly Rewards Calendar: `DailyCheckIn` model + `migration.sql`, anti-abuse `@@unique([userId, date])`, user-bound milestone coupons (`targetUserId`), auto-popup modal, & embedded `/profile/rewards` calendar widget
-- **Test**: Unit tests passed in `checkin.test.ts` (4/4); full test suite passed (91/91 tests); TypeScript typecheck passed
+- [ ] **Phase 15.1 — Authorization and abuse-resistance audit**
+  - [ ] Test every server action and route for customer, seller-owner, other-seller,
+        admin, unauthenticated, and suspended-account access
+  - [ ] Fix existing analytics ownership leakage before exposing seller analytics
+  - [ ] Add rate limits and abuse controls for auth-sensitive writes, checkout,
+        search, Q&A, image generation, notification retries, and check-ins
+  - [ ] Add CSRF/origin protections where cookie-authenticated mutations need them
 
-### Phase 14.4 — Low Stock & Restock Alerts
+- [ ] **Phase 15.2 — Secrets and browser security**
+  - [ ] Use least-privilege provider credentials, separate environments, rotation
+        procedures, and automated secret scanning
+  - [ ] Add a tested Content Security Policy and security headers compatible with
+        Clerk, Stripe/PayPal, Cloudinary, and application assets
+  - [ ] Add dependency vulnerability review and a documented patch cadence
 
-Goal: help sellers avoid stockouts with proactive notifications.
+- [ ] **Phase 15.3 — Observability and recovery**
+  - [ ] Add structured logs with request/event correlation IDs and secret/PII redaction
+  - [ ] Add free-tier or self-hostable error tracking, uptime checks, and alerts for
+        payments, webhooks, email outbox, cron jobs, search, and settlement
+  - [ ] Define service-level indicators for checkout success, webhook lag, outbox
+        lag, search latency, and settlement reconciliation
+  - [ ] Automate database backups and complete a documented restore drill
+  - [ ] Add staging, deployment, rollback, incident, and provider-outage runbooks
 
-- [ ] Add `lowStockThreshold` field to `ProductVariant` (default 5)
-- [ ] After each order placement, check if any variant's `quantity` falls below its threshold
-- [ ] Emit a `LOW_STOCK` domain event and create a seller notification + email outbox job
-- [ ] Seller can configure per-variant threshold from the inventory page
-- [ ] Admin dashboard shows a low-stock overview across all stores
-- **Test**: Placing an order that brings a variant to or below threshold triggers exactly one seller notification
+- [ ] **Phase 15.4 — Launch gate**
+  - [ ] Run load tests for browse/search, checkout, webhooks, notifications, and dashboards
+  - [ ] Complete accessibility, privacy/retention, legal-policy, and operational reviews
+  - [ ] **Test**: Staging passes the Phase 12 suites, restore drill, rollback drill,
+        and a production-readiness checklist with named owners
 
-### Phase 14.5 — Multi-Currency Display
+---
 
-Goal: show prices in the customer's local currency using exchange rates (display
-only — charge in base currency to avoid payment complexity).
+## Phase 16: Seller & Admin Analytics
 
-- [ ] Add an exchange-rate cache (updated once daily via a cron job hitting a free open API)
-- [ ] Detect the customer's currency from the existing country cookie
-- [ ] Display converted prices on product, browse, and cart pages with a clear "Charged in [base currency]" note
-- [ ] Allow manual currency selection from the existing country/lang/currency selector header component
-- **Test**: Switching currency updates displayed prices; checkout always charges in the base currency
+Goal: turn the existing dashboard prototypes into authorized, payment-grounded,
+actionable analytics without a third-party analytics dependency.
+
+- [ ] **Phase 16.1 — Analytics correctness and access foundation**
+  - [ ] Require seller role plus store ownership in every seller analytics query;
+        never return customer PII for another seller's store
+  - [ ] Define GMV, recognized revenue, net seller revenue, order count, active
+        store, refund rate, return rate, repeat customer, and date/timezone semantics
+  - [ ] Include only the correct payment/order states and remove hard-coded growth percentages
+  - [ ] Use database aggregation and stable pagination instead of loading all order groups
+  - [ ] Add query-level authorization, aggregation, empty-state, and large-fixture tests
+
+- [ ] **Phase 16.2 — Seller analytics**
+  - [ ] Revenue over time with daily/weekly/monthly controls and comparable prior periods
+  - [ ] Top products and variants by net revenue, gross revenue, and unit count
+  - [ ] Average order value, repeat-customer rate, return/refund rate, and stock risk
+  - [ ] Server-prefetch the initial range, hydrate the same stable query key, and
+        invalidate only affected analytics after reconciled commerce events
+  - [ ] **Test**: Correct charts render from demo fixtures with accessible tables
+        or summaries and honest empty states
+
+- [ ] **Phase 16.3 — Admin analytics**
+  - [ ] Platform GMV, net platform revenue, paid order count, and active stores over time
+  - [ ] Top stores plus return/refund/dispute and settlement-risk signals
+  - [ ] Add outbox, webhook, cron, search, and settlement health metrics
+  - [ ] **Test**: Admin-only data stays inaccessible to sellers and customers
+
+---
+
+## Phase 17: Customer Growth & Merchandising Backlog
+
+These features are valuable, but they follow the Phase 11-16 correctness,
+payments, testing, and launch gates unless product priorities explicitly change.
+
+### Phase 17.1 — Product Q&A
+
+Goal: let customers ask questions on product pages while sellers and eligible
+buyers provide moderated public answers.
+
+- [ ] Migrate the legacy static `Question { question, answer }` model to authored
+      `ProductQuestion`, `ProductAnswer`, and unique per-user helpful-vote records
+- [ ] Define verified-buyer eligibility, seller official answers, edit history,
+      visibility/moderation states, reports, rate limits, and spam controls
+- [ ] Sanitize/validate content and enforce author, seller-owner, and admin permissions
+- [ ] Notify the owning seller through the typed notification/outbox pipeline
+- [ ] Server-render crawlable public Q&A; prefetch the initial thread and use
+      accessible native controls plus targeted mutation invalidation
+- [ ] Add metadata/structured content only where it truthfully matches visible Q&A
+- [ ] **Test**: Authorization, moderation, duplicate votes, notification recipients,
+      keyboard access, and hidden-content indexability all pass
+
+### Phase 17.2 — GoCoins Loyalty & Rewards Correctness
+
+Goal: keep the implemented GoCoins experience while making its accounting safe
+under retries, concurrency, failed payments, cancellations, refunds, and abuse.
+
+- [x] Add `LoyaltyAccount`, `LoyaltyTransaction`, `LoyaltyRedemption`, and
+      `DailyCheckIn` data foundations and applied migrations
+- [x] Add checkout redemption UI, rewards dashboard/history, daily check-in
+      calendar, user-bound milestone coupons, and in-app reward notifications
+- [x] Enforce the current 100-coin minimum and 30% product-subtotal cap in helpers
+- [ ] Move order creation, inventory decrement, coupon use, coin validation,
+      conditional balance decrement, ledger rows, and cart completion into one
+      atomic transaction or compensating workflow
+- [ ] Award coins once per order's transition to paid, not once per distinct
+      provider event; add a database uniqueness invariant for the business event
+- [ ] Prevent concurrent redemption from making balances negative
+- [ ] Decide and implement cancellation/refund/chargeback coin reversal policy,
+      coupon stacking/allocation policy, expiry policy, and abuse controls
+- [ ] Use cryptographically secure coupon identifiers and define the business-day timezone
+- [ ] Route loyalty events through typed contracts and the shared delivery pipeline
+- [ ] **Test**: Unit tests remain green and database integration tests cover duplicate
+      paid events, concurrent redemption/check-in, rollback, refund, and chargeback
+
+### Phase 17.3 — Low Stock & Restock Alerts
+
+Goal: help sellers avoid stockouts with threshold-crossing notifications.
+
+- [ ] Add `lowStockThreshold` to the actual sellable inventory row (`Size`, or a
+      future explicit SKU inventory model), not `ProductVariant`, because quantity
+      is currently stored per size
+- [ ] Detect above→at/below and at/below→above threshold crossings inside the
+      same transaction that changes inventory
+- [ ] Emit idempotent low-stock and restocked domain events with seller notification/email jobs
+- [ ] Let sellers configure thresholds per sellable SKU; add admin aggregate visibility
+- [ ] **Test**: Concurrent purchases trigger one threshold-crossing alert, and a
+      restock allows a future low-stock alert without notification spam
+
+### Phase 17.4 — Multi-Currency Display
+
+Goal: show estimated local prices while charging and recording one authoritative
+base currency until a separate multi-currency payment phase is approved.
+
+- [ ] Select a free, license-compatible exchange-rate source and persist daily
+      versioned rates with last-known-good fallback, freshness, and failure alerts
+- [ ] Detect a default from country while allowing an explicit currency cookie override
+- [ ] Centralize Decimal/minor-unit conversion and currency-specific rounding
+- [ ] Display estimated converted prices on product, browse, cart, and checkout
+      with a persistent "Charged in [base currency]" disclosure
+- [ ] Keep order, payment, refund, GoCoins, analytics, and seller settlement
+      calculations exclusively in the authoritative charge currency
+- [ ] **Test**: Switching currency updates display only; stale/missing rates fail
+      safely; checkout/provider amounts and ledger values never change
