@@ -1,4 +1,7 @@
 import { PrismaClient } from '@prisma/client';
+import { assertSafeE2ERuntime } from './runtime-safety';
+
+assertSafeE2ERuntime();
 
 declare global {
 	var prisma: PrismaClient | undefined;

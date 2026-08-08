@@ -678,6 +678,9 @@ Goal: protect the critical marketplace workflows before production deployment.
   - [x] Add Playwright configuration, Chromium project, and an opt-in public
         home-page smoke test; protected customer, seller, and admin journeys
         remain pending until test auth and database isolation are defined
+  - [x] Add a fail-closed E2E runtime guard that rejects production APP_ENV,
+        database URL mismatches, live payment keys, non-sandbox PayPal, enabled
+        email/automation, or non-test auth configuration
   - [x] Add `test:unit` and `test:e2e` scripts while retaining `test` as the
         complete non-browser suite; `test:integration` remains pending
   - [ ] **Test**: All suites run locally from documented commands
