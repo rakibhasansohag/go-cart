@@ -665,9 +665,9 @@ post-purchase workflow.
 Goal: protect the critical marketplace workflows before production deployment.
 
 - **Audit status (2026-08-08)**: Reopened. The repository has 91 passing Vitest
-  tests and a deterministic demo seed, but no browser test runner, E2E specs,
-  isolated integration database configuration, or `test:integration`/`test:e2e`
-  scripts.
+  tests, a deterministic demo seed, and now an opt-in Playwright public smoke
+  foundation. Isolated integration infrastructure and protected customer,
+  seller, and admin journeys remain pending.
 
 - [ ] **Phase 12.1 — Test infrastructure**
   - [x] Add Vitest unit-test tooling and deterministic fixtures
@@ -675,9 +675,11 @@ Goal: protect the critical marketplace workflows before production deployment.
         contract, migration/reset helper, and deterministic cleanup
   - [x] Add a repeatable deterministic demo fixture generator for 1,000 orders across the admin, seller, and customer test accounts
   - [x] Seed realistic generic catalog names, three variant image views, and stable empty-image fallbacks for visual QA
-  - [ ] Add Playwright browser end-to-end testing for customer, seller, and admin roles
-  - [ ] Add `test:unit`, `test:integration`, and `test:e2e` scripts while
-        retaining `test` as the complete non-browser suite
+  - [x] Add Playwright configuration, Chromium project, and an opt-in public
+        home-page smoke test; protected customer, seller, and admin journeys
+        remain pending until test auth and database isolation are defined
+  - [x] Add `test:unit` and `test:e2e` scripts while retaining `test` as the
+        complete non-browser suite; `test:integration` remains pending
   - [ ] **Test**: All suites run locally from documented commands
 
 - [ ] **Phase 12.2 — Critical integration coverage**
@@ -703,11 +705,12 @@ Goal: protect the critical marketplace workflows before production deployment.
 - [ ] **Phase 12.4 — Continuous integration**
   - [x] Run linting, TypeScript, Vitest, and a production build for pull requests
         targeting `main` or `dev`
+  - [x] Pin the Bun runtime, restrict workflow token permissions to read-only,
+        and add a test-environment-only public E2E job with Playwright report upload
   - [ ] Add an explicit formatting check and decide whether lint warnings are a
         tracked baseline or fail the build (current audit: 0 errors, 103 warnings)
   - [ ] Run database integration tests and Playwright in CI with isolated services
-  - [ ] Cache Bun dependencies safely and upload Playwright traces/screenshots,
-        test reports, and useful build artifacts on failure
+  - [ ] Cache Bun dependencies safely and upload useful build artifacts on failure
   - [ ] Configure GitHub branch protection so required checks block merging
   - [ ] **Test**: A deliberately failing required check prevents the pull request from passing
 

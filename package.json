@@ -13,6 +13,8 @@
 		"start": "next start",
 		"lint": "eslint .",
 		"test": "vitest run",
+		"test:unit": "vitest run",
+		"test:e2e": "playwright test",
 		"test:payment": "vitest run src/lib/payments",
 		"test:watch": "vitest",
 		"typecheck": "tsc --noEmit",
@@ -114,6 +116,7 @@
 	},
 	"devDependencies": {
 		"@eslint/eslintrc": "^3",
+		"@playwright/test": "^1.62.1",
 		"@tailwindcss/postcss": "^4.3.3",
 		"@tanstack/react-query-devtools": "^5.101.4",
 		"@types/mjml": "4.7.4",
