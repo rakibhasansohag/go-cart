@@ -683,6 +683,11 @@ Goal: protect the critical marketplace workflows before production deployment.
         email/automation, or non-test auth configuration
   - [x] Add a guarded one-command staging anonymizer that preserves IDs, roles,
         relationships, statuses, and totals while replacing personal/provider data
+  - [x] Add opt-in Clerk Testing Token setup and protected customer, seller, and
+        admin authorization specs; credentials and Clerk/DB role synchronization remain
+        staging configuration tasks
+  - [x] Add a guarded Clerk-to-Prisma E2E user synchronizer that applies USER,
+        SELLER, and ADMIN roles only to the isolated staging database
   - [x] Add `test:unit` and `test:e2e` scripts while retaining `test` as the
         complete non-browser suite; `test:integration` remains pending
   - [ ] **Test**: All suites run locally from documented commands

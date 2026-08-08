@@ -76,3 +76,42 @@ jobs:
           name: playwright-report
           path: playwright-report/
           if-no-files-found: ignore
+
+  e2e-protected-authorization:
+    name: Protected E2E Authorization (Staging Only)
+    if: ${{ vars.E2E_BASE_URL != '' && vars.E2E_ENVIRONMENT == 'staging' && vars.E2E_PROTECTED == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Bun Environment
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.11
+
+      - name: Install Dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Install Chromium
+        run: bunx playwright install --with-deps chromium
+
+      - name: Run Protected Authorization Tests
+        run: bun run test:e2e:protected
+        env:
+          PLAYWRIGHT_BASE_URL: ${{ vars.E2E_BASE_URL }}
+          E2E_PROTECTED: 'true'
+          CLERK_PUBLISHABLE_KEY: ${{ vars.E2E_CLERK_PUBLISHABLE_KEY }}
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ vars.E2E_CLERK_PUBLISHABLE_KEY }}
+          CLERK_SECRET_KEY: ${{ secrets.E2E_CLERK_SECRET_KEY }}
+          E2E_CUSTOMER_EMAIL: ${{ vars.E2E_CUSTOMER_EMAIL }}
+          E2E_SELLER_EMAIL: ${{ vars.E2E_SELLER_EMAIL }}
+          E2E_ADMIN_EMAIL: ${{ vars.E2E_ADMIN_EMAIL }}
+
+      - name: Upload Protected Playwright Report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: protected-playwright-report
+          path: playwright-report/
+          if-no-files-found: ignore

@@ -1,0 +1,31 @@
+import { expect, test } from '@playwright/test';
+import { signInAs } from './fixtures';
+
+test.skip(
+  process.env.E2E_PROTECTED !== 'true',
+  'Protected E2E is opt-in and must run against staging only.',
+);
+
+test('customer cannot access the admin dashboard', async ({ page }) => {
+  await signInAs(page, 'customer');
+  await page.goto('/dashboard/admin');
+  await expect(page).toHaveURL(/\/$/);
+});
+
+test('seller cannot access the admin dashboard', async ({ page }) => {
+  await signInAs(page, 'seller');
+  await page.goto('/dashboard/admin');
+  await expect(page).toHaveURL(/\/$/);
+});
+
+test('admin can access the admin dashboard', async ({ page }) => {
+  await signInAs(page, 'admin');
+  await page.goto('/dashboard/admin');
+  await expect(page).toHaveURL(/\/dashboard\/admin/);
+});
+
+test('customer cannot access the seller dashboard', async ({ page }) => {
+  await signInAs(page, 'customer');
+  await page.goto('/dashboard/seller');
+  await expect(page).toHaveURL(/\/$/);
+});

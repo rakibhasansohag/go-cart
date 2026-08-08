@@ -19,7 +19,18 @@ export default defineConfig({
   },
   projects: [
     {
+      name: 'clerk-setup',
+      testMatch: /clerk\.setup\.ts/,
+    },
+    {
       name: 'chromium',
+      testMatch: /smoke\.spec\.ts/,
+      use: { ...devices['Desktop Chrome'] },
+    },
+    {
+      name: 'protected-chromium',
+      testMatch: /protected\/.*\.spec\.ts/,
+      dependencies: ['clerk-setup'],
       use: { ...devices['Desktop Chrome'] },
     },
   ],

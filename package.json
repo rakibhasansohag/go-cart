@@ -9,6 +9,7 @@
 		"clean:next": "bun -e \"require('fs').rmSync('.next',{recursive:true,force:true})\"",
 		"db:prepare": "bun --no-env-file x prisma generate && bun --no-env-file x prisma migrate deploy",
 		"db:anonymize-staging": "bun prisma/anonymize-staging.ts",
+		"db:sync-e2e-users": "bun prisma/sync-e2e-users.ts",
 		"db:seed:demo": "bun prisma/seed-demo.ts",
 		"build": "bun prisma generate && next build",
 		"start": "next start",
@@ -16,6 +17,7 @@
 		"test": "vitest run",
 		"test:unit": "vitest run",
 		"test:e2e": "playwright test",
+		"test:e2e:protected": "playwright test --project=protected-chromium",
 		"test:payment": "vitest run src/lib/payments",
 		"test:watch": "vitest",
 		"typecheck": "tsc --noEmit",
@@ -116,6 +118,8 @@
 		"zustand": "^5.0.14"
 	},
 	"devDependencies": {
+		"@clerk/backend": "^3.16.1",
+		"@clerk/testing": "^2.2.19",
 		"@eslint/eslintrc": "^3",
 		"@playwright/test": "^1.62.1",
 		"@tailwindcss/postcss": "^4.3.3",
