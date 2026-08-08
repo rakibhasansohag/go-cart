@@ -21,10 +21,13 @@
 
 # production
 /build
+.env*
+!.env.example
 
 # misc
 .DS_Store
 *.pem
+.env.staging.local
 
 # debug
 npm-debug.log*

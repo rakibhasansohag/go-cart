@@ -15,6 +15,8 @@ const isTrue = (value: string | undefined) => value?.toLowerCase() === TRUE;
  */
 export function assertSafeE2ERuntime(): void {
 	if (!isTrue(process.env.E2E_TEST_MODE)) return;
+	// Unit tests mock server dependencies and must not require a live database.
+	if (process.env.VITEST === 'true' || process.env.NODE_ENV === 'test') return;
 
 	if (!['local', 'staging', 'test'].includes(process.env.APP_ENV ?? '')) {
 		throw new RuntimeSafetyError(

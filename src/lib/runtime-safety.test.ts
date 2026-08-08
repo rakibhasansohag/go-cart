@@ -4,7 +4,8 @@ import { assertSafeE2ERuntime } from './runtime-safety';
 const originalEnv = { ...process.env };
 
 beforeEach(() => {
-	process.env = { ...originalEnv };
+	process.env = { ...originalEnv, VITEST: 'false', NODE_ENV: 'production' };
+	// Exercise the production guard itself rather than Vitest's database bypass.
 });
 
 describe('assertSafeE2ERuntime', () => {

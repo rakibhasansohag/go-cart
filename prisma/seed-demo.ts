@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 import { PrismaClient, FulfillmentMode, OrderStatus, PackageStatus, PaymentMethod, PaymentStatus, ProductStatus, ShipmentStatus, Role, ShippingFeeMethod, StoreStatus } from '@prisma/client';
+import { assertSafeE2ERuntime } from '../src/lib/runtime-safety';
 
 /**
  * Deterministic, scoped demo fixture generator.
@@ -8,6 +9,7 @@ import { PrismaClient, FulfillmentMode, OrderStatus, PackageStatus, PaymentMetho
  * command is safe and changing the builders below is enough to add future
  * fields. It never deletes user-created records.
  */
+assertSafeE2ERuntime();
 const db = new PrismaClient();
 const COUNT = Math.max(1, Math.min(10_000, Number(process.env.DEMO_SEED_COUNT ?? 1_000)));
 const PREFIX = 'gocart-demo';
@@ -92,7 +94,6 @@ async function main() {
 	await db.paymentDetails.deleteMany({ where: { id: { in: paymentIds } } });
 	await db.orderGroup.deleteMany({ where: { id: { in: groupIds } } });
 	await db.order.deleteMany({ where: { id: { in: orderIds } } });
-	await db.shippingAddress.deleteMany({ where: { id: { in: addressIds } } });
 
 	const orders = [];
 	const addresses = [];
@@ -114,7 +115,9 @@ async function main() {
 		payments.push({ id: paymentIds[index], paymentInetntId: `demo_pi_${index + 1}`, paymentMethod: 'Stripe', status: 'succeeded', amount: subtotal, currency: 'USD', orderId: orderIds[index], userId: customer.id, createdAt, updatedAt: createdAt });
 		shipments.push({ id: id('shipment', index), status: fixture.shipment, orderGroupId: groupIds[index], createdAt, updatedAt: createdAt });
 	}
-	await db.shippingAddress.createMany({ data: addresses });
+	// Keep deterministic addresses that may still be referenced by historical
+	// orders. This makes reseeding safe on a branched production snapshot.
+	await db.shippingAddress.createMany({ data: addresses, skipDuplicates: true });
 	await db.order.createMany({ data: orders });
 	await db.orderGroup.createMany({ data: groups });
 	await db.orderItem.createMany({ data: items });

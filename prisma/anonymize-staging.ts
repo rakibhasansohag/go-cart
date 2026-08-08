@@ -1,6 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 
-const stagingUrl = process.env.STAGING_DATABASE_URL;
+const stagingUrl = process.env.E2E_DATABASE_URL;
 if (process.env.APP_ENV !== 'staging') {
 	throw new Error('Refusing to anonymize: set APP_ENV=staging.');
 }
@@ -10,7 +10,7 @@ if (process.env.STAGING_DATABASE_CONFIRM !== 'ANONYMIZE_STAGING_BRANCH') {
 	);
 }
 if (!stagingUrl) {
-	throw new Error('Refusing to anonymize: STAGING_DATABASE_URL is required.');
+	throw new Error('Refusing to anonymize: E2E_DATABASE_URL is required.');
 }
 
 const db = new PrismaClient({ datasources: { db: { url: stagingUrl } } });
