@@ -40,6 +40,16 @@ if (action === 'up') {
 	run('docker', [...compose, 'up', '-d', 'postgres']);
 	run('bun', ['x', 'prisma', 'migrate', 'deploy'], env);
 	run('bun', ['prisma/seed-demo.ts'], env);
+	if (env.E2E_PROTECTED?.toLowerCase() === 'true') {
+		run('bun', ['prisma/sync-e2e-users.ts'], env);
+	}
+} else if (action === 'sync-users') {
+	const env = loadEnvFile('.env.e2e.local');
+	if (env.DATABASE_URL !== env.E2E_DATABASE_URL) {
+		throw new Error('DATABASE_URL and E2E_DATABASE_URL must be identical in .env.e2e.local.');
+	}
+	run('docker', [...compose, 'up', '-d', 'postgres']);
+	run('bun', ['prisma/sync-e2e-users.ts'], env);
 } else if (action === 'test') {
 	const env = loadEnvFile('.env.e2e.local');
 	if (env.DATABASE_URL !== env.E2E_DATABASE_URL) {
@@ -50,5 +60,5 @@ if (action === 'up') {
 	run('bunx', ['playwright', 'install', 'chromium']);
 	run('bunx', ['playwright', 'test', ...process.argv.slice(3)], env);
 } else {
-	throw new Error(`Unknown action: ${action}. Use up, prepare, test, reset, or down.`);
+	throw new Error(`Unknown action: ${action}. Use up, prepare, sync-users, test, reset, or down.`);
 }

@@ -13,6 +13,7 @@
 		"db:seed:demo": "bun prisma/seed-demo.ts",
 		"db:e2e:up": "bun --no-env-file scripts/e2e-local.ts up",
 		"db:e2e:prepare": "bun --no-env-file scripts/e2e-local.ts prepare",
+		"db:e2e:sync-users": "bun --no-env-file scripts/e2e-local.ts sync-users",
 		"db:e2e:reset": "bun --no-env-file scripts/e2e-local.ts reset",
 		"db:e2e:down": "bun --no-env-file scripts/e2e-local.ts down",
 		"test:e2e:local": "bun --no-env-file scripts/e2e-local.ts test",
