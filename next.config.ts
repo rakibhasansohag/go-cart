@@ -1,6 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
 	reactStrictMode: false,
+	// Keep the isolated E2E server independent from a developer's normal
+	// `.next` process, which prevents Windows build-lock collisions.
+	distDir: process.env.E2E_TEST_MODE === 'true' ? '.next-e2e' : '.next',
 	// MJML discovers its component/config modules dynamically at runtime. Keep it
 	// in Node's module system so the Server Action compiler does not rewrite those
 	// lookups into the synthetic `(action-browser)` filesystem namespace.
