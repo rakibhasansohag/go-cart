@@ -101,7 +101,49 @@ async function main() {
 		}
 	}
 
-	console.log(`Integration checks passed: ${orderCount} orders, permissions, totals, coupons, transitions, inventory, and payment invariants.`);
+	const returnItems = await db.returnItem.findMany({
+		select: {
+			quantity: true,
+			receivedQuantity: true,
+			restockedQuantity: true,
+			requestedAmount: true,
+			approvedAmount: true,
+		},
+	});
+	for (const item of returnItems) {
+		assert(item.quantity > 0, 'return quantity must be positive');
+		assert(item.receivedQuantity >= 0 && item.restockedQuantity >= 0, 'return quantities cannot be negative');
+		assert(item.restockedQuantity <= item.receivedQuantity, 'restocked quantity exceeds received quantity');
+		assert(item.requestedAmount >= 0 && (item.approvedAmount ?? 0) >= 0, 'return amounts cannot be negative');
+	}
+	const refunds = await db.refundTransaction.findMany({
+		select: { amount: true, status: true, processedAt: true, idempotencyKey: true },
+	});
+	assert(new Set(refunds.map((refund) => refund.idempotencyKey)).size === refunds.length, 'duplicate refund idempotency keys detected');
+	for (const refund of refunds) {
+		assert(refund.amount > 0, 'refund amount must be positive');
+		if (refund.status === 'SUCCEEDED') assert(refund.processedAt !== null, 'successful refund is missing processedAt');
+	}
+
+	const shipments = await db.shipment.findMany({
+		select: { items: { select: { quantity: true, orderItemId: true, orderItem: { select: { quantity: true } } } } },
+	});
+	const shippedByItem = new Map<string, number>();
+	for (const shipment of shipments) {
+		for (const item of shipment.items) {
+			assert(item.quantity > 0, 'shipment item quantity must be positive');
+			const shipped = (shippedByItem.get(item.orderItemId) ?? 0) + item.quantity;
+			assert(shipped <= item.orderItem.quantity, 'shipment quantity exceeds ordered quantity');
+			shippedByItem.set(item.orderItemId, shipped);
+		}
+	}
+	const trackingEvents = await db.trackingEvent.findMany({ select: { providerEventId: true } });
+	const eventKeys = trackingEvents.map((event) => event.providerEventId).filter(Boolean);
+	assert(new Set(eventKeys).size === eventKeys.length, 'duplicate carrier event IDs detected');
+	const deliveryAttempts = await db.deliveryAttempt.findMany({ select: { shipmentId: true, attemptNumber: true } });
+	assert(deliveryAttempts.every((attempt) => attempt.attemptNumber > 0), 'delivery attempt number must be positive');
+
+	console.log(`Integration checks passed: ${orderCount} orders, permissions, totals, coupons, transitions, inventory, payments, returns, and shipments.`);
 }
 
 main().catch((error) => {

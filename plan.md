@@ -703,7 +703,8 @@ Goal: protect the critical marketplace workflows before production deployment.
     - [x] Add a local Docker integration smoke check for seeded role permissions,
           order/group/item totals, coupon usage limits, order transitions, and
           non-negative inventory quantities, plus paid amount/payment-event
-          uniqueness invariants
+          uniqueness invariants, return/refund quantities, and shipment/carrier
+          idempotency invariants
   - [ ] Cover payment webhook signature verification, event idempotency, retries,
         provider reconciliation, and refund reconciliation against the database
   - [ ] Cover return eligibility, concurrent partial returns, disputes, and restocking
