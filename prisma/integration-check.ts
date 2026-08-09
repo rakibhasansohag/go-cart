@@ -143,7 +143,21 @@ async function main() {
 	const deliveryAttempts = await db.deliveryAttempt.findMany({ select: { shipmentId: true, attemptNumber: true } });
 	assert(deliveryAttempts.every((attempt) => attempt.attemptNumber > 0), 'delivery attempt number must be positive');
 
-	console.log(`Integration checks passed: ${orderCount} orders, permissions, totals, coupons, transitions, inventory, payments, returns, and shipments.`);
+	const loyaltyAccounts = await db.loyaltyAccount.findMany({ select: { balance: true, lifetimeEarned: true } });
+	for (const account of loyaltyAccounts) {
+		assert(account.balance >= 0, 'GoCoins balance cannot be negative');
+		assert(account.lifetimeEarned >= account.balance, 'GoCoins lifetime earned cannot be below balance');
+	}
+	const loyaltyTransactions = await db.loyaltyTransaction.findMany({ select: { idempotencyKey: true, points: true } });
+	assert(new Set(loyaltyTransactions.map((transaction) => transaction.idempotencyKey)).size === loyaltyTransactions.length, 'duplicate GoCoins idempotency keys detected');
+	assert(loyaltyTransactions.every((transaction) => transaction.points > 0), 'GoCoins transaction points must be positive');
+
+	const domainEvents = await db.domainEvent.findMany({ select: { eventKey: true } });
+	assert(new Set(domainEvents.map((event) => event.eventKey)).size === domainEvents.length, 'duplicate domain event keys detected');
+	const notifications = await db.notification.findMany({ select: { sourceEventId: true, recipientId: true } });
+	assert(new Set(notifications.map((notification) => `${notification.sourceEventId}:${notification.recipientId}`)).size === notifications.length, 'duplicate notifications detected');
+
+	console.log(`Integration checks passed: ${orderCount} orders, permissions, totals, coupons, transitions, inventory, payments, returns, shipments, GoCoins, and notifications.`);
 }
 
 main().catch((error) => {

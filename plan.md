@@ -704,7 +704,8 @@ Goal: protect the critical marketplace workflows before production deployment.
           order/group/item totals, coupon usage limits, order transitions, and
           non-negative inventory quantities, plus paid amount/payment-event
           uniqueness invariants, return/refund quantities, and shipment/carrier
-          idempotency invariants
+          idempotency invariants, GoCoins balance/idempotency invariants, and
+          domain-event/notification uniqueness invariants
   - [ ] Cover payment webhook signature verification, event idempotency, retries,
         provider reconciliation, and refund reconciliation against the database
   - [ ] Cover return eligibility, concurrent partial returns, disputes, and restocking
@@ -726,7 +727,8 @@ Goal: protect the critical marketplace workflows before production deployment.
         and add a test-environment-only public E2E job with Playwright report upload
   - [ ] Add an explicit formatting check and decide whether lint warnings are a
         tracked baseline or fail the build (current audit: 0 errors, 103 warnings)
-  - [ ] Run database integration tests and Playwright in CI with isolated services
+  - [x] Run database integration tests in CI with an isolated PostgreSQL service;
+        protected Playwright remains dependent on external Clerk/network access
   - [ ] Cache Bun dependencies safely and upload useful build artifacts on failure
   - [ ] Configure GitHub branch protection so required checks block merging
   - [ ] **Test**: A deliberately failing required check prevents the pull request from passing
