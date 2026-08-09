@@ -65,6 +65,11 @@ if (action === 'up') {
 	const env = validatedE2EEnv();
 	run('docker', [...compose, 'up', '-d', 'postgres']);
 	run('bun', ['prisma/sync-e2e-users.ts'], env);
+} else if (action === 'integration') {
+	const env = validatedE2EEnv();
+	run('docker', [...compose, 'up', '-d', 'postgres']);
+	run('bun', ['x', 'prisma', 'migrate', 'deploy'], env);
+	run('bun', ['prisma/integration-check.ts'], env);
 } else if (action === 'server') {
 	const env = validatedE2EEnv();
 	// Preparation already generated Prisma and applied migrations. Starting
@@ -81,5 +86,5 @@ if (action === 'up') {
 	run('bunx', ['playwright', 'install', 'chromium']);
 	run('bunx', ['playwright', 'test', ...process.argv.slice(3)], env);
 } else {
-	throw new Error(`Unknown action: ${action}. Use up, prepare, sync-users, server, test, reset, or down.`);
+	throw new Error(`Unknown action: ${action}. Use up, prepare, sync-users, integration, server, test, reset, or down.`);
 }
