@@ -1,5 +1,6 @@
 import { PrismaClient, Role } from '@prisma/client';
 import { assertSafeE2ERuntime } from '../src/lib/runtime-safety';
+import { deriveOrderStatus } from '../src/lib/orders/status-sync';
 
 assertSafeE2ERuntime();
 
@@ -32,8 +33,10 @@ async function main() {
 		orderBy: { createdAt: 'asc' },
 		select: {
 			total: true,
+			orderStatus: true,
 			groups: {
 				select: {
+					status: true,
 					total: true,
 					subTotal: true,
 					shippingFees: true,
@@ -45,6 +48,7 @@ async function main() {
 	for (const order of orders) {
 		const groupTotal = order.groups.reduce((sum, group) => sum + group.total, 0);
 		assert(closeEnough(order.total, groupTotal), 'order total does not equal group totals');
+		assert(deriveOrderStatus(order.groups.map((group) => group.status)) === order.orderStatus, 'order status does not match group statuses');
 		for (const group of order.groups) {
 			assert(closeEnough(group.total, group.subTotal + group.shippingFees), 'group total invariant failed');
 			for (const item of group.items) {
@@ -57,7 +61,47 @@ async function main() {
 	const invalidSizes = await db.size.count({ where: { quantity: { lt: 0 } } });
 	assert(invalidSizes === 0, `found ${invalidSizes} inventory sizes with negative quantity`);
 
-	console.log(`Integration checks passed: ${orderCount} orders, role permissions, totals, and inventory invariants.`);
+	const paidOrders = await db.order.findMany({
+		where: { paymentStatus: 'Paid' },
+		take: 25,
+		select: { total: true, paymentMethod: true, paymentDetails: { select: { amount: true, currency: true } } },
+	});
+	for (const order of paidOrders) {
+		assert(order.paymentMethod !== null, 'paid order is missing a payment method');
+		assert(order.paymentDetails !== null, 'paid order is missing payment details');
+		assert(closeEnough(order.paymentDetails.amount, order.total), 'paid amount does not match order total');
+		assert(Boolean(order.paymentDetails.currency), 'payment currency is missing');
+	}
+	const duplicateEventKeys = await db.paymentEvent.groupBy({
+		by: ['providerEventId'],
+		_count: { providerEventId: true },
+		having: { providerEventId: { _count: { gt: 1 } } },
+	});
+	assert(duplicateEventKeys.length === 0, 'duplicate payment webhook event IDs detected');
+
+	const limitedCoupons = await db.coupon.findMany({
+		where: { maxUses: { gt: 0 } },
+		select: {
+			code: true,
+			maxUses: true,
+			maxUsesPerUser: true,
+			orders: {
+				where: { order: { paymentStatus: 'Paid' } },
+				select: { order: { select: { userId: true } } },
+			},
+		},
+	});
+	for (const coupon of limitedCoupons) {
+		assert(coupon.orders.length <= coupon.maxUses, `coupon ${coupon.code} exceeded maxUses`);
+		const usesByUser = new Map<string, number>();
+		for (const redemption of coupon.orders) {
+			const count = (usesByUser.get(redemption.order.userId) ?? 0) + 1;
+			assert(count <= coupon.maxUsesPerUser, `coupon ${coupon.code} exceeded maxUsesPerUser`);
+			usesByUser.set(redemption.order.userId, count);
+		}
+	}
+
+	console.log(`Integration checks passed: ${orderCount} orders, permissions, totals, coupons, transitions, inventory, and payment invariants.`);
 }
 
 main().catch((error) => {
