@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: gocart
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: gocart
+      POSTGRES_PASSWORD: gocart
+      POSTGRES_DB: gocart_e2e
+    ports:
+      - "55432:5432"
+    volumes:
+      - gocart-e2e-postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gocart -d gocart_e2e"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+volumes:
+  gocart-e2e-postgres:

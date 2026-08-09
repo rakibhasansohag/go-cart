@@ -671,8 +671,9 @@ Goal: protect the critical marketplace workflows before production deployment.
 
 - [ ] **Phase 12.1 — Test infrastructure**
   - [x] Add Vitest unit-test tooling and deterministic fixtures
-  - [ ] Add an isolated PostgreSQL integration-test database, environment
-        contract, migration/reset helper, and deterministic cleanup
+  - [x] Add an isolated local PostgreSQL integration-test database via Docker,
+        an `.env.e2e.local` contract, automatic migration/seed helper, and reset
+        command; this avoids connecting E2E runs to Neon production or branches
   - [x] Add a repeatable deterministic demo fixture generator for 1,000 orders across the admin, seller, and customer test accounts
   - [x] Seed realistic generic catalog names, three variant image views, and stable empty-image fallbacks for visual QA
   - [x] Add Playwright configuration, Chromium project, and an opt-in public
@@ -690,7 +691,8 @@ Goal: protect the critical marketplace workflows before production deployment.
         SELLER, and ADMIN roles only to the isolated staging database
   - [x] Add `test:unit` and `test:e2e` scripts while retaining `test` as the
         complete non-browser suite; `test:integration` remains pending
-  - [ ] **Test**: All suites run locally from documented commands
+  - [ ] **Test**: All suites run locally from documented commands (`bun run
+        db:e2e:prepare`, then `bun run test:e2e:local`)
 
 - [ ] **Phase 12.2 — Critical integration coverage**
   - [x] Keep the existing focused unit coverage for payment security/status,
