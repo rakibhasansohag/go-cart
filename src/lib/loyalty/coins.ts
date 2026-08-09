@@ -182,6 +182,17 @@ export async function redeemCoins(
 
 	const discount = coinsToDiscount(input.coins);
 
+	// Decrement only when the account still has enough balance. This conditional
+	// update is atomic at the database level and prevents concurrent redemptions
+	// from overspending the same GoCoins balance.
+	const debited = await tx.loyaltyAccount.updateMany({
+		where: { id: account.id, balance: { gte: input.coins } },
+		data: { balance: { decrement: input.coins } },
+	});
+	if (debited.count !== 1) {
+		throw new Error('Insufficient GoCoins balance.');
+	}
+
 	const transaction = await tx.loyaltyTransaction.create({
 		data: {
 			accountId: account.id,
@@ -199,13 +210,6 @@ export async function redeemCoins(
 			orderId: input.orderId,
 			points: input.coins,
 			discount,
-		},
-	});
-
-	await tx.loyaltyAccount.update({
-		where: { id: account.id },
-		data: {
-			balance: { decrement: input.coins },
 		},
 	});
 

@@ -1,6 +1,8 @@
 import { PrismaClient, Role } from '@prisma/client';
 import { assertSafeE2ERuntime } from '../src/lib/runtime-safety';
 import { deriveOrderStatus } from '../src/lib/orders/status-sync';
+import { redeemCoins } from '../src/lib/loyalty/coins';
+import { randomUUID } from 'node:crypto';
 
 assertSafeE2ERuntime();
 
@@ -156,6 +158,26 @@ async function main() {
 	assert(new Set(domainEvents.map((event) => event.eventKey)).size === domainEvents.length, 'duplicate domain event keys detected');
 	const notifications = await db.notification.findMany({ select: { sourceEventId: true, recipientId: true } });
 	assert(new Set(notifications.map((notification) => `${notification.sourceEventId}:${notification.recipientId}`)).size === notifications.length, 'duplicate notifications detected');
+
+	const raceEmail = `integration-race-${randomUUID()}@example.test`;
+	const raceUser = await db.user.create({ data: { name: 'Integration Race User', email: raceEmail, picture: '', role: Role.USER } });
+	try {
+		await db.loyaltyAccount.create({ data: { userId: raceUser.id, balance: 100, lifetimeEarned: 100 } });
+		const raceOrders = await db.order.findMany({ take: 2, select: { id: true } });
+		const raceResults = await Promise.all(raceOrders.map((order, index) =>
+			db.$transaction((tx) => redeemCoins(tx, {
+				userId: raceUser.id,
+				orderId: order.id,
+				coins: 100,
+				idempotencyKey: `integration-race:${raceUser.id}:${index}`,
+			})).then(() => true).catch(() => false),
+		));
+		assert(raceResults.filter(Boolean).length === 1, 'concurrent GoCoins redemption was not serialized');
+		const raceAccount = await db.loyaltyAccount.findUniqueOrThrow({ where: { userId: raceUser.id } });
+		assert(raceAccount.balance === 0, 'concurrent GoCoins redemption left an incorrect balance');
+	} finally {
+		await db.user.delete({ where: { id: raceUser.id } });
+	}
 
 	console.log(`Integration checks passed: ${orderCount} orders, permissions, totals, coupons, transitions, inventory, payments, returns, shipments, GoCoins, and notifications.`);
 }

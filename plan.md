@@ -710,7 +710,8 @@ Goal: protect the critical marketplace workflows before production deployment.
         provider reconciliation, and refund reconciliation against the database
   - [ ] Cover return eligibility, concurrent partial returns, disputes, and restocking
   - [ ] Cover split/consolidated shipment invariants and carrier-event idempotency
-  - [ ] Cover concurrent GoCoins award/redemption invariants
+  - [x] Cover concurrent GoCoins award/redemption invariants with an atomic
+        balance-guarded redemption decrement and idempotency checks
   - [ ] **Test**: Critical server workflows pass against an isolated test database
 
 - [ ] **Phase 12.3 — End-to-end commerce journeys**
