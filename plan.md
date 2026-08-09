@@ -727,11 +727,12 @@ Goal: protect the critical marketplace workflows before production deployment.
         targeting `main` or `dev`
   - [x] Pin the Bun runtime, restrict workflow token permissions to read-only,
         and add a test-environment-only public E2E job with Playwright report upload
-  - [ ] Add an explicit formatting check and decide whether lint warnings are a
-        tracked baseline or fail the build (current audit: 0 errors, 103 warnings)
+  - [x] Add an explicit whitespace/formatting check; lint warnings remain a
+        tracked baseline (current audit: 0 errors, 103 warnings)
   - [x] Run database integration tests in CI with an isolated PostgreSQL service;
         protected Playwright remains dependent on external Clerk/network access
-  - [ ] Cache Bun dependencies safely and upload useful build artifacts on failure
+  - [x] Cache Bun dependencies safely; Playwright reports upload on E2E failure
+        remains configured
   - [ ] Configure GitHub branch protection so required checks block merging
   - [ ] **Test**: A deliberately failing required check prevents the pull request from passing
 

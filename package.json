@@ -21,6 +21,7 @@
 		"build": "bun prisma generate && next build",
 		"start": "next start",
 		"lint": "eslint .",
+		"check:format": "git diff --check",
 		"test": "vitest run",
 		"test:unit": "vitest run",
 		"test:e2e": "playwright test",
