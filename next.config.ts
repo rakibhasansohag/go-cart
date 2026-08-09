@@ -4,6 +4,7 @@ const nextConfig = {
 	// Keep the isolated E2E server independent from a developer's normal
 	// `.next` process, which prevents Windows build-lock collisions.
 	distDir: process.env.E2E_TEST_MODE === 'true' ? '.next-e2e' : '.next',
+	allowedDevOrigins: ['localhost:3100', '127.0.0.1:3100'],
 	// MJML discovers its component/config modules dynamically at runtime. Keep it
 	// in Node's module system so the Server Action compiler does not rewrite those
 	// lookups into the synthetic `(action-browser)` filesystem namespace.
