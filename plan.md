@@ -715,6 +715,7 @@ Goal: protect the critical marketplace workflows before production deployment.
   - [ ] **Test**: Critical server workflows pass against an isolated test database
 
 - [ ] **Phase 12.3 — End-to-end commerce journeys**
+  - [x] Add public browse-route and unauthenticated checkout-redirect smoke coverage
   - [ ] Cover browse → cart → checkout → payment → order history
   - [ ] Cover seller fulfillment → shipment tracking → delivery
   - [ ] Cover delivered item → return request → decision → refund/restock
