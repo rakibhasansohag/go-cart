@@ -1,7 +1,7 @@
 import { db } from '@/lib/db';
 import { reconcilePaymentEvent } from './reconcile';
 import { RefundTransactionStatus, ReturnRequestStatus } from '@prisma/client';
-import { publishDomainEvent } from '@/lib/notifications/domain-events';
+import { DOMAIN_EVENT_TYPES, publishDomainEvent } from '@/lib/notifications/domain-events';
 import { scheduleEmailOutboxDispatch } from '@/lib/email/schedule';
 import type { PaymentStatus } from '@prisma/client';
 import type Stripe from 'stripe';
@@ -125,7 +125,7 @@ export async function handleStripeEvent(event: Stripe.Event) {
 			}
 			const domainEvent = await publishDomainEvent(tx, {
 				eventKey: `return.refunded:${event.id}`,
-				eventType: 'return.status_changed',
+				eventType: DOMAIN_EVENT_TYPES.REFUND_ISSUED,
 				aggregateType: 'RETURN_REQUEST',
 				aggregateId: request.id,
 				orderId: request.orderId,
@@ -138,6 +138,7 @@ export async function handleStripeEvent(event: Stripe.Event) {
 					nextStatus: 'Refunded',
 					requestedAmount: request.requestedAmount,
 					approvedAmount: request.approvedAmount ?? request.requestedAmount,
+					amount: Number(request.approvedAmount ?? request.requestedAmount),
 					currency: request.currency,
 					message: 'Your refund was confirmed by Stripe.',
 				},

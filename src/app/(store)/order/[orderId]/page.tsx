@@ -6,6 +6,7 @@ import OrderPageView from '@/components/store/order-page/order-page-view';
 import { getQueryClient } from '@/lib/get-query-client';
 import { queryKeys } from '@/lib/query-keys';
 import { getOrder } from '@/queries/order';
+import { getShipmentTracking } from '@/queries/fulfillment';
 import { auth } from '@clerk/nextjs/server';
 
 export default async function OrderPage({
@@ -26,6 +27,10 @@ export default async function OrderPage({
 	if (!order) redirect('/');
 
 	queryClient.setQueryData(queryKeys.orders.detail(orderId), order);
+	await queryClient.prefetchQuery({
+		queryKey: queryKeys.orders.tracking(orderId),
+		queryFn: () => getShipmentTracking(orderId),
+	});
 
 	return (
 		<div className='min-h-screen bg-background text-foreground flex flex-col'>

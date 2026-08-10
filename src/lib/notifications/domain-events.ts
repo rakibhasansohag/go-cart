@@ -10,8 +10,15 @@ export const DOMAIN_EVENT_TYPES = {
 	PAID_PACKAGE_READY: 'package.paid_ready',
 	PACKAGE_STATUS_CHANGED: 'package.status_changed',
 	SHIPMENT_STATUS_CHANGED: 'shipment.status_changed',
+	SHIPMENT_DELIVERY_ATTEMPT: 'shipment.delivery_attempt',
+	SHIPMENT_TRACKING_UPDATED: 'shipment.tracking_updated',
 	RETURN_REQUESTED: 'return.requested',
 	RETURN_STATUS_CHANGED: 'return.status_changed',
+	RETURN_DEADLINE_DUE: 'return.deadline_due',
+	RETURN_DISPUTE_ESCALATED: 'return.dispute_escalated',
+	REFUND_ISSUED: 'refund.issued',
+	EXCHANGE_APPROVED: 'exchange.approved',
+	RETURN_INVENTORY_RECONCILED: 'return.inventory_reconciled',
 	CHECKOUT_ABANDONED: 'checkout.abandoned',
 } as const;
 
@@ -60,7 +67,14 @@ async function resolveRecipients(
 		(input.eventType === DOMAIN_EVENT_TYPES.PAYMENT_SUCCEEDED ||
 			input.eventType === DOMAIN_EVENT_TYPES.PACKAGE_STATUS_CHANGED ||
 			input.eventType === DOMAIN_EVENT_TYPES.SHIPMENT_STATUS_CHANGED ||
-			input.eventType === DOMAIN_EVENT_TYPES.RETURN_STATUS_CHANGED)
+			input.eventType === DOMAIN_EVENT_TYPES.SHIPMENT_DELIVERY_ATTEMPT ||
+			input.eventType === DOMAIN_EVENT_TYPES.SHIPMENT_TRACKING_UPDATED ||
+			input.eventType === DOMAIN_EVENT_TYPES.RETURN_STATUS_CHANGED ||
+			input.eventType === DOMAIN_EVENT_TYPES.RETURN_DEADLINE_DUE ||
+			input.eventType === DOMAIN_EVENT_TYPES.RETURN_DISPUTE_ESCALATED ||
+			input.eventType === DOMAIN_EVENT_TYPES.RETURN_INVENTORY_RECONCILED ||
+			input.eventType === DOMAIN_EVENT_TYPES.EXCHANGE_APPROVED ||
+			input.eventType === DOMAIN_EVENT_TYPES.REFUND_ISSUED)
 	) {
 		const order = await tx.order.findUnique({
 			where: { id: input.orderId },
@@ -81,7 +95,13 @@ async function resolveRecipients(
 		input.storeId &&
 		(input.eventType === DOMAIN_EVENT_TYPES.PAID_PACKAGE_READY ||
 			input.eventType === DOMAIN_EVENT_TYPES.SHIPMENT_STATUS_CHANGED ||
-			input.eventType === DOMAIN_EVENT_TYPES.RETURN_REQUESTED)
+			input.eventType === DOMAIN_EVENT_TYPES.SHIPMENT_DELIVERY_ATTEMPT ||
+			input.eventType === DOMAIN_EVENT_TYPES.SHIPMENT_TRACKING_UPDATED ||
+			input.eventType === DOMAIN_EVENT_TYPES.RETURN_REQUESTED ||
+			input.eventType === DOMAIN_EVENT_TYPES.RETURN_DEADLINE_DUE ||
+			input.eventType === DOMAIN_EVENT_TYPES.RETURN_DISPUTE_ESCALATED ||
+			input.eventType === DOMAIN_EVENT_TYPES.RETURN_INVENTORY_RECONCILED ||
+			input.eventType === DOMAIN_EVENT_TYPES.EXCHANGE_APPROVED)
 	) {
 		const store = await tx.store.findUnique({
 			where: { id: input.storeId },
@@ -106,6 +126,13 @@ async function resolveRecipients(
 			where: { role: Role.ADMIN },
 			select: { id: true },
 		});
+		for (const admin of admins) recipientIds.add(admin.id);
+	}
+	if (
+		input.eventType === DOMAIN_EVENT_TYPES.RETURN_DISPUTE_ESCALATED ||
+		input.eventType === DOMAIN_EVENT_TYPES.RETURN_INVENTORY_RECONCILED
+	) {
+		const admins = await tx.user.findMany({ where: { role: Role.ADMIN }, select: { id: true } });
 		for (const admin of admins) recipientIds.add(admin.id);
 	}
 
@@ -184,6 +211,20 @@ function notificationFor(input: PublishDomainEventInput, recipient: Recipient) {
 						message: `${packageReference || 'Your package'} is now ${nextStatus || 'in transit'}.`,
 						actionUrl: orderId ? `/order/${orderId}` : null,
 					};
+		case DOMAIN_EVENT_TYPES.SHIPMENT_DELIVERY_ATTEMPT:
+			return {
+				category: NotificationCategory.DELIVERY,
+				title: 'Delivery attempt recorded',
+				message: `${packageReference || 'Your shipment'} has a delivery attempt update: ${payloadText(input.payload, 'outcome') || 'recorded'}.`,
+				actionUrl: orderId ? `/order/${orderId}` : null,
+			};
+		case DOMAIN_EVENT_TYPES.SHIPMENT_TRACKING_UPDATED:
+			return {
+				category: NotificationCategory.DELIVERY,
+				title: 'Tracking information updated',
+				message: `${packageReference || 'Your shipment'} has new carrier tracking information.`,
+				actionUrl: orderId ? `/order/${orderId}` : null,
+			};
 		case DOMAIN_EVENT_TYPES.RETURN_REQUESTED:
 			return {
 				category: NotificationCategory.RETURN,
@@ -205,6 +246,25 @@ function notificationFor(input: PublishDomainEventInput, recipient: Recipient) {
 						: null,
 				};
 			}
+		case DOMAIN_EVENT_TYPES.RETURN_DEADLINE_DUE:
+		case DOMAIN_EVENT_TYPES.RETURN_DISPUTE_ESCALATED:
+		case DOMAIN_EVENT_TYPES.RETURN_INVENTORY_RECONCILED:
+		case DOMAIN_EVENT_TYPES.EXCHANGE_APPROVED:
+			return {
+				category: NotificationCategory.RETURN,
+				title: 'Return workflow updated',
+				message: `Your return request has a new ${humanizeStatus(input.eventType.split('.')[1] ?? 'update')} update.`,
+				actionUrl: payloadText(input.payload, 'returnRequestId')
+					? `/profile/returns/${payloadText(input.payload, 'returnRequestId')}`
+					: null,
+			};
+		case DOMAIN_EVENT_TYPES.REFUND_ISSUED:
+			return {
+				category: NotificationCategory.REFUND,
+				title: 'Refund issued',
+				message: 'A refund has been issued for your order.',
+				actionUrl: orderId ? `/order/${orderId}` : null,
+			};
 		case DOMAIN_EVENT_TYPES.CHECKOUT_ABANDONED:
 			return {
 				category: NotificationCategory.ORDER,
@@ -426,7 +486,47 @@ export async function publishDomainEvent(
 				...content,
 			},
 		});
-		if (!emailEnabled || !hasDeliverableEmail(recipient.email)) continue;
+		await tx.notificationDeliveryAudit.upsert({
+			where: {
+				sourceEventId_recipientId_channel_attemptNumber: {
+					sourceEventId: event.id,
+					recipientId: recipient.id,
+					channel: NotificationChannel.IN_APP,
+					attemptNumber: 0,
+				},
+			},
+			update: {},
+			create: {
+				sourceEventId: event.id,
+				recipientId: recipient.id,
+				recipientEmail: recipient.email,
+				channel: NotificationChannel.IN_APP,
+				status: inAppEnabled ? 'QUEUED' : 'SKIPPED',
+				finishedAt: inAppEnabled ? null : new Date(),
+			},
+		});
+		if (!emailEnabled || !hasDeliverableEmail(recipient.email)) {
+			await tx.notificationDeliveryAudit.upsert({
+			where: {
+				sourceEventId_recipientId_channel_attemptNumber: {
+					sourceEventId: event.id,
+					recipientId: recipient.id,
+					channel: NotificationChannel.EMAIL,
+					attemptNumber: 0,
+				},
+			},
+			update: {},
+			create: {
+				sourceEventId: event.id,
+				recipientId: recipient.id,
+				recipientEmail: recipient.email,
+				channel: NotificationChannel.EMAIL,
+				status: 'SKIPPED',
+				finishedAt: new Date(),
+			},
+		});
+			continue;
+		}
 		await tx.emailOutbox.upsert({
 			where: {
 				sourceEventId_recipientId: {
@@ -448,6 +548,24 @@ export async function publishDomainEvent(
 				},
 			},
 		});
+		await tx.notificationDeliveryAudit.upsert({
+				where: {
+					sourceEventId_recipientId_channel_attemptNumber: {
+						sourceEventId: event.id,
+						recipientId: recipient.id,
+						channel: NotificationChannel.EMAIL,
+						attemptNumber: 0,
+					},
+				},
+				update: {},
+				create: {
+					sourceEventId: event.id,
+					recipientId: recipient.id,
+					recipientEmail: recipient.email,
+					channel: NotificationChannel.EMAIL,
+				status: 'QUEUED',
+				},
+			});
 	}
 
 	return event;

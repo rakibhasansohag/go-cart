@@ -146,11 +146,18 @@ async function main() {
 			shippedByItem.set(item.orderItemId, shipped);
 		}
 	}
+	const itemShipmentCounts = new Map<string, number>();
+	for (const shipment of shipments) {
+		for (const item of shipment.items) itemShipmentCounts.set(item.orderItemId, (itemShipmentCounts.get(item.orderItemId) ?? 0) + 1);
+	}
+	assert([...itemShipmentCounts.values()].some((count) => count > 1), 'split shipment fixture is missing');
+	assert(shipments.some((shipment) => shipment.packageAssignments.length > 1), 'consolidated shipment fixture is missing');
 	const trackingEvents = await db.trackingEvent.findMany({ select: { providerEventId: true } });
 	const eventKeys = trackingEvents.map((event) => event.providerEventId).filter(Boolean);
 	assert(new Set(eventKeys).size === eventKeys.length, 'duplicate carrier event IDs detected');
 	const deliveryAttempts = await db.deliveryAttempt.findMany({ select: { shipmentId: true, attemptNumber: true } });
 	assert(deliveryAttempts.every((attempt) => attempt.attemptNumber > 0), 'delivery attempt number must be positive');
+	assert((await db.trackingEvent.count({ where: { status: 'DELIVERY_ATTEMPT_FAILED' } })) > 0, 'failed delivery tracking fixture is missing');
 
 	const loyaltyAccounts = await db.loyaltyAccount.findMany({ select: { balance: true, lifetimeEarned: true } });
 	for (const account of loyaltyAccounts) {

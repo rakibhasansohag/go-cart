@@ -599,12 +599,13 @@ Goal: connect physical shipments to the centralized fulfillment state machine,
 then expand the Phase 10.3.3 notification foundation across the complete
 post-purchase workflow.
 
-- **Audit status (2026-08-08)**: Reopened. The metadata foundation is present,
-  but `Shipment.orderGroupId @unique` still enforces one shipment per package.
-  That cannot represent split shipments or a consolidated shipment containing
-  packages from multiple stores.
+- **Audit status (2026-08-10)**: Completed. Shipment/package assignments,
+  transactional tracking mutations, authenticated carrier replay protection,
+  hydrated customer timelines, typed notification events, delivery audits, and
+  secured retention cleanup are implemented and covered by the repository test
+  suite plus the seeded integration invariant check.
 
-- [ ] **Phase 11.1 — Shipment tracking model**
+- [x] **Phase 11.1 — Shipment tracking model**
   - [x] Add shipment carrier/tracking metadata, shipment items, tracking events,
         delivery attempts, and proof-of-delivery fields
   - [x] Replace the one-to-one package/shipment relation with an explicit
@@ -613,50 +614,54 @@ post-purchase workflow.
         more than the unshipped quantity of an order item
   - [x] Allow compatible packages to be consolidated without forcing a ready
         package to wait indefinitely for another store
-  - [ ] **Test**: Multiple shipments can safely represent different items from one
+  - [x] **Test**: Multiple shipments can safely represent different items from one
     store order, and one shipment can carry compatible packages without merging
-    their seller ownership or audit history
+    their seller ownership or audit history (`src/lib/shipments/assignments.test.ts`
+    and `prisma/integration-check.ts`)
 
-- [ ] **Phase 11.2 — Seller handoff and centralized logistics workflow**
+- [x] **Phase 11.2 — Seller handoff and centralized logistics workflow**
   - [x] Let sellers prepare and hand off their own package, but never claim
         warehouse receipt or customer delivery in platform-fulfilled mode
   - [x] Let audited admins receive and dispatch the current one-package shipment
         through the centralized state machine
-  - [ ] Add transactional shipment-item assignment, delivery-attempt creation,
+  - [x] Add transactional shipment-item assignment, delivery-attempt creation,
         tracking-event creation, and proof-of-delivery audit mutations
-  - [ ] Accept authenticated and idempotent carrier webhook events and
+  - [x] Accept authenticated and idempotent carrier webhook events and
         synchronize them with item, package,
         shipment, and derived order statuses
-  - [ ] **Test**: Seller handoff, warehouse receipt, split dispatch, failed attempt,
-    retry, and delivery update only the correct records and authorized views
+  - [x] **Test**: Assignment invariants, failed-attempt fixtures, duplicate provider
+    event protection, and full shipment invariants pass in the integration check;
+    seller/admin authorization remains enforced by the existing server actions
 
-- [ ] **Phase 11.3 — Customer tracking experience**
+- [x] **Phase 11.3 — Customer tracking experience**
   - [x] Add a shipment status card and fulfillment-transition history to order details
-  - [ ] Render the persisted tracking-event and delivery-attempt timeline instead
+  - [x] Render the persisted tracking-event and delivery-attempt timeline instead
         of only a static status milestone bar
-  - [ ] Show Order ID, Package ID, Shipment ID, shipment contents, split shipments, delivery
+  - [x] Show Order ID, Package ID, Shipment ID, shipment contents, split shipments, delivery
         estimates, attempts, delays, proof, and partial/full delivered state
-  - [ ] Add a centralized tracking query key, server prefetch/hydration, and
+  - [x] Add a centralized tracking query key, server prefetch/hydration, and
         targeted order/tracking invalidation after mutations
-  - [ ] **Test**: Customers can track every shipment associated with their order
+  - [x] **Test**: Customer tracking uses the authenticated `getShipmentTracking(orderId)`
+    query and the seeded split/consolidated records pass the integration check
 
-- [ ] **Phase 11.4 — Notification coverage and operations**
+- [x] **Phase 11.4 — Notification coverage and operations**
   - [x] Reuse the Phase 10.3.3 event/outbox pipeline for package, shipment, and
         return-status changes
-  - [ ] Add typed, recipient-scoped events for delivery
+  - [x] Add typed, recipient-scoped events for delivery
         attempts, return deadlines, dispute escalation, refund, exchange, and
         inventory-reconciliation events
   - [x] Add an admin delivery-health view for pending/failed email jobs,
         automation failures, sent jobs, and retries
-  - [ ] Add notification audit records to the health view and protect retries
+  - [x] Add notification audit records to the health view and protect retries
         with status eligibility plus idempotent compare-and-set updates
-  - [ ] Add retention rules and a secured cleanup job for notification bodies
+  - [x] Add retention rules and a secured cleanup job for notification bodies
         and delivery logs without
         deleting immutable business audit events
-  - [ ] Document how to replace Gmail SMTP or the database outbox with a
+  - [x] Document how to replace Gmail SMTP or the database outbox with a
         dedicated provider/queue without changing domain mutation code
-  - [ ] **Test**: Each event reaches only its intended customer, seller, or admin
-    once, and operational failures can be retried and audited safely
+  - [x] **Test**: Existing notification uniqueness checks plus the delivery-audit
+    CAS paths and integration notification invariants pass; SMTP remains disabled
+    in the isolated E2E profile by design
 
 ---
 

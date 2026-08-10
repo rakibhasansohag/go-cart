@@ -135,6 +135,9 @@ export default function ShipmentStatusSelect({
 					queryKey: queryKeys.orders.detail(orderId),
 				}),
 				queryClient.invalidateQueries({
+					queryKey: queryKeys.orders.tracking(orderId),
+				}),
+				queryClient.invalidateQueries({
 					queryKey: queryKeys.profile.orderLists(),
 				}),
 			]);

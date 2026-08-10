@@ -175,7 +175,7 @@ export async function getAdminDeliveryHealth(input?: {
 			? { status: 'PENDING' }
 			: { status: { in: ['FAILED', 'PENDING'] } };
 
-	const [sentCount, pendingCount, failedCount, totalOutboxCount, outboxItems, sentOutbox, automationRuns] =
+	const [sentCount, pendingCount, failedCount, totalOutboxCount, outboxItems, sentOutbox, automationRuns, auditStats, auditItems] =
 		await Promise.all([
 			db.emailOutbox.count({ where: { status: 'SENT' } }),
 			db.emailOutbox.count({ where: { status: 'PENDING' } }),
@@ -204,6 +204,16 @@ export async function getAdminDeliveryHealth(input?: {
 				orderBy: { startedAt: 'desc' },
 				take: 15,
 			}),
+			db.notificationDeliveryAudit.groupBy({
+				by: ['channel', 'status'],
+				_count: { _all: true },
+			}),
+			db.notificationDeliveryAudit.findMany({
+				where: { status: { in: ['FAILED', 'PROCESSING'] } },
+				include: { recipient: { select: { name: true, email: true } }, sourceEvent: { select: { eventType: true } } },
+				orderBy: { createdAt: 'desc' },
+				take: 50,
+			}),
 		]);
 
 	return {
@@ -218,6 +228,8 @@ export async function getAdminDeliveryHealth(input?: {
 		failedOutbox: outboxItems,
 		sentOutbox,
 		automationRuns,
+		auditStats,
+		auditItems,
 	};
 }
 
@@ -235,14 +247,22 @@ export async function retryOutboxJob(outboxId: string) {
 	const item = await db.emailOutbox.findUnique({ where: { id: outboxId } });
 	if (!item) throw new Error('Outbox job not found.');
 
-	const updated = await db.emailOutbox.update({
-		where: { id: outboxId },
+	const updatedCount = await db.emailOutbox.updateMany({
+		where: {
+			id: outboxId,
+			OR: [
+				{ status: 'FAILED' },
+				{ status: 'PROCESSING', lastAttemptAt: { lt: new Date(Date.now() - 10 * 60 * 1000) } },
+			],
+		},
 		data: {
 			status: 'PENDING',
 			nextAttemptAt: new Date(),
 			lastError: null,
 		},
 	});
+	if (updatedCount.count !== 1) throw new Error('Only failed or stale processing jobs can be retried.');
+	const updated = await db.emailOutbox.findUniqueOrThrow({ where: { id: outboxId } });
 
 	try {
 		const { scheduleEmailOutboxDispatch } = await import('@/lib/email/schedule');
@@ -272,8 +292,14 @@ export async function retryMultipleOutboxJobs(outboxIds: string[]) {
 		select: { id: true, sourceEventId: true },
 	});
 
-	await db.emailOutbox.updateMany({
-		where: { id: { in: outboxIds } },
+	const updated = await db.emailOutbox.updateMany({
+		where: {
+			id: { in: outboxIds },
+			OR: [
+				{ status: 'FAILED' },
+				{ status: 'PROCESSING', lastAttemptAt: { lt: new Date(Date.now() - 10 * 60 * 1000) } },
+			],
+		},
 		data: {
 			status: 'PENDING',
 			nextAttemptAt: new Date(),
@@ -288,7 +314,7 @@ export async function retryMultipleOutboxJobs(outboxIds: string[]) {
 		console.error('Outbox batch dispatch retry error:', err);
 	}
 
-	return { updatedCount: items.length };
+	return { updatedCount: updated.count };
 }
 
 

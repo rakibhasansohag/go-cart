@@ -20,29 +20,30 @@ model User {
   picture String @db.Text
   role    Role   @default(USER)
 
-  stores                  Store[]                  @relation("UserStores")
-  following               Store[]                  @relation("UserFollowingStore")
-  reviews                 Review[]                 @relation("ReviewToUser")
-  cart                    Cart?                    @relation("UserCart")
-  shippingAddresses       ShippingAddress[]        @relation("UserShippingAddresses")
-  orders                  Order[]                  @relation("UserOrders")
-  wishlist                Wishlist[]               @relation("WishlistToUser")
-  payments                PaymentDetails[]         @relation("PaymentDetailsToUser")
-  coupons                 Coupon[]                 @relation("CouponToUser")
-  returnRequests          ReturnRequest[]          @relation("ReturnCustomer")
-  returnEvidence          ReturnEvidence[]         @relation("ReturnEvidenceUploader")
-  returnEvents            ReturnEvent[]            @relation("ReturnEventActor")
-  fulfillmentEvents       FulfillmentTransition[]  @relation("FulfillmentTransitionActor")
-  cancellationRequests    CancellationRequest[]    @relation("CancellationRequestCustomer")
-  cancellationDecisions   CancellationRequest[]    @relation("CancellationRequestDecider")
-  domainEvents            DomainEvent[]            @relation("DomainEventActor")
-  notifications           Notification[]           @relation("NotificationRecipient")
-  notificationPreferences NotificationPreference[] @relation("NotificationPreferenceUser")
-  emailOutboxJobs         EmailOutbox[]            @relation("EmailOutboxRecipient")
-  emailTemplatesEdited    EmailTemplate[]          @relation("EmailTemplateEditor")
-  loyaltyAccount          LoyaltyAccount?
-  personalCoupons         Coupon[]                 @relation("UserPersonalCoupons")
-  dailyCheckIns           DailyCheckIn[]           @relation("UserDailyCheckIns")
+  stores                     Store[]                     @relation("UserStores")
+  following                  Store[]                     @relation("UserFollowingStore")
+  reviews                    Review[]                    @relation("ReviewToUser")
+  cart                       Cart?                       @relation("UserCart")
+  shippingAddresses          ShippingAddress[]           @relation("UserShippingAddresses")
+  orders                     Order[]                     @relation("UserOrders")
+  wishlist                   Wishlist[]                  @relation("WishlistToUser")
+  payments                   PaymentDetails[]            @relation("PaymentDetailsToUser")
+  coupons                    Coupon[]                    @relation("CouponToUser")
+  returnRequests             ReturnRequest[]             @relation("ReturnCustomer")
+  returnEvidence             ReturnEvidence[]            @relation("ReturnEvidenceUploader")
+  returnEvents               ReturnEvent[]               @relation("ReturnEventActor")
+  fulfillmentEvents          FulfillmentTransition[]     @relation("FulfillmentTransitionActor")
+  cancellationRequests       CancellationRequest[]       @relation("CancellationRequestCustomer")
+  cancellationDecisions      CancellationRequest[]       @relation("CancellationRequestDecider")
+  domainEvents               DomainEvent[]               @relation("DomainEventActor")
+  notifications              Notification[]              @relation("NotificationRecipient")
+  notificationPreferences    NotificationPreference[]    @relation("NotificationPreferenceUser")
+  emailOutboxJobs            EmailOutbox[]               @relation("EmailOutboxRecipient")
+  notificationDeliveryAudits NotificationDeliveryAudit[] @relation("NotificationDeliveryAuditRecipient")
+  emailTemplatesEdited       EmailTemplate[]             @relation("EmailTemplateEditor")
+  loyaltyAccount             LoyaltyAccount?
+  personalCoupons            Coupon[]                    @relation("UserPersonalCoupons")
+  dailyCheckIns              DailyCheckIn[]              @relation("UserDailyCheckIns")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -941,6 +942,14 @@ enum NotificationChannel {
   EMAIL
 }
 
+enum NotificationDeliveryStatus {
+  QUEUED
+  PROCESSING
+  SENT
+  FAILED
+  SKIPPED
+}
+
 model NotificationPreference {
   id        String               @id @default(uuid())
   category  NotificationCategory
@@ -979,8 +988,9 @@ model DomainEvent {
   actorUserId String?
   actorUser   User?   @relation("DomainEventActor", fields: [actorUserId], references: [id])
 
-  notifications Notification[]
-  emailOutbox   EmailOutbox[]
+  notifications  Notification[]
+  emailOutbox    EmailOutbox[]
+  deliveryAudits NotificationDeliveryAudit[]
 
   createdAt DateTime @default(now())
 
@@ -1009,6 +1019,31 @@ model Notification {
   @@unique([sourceEventId, recipientId])
   @@index([recipientId, readAt, createdAt])
   @@index([recipientId, category, createdAt])
+}
+
+/// Immutable per-attempt operational record for notification delivery. DomainEvent
+/// remains the business audit; this table records queue and provider outcomes.
+model NotificationDeliveryAudit {
+  id             String                     @id @default(uuid())
+  channel        NotificationChannel
+  status         NotificationDeliveryStatus
+  attemptNumber  Int                        @default(0)
+  recipientEmail String?
+  error          String?                    @db.Text
+  startedAt      DateTime                   @default(now())
+  finishedAt     DateTime?
+
+  sourceEventId String
+  sourceEvent   DomainEvent @relation(fields: [sourceEventId], references: [id], onDelete: Cascade)
+  recipientId   String
+  recipient     User        @relation("NotificationDeliveryAuditRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([sourceEventId, recipientId, channel, attemptNumber])
+  @@index([status, createdAt])
+  @@index([recipientId, createdAt])
+  @@index([sourceEventId, channel, attemptNumber])
 }
 
 model EmailOutbox {

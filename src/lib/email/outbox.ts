@@ -19,6 +19,15 @@ type DispatchResult =
 	| { id: string; status: 'failed'; error: string }
 	| { id: string; status: 'skipped' };
 
+type DeliveryAuditClient = {
+	upsert: (args: { where: object; update: object; create: object }) => Promise<unknown>;
+	updateMany: (args: { where: object; data: object }) => Promise<unknown>;
+};
+
+function deliveryAuditClient(): DeliveryAuditClient | null {
+	return (db as unknown as { notificationDeliveryAudit?: DeliveryAuditClient }).notificationDeliveryAudit ?? null;
+}
+
 function retryDate(attemptCount: number) {
 	const delay = Math.min(
 		MAX_RETRY_MS,
@@ -120,7 +129,30 @@ async function claimOutboxJob(id: string) {
 	});
 	if (claimed.count !== 1) return null;
 
-	return db.emailOutbox.findUnique({ where: { id } });
+	const job = await db.emailOutbox.findUnique({ where: { id } });
+	const audit = deliveryAuditClient();
+	if (job && audit) {
+		await audit.upsert({
+			where: {
+				sourceEventId_recipientId_channel_attemptNumber: {
+					sourceEventId: job.sourceEventId,
+					recipientId: job.recipientId,
+					channel: 'EMAIL',
+					attemptNumber: job.attemptCount,
+				},
+			},
+			update: { status: 'PROCESSING', startedAt: claimedAt, finishedAt: null, error: null, recipientEmail: job.recipientEmail },
+			create: {
+				sourceEventId: job.sourceEventId,
+				recipientId: job.recipientId,
+				recipientEmail: job.recipientEmail,
+				channel: 'EMAIL',
+				status: 'PROCESSING',
+				attemptNumber: job.attemptCount,
+			},
+		});
+	}
+	return job;
 }
 
 export async function dispatchEmailOutboxJob(
@@ -143,20 +175,27 @@ export async function dispatchEmailOutboxJob(
 			text: rendered.text,
 			html: rendered.html,
 		});
-		await db.emailOutbox.updateMany({
+		const deliveredAt = new Date();
+		const sent = await db.emailOutbox.updateMany({
 			where: { id: job.id, status: EmailOutboxStatus.PROCESSING },
 			data: {
 				status: EmailOutboxStatus.SENT,
-				sentAt: new Date(),
+				sentAt: deliveredAt,
 				lastError: null,
 				templateSource: rendered.templateSource,
 				templateVersion: rendered.templateVersion,
 			},
 		});
+		if (sent.count === 1 && deliveryAuditClient()) {
+			await deliveryAuditClient()!.updateMany({
+				where: { sourceEventId: job.sourceEventId, recipientId: job.recipientId, channel: 'EMAIL', attemptNumber: job.attemptCount, status: 'PROCESSING' },
+				data: { status: 'SENT', finishedAt: deliveredAt, error: null },
+			});
+		}
 		return { id: job.id, status: 'sent' };
 	} catch (error) {
 		const message = safeError(error);
-		await db.emailOutbox.updateMany({
+		const failed = await db.emailOutbox.updateMany({
 			where: { id: job.id, status: EmailOutboxStatus.PROCESSING },
 			data: {
 				status: EmailOutboxStatus.FAILED,
@@ -164,6 +203,12 @@ export async function dispatchEmailOutboxJob(
 				lastError: message,
 			},
 		});
+		if (failed.count === 1 && deliveryAuditClient()) {
+			await deliveryAuditClient()!.updateMany({
+				where: { sourceEventId: job.sourceEventId, recipientId: job.recipientId, channel: 'EMAIL', attemptNumber: job.attemptCount, status: 'PROCESSING' },
+				data: { status: 'FAILED', finishedAt: new Date(), error: message },
+			});
+		}
 		return { id: job.id, status: 'failed', error: message };
 	}
 }

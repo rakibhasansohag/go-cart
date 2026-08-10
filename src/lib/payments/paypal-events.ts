@@ -1,7 +1,7 @@
 import { db } from '@/lib/db';
 import { paypalRequest } from './paypal-client';
 import { reconcilePaymentEvent } from './reconcile';
-import { publishDomainEvent } from '@/lib/notifications/domain-events';
+import { DOMAIN_EVENT_TYPES, publishDomainEvent } from '@/lib/notifications/domain-events';
 import { scheduleEmailOutboxDispatch } from '@/lib/email/schedule';
 import { RefundTransactionStatus, ReturnRequestStatus } from '@prisma/client';
 import type { PaymentStatus } from '@prisma/client';
@@ -139,7 +139,7 @@ export async function handlePayPalEvent(event: PayPalWebhookEvent) {
 				if (!request || request.status === ReturnRequestStatus.REFUNDED) return { sourceEventId: null };
 				const domainEvent = await publishDomainEvent(tx, {
 					eventKey: `return.refunded:Paypal:${event.id}`,
-					eventType: 'return.status_changed',
+					eventType: DOMAIN_EVENT_TYPES.REFUND_ISSUED,
 					aggregateType: 'RETURN_REQUEST',
 					aggregateId: request.id,
 					orderId: request.orderId,
@@ -152,6 +152,7 @@ export async function handlePayPalEvent(event: PayPalWebhookEvent) {
 						nextStatus: 'Refunded',
 						requestedAmount: request.requestedAmount,
 						approvedAmount: request.approvedAmount ?? request.requestedAmount,
+						amount: Number(request.approvedAmount ?? request.requestedAmount),
 						currency: request.currency,
 						message: 'Your refund was confirmed by PayPal.',
 					},

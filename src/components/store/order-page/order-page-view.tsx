@@ -7,6 +7,7 @@ import OrderInfoCard from '@/components/store/cards/order/info';
 import OrderTotalDetailsCard from '@/components/store/cards/order/total';
 import OrderUserDetailsCard from '@/components/store/cards/order/user';
 import OrderGroupsContainer from './groups-container';
+import ShipmentTrackingTimeline from './shipment-tracking-timeline';
 import OrderHeader from './header';
 import OrderPayment from './payment';
 import { useOrderStatusSync } from '@/hooks/use-order-status-sync';
@@ -127,6 +128,7 @@ export default function OrderPageView({ orderId }: { orderId: string }) {
 						groups={order.groups}
 						check={canRequestReturns}
 					/>
+					<ShipmentTrackingTimeline orderId={orderId} />
 				</div>
 
 				{isPendingPayment && (

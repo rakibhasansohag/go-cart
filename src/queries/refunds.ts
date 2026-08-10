@@ -6,7 +6,7 @@ import { Prisma, RefundTransactionStatus, ReturnRequestStatus } from '@prisma/cl
 import { db } from '@/lib/db';
 import { getStripeClient } from '@/lib/payments/stripe-client';
 import { paypalRequest } from '@/lib/payments/paypal-client';
-import { publishDomainEvent } from '@/lib/notifications/domain-events';
+import { DOMAIN_EVENT_TYPES, publishDomainEvent } from '@/lib/notifications/domain-events';
 import { scheduleEmailOutboxDispatch } from '@/lib/email/schedule';
 
 const REFUND_TRANSACTION_OPTIONS = { maxWait: 10_000, timeout: 30_000 } as const;
@@ -90,7 +90,7 @@ export async function issueReturnRefund(returnRequestId: string) {
 			if (!succeeded) return { request: null, eventId: null };
 			const event = await publishDomainEvent(tx, {
 					eventKey: `return.refunded:${provider}:${providerRefundId}`,
-				eventType: 'return.status_changed',
+				eventType: DOMAIN_EVENT_TYPES.REFUND_ISSUED,
 				aggregateType: 'RETURN_REQUEST',
 				aggregateId: request.id,
 				actorUserId: userId,
@@ -106,6 +106,7 @@ export async function issueReturnRefund(returnRequestId: string) {
 					approvedAmount: amount / 100,
 					currency: request.currency,
 					message: 'Your refund was issued successfully.',
+					amount: amount / 100,
 				},
 			});
 			const updatedRequest = await tx.returnRequest.update({ where: { id: request.id, status: ReturnRequestStatus.REFUND_PENDING }, data: { status: ReturnRequestStatus.REFUNDED, resolvedAt: new Date() } });

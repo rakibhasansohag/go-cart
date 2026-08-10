@@ -1,7 +1,6 @@
 import { OrderGroupWithItemsType } from '@/lib/types';
 import { getShippingDatesRange } from '@/lib/utils';
 import OrderGroupTable from './group-table';
-import ShipmentTrackingCard from './shipment-tracking-card';
 
 export default function OrderGroupsContainer({
 	groups,
@@ -30,22 +29,6 @@ export default function OrderGroupsContainer({
 
 				return (
 					<div key={`${group.id || 'group'}-${index}`} className='space-y-4'>
-						{group.shipment && (
-							<ShipmentTrackingCard
-								shipment={{
-									...group.shipment,
-									orderGroup: {
-										id: group.id,
-										packageStatus: group.packageStatus || 'PENDING',
-										store: {
-											name: group.store.name,
-											url: group.store.url,
-											logo: group.store.logo,
-										},
-									},
-								}}
-							/>
-						)}
 						<OrderGroupTable
 							group={group}
 							deliveryInfo={deliveryInfo}

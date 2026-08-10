@@ -30,6 +30,15 @@ export const DOMAIN_EVENT_PAYLOAD_SCHEMAS = {
 		orderGroupId: z.string().min(1),
 		nextStatus: z.string().min(1),
 	}),
+	'shipment.delivery_attempt': commonPayload.extend({
+		shipmentId: z.string().min(1),
+		outcome: z.string().min(1),
+		attemptNumber: z.number().int().positive(),
+	}),
+	'shipment.tracking_updated': commonPayload.extend({
+		shipmentId: z.string().min(1),
+		trackingEventId: z.string().min(1),
+	}),
 	'return.requested': commonPayload.extend({
 		returnRequestId: z.string().min(1),
 		orderGroupId: z.string().optional(),
@@ -42,6 +51,21 @@ export const DOMAIN_EVENT_PAYLOAD_SCHEMAS = {
 		returnRequestId: z.string().min(1),
 	}),
 	'return.dispute_resolved': commonPayload.extend({
+		returnRequestId: z.string().min(1),
+	}),
+	'return.deadline_due': commonPayload.extend({
+		returnRequestId: z.string().min(1),
+		deadlineAt: z.string().min(1),
+	}),
+	'return.dispute_escalated': commonPayload.extend({
+		returnRequestId: z.string().min(1),
+	}),
+	'refund.issued': commonPayload.extend({
+		orderId: z.string().min(1),
+		amount: z.number().finite(),
+		currency: z.string().min(1),
+	}),
+	'exchange.approved': commonPayload.extend({
 		returnRequestId: z.string().min(1),
 	}),
 	'cancellation.requested': commonPayload.extend({

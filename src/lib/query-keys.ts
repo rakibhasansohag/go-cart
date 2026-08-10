@@ -33,6 +33,7 @@ export const queryKeys = {
 	},
 	orders: {
 		detail: (orderId: string) => ['orders', 'detail', orderId] as const,
+		tracking: (orderId: string) => ['orders', 'tracking', orderId] as const,
 		statuses: (orderIds: string[], groupIds: string[], viewerId?: string) =>
 			['orders', 'statuses', { orderIds, groupIds, viewerId }] as const,
 	},

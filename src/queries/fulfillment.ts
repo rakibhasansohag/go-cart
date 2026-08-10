@@ -286,6 +286,22 @@ export async function updateShipmentStatus(input: {
 		if (changed.count !== 1) {
 			throw new Error('Shipment changed elsewhere. Refresh and try again.');
 		}
+		if (input.nextStatus === ShipmentStatus.DELIVERY_ATTEMPT_FAILED) {
+			const previousAttempt = await tx.deliveryAttempt.findFirst({
+				where: { shipmentId: shipment.id },
+				orderBy: { attemptNumber: 'desc' },
+				select: { attemptNumber: true },
+			});
+			await tx.deliveryAttempt.create({
+				data: {
+					shipmentId: shipment.id,
+					attemptNumber: (previousAttempt?.attemptNumber ?? 0) + 1,
+					outcome: 'FAILED',
+					reasonCode: input.reasonCode?.trim() || null,
+					message: input.message?.trim() || null,
+				},
+			});
+		}
 
 		await tx.fulfillmentTransition.create({
 			data: {
@@ -529,6 +545,8 @@ export async function updateShipmentCarrierInfo(input: {
 	serviceLevel?: string;
 	estimatedDeliveryAt?: string | Date | null;
 	proofOfDeliveryUrl?: string | null;
+	proofOfDeliveryAt?: string | Date | null;
+	idempotencyKey?: string;
 }) {
 	const user = await currentUser();
 	if (!user) throw new Error('Unauthenticated.');
@@ -536,9 +554,15 @@ export async function updateShipmentCarrierInfo(input: {
 		throw new Error('Admin logistics privileges are required.');
 	}
 
-	const updated = await db.shipment.update({
-		where: { id: input.shipmentId },
-		data: {
+	const updated = await db.$transaction(async (tx) => {
+		const shipment = await tx.shipment.findUnique({
+			where: { id: input.shipmentId },
+			include: { packageAssignments: { orderBy: { createdAt: 'asc' }, take: 1, include: { orderGroup: { select: { id: true, orderId: true } } } } },
+		});
+		if (!shipment || !shipment.packageAssignments[0]) throw new Error('Shipment not found.');
+		const updated = await tx.shipment.update({
+			where: { id: input.shipmentId },
+			data: {
 			...(input.carrier !== undefined ? { carrier: input.carrier.trim() || null } : {}),
 			...(input.trackingNumber !== undefined ? { trackingNumber: input.trackingNumber.trim() || null } : {}),
 			...(input.serviceLevel !== undefined ? { serviceLevel: input.serviceLevel.trim() || null } : {}),
@@ -546,8 +570,32 @@ export async function updateShipmentCarrierInfo(input: {
 				? { estimatedDeliveryAt: input.estimatedDeliveryAt ? new Date(input.estimatedDeliveryAt) : null }
 				: {}),
 			...(input.proofOfDeliveryUrl !== undefined ? { proofOfDeliveryUrl: input.proofOfDeliveryUrl ? input.proofOfDeliveryUrl.trim() : null } : {}),
-		},
-	});
+			...(input.proofOfDeliveryAt !== undefined ? { proofOfDeliveryAt: input.proofOfDeliveryAt ? new Date(input.proofOfDeliveryAt) : null } : {}),
+			},
+		});
+		if (input.proofOfDeliveryUrl !== undefined || input.proofOfDeliveryAt !== undefined) {
+			const idempotencyKey = input.idempotencyKey?.trim() || `proof:${input.shipmentId}:${input.proofOfDeliveryUrl || 'cleared'}`;
+			const duplicate = await tx.fulfillmentTransition.findUnique({ where: { idempotencyKey } });
+			if (!duplicate) {
+				await tx.fulfillmentTransition.create({
+					data: {
+						entityType: FulfillmentEntityType.SHIPMENT,
+						previousStatus: shipment.status,
+						nextStatus: shipment.status,
+						actorRole: FulfillmentActorRole.ADMIN,
+						source: FulfillmentSource.MANUAL,
+						message: input.proofOfDeliveryUrl ? 'Proof of delivery attached.' : 'Proof of delivery cleared.',
+						idempotencyKey,
+						actorUserId: user.id,
+						orderId: shipment.packageAssignments[0].orderGroup.orderId,
+						orderGroupId: shipment.packageAssignments[0].orderGroup.id,
+						shipmentId: shipment.id,
+					},
+				});
+			}
+		}
+		return updated;
+	}, FULFILLMENT_TRANSACTION_OPTIONS);
 
 	updateTag('user-orders');
 	return updated;

@@ -103,6 +103,8 @@ async function main() {
 	const shipments = [];
 	const shipmentAssignments = [];
 	const shipmentItems = [];
+	const trackingEvents = [];
+	const deliveryAttempts = [];
 	for (let index = 0; index < COUNT; index += 1) {
 		const fixture = statusFixtures[index % statusFixtures.length];
 		const product = catalog[index % catalog.length];
@@ -116,9 +118,44 @@ async function main() {
 		items.push({ id: itemIds[index], productId: product.productId, variantId: product.variantId, sizeId: product.sizeId, productSlug: product.slug, variantSlug: product.variantSlug, sku: product.sku, name: product.name, image: product.image, size: product.size, quantity, shippingFee: 0, price: product.price, totalPrice: subtotal, orderGroupId: groupIds[index], status: fixture.item, deliveredAt: fixture.item === ProductStatus.Delivered ? createdAt : null, createdAt, updatedAt: createdAt });
 		payments.push({ id: paymentIds[index], paymentInetntId: `demo_pi_${index + 1}`, paymentMethod: 'Stripe', status: 'succeeded', amount: subtotal, currency: 'USD', orderId: orderIds[index], userId: customer.id, createdAt, updatedAt: createdAt });
 		const shipmentId = id('shipment', index);
-		shipments.push({ id: shipmentId, status: fixture.shipment, createdAt, updatedAt: createdAt });
-		shipmentAssignments.push({ id: id('shipment-assignment', index), shipmentId, orderGroupId: groupIds[index], createdAt, updatedAt: createdAt });
-		shipmentItems.push({ id: id('shipment-item', index), shipmentId, orderItemId: itemIds[index], quantity, createdAt, updatedAt: createdAt });
+		const isConsolidatedPackage = index === 4;
+		if (!isConsolidatedPackage) {
+			shipments.push({
+				id: shipmentId,
+				status: fixture.shipment,
+				carrier: index % 3 === 0 ? 'DemoShip' : null,
+				trackingNumber: index % 3 === 0 ? `DEMO-TRACK-${String(index + 1).padStart(4, '0')}` : null,
+				serviceLevel: index % 3 === 0 ? 'Demo Express' : null,
+				estimatedDeliveryAt: index % 3 === 0 ? new Date(createdAt.getTime() + 5 * 24 * 60 * 60 * 1000) : null,
+				proofOfDeliveryUrl: fixture.shipment === ShipmentStatus.DELIVERED ? `https://example.test/proof/${shipmentId}` : null,
+				proofOfDeliveryAt: fixture.shipment === ShipmentStatus.DELIVERED ? createdAt : null,
+				createdAt,
+				updatedAt: createdAt,
+			});
+			shipmentAssignments.push({ id: id('shipment-assignment', index), shipmentId, orderGroupId: groupIds[index], createdAt, updatedAt: createdAt });
+			// Demo order 3 is deliberately split across two shipments.
+			const splitQuantity = index === 2 ? Math.max(1, quantity - 1) : quantity;
+			shipmentItems.push({ id: id('shipment-item', index), shipmentId, orderItemId: itemIds[index], quantity: splitQuantity, createdAt, updatedAt: createdAt });
+			if (index === 2) {
+				const splitShipmentId = id('shipment-split', index);
+				shipments.push({ id: splitShipmentId, status: ShipmentStatus.DELIVERY_ATTEMPT_FAILED, carrier: 'DemoShip', trackingNumber: 'DEMO-SPLIT-0003', serviceLevel: 'Demo Ground', estimatedDeliveryAt: new Date(createdAt.getTime() + 7 * 24 * 60 * 60 * 1000), proofOfDeliveryUrl: null, proofOfDeliveryAt: null, createdAt, updatedAt: createdAt });
+				shipmentAssignments.push({ id: id('shipment-assignment-split', index), shipmentId: splitShipmentId, orderGroupId: groupIds[index], createdAt, updatedAt: createdAt });
+				shipmentItems.push({ id: id('shipment-item-split', index), shipmentId: splitShipmentId, orderItemId: itemIds[index], quantity: 1, createdAt, updatedAt: createdAt });
+				trackingEvents.push({ id: id('tracking-split-hub', index), providerEventId: `demo-carrier-${index}-hub`, shipmentId: splitShipmentId, status: ShipmentStatus.RECEIVED_AT_HUB, location: 'Demo Hub', description: 'Split parcel received at the regional hub.', occurredAt: new Date(createdAt.getTime() + 60 * 60 * 1000), createdAt });
+				trackingEvents.push({ id: id('tracking-split-failed', index), providerEventId: `demo-carrier-${index}-failed`, shipmentId: splitShipmentId, status: ShipmentStatus.DELIVERY_ATTEMPT_FAILED, location: 'Demo City', description: 'Recipient was unavailable; another attempt is scheduled.', occurredAt: new Date(createdAt.getTime() + 2 * 60 * 60 * 1000), createdAt });
+				deliveryAttempts.push({ id: id('delivery-attempt', index), shipmentId: splitShipmentId, attemptNumber: 1, outcome: 'FAILED', reasonCode: 'CUSTOMER_UNAVAILABLE', message: 'Recipient was unavailable at the delivery address.', occurredAt: new Date(createdAt.getTime() + 2 * 60 * 60 * 1000) });
+			}
+			if (index === 0) {
+				trackingEvents.push({ id: id('tracking-accepted', index), providerEventId: `demo-carrier-${index}-accepted`, shipmentId, status: ShipmentStatus.AWAITING_RECEIPT, location: 'Demo Warehouse', description: 'Shipment label created and awaiting carrier receipt.', occurredAt: createdAt, createdAt });
+			}
+			if (index === 3) {
+				trackingEvents.push({ id: id('tracking-consolidated', index), providerEventId: `demo-carrier-${index}-hub`, shipmentId, status: ShipmentStatus.RECEIVED_AT_HUB, location: 'Demo Consolidation Hub', description: 'Two seller packages were consolidated for line-haul transport.', occurredAt: new Date(createdAt.getTime() + 60 * 60 * 1000), createdAt });
+			}
+		} else {
+			// Order 5 shares order 4's shipment to exercise a consolidated package.
+			shipmentAssignments.push({ id: id('shipment-assignment-consolidated', index), shipmentId: id('shipment', 3), orderGroupId: groupIds[index], createdAt, updatedAt: createdAt });
+			shipmentItems.push({ id: id('shipment-item-consolidated', index), shipmentId: id('shipment', 3), orderItemId: itemIds[index], quantity, createdAt, updatedAt: createdAt });
+		}
 	}
 	// Keep deterministic addresses that may still be referenced by historical
 	// orders. This makes reseeding safe on a branched production snapshot.
@@ -130,6 +167,8 @@ async function main() {
 	await db.shipment.createMany({ data: shipments });
 	await db.shipmentPackageAssignment.createMany({ data: shipmentAssignments });
 	await db.shipmentItem.createMany({ data: shipmentItems });
+	await db.trackingEvent.createMany({ data: trackingEvents });
+	await db.deliveryAttempt.createMany({ data: deliveryAttempts });
 	console.log(`Seeded ${COUNT} deterministic demo orders for ${users.customer}. Seller: ${users.seller}. Admin: ${users.admin}.`);
 }
 

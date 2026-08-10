@@ -836,8 +836,10 @@ export async function transitionReturnRequest(
 		});
 
 		const statusEvent = await publishDomainEvent(tx, {
-			eventKey: `return.status_changed:${returnEvent.id}`,
-			eventType: DOMAIN_EVENT_TYPES.RETURN_STATUS_CHANGED,
+			eventKey: `${input.toStatus === 'EXCHANGED' ? 'exchange.approved' : 'return.status_changed'}:${returnEvent.id}`,
+			eventType: input.toStatus === 'EXCHANGED'
+				? DOMAIN_EVENT_TYPES.EXCHANGE_APPROVED
+				: DOMAIN_EVENT_TYPES.RETURN_STATUS_CHANGED,
 			aggregateType: 'RETURN_REQUEST',
 			aggregateId: request.id,
 			actorUserId: userId,
