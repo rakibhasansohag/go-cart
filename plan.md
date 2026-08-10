@@ -669,7 +669,7 @@ post-purchase workflow.
 
 Goal: protect the critical marketplace workflows before production deployment.
 
-- **Audit status (2026-08-10)**: In progress. The repository has 98 passing Vitest
+- **Audit status (2026-08-10)**: In progress. The repository has 115 passing Vitest
   tests, a deterministic demo seed, and an opt-in Playwright public smoke
   foundation. The isolated Docker integration check now performs concurrent
   payment replay and return-overlap protection checks in addition to payment,
@@ -724,6 +724,9 @@ Goal: protect the critical marketplace workflows before production deployment.
   - [x] Cover concurrent payment-event replay and active return-request overlap
         protection against the isolated database, with temporary fixtures cleaned
         up after each check
+  - [x] Add Stripe signature-boundary tests, PayPal verification tests, and
+        Stripe/PayPal provider event-mapping tests for ignored, paid, duplicate,
+        and refund-related events
   - [ ] **Test**: Critical server workflows pass against an isolated test database
 
 - [ ] **Phase 12.3 — End-to-end commerce journeys**
