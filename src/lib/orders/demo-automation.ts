@@ -42,7 +42,10 @@ async function advanceOne(groupId: string) {
 		const group = await tx.orderGroup.findUnique({
 			where: { id: groupId },
 			include: {
-				shipment: true,
+				shipmentAssignments: {
+					include: { shipment: true },
+					orderBy: { createdAt: 'asc' },
+				},
 				store: { select: { name: true, url: true } },
 				items: true,
 				order: { select: { id: true, paymentStatus: true, paymentDetails: { select: { currency: true } } } },
@@ -89,49 +92,54 @@ async function advanceOne(groupId: string) {
 					items: group.items.map((item) => ({ name: item.name, image: item.image, sku: item.sku, size: item.size, quantity: item.quantity, unitPrice: item.price, totalPrice: item.totalPrice, storeName: group.store.name })),
 				},
 			});
-			await syncLegacyFulfillmentSummary(tx, { ...group, packageStatus: packageNext });
+			await syncLegacyFulfillmentSummary(tx, {
+				...group,
+				packageStatus: packageNext,
+				shipment: group.shipmentAssignments[0]?.shipment ?? null,
+			});
 			return true;
 		}
 
-		if (!group.shipment) {
+		const shipment = group.shipmentAssignments[0]?.shipment ?? null;
+		if (!shipment) {
 			await tx.orderGroup.update({ where: { id: group.id }, data: { automationMode: 'MANUAL', nextTransitionAt: null } });
 			return false;
 		}
-		const shipmentNext = getAllowedShipmentTransitions({ current: group.shipment.status, actorRole: FulfillmentActorRole.SYSTEM, mode: group.fulfillmentMode }).find((status) => status !== ShipmentStatus.DELIVERY_ATTEMPT_FAILED);
+		const shipmentNext = getAllowedShipmentTransitions({ current: shipment.status, actorRole: FulfillmentActorRole.SYSTEM, mode: group.fulfillmentMode }).find((status) => status !== ShipmentStatus.DELIVERY_ATTEMPT_FAILED);
 		if (!shipmentNext) {
 			await tx.orderGroup.update({ where: { id: group.id }, data: { automationMode: 'MANUAL', nextTransitionAt: null } });
 			return false;
 		}
 		const idempotencyKey = key(group.id, shipmentNext);
-		const changed = await tx.shipment.updateMany({ where: { id: group.shipment.id, status: group.shipment.status }, data: { status: shipmentNext } });
+		const changed = await tx.shipment.updateMany({ where: { id: shipment.id, status: shipment.status }, data: { status: shipmentNext } });
 		if (changed.count !== 1) return false;
 		await tx.fulfillmentTransition.create({
 			data: {
 				entityType: FulfillmentEntityType.SHIPMENT,
-				previousStatus: group.shipment.status,
+				previousStatus: shipment.status,
 				nextStatus: shipmentNext,
 				actorRole: FulfillmentActorRole.SYSTEM,
 				source: FulfillmentSource.AUTOMATION,
 				idempotencyKey,
 				orderId: group.orderId,
 				orderGroupId: group.id,
-				shipmentId: group.shipment.id,
+				shipmentId: shipment.id,
 			},
 		});
 		await publishDomainEvent(tx, {
 			eventKey: `fulfillment:${idempotencyKey}`,
 			eventType: DOMAIN_EVENT_TYPES.SHIPMENT_STATUS_CHANGED,
 			aggregateType: 'SHIPMENT',
-			aggregateId: group.shipment.id,
+			aggregateId: shipment.id,
 			orderId: group.orderId,
 			storeId: group.storeId,
 			payload: {
 				orderId: group.orderId,
 				orderGroupId: group.id,
-				shipmentId: group.shipment.id,
+				shipmentId: shipment.id,
 				storeUrl: group.store.url,
 				storeName: group.store.name,
-				previousStatus: SHIPMENT_STATUS_LABELS[group.shipment.status],
+				previousStatus: SHIPMENT_STATUS_LABELS[shipment.status],
 				nextStatus: SHIPMENT_STATUS_LABELS[shipmentNext],
 				items: group.items.map((item) => ({ name: item.name, image: item.image, sku: item.sku, size: item.size, quantity: item.quantity, unitPrice: item.price, totalPrice: item.totalPrice, storeName: group.store.name })),
 			},

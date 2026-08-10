@@ -1288,11 +1288,14 @@ export const placeOrder = async (
 				shippingDeliveryMin: deliveryTimeMin || 7,
 				shippingDeliveryMax: deliveryTimeMax || 30,
 				couponId: check && cartCoupon ? cartCoupon?.id : null,
-				shipment: {
-					create: {},
+			},
+		});
+		const shipment = await db.shipment.create({
+			data: {
+				packageAssignments: {
+					create: { orderGroupId: orderGroup.id },
 				},
 			},
-			include: { shipment: true },
 		});
 
 		await db.fulfillmentTransition.createMany({
@@ -1310,20 +1313,20 @@ export const placeOrder = async (
 				{
 					entityType: FulfillmentEntityType.SHIPMENT,
 					previousStatus: 'CREATED',
-					nextStatus: orderGroup.shipment!.status,
+					nextStatus: shipment.status,
 					actorRole: FulfillmentActorRole.SYSTEM,
 					source: FulfillmentSource.API,
-					idempotencyKey: `order:${order.id}:shipment:${orderGroup.shipment!.id}:created`,
+					idempotencyKey: `order:${order.id}:shipment:${shipment.id}:created`,
 					orderId: order.id,
 					orderGroupId: orderGroup.id,
-					shipmentId: orderGroup.shipment!.id,
+					shipmentId: shipment.id,
 				},
 			],
 		});
 
 		// Create OrderItems for this OrderGroup
 		for (const item of items) {
-			await db.orderItem.create({
+			const orderItem = await db.orderItem.create({
 				data: {
 					orderGroupId: orderGroup.id,
 					productId: item.productId,
@@ -1339,6 +1342,13 @@ export const placeOrder = async (
 					price: item.price,
 					shippingFee: item.shippingFee,
 					totalPrice: item.totalPrice,
+				},
+			});
+			await db.shipmentItem.create({
+				data: {
+					shipmentId: shipment.id,
+					orderItemId: orderItem.id,
+					quantity: orderItem.quantity,
 				},
 			});
 		}

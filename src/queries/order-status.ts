@@ -32,7 +32,7 @@ export async function getOrderStatusSnapshots(input: {
         ? { store: { userId: user.id } }
         : { order: { userId: user.id } };
 
-  return db.orderGroup.findMany({
+  const snapshots = await db.orderGroup.findMany({
     where: {
       ...accessWhere,
       OR: [
@@ -45,7 +45,10 @@ export async function getOrderStatusSnapshots(input: {
       orderId: true,
       status: true,
       packageStatus: true,
-      shipment: { select: { status: true } },
+      shipmentAssignments: {
+        select: { shipment: { select: { status: true } } },
+        orderBy: { createdAt: "asc" },
+      },
       order: {
         select: {
           orderStatus: true,
@@ -54,4 +57,9 @@ export async function getOrderStatusSnapshots(input: {
       },
     },
   });
+
+  return snapshots.map(({ shipmentAssignments, ...snapshot }) => ({
+    ...snapshot,
+    shipment: shipmentAssignments[0]?.shipment ?? null,
+  }));
 }

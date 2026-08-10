@@ -51,9 +51,9 @@ model User {
 model DailyCheckIn {
   id          String   @id @default(uuid())
   userId      String
-  date        String   // "YYYY-MM-DD"
-  yearMonth   String   // "YYYY-MM"
-  dayIndex    Int      // 1 to 31 (monthly check-in count)
+  date        String // "YYYY-MM-DD"
+  yearMonth   String // "YYYY-MM"
+  dayIndex    Int // 1 to 31 (monthly check-in count)
   coinsEarned Int      @default(0)
   rewardType  String   @default("COINS") // "COINS" | "COINS_COUPON" | "FREE_SHIPPING"
   couponId    String?
@@ -695,10 +695,10 @@ model OrderGroup {
   couponId String?
   coupon   Coupon? @relation("CouponToOrderGroup", fields: [couponId], references: [id])
 
-  returnRequests       ReturnRequest[]         @relation("ReturnRequestToOrderGroup")
-  shipment             Shipment?
-  fulfillmentEvents    FulfillmentTransition[] @relation("FulfillmentTransitionToOrderGroup")
-  cancellationRequests CancellationRequest[]   @relation("CancellationRequestToOrderGroup")
+  returnRequests       ReturnRequest[]             @relation("ReturnRequestToOrderGroup")
+  shipmentAssignments  ShipmentPackageAssignment[] @relation("OrderGroupToShipmentAssignments")
+  fulfillmentEvents    FulfillmentTransition[]     @relation("FulfillmentTransitionToOrderGroup")
+  cancellationRequests CancellationRequest[]       @relation("CancellationRequestToOrderGroup")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -780,7 +780,7 @@ model OrderItem {
   status      ProductStatus @default(Pending)
   deliveredAt DateTime?
 
-  returnItems ReturnItem[] @relation("ReturnItemToOrderItem")
+  returnItems   ReturnItem[]   @relation("ReturnItemToOrderItem")
   shipmentItems ShipmentItem[]
 
   createdAt DateTime @default(now())
@@ -804,13 +804,11 @@ model Shipment {
   failureReasonCode String?
   failureMessage    String? @db.Text
 
-  orderGroupId String     @unique
-  orderGroup   OrderGroup @relation(fields: [orderGroupId], references: [id], onDelete: Cascade)
-
-  fulfillmentEvents FulfillmentTransition[] @relation("FulfillmentTransitionToShipment")
-  items             ShipmentItem[]
-  trackingEvents    TrackingEvent[]
-  deliveryAttempts  DeliveryAttempt[]
+  fulfillmentEvents  FulfillmentTransition[]     @relation("FulfillmentTransitionToShipment")
+  items              ShipmentItem[]
+  trackingEvents     TrackingEvent[]
+  deliveryAttempts   DeliveryAttempt[]
+  packageAssignments ShipmentPackageAssignment[] @relation("ShipmentToPackageAssignments")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -819,13 +817,30 @@ model Shipment {
   @@index([carrier, trackingNumber])
 }
 
+/// A shipment may carry one or more seller packages, and a package may be
+/// split across multiple shipments. Item quantities remain authoritative in
+/// ShipmentItem so partial shipment assignment is explicit and auditable.
+model ShipmentPackageAssignment {
+  id           String   @id @default(uuid())
+  shipmentId   String
+  orderGroupId String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  shipment   Shipment   @relation("ShipmentToPackageAssignments", fields: [shipmentId], references: [id], onDelete: Cascade)
+  orderGroup OrderGroup @relation("OrderGroupToShipmentAssignments", fields: [orderGroupId], references: [id], onDelete: Cascade)
+
+  @@unique([shipmentId, orderGroupId])
+  @@index([orderGroupId])
+}
+
 model ShipmentItem {
-  id         String   @id @default(uuid())
-  shipmentId String
+  id          String   @id @default(uuid())
+  shipmentId  String
   orderItemId String
-  quantity   Int
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  quantity    Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   shipment  Shipment  @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
   orderItem OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Restrict)
@@ -835,14 +850,14 @@ model ShipmentItem {
 }
 
 model TrackingEvent {
-  id              String   @id @default(uuid())
+  id              String         @id @default(uuid())
   shipmentId      String
-  providerEventId String?  @unique
+  providerEventId String?        @unique
   status          ShipmentStatus
   location        String?
-  description     String?  @db.Text
+  description     String?        @db.Text
   occurredAt      DateTime
-  createdAt       DateTime @default(now())
+  createdAt       DateTime       @default(now())
 
   shipment Shipment @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
 
@@ -1103,8 +1118,6 @@ model Wishlist {
   @@index([variantId])
   @@index([sizeId])
 }
-
-
 
 model PaymentDetails {
   id String @id @default(uuid())

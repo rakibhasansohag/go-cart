@@ -8,6 +8,7 @@ import { db } from '@/lib/db';
 import { StoreStatus, StoreType } from '@/lib/types';
 import { checkIfUserFollowingStore } from './product';
 import { normalizeCommerceReference } from '@/lib/orders/references';
+import { primaryShipmentFromAssignments } from '@/lib/shipments/compat';
 
 // Point:   Function: upsertStore
 // Description: Upserts store details into the database, ensuring uniqueness of name,url, email, and phone number.
@@ -531,7 +532,10 @@ export const getStoreOrders = async (
 				include: {
 					items: true,
 					coupon: true,
-					shipment: true,
+					shipmentAssignments: {
+						include: { shipment: true },
+						orderBy: { createdAt: 'asc' },
+					},
 					cancellationRequests: {
 						orderBy: { createdAt: 'desc' },
 						take: 1,
@@ -569,7 +573,7 @@ export const getStoreOrders = async (
 		]);
 
 		return {
-			orders,
+			orders: orders.map(primaryShipmentFromAssignments),
 			totalCount,
 			totalPages: Math.ceil(totalCount / limit) || 1,
 			page,

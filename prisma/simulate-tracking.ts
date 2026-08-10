@@ -8,8 +8,10 @@ async function runSimulation() {
 	const shipments = await db.shipment.findMany({
 		take: 5,
 		include: {
-			orderGroup: {
-				select: { id: true, store: { select: { name: true } } },
+			packageAssignments: {
+				include: {
+					orderGroup: { select: { id: true, store: { select: { name: true } } } },
+				},
 			},
 		},
 		orderBy: { updatedAt: 'desc' },
@@ -42,7 +44,10 @@ async function runSimulation() {
 			},
 		});
 
-		console.log(`[Package #${shipment.orderGroup.id.slice(-8).toUpperCase()}] (${shipment.orderGroup.store.name}) -> Status updated to: ${updated.status} | Carrier: ${updated.carrier} | Tracking #: ${updated.trackingNumber}`);
+		const packages = shipment.packageAssignments
+			.map(({ orderGroup }) => `#${orderGroup.id.slice(-8).toUpperCase()} (${orderGroup.store.name})`)
+			.join(', ');
+		console.log(`[Packages ${packages}] -> Status updated to: ${updated.status} | Carrier: ${updated.carrier} | Tracking #: ${updated.trackingNumber}`);
 	}
 
 	console.log('=== Simulation Completed Successfully ===');

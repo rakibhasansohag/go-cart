@@ -2,6 +2,7 @@
 
 import { db } from '@/lib/db';
 import { auth } from '@clerk/nextjs/server';
+import { primaryShipmentFromAssignments } from '@/lib/shipments/compat';
 
 // Function: getOrder
 // Description: Retrieves a specific order by its ID and the current user's ID, including associated groups, items, store information,
@@ -29,7 +30,10 @@ export const getOrder = async (orderId: string) => {
 					items: true,
 					store: true,
 					coupon: true,
-					shipment: true,
+					shipmentAssignments: {
+						include: { shipment: true },
+						orderBy: { createdAt: 'asc' },
+					},
 					cancellationRequests: {
 						orderBy: { createdAt: 'desc' },
 						take: 1,
@@ -57,5 +61,10 @@ export const getOrder = async (orderId: string) => {
 		},
 	});
 
-	return order;
+	return order
+		? {
+			...order,
+			groups: order.groups.map(primaryShipmentFromAssignments),
+		}
+		: order;
 };

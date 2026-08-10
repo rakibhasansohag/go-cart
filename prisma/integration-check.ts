@@ -128,8 +128,15 @@ async function main() {
 	}
 
 	const shipments = await db.shipment.findMany({
-		select: { items: { select: { quantity: true, orderItemId: true, orderItem: { select: { quantity: true } } } } },
+		select: {
+			id: true,
+			packageAssignments: { select: { orderGroupId: true } },
+			items: { select: { quantity: true, orderItemId: true, orderItem: { select: { quantity: true } } } },
+		},
 	});
+	assert(shipments.every((shipment) => shipment.packageAssignments.length > 0), 'shipment is missing a package assignment');
+	const shipmentPackagePairs = shipments.flatMap((shipment) => shipment.packageAssignments.map((assignment) => `${shipment.id}:${assignment.orderGroupId}`));
+	assert(new Set(shipmentPackagePairs).size === shipmentPackagePairs.length, 'duplicate shipment/package assignments detected');
 	const shippedByItem = new Map<string, number>();
 	for (const shipment of shipments) {
 		for (const item of shipment.items) {

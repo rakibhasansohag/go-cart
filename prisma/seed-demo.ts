@@ -90,7 +90,7 @@ async function main() {
 	const addressIds = Array.from({ length: COUNT }, (_, index) => id('address', index));
 	const paymentIds = Array.from({ length: COUNT }, (_, index) => id('payment', index));
 	await db.orderItem.deleteMany({ where: { id: { in: itemIds } } });
-	await db.shipment.deleteMany({ where: { orderGroupId: { in: groupIds } } });
+	await db.shipment.deleteMany({ where: { packageAssignments: { some: { orderGroupId: { in: groupIds } } } } });
 	await db.paymentDetails.deleteMany({ where: { id: { in: paymentIds } } });
 	await db.orderGroup.deleteMany({ where: { id: { in: groupIds } } });
 	await db.order.deleteMany({ where: { id: { in: orderIds } } });
@@ -101,6 +101,8 @@ async function main() {
 	const items = [];
 	const payments = [];
 	const shipments = [];
+	const shipmentAssignments = [];
+	const shipmentItems = [];
 	for (let index = 0; index < COUNT; index += 1) {
 		const fixture = statusFixtures[index % statusFixtures.length];
 		const product = catalog[index % catalog.length];
@@ -113,7 +115,10 @@ async function main() {
 		groups.push({ id: groupIds[index], status: fixture.order, fulfillmentMode: FulfillmentMode.PLATFORM, packageStatus: fixture.package, shippingService: 'Demo Delivery', shippingDeliveryMin: 3, shippingDeliveryMax: 10, shippingFees: 0, subTotal: subtotal, total: subtotal, orderId: orderIds[index], storeId: store.id, createdAt, updatedAt: createdAt });
 		items.push({ id: itemIds[index], productId: product.productId, variantId: product.variantId, sizeId: product.sizeId, productSlug: product.slug, variantSlug: product.variantSlug, sku: product.sku, name: product.name, image: product.image, size: product.size, quantity, shippingFee: 0, price: product.price, totalPrice: subtotal, orderGroupId: groupIds[index], status: fixture.item, deliveredAt: fixture.item === ProductStatus.Delivered ? createdAt : null, createdAt, updatedAt: createdAt });
 		payments.push({ id: paymentIds[index], paymentInetntId: `demo_pi_${index + 1}`, paymentMethod: 'Stripe', status: 'succeeded', amount: subtotal, currency: 'USD', orderId: orderIds[index], userId: customer.id, createdAt, updatedAt: createdAt });
-		shipments.push({ id: id('shipment', index), status: fixture.shipment, orderGroupId: groupIds[index], createdAt, updatedAt: createdAt });
+		const shipmentId = id('shipment', index);
+		shipments.push({ id: shipmentId, status: fixture.shipment, createdAt, updatedAt: createdAt });
+		shipmentAssignments.push({ id: id('shipment-assignment', index), shipmentId, orderGroupId: groupIds[index], createdAt, updatedAt: createdAt });
+		shipmentItems.push({ id: id('shipment-item', index), shipmentId, orderItemId: itemIds[index], quantity, createdAt, updatedAt: createdAt });
 	}
 	// Keep deterministic addresses that may still be referenced by historical
 	// orders. This makes reseeding safe on a branched production snapshot.
@@ -123,6 +128,8 @@ async function main() {
 	await db.orderItem.createMany({ data: items });
 	await db.paymentDetails.createMany({ data: payments });
 	await db.shipment.createMany({ data: shipments });
+	await db.shipmentPackageAssignment.createMany({ data: shipmentAssignments });
+	await db.shipmentItem.createMany({ data: shipmentItems });
 	console.log(`Seeded ${COUNT} deterministic demo orders for ${users.customer}. Seller: ${users.seller}. Admin: ${users.admin}.`);
 }
 

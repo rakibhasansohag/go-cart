@@ -2,6 +2,7 @@
 
 import { db } from '@/lib/db';
 import { normalizeCommerceReference } from '@/lib/orders/references';
+import { primaryShipmentFromAssignments } from '@/lib/shipments/compat';
 import { currentUser } from '@clerk/nextjs/server';
 
 export type MonthlyRevenueData = {
@@ -598,7 +599,10 @@ export const getAllAdminOrders = async ({
 				},
 			coupon: true,
 			items: true,
-			shipment: true,
+			shipmentAssignments: {
+				include: { shipment: true },
+				orderBy: { createdAt: 'asc' },
+			},
 			cancellationRequests: {
 				orderBy: { createdAt: 'desc' },
 				take: 1,
@@ -622,7 +626,7 @@ export const getAllAdminOrders = async ({
 	]);
 
 	return {
-		orders,
+		orders: orders.map(primaryShipmentFromAssignments),
 		totalCount,
 		totalPages: Math.ceil(totalCount / limit) || 1,
 		page,

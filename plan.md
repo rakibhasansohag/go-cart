@@ -607,11 +607,11 @@ post-purchase workflow.
 - [ ] **Phase 11.1 — Shipment tracking model**
   - [x] Add shipment carrier/tracking metadata, shipment items, tracking events,
         delivery attempts, and proof-of-delivery fields
-  - [ ] Replace the one-to-one package/shipment relation with an explicit
+  - [x] Replace the one-to-one package/shipment relation with an explicit
         package-to-shipment assignment model that supports quantities
-  - [ ] Support split and partial shipments per order group without assigning
+  - [x] Support split and partial shipments per order group without assigning
         more than the unshipped quantity of an order item
-  - [ ] Allow compatible packages to be consolidated without forcing a ready
+  - [x] Allow compatible packages to be consolidated without forcing a ready
         package to wait indefinitely for another store
   - [ ] **Test**: Multiple shipments can safely represent different items from one
     store order, and one shipment can carry compatible packages without merging

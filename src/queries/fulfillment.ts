@@ -123,9 +123,12 @@ export async function updatePackageStatus(input: {
 		}
 
 		const group = await tx.orderGroup.findFirst({
-			where: { id: input.groupId, storeId: store.id },
-			include: {
-				shipment: true,
+		where: { id: input.groupId, storeId: store.id },
+		include: {
+				shipmentAssignments: {
+					include: { shipment: true },
+					orderBy: { createdAt: 'asc' },
+				},
 				store: { select: { name: true, url: true } },
 				items: true,
 				order: {
@@ -134,6 +137,7 @@ export async function updatePackageStatus(input: {
 			},
 		});
 		if (!group) throw new Error('Package not found.');
+		const shipment = group.shipmentAssignments[0]?.shipment ?? null;
 
 		assertPackageTransition(
 			group.packageStatus,
@@ -199,6 +203,7 @@ export async function updatePackageStatus(input: {
 		await syncLegacyFulfillmentSummary(tx, {
 			...group,
 			packageStatus: input.nextStatus,
+			shipment,
 		});
 		return { status: input.nextStatus, sourceEventId: domainEvent.id };
 	}, FULFILLMENT_TRANSACTION_OPTIONS);
@@ -239,7 +244,10 @@ export async function updateShipmentStatus(input: {
 		const group = await tx.orderGroup.findUnique({
 			where: { id: input.groupId },
 			include: {
-				shipment: true,
+				shipmentAssignments: {
+					include: { shipment: true },
+					orderBy: { createdAt: 'asc' },
+				},
 				store: { select: { name: true, url: true } },
 				items: true,
 				order: {
@@ -247,10 +255,12 @@ export async function updateShipmentStatus(input: {
 				},
 			},
 		});
-		if (!group?.shipment) throw new Error('Shipment not found.');
+		if (!group) throw new Error('Shipment not found.');
+		const shipment = group.shipmentAssignments[0]?.shipment ?? null;
+		if (!shipment) throw new Error('Shipment not found.');
 
 		assertShipmentTransition({
-			current: group.shipment.status,
+			current: shipment.status,
 			next: input.nextStatus,
 			actorRole: FulfillmentActorRole.ADMIN,
 			mode: group.fulfillmentMode,
@@ -260,7 +270,7 @@ export async function updateShipmentStatus(input: {
 		});
 
 		const changed = await tx.shipment.updateMany({
-			where: { id: group.shipment.id, status: group.shipment.status },
+			where: { id: shipment.id, status: shipment.status },
 			data: {
 				status: input.nextStatus,
 				failureReasonCode:
@@ -280,7 +290,7 @@ export async function updateShipmentStatus(input: {
 		await tx.fulfillmentTransition.create({
 			data: {
 				entityType: FulfillmentEntityType.SHIPMENT,
-				previousStatus: group.shipment.status,
+				previousStatus: shipment.status,
 				nextStatus: input.nextStatus,
 				actorRole: FulfillmentActorRole.ADMIN,
 				source: FulfillmentSource.MANUAL,
@@ -290,7 +300,7 @@ export async function updateShipmentStatus(input: {
 				actorUserId: user.id,
 				orderId: group.orderId,
 				orderGroupId: group.id,
-				shipmentId: group.shipment.id,
+				shipmentId: shipment.id,
 			},
 		});
 
@@ -298,19 +308,19 @@ export async function updateShipmentStatus(input: {
 			eventKey: `fulfillment:${idempotencyKey}`,
 			eventType: DOMAIN_EVENT_TYPES.SHIPMENT_STATUS_CHANGED,
 			aggregateType: 'SHIPMENT',
-			aggregateId: group.shipment.id,
+			aggregateId: shipment.id,
 			actorUserId: user.id,
 			orderId: group.orderId,
 			storeId: group.storeId,
 			payload: {
 				orderId: group.orderId,
 				orderGroupId: group.id,
-				shipmentId: group.shipment.id,
+				shipmentId: shipment.id,
 				storeUrl: group.store.url,
 				storeName: group.store.name,
 				shippingService: group.shippingService,
 				deliveryEstimate: `${group.shippingDeliveryMin}-${group.shippingDeliveryMax} days after dispatch`,
-				previousStatus: SHIPMENT_STATUS_LABELS[group.shipment.status],
+				previousStatus: SHIPMENT_STATUS_LABELS[shipment.status],
 				nextStatus: SHIPMENT_STATUS_LABELS[input.nextStatus],
 				failureReason:
 					input.nextStatus === ShipmentStatus.DELIVERY_ATTEMPT_FAILED
@@ -415,7 +425,14 @@ export async function decidePackageCancellation(input: {
 				},
 			},
 			include: {
-				orderGroup: { include: { shipment: true } },
+				orderGroup: {
+					include: {
+						shipmentAssignments: {
+							include: { shipment: true },
+							orderBy: { createdAt: 'asc' },
+						},
+					},
+				},
 			},
 		});
 		if (!request) throw new Error('Cancellation request not found.');
@@ -441,9 +458,10 @@ export async function decidePackageCancellation(input: {
 			where: { id: request.orderGroup.id },
 			data: { packageStatus: PackageStatus.CANCELLED },
 		});
-		if (request.orderGroup.shipment) {
+		const shipment = request.orderGroup.shipmentAssignments[0]?.shipment ?? null;
+		if (shipment) {
 			await tx.shipment.update({
-				where: { id: request.orderGroup.shipment.id },
+				where: { id: shipment.id },
 				data: { status: ShipmentStatus.CANCELLED },
 			});
 		}
@@ -462,11 +480,11 @@ export async function decidePackageCancellation(input: {
 				orderGroupId: request.orderGroupId,
 			},
 		});
-		if (request.orderGroup.shipment) {
+		if (shipment) {
 			await tx.fulfillmentTransition.create({
 				data: {
 					entityType: FulfillmentEntityType.SHIPMENT,
-					previousStatus: request.orderGroup.shipment.status,
+					previousStatus: shipment.status,
 					nextStatus: ShipmentStatus.CANCELLED,
 					actorRole: FulfillmentActorRole.SELLER,
 					source: FulfillmentSource.MANUAL,
@@ -476,7 +494,7 @@ export async function decidePackageCancellation(input: {
 					actorUserId: user.id,
 					orderId: request.orderId,
 					orderGroupId: request.orderGroupId,
-					shipmentId: request.orderGroup.shipment.id,
+					shipmentId: shipment.id,
 				},
 			});
 		}
@@ -484,7 +502,7 @@ export async function decidePackageCancellation(input: {
 		await syncLegacyFulfillmentSummary(tx, {
 			...request.orderGroup,
 			packageStatus: PackageStatus.CANCELLED,
-			shipment: request.orderGroup.shipment
+			shipment: shipment
 				? { status: ShipmentStatus.CANCELLED }
 				: null,
 		});
@@ -541,29 +559,37 @@ export async function getShipmentTracking(orderId: string) {
 
 	const shipments = await db.shipment.findMany({
 		where: {
-			orderGroup: {
-				orderId,
-				OR: [
-					{ order: { userId: user.id } },
-					{ store: { userId: user.id } },
-				],
+			packageAssignments: {
+				some: {
+					orderGroup: {
+						orderId,
+						OR: [
+							{ order: { userId: user.id } },
+							{ store: { userId: user.id } },
+						],
+					},
+				},
 			},
 		},
 		include: {
-			orderGroup: {
-				select: {
-					id: true,
-					packageStatus: true,
-					fulfillmentMode: true,
-					store: { select: { id: true, name: true, url: true, logo: true } },
-					items: {
+			packageAssignments: {
+				include: {
+					orderGroup: {
 						select: {
 							id: true,
-							name: true,
-							sku: true,
-							image: true,
-							quantity: true,
-							status: true,
+							packageStatus: true,
+							fulfillmentMode: true,
+							store: { select: { id: true, name: true, url: true, logo: true } },
+							items: {
+								select: {
+									id: true,
+									name: true,
+									sku: true,
+									image: true,
+									quantity: true,
+									status: true,
+								},
+							},
 						},
 					},
 				},
