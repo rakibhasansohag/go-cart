@@ -1,4 +1,10 @@
-import { PaymentMethod, PrismaClient, Role } from '@prisma/client';
+import {
+	PaymentMethod,
+	PrismaClient,
+	ReturnReason,
+	ReturnResolution,
+	Role,
+} from '@prisma/client';
 import { assertSafeE2ERuntime } from '../src/lib/runtime-safety';
 import { deriveOrderStatus } from '../src/lib/orders/status-sync';
 import { redeemCoins } from '../src/lib/loyalty/coins';
@@ -16,6 +22,177 @@ function assert(condition: unknown, message: string): asserts condition {
 
 function closeEnough(actual: number, expected: number): boolean {
 	return Math.abs(actual - expected) <= epsilon;
+}
+
+async function assertConcurrentPaymentReplay(orderId: string, amount: number) {
+	const providerEventId = `integration-concurrent-payment:${orderId}`;
+	const providerPaymentId = `integration-concurrent-pi:${orderId}`;
+	const earnedIdempotencyKey = `earn:${providerEventId}`;
+	const paymentDomainEventKey = `payment:succeeded:Stripe:${providerPaymentId}`;
+	const gocoinDomainEventKey = `gocoin.earned:${earnedIdempotencyKey}`;
+
+	const orderBefore = await db.order.findUniqueOrThrow({
+		where: { id: orderId },
+		select: { paymentStatus: true, paymentMethod: true },
+	});
+	const paymentBefore = await db.paymentDetails.findUnique({
+		where: { orderId },
+		select: {
+			paymentInetntId: true,
+			providerCaptureId: true,
+			paymentMethod: true,
+			status: true,
+			amount: true,
+			currency: true,
+		},
+	});
+
+	try {
+		const previousEarn = await db.loyaltyTransaction.findUnique({
+			where: { idempotencyKey: earnedIdempotencyKey },
+			select: { id: true, accountId: true, points: true },
+		});
+		if (previousEarn) {
+			await db.loyaltyAccount.update({
+				where: { id: previousEarn.accountId },
+				data: {
+					balance: { decrement: previousEarn.points },
+					lifetimeEarned: { decrement: previousEarn.points },
+				},
+			});
+			await db.loyaltyTransaction.delete({ where: { id: previousEarn.id } });
+		}
+		await db.domainEvent.deleteMany({
+			where: { eventKey: { in: [paymentDomainEventKey, gocoinDomainEventKey] } },
+		});
+		await db.paymentEvent.deleteMany({ where: { providerEventId } });
+
+		const results = await Promise.all([
+			reconcilePaymentEvent({
+				orderId,
+				provider: PaymentMethod.Stripe,
+				providerEventId,
+				providerPaymentId,
+				eventType: 'payment_intent.succeeded',
+				providerStatus: 'succeeded',
+				paymentStatus: 'Paid',
+				amount,
+				currency: 'USD',
+				verifyOrderAmount: true,
+			}),
+			reconcilePaymentEvent({
+				orderId,
+				provider: PaymentMethod.Stripe,
+				providerEventId,
+				providerPaymentId,
+				eventType: 'payment_intent.succeeded',
+				providerStatus: 'succeeded',
+				paymentStatus: 'Paid',
+				amount,
+				currency: 'USD',
+				verifyOrderAmount: true,
+			}),
+		]);
+
+		assert(results.filter((result) => !result.duplicate).length === 1, 'concurrent payment replay did not have exactly one primary result');
+		assert(results.filter((result) => result.duplicate).length === 1, 'concurrent payment replay did not return exactly one duplicate result');
+		assert(await db.paymentEvent.count({ where: { providerEventId } }) === 1, 'concurrent payment replay created duplicate payment events');
+	} finally {
+		const earned = await db.loyaltyTransaction.findUnique({
+			where: { idempotencyKey: earnedIdempotencyKey },
+			select: { id: true, accountId: true, points: true },
+		});
+		if (earned) {
+			await db.loyaltyAccount.update({
+				where: { id: earned.accountId },
+				data: {
+					balance: { decrement: earned.points },
+					lifetimeEarned: { decrement: earned.points },
+				},
+			});
+			await db.loyaltyTransaction.delete({ where: { id: earned.id } });
+		}
+		await db.domainEvent.deleteMany({
+			where: { eventKey: { in: [paymentDomainEventKey, gocoinDomainEventKey] } },
+		});
+		await db.paymentEvent.deleteMany({ where: { providerEventId } });
+		if (paymentBefore) {
+			await db.paymentDetails.update({ where: { orderId }, data: paymentBefore });
+		}
+		await db.order.update({
+			where: { id: orderId },
+			data: { paymentStatus: orderBefore.paymentStatus, paymentMethod: orderBefore.paymentMethod },
+		});
+	}
+}
+
+async function assertConcurrentReturnOverlapProtection() {
+	const fixture = await db.orderGroup.findFirst({
+		where: { items: { some: {} } },
+		select: {
+			id: true,
+			orderId: true,
+			storeId: true,
+			order: { select: { userId: true } },
+			items: { take: 1, select: { id: true, price: true, totalPrice: true } },
+		},
+	});
+	assert(fixture && fixture.items[0], 'a return overlap fixture is required');
+
+	const [firstRequest, secondRequest] = await Promise.all([
+		db.returnRequest.create({
+			data: {
+				reason: ReturnReason.OTHER,
+				resolution: ReturnResolution.REFUND,
+				requestedAmount: fixture.items[0].totalPrice,
+				customerId: fixture.order.userId,
+				orderId: fixture.orderId,
+				orderGroupId: fixture.id,
+				storeId: fixture.storeId,
+			},
+		}),
+		db.returnRequest.create({
+			data: {
+				reason: ReturnReason.OTHER,
+				resolution: ReturnResolution.REFUND,
+				requestedAmount: fixture.items[0].totalPrice,
+				customerId: fixture.order.userId,
+				orderId: fixture.orderId,
+				orderGroupId: fixture.id,
+				storeId: fixture.storeId,
+			},
+		}),
+	]);
+
+	try {
+		const activeRequestKey = `integration-return-overlap:${fixture.items[0].id}`;
+		const outcomes = await Promise.allSettled([
+			db.returnItem.create({
+				data: {
+					quantity: 1,
+					unitAmount: fixture.items[0].price,
+					requestedAmount: fixture.items[0].totalPrice,
+					activeRequestKey,
+					returnRequestId: firstRequest.id,
+					orderItemId: fixture.items[0].id,
+				},
+			}),
+			db.returnItem.create({
+				data: {
+					quantity: 1,
+					unitAmount: fixture.items[0].price,
+					requestedAmount: fixture.items[0].totalPrice,
+					activeRequestKey,
+					returnRequestId: secondRequest.id,
+					orderItemId: fixture.items[0].id,
+				},
+			}),
+		]);
+		assert(outcomes.filter((outcome) => outcome.status === 'fulfilled').length === 1, 'return overlap allowed more than one active request');
+		assert(outcomes.filter((outcome) => outcome.status === 'rejected').length === 1, 'return overlap did not enforce the unique active request key');
+	} finally {
+		await db.returnRequest.deleteMany({ where: { id: { in: [firstRequest.id, secondRequest.id] } } });
+	}
 }
 
 async function main() {
@@ -106,6 +283,7 @@ async function main() {
 		verifyOrderAmount: true,
 	});
 	assert(duplicateReconciliation.duplicate === true, 'payment reconciliation replay was not idempotent');
+	await assertConcurrentPaymentReplay(reconciliationOrder.id, reconciliationOrder.total);
 	const duplicateEventKeys = await db.paymentEvent.groupBy({
 		by: ['providerEventId'],
 		_count: { providerEventId: true },
@@ -150,6 +328,7 @@ async function main() {
 		assert(item.restockedQuantity <= item.receivedQuantity, 'restocked quantity exceeds received quantity');
 		assert(item.requestedAmount >= 0 && (item.approvedAmount ?? 0) >= 0, 'return amounts cannot be negative');
 	}
+	await assertConcurrentReturnOverlapProtection();
 	const refunds = await db.refundTransaction.findMany({
 		select: { amount: true, status: true, processedAt: true, idempotencyKey: true },
 	});

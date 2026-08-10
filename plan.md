@@ -670,11 +670,11 @@ post-purchase workflow.
 Goal: protect the critical marketplace workflows before production deployment.
 
 - **Audit status (2026-08-10)**: In progress. The repository has 98 passing Vitest
-  tests, a deterministic demo seed, and now an opt-in Playwright public smoke
-  foundation. The integration check now performs live payment replay
-  reconciliation and verifies split/consolidated shipment fixtures. Local
-  Docker execution and Clerk-backed protected journeys still require external
-  environment access.
+  tests, a deterministic demo seed, and an opt-in Playwright public smoke
+  foundation. The isolated Docker integration check now performs concurrent
+  payment replay and return-overlap protection checks in addition to payment,
+  return, shipment, GoCoins, and notification invariants. Local protected
+  Clerk-backed journeys still require external environment access.
 
 - [ ] **Phase 12.1 — Test infrastructure**
   - [x] Add Vitest unit-test tooling and deterministic fixtures
@@ -721,6 +721,9 @@ Goal: protect the critical marketplace workflows before production deployment.
   - [x] Cover split/consolidated shipment invariants and carrier-event idempotency
   - [x] Cover concurrent GoCoins award/redemption invariants with an atomic
         balance-guarded redemption decrement and idempotency checks
+  - [x] Cover concurrent payment-event replay and active return-request overlap
+        protection against the isolated database, with temporary fixtures cleaned
+        up after each check
   - [ ] **Test**: Critical server workflows pass against an isolated test database
 
 - [ ] **Phase 12.3 — End-to-end commerce journeys**
@@ -734,8 +737,8 @@ Goal: protect the critical marketplace workflows before production deployment.
   - [ ] **Test**: The complete customer, seller, and admin journeys pass in supported browsers
 
 - [ ] **Phase 12.4 — Continuous integration**
-  - [x] Run linting, TypeScript, Vitest, and a production build for pull requests
-        targeting `main` or `dev`
+  - [x] Run linting, TypeScript, Vitest, and a production build for commits pushed
+        to `main` or `dev`
   - [x] Pin the Bun runtime, restrict workflow token permissions to read-only,
         and add a test-environment-only public E2E job with Playwright report upload
   - [x] Add an explicit whitespace/formatting check; lint warnings remain a
@@ -745,7 +748,9 @@ Goal: protect the critical marketplace workflows before production deployment.
   - [x] Cache Bun dependencies safely; Playwright reports upload on E2E failure
         remains configured
   - [ ] Configure GitHub branch protection so required checks block merging
-  - [ ] **Test**: A deliberately failing required check prevents the pull request from passing
+        (deferred for the current single-maintainer push-based workflow)
+  - [x] **Test**: A successful commit pushed to `dev` runs the build, unit-test,
+        and isolated database integration checks in GitHub Actions
 
 ---
 

@@ -89,8 +89,9 @@ async function main() {
 	const itemIds = Array.from({ length: COUNT }, (_, index) => id('item', index));
 	const addressIds = Array.from({ length: COUNT }, (_, index) => id('address', index));
 	const paymentIds = Array.from({ length: COUNT }, (_, index) => id('payment', index));
-	await db.orderItem.deleteMany({ where: { id: { in: itemIds } } });
+	await db.shipmentItem.deleteMany({ where: { orderItemId: { in: itemIds } } });
 	await db.shipment.deleteMany({ where: { packageAssignments: { some: { orderGroupId: { in: groupIds } } } } });
+	await db.orderItem.deleteMany({ where: { id: { in: itemIds } } });
 	await db.paymentDetails.deleteMany({ where: { id: { in: paymentIds } } });
 	await db.orderGroup.deleteMany({ where: { id: { in: groupIds } } });
 	await db.order.deleteMany({ where: { id: { in: orderIds } } });

@@ -22,7 +22,7 @@ export function scheduleEmailOutboxDispatch(sourceEventIds: string[]) {
 		// The durable outbox remains pending when this helper is called outside a
 		// Next.js request context (for example, a unit test or maintenance script).
 		const message = error instanceof Error ? error.message : String(error);
-		if (process.env.NODE_ENV !== 'test' && !message.includes('after was called outside a request scope')) {
+		if (process.env.NODE_ENV !== 'test' && !message.includes('called outside a request scope')) {
 			console.warn('Email outbox dispatch was deferred to recovery:', error);
 		}
 	}
