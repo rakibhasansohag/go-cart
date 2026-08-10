@@ -702,7 +702,7 @@ Goal: protect the critical marketplace workflows before production deployment.
         commands in `docs/testing.md`
   - [ ] **Test**: All suites run locally from documented commands (`bun run
         db:e2e:prepare`, then `bun run test:e2e:local`)
-
+<!-- s -->
 - [ ] **Phase 12.2 — Critical integration coverage**
   - [x] Keep the existing focused unit coverage for payment security/status,
         fulfillment transitions, return rules/reconciliation, notifications,
