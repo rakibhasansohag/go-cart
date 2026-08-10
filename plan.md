@@ -669,10 +669,12 @@ post-purchase workflow.
 
 Goal: protect the critical marketplace workflows before production deployment.
 
-- **Audit status (2026-08-08)**: Reopened. The repository has 91 passing Vitest
+- **Audit status (2026-08-10)**: In progress. The repository has 98 passing Vitest
   tests, a deterministic demo seed, and now an opt-in Playwright public smoke
-  foundation. Isolated integration infrastructure and protected customer,
-  seller, and admin journeys remain pending.
+  foundation. The integration check now performs live payment replay
+  reconciliation and verifies split/consolidated shipment fixtures. Local
+  Docker execution and Clerk-backed protected journeys still require external
+  environment access.
 
 - [ ] **Phase 12.1 — Test infrastructure**
   - [x] Add Vitest unit-test tooling and deterministic fixtures
@@ -696,6 +698,8 @@ Goal: protect the critical marketplace workflows before production deployment.
         SELLER, and ADMIN roles only to the isolated staging database
   - [x] Add `test:unit` and `test:e2e` scripts while retaining `test` as the
         complete non-browser suite; `test:integration` remains pending
+  - [x] Document isolated database, public smoke, and protected commerce test
+        commands in `docs/testing.md`
   - [ ] **Test**: All suites run locally from documented commands (`bun run
         db:e2e:prepare`, then `bun run test:e2e:local`)
 
@@ -714,13 +718,15 @@ Goal: protect the critical marketplace workflows before production deployment.
   - [ ] Cover payment webhook signature verification, event idempotency, retries,
         provider reconciliation, and refund reconciliation against the database
   - [ ] Cover return eligibility, concurrent partial returns, disputes, and restocking
-  - [ ] Cover split/consolidated shipment invariants and carrier-event idempotency
+  - [x] Cover split/consolidated shipment invariants and carrier-event idempotency
   - [x] Cover concurrent GoCoins award/redemption invariants with an atomic
         balance-guarded redemption decrement and idempotency checks
   - [ ] **Test**: Critical server workflows pass against an isolated test database
 
 - [ ] **Phase 12.3 — End-to-end commerce journeys**
   - [x] Add public browse-route and unauthenticated checkout-redirect smoke coverage
+  - [x] Add opt-in protected customer tracking, seller fulfillment workspace, and
+        admin delivery-health authorization specs
   - [ ] Cover browse → cart → checkout → payment → order history
   - [ ] Cover seller fulfillment → shipment tracking → delivery
   - [ ] Cover delivered item → return request → decision → refund/restock

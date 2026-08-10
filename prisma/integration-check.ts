@@ -1,8 +1,9 @@
-import { PrismaClient, Role } from '@prisma/client';
+import { PaymentMethod, PrismaClient, Role } from '@prisma/client';
 import { assertSafeE2ERuntime } from '../src/lib/runtime-safety';
 import { deriveOrderStatus } from '../src/lib/orders/status-sync';
 import { redeemCoins } from '../src/lib/loyalty/coins';
 import { randomUUID } from 'node:crypto';
+import { reconcilePaymentEvent } from '../src/lib/payments/reconcile';
 
 assertSafeE2ERuntime();
 
@@ -74,6 +75,37 @@ async function main() {
 		assert(closeEnough(order.paymentDetails.amount, order.total), 'paid amount does not match order total');
 		assert(Boolean(order.paymentDetails.currency), 'payment currency is missing');
 	}
+	const reconciliationOrder = await db.order.findFirst({
+		where: { paymentStatus: 'Paid', user: { email: 'rakibdev133@gmail.com' } },
+		select: { id: true, total: true },
+	});
+	assert(reconciliationOrder, 'a paid demo order is required for payment reconciliation coverage');
+	const reconciliationEventId = `integration-payment:${reconciliationOrder.id}`;
+	await reconcilePaymentEvent({
+		orderId: reconciliationOrder.id,
+		provider: PaymentMethod.Stripe,
+		providerEventId: reconciliationEventId,
+		providerPaymentId: `integration-pi:${reconciliationOrder.id}`,
+		eventType: 'payment_intent.succeeded',
+		providerStatus: 'succeeded',
+		paymentStatus: 'Paid',
+		amount: reconciliationOrder.total,
+		currency: 'USD',
+		verifyOrderAmount: true,
+	});
+	const duplicateReconciliation = await reconcilePaymentEvent({
+		orderId: reconciliationOrder.id,
+		provider: PaymentMethod.Stripe,
+		providerEventId: reconciliationEventId,
+		providerPaymentId: `integration-pi:${reconciliationOrder.id}`,
+		eventType: 'payment_intent.succeeded',
+		providerStatus: 'succeeded',
+		paymentStatus: 'Paid',
+		amount: reconciliationOrder.total,
+		currency: 'USD',
+		verifyOrderAmount: true,
+	});
+	assert(duplicateReconciliation.duplicate === true, 'payment reconciliation replay was not idempotent');
 	const duplicateEventKeys = await db.paymentEvent.groupBy({
 		by: ['providerEventId'],
 		_count: { providerEventId: true },
