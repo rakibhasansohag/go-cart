@@ -2,6 +2,7 @@ import {
 	PaymentMethod,
 	PrismaClient,
 	ReturnReason,
+	ReturnRequestStatus,
 	ReturnResolution,
 	Role,
 } from '@prisma/client';
@@ -10,6 +11,9 @@ import { deriveOrderStatus } from '../src/lib/orders/status-sync';
 import { redeemCoins } from '../src/lib/loyalty/coins';
 import { randomUUID } from 'node:crypto';
 import { reconcilePaymentEvent } from '../src/lib/payments/reconcile';
+import { handleStripeEvent } from '../src/lib/payments/stripe-events';
+import { reconcileReturnInventoryForAdmin } from '../src/lib/returns/inventory';
+import type Stripe from 'stripe';
 
 assertSafeE2ERuntime();
 
@@ -195,6 +199,197 @@ async function assertConcurrentReturnOverlapProtection() {
 	}
 }
 
+async function assertStripeRefundWebhookSettlement() {
+	const fixture = await db.order.findFirst({
+		where: { paymentStatus: 'Paid', user: { email: 'rakibdev133@gmail.com' } },
+		select: {
+			id: true,
+			total: true,
+			paymentStatus: true,
+			paymentMethod: true,
+			orderStatus: true,
+			userId: true,
+			paymentDetails: {
+				select: {
+					id: true,
+					paymentInetntId: true,
+					providerCaptureId: true,
+					paymentMethod: true,
+					status: true,
+					amount: true,
+					currency: true,
+				},
+			},
+			groups: { take: 1, select: { id: true, storeId: true, items: { take: 1, select: { id: true, quantity: true, price: true, totalPrice: true } } } },
+		},
+	});
+	assert(fixture?.paymentDetails && fixture.groups[0]?.items[0], 'a paid order with payment details is required for refund webhook coverage');
+
+	const group = fixture.groups[0];
+	const orderItem = group.items[0];
+	const eventId = `integration-stripe-refund:${fixture.id}:${randomUUID()}`;
+	const returnRequest = await db.returnRequest.create({
+		data: {
+			status: ReturnRequestStatus.REFUND_PENDING,
+			reason: ReturnReason.OTHER,
+			resolution: ReturnResolution.REFUND,
+			requestedAmount: fixture.total,
+			approvedAmount: fixture.total,
+			currency: fixture.paymentDetails.currency,
+			customerId: fixture.userId,
+			orderId: fixture.id,
+			orderGroupId: group.id,
+			storeId: group.storeId,
+			paymentDetailsId: fixture.paymentDetails.id,
+			items: {
+				create: {
+					quantity: orderItem.quantity,
+					unitAmount: orderItem.price,
+					requestedAmount: orderItem.totalPrice,
+					activeRequestKey: `integration-refund-return:${fixture.id}:${randomUUID()}`,
+					orderItemId: orderItem.id,
+				},
+			},
+		},
+	});
+	await db.refundTransaction.create({
+		data: {
+			provider: PaymentMethod.Stripe,
+			idempotencyKey: `integration-refund:${returnRequest.id}`,
+			status: 'PROCESSING',
+			amount: fixture.total,
+			currency: fixture.paymentDetails.currency,
+			returnRequestId: returnRequest.id,
+			paymentDetailsId: fixture.paymentDetails.id,
+		},
+	});
+
+	const event = {
+		id: eventId,
+		object: 'event',
+		api_version: '2025-03-31.basil',
+		created: Math.floor(Date.now() / 1000),
+		data: {
+			object: {
+				id: `integration-charge:${fixture.id}`,
+				object: 'charge',
+				amount: Math.round(fixture.total * 100),
+				amount_refunded: Math.round(fixture.total * 100),
+				currency: fixture.paymentDetails.currency.toLowerCase(),
+				status: 'succeeded',
+				payment_intent: fixture.paymentDetails.paymentInetntId,
+				metadata: { orderId: fixture.id },
+			},
+		},
+		livemode: false,
+		pending_webhooks: 0,
+		request: null,
+		type: 'charge.refunded',
+	} as unknown as Stripe.Event;
+
+	try {
+		const first = await handleStripeEvent(event);
+		assert(!('ignored' in first) && first.duplicate === false, 'Stripe refund webhook was not processed as a new event');
+		const second = await handleStripeEvent(event);
+		assert(!('ignored' in second) && second.duplicate === true, 'Stripe refund webhook replay was not idempotent');
+
+		const [settledRequest, refund, refreshedOrder, paymentEventCount, domainEvents] = await Promise.all([
+			db.returnRequest.findUnique({ where: { id: returnRequest.id }, select: { status: true, resolvedAt: true } }),
+			db.refundTransaction.findUnique({ where: { idempotencyKey: `integration-refund:${returnRequest.id}` }, select: { status: true, processedAt: true } }),
+			db.order.findUnique({ where: { id: fixture.id }, select: { paymentStatus: true } }),
+			db.paymentEvent.count({ where: { providerEventId: eventId } }),
+			db.domainEvent.findMany({ where: { eventKey: `return.refunded:${eventId}` }, select: { id: true } }),
+		]);
+		assert(settledRequest && settledRequest.status === ReturnRequestStatus.REFUNDED && settledRequest.resolvedAt !== null, 'Stripe refund webhook did not settle the return request');
+		assert(refund?.status === 'SUCCEEDED' && refund.processedAt !== null, 'Stripe refund webhook did not complete the refund transaction');
+		assert(refreshedOrder?.paymentStatus === 'Refunded', 'Stripe refund webhook did not reconcile the order payment status');
+		assert(paymentEventCount === 1, 'Stripe refund webhook replay created a duplicate payment event');
+		assert(domainEvents.length === 1, 'Stripe refund webhook replay created duplicate refund domain events');
+	} finally {
+		const domainEvents = await db.domainEvent.findMany({ where: { eventKey: `return.refunded:${eventId}` }, select: { id: true } });
+		if (domainEvents.length > 0) await db.notification.deleteMany({ where: { sourceEventId: { in: domainEvents.map((entry) => entry.id) } } });
+		await db.domainEvent.deleteMany({ where: { id: { in: domainEvents.map((entry) => entry.id) } } });
+		await db.paymentEvent.deleteMany({ where: { providerEventId: eventId } });
+		await db.returnRequest.delete({ where: { id: returnRequest.id } });
+		await db.paymentDetails.update({ where: { id: fixture.paymentDetails.id }, data: fixture.paymentDetails });
+		await db.order.update({ where: { id: fixture.id }, data: { paymentStatus: fixture.paymentStatus, paymentMethod: fixture.paymentMethod, orderStatus: fixture.orderStatus } });
+	}
+}
+
+async function assertReturnInventoryReconciliation() {
+	const admin = await db.user.findUnique({ where: { email: 'rakibhasansohag133@gmail.com' }, select: { id: true } });
+	assert(admin, 'demo admin is required for return inventory coverage');
+	const fixture = await db.orderItem.findFirst({
+		where: { status: 'Delivered', quantity: { gte: 2 }, orderGroup: { order: { user: { email: 'rakibdev133@gmail.com' } } } },
+		select: {
+			id: true,
+			quantity: true,
+			price: true,
+			totalPrice: true,
+			sizeId: true,
+			status: true,
+			orderGroup: { select: { id: true, orderId: true, storeId: true, status: true, order: { select: { userId: true, orderStatus: true } } } },
+		},
+	});
+	assert(fixture, 'a delivered multi-unit order item is required for return inventory coverage');
+
+	const originalSize = await db.size.findUniqueOrThrow({ where: { id: fixture.sizeId }, select: { quantity: true } });
+	const firstQuantity = 1;
+	const secondQuantity = fixture.quantity - firstQuantity;
+	const createReturn = (quantity: number, status: ReturnRequestStatus, activeRequestKey?: string) => db.returnRequest.create({
+		data: {
+			status,
+			reason: ReturnReason.DAMAGED,
+			resolution: ReturnResolution.REFUND,
+			requestedAmount: fixture.price * quantity,
+			approvedAmount: fixture.price * quantity,
+			customerId: fixture.orderGroup.order.userId,
+			orderId: fixture.orderGroup.orderId,
+			orderGroupId: fixture.orderGroup.id,
+			storeId: fixture.orderGroup.storeId,
+			resolvedAt: status === ReturnRequestStatus.REFUNDED ? new Date() : null,
+			items: { create: { quantity, receivedQuantity: quantity, unitAmount: fixture.price, requestedAmount: fixture.price * quantity, activeRequestKey: activeRequestKey ?? null, orderItemId: fixture.id } },
+		},
+		select: { id: true, items: { select: { id: true } } },
+	});
+	const firstReturn = await createReturn(firstQuantity, ReturnRequestStatus.REFUNDED);
+	const secondReturn = await createReturn(secondQuantity, ReturnRequestStatus.REQUESTED, `integration-partial-return:${fixture.id}:${randomUUID()}`);
+
+	try {
+		const firstInput = { returnRequestId: firstReturn.id, items: [{ returnItemId: firstReturn.items[0].id, restockable: true, quantity: firstQuantity }] };
+		const secondInput = { returnRequestId: secondReturn.id, items: [{ returnItemId: secondReturn.items[0].id, restockable: true, quantity: secondQuantity }] };
+		const firstResult = await reconcileReturnInventoryForAdmin(firstInput, admin.id);
+		const afterFirst = await db.size.findUniqueOrThrow({ where: { id: fixture.sizeId }, select: { quantity: true } });
+		const partialItem = await db.orderItem.findUniqueOrThrow({ where: { id: fixture.id }, select: { status: true } });
+		assert(firstResult.restocked === firstQuantity, 'partial return did not restock only the received quantity');
+		assert(afterFirst.quantity === originalSize.quantity + firstQuantity, 'partial return changed inventory by the wrong amount');
+		assert(partialItem.status === 'Delivered', 'partial return incorrectly marked the order item terminal');
+
+		const firstReplay = await reconcileReturnInventoryForAdmin(firstInput, admin.id);
+		const afterFirstReplay = await db.size.findUniqueOrThrow({ where: { id: fixture.sizeId }, select: { quantity: true } });
+		assert(firstReplay.restocked === 0 && afterFirstReplay.quantity === afterFirst.quantity, 'partial restock replay was not idempotent');
+
+		await db.returnRequest.update({ where: { id: secondReturn.id }, data: { status: ReturnRequestStatus.REFUNDED, resolvedAt: new Date() } });
+		await db.returnItem.update({ where: { id: secondReturn.items[0].id }, data: { activeRequestKey: null } });
+		const secondResult = await reconcileReturnInventoryForAdmin(secondInput, admin.id);
+		const finalItem = await db.orderItem.findUniqueOrThrow({ where: { id: fixture.id }, select: { status: true } });
+		const finalGroup = await db.orderGroup.findUniqueOrThrow({ where: { id: fixture.orderGroup.id }, select: { status: true, order: { select: { orderStatus: true } } } });
+		assert(secondResult.restocked === secondQuantity, 'final return did not restock the remaining quantity');
+		assert(finalItem.status === 'Refunded', 'fully settled return did not mark the order item refunded');
+		assert(finalGroup.status === 'Refunded' && finalGroup.order.orderStatus === 'Refunded', 'return settlement did not propagate parent order statuses');
+
+		const secondReplay = await reconcileReturnInventoryForAdmin(secondInput, admin.id);
+		const finalSize = await db.size.findUniqueOrThrow({ where: { id: fixture.sizeId }, select: { quantity: true } });
+		assert(secondReplay.restocked === 0 && finalSize.quantity === originalSize.quantity + fixture.quantity, 'final restock replay was not idempotent');
+	} finally {
+		await db.returnRequest.deleteMany({ where: { id: { in: [firstReturn.id, secondReturn.id] } } });
+		await db.size.update({ where: { id: fixture.sizeId }, data: { quantity: originalSize.quantity } });
+		await db.orderItem.update({ where: { id: fixture.id }, data: { status: fixture.status } });
+		await db.orderGroup.update({ where: { id: fixture.orderGroup.id }, data: { status: fixture.orderGroup.status } });
+		await db.order.update({ where: { id: fixture.orderGroup.orderId }, data: { orderStatus: fixture.orderGroup.order.orderStatus } });
+	}
+}
+
 async function main() {
 	const users = await db.user.findMany({
 		where: { email: { in: ['rakibdev133@gmail.com', 'drdevil133@gmail.com', 'rakibhasansohag133@gmail.com'] } },
@@ -290,6 +485,7 @@ async function main() {
 		having: { providerEventId: { _count: { gt: 1 } } },
 	});
 	assert(duplicateEventKeys.length === 0, 'duplicate payment webhook event IDs detected');
+	await assertStripeRefundWebhookSettlement();
 
 	const limitedCoupons = await db.coupon.findMany({
 		where: { maxUses: { gt: 0 } },
@@ -329,6 +525,7 @@ async function main() {
 		assert(item.requestedAmount >= 0 && (item.approvedAmount ?? 0) >= 0, 'return amounts cannot be negative');
 	}
 	await assertConcurrentReturnOverlapProtection();
+	await assertReturnInventoryReconciliation();
 	const refunds = await db.refundTransaction.findMany({
 		select: { amount: true, status: true, processedAt: true, idempotencyKey: true },
 	});
