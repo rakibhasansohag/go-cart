@@ -27,7 +27,6 @@ import {
 	publishDomainEvent,
 } from '@/lib/notifications/domain-events';
 import { reconcileReturnInventoryForAdmin } from '@/lib/returns/inventory';
-import type { ReconcileReturnInventoryInput, ReturnItemDisposition } from '@/lib/returns/inventory';
 
 export type ReturnEvidenceInput = {
 	type: ReturnEvidenceType;
@@ -50,7 +49,17 @@ export type TransitionReturnRequestInput = {
 	note?: string;
 };
 
-export type { ReconcileReturnInventoryInput, ReturnItemDisposition };
+export type ReturnItemDisposition = 'RESTOCKABLE' | 'DAMAGED' | 'DISPOSED' | 'REJECTED';
+
+export type ReconcileReturnInventoryInput = {
+	returnRequestId: string;
+	items: Array<{
+		returnItemId: string;
+		restockable: boolean;
+		disposition?: ReturnItemDisposition;
+		quantity?: number;
+	}>;
+};
 
 
 const RETURN_TRANSACTION_OPTIONS = {

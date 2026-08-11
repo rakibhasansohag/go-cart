@@ -669,12 +669,13 @@ post-purchase workflow.
 
 Goal: protect the critical marketplace workflows before production deployment.
 
-- **Audit status (2026-08-10)**: In progress. The repository has 115 passing Vitest
+- **Audit status (2026-08-11)**: In progress. The repository has 115 passing Vitest
   tests, a deterministic demo seed, and an opt-in Playwright public smoke
   foundation. The isolated Docker integration check now performs concurrent
-  payment replay and return-overlap protection checks in addition to payment,
-  return, shipment, GoCoins, and notification invariants. Local protected
-  Clerk-backed journeys still require external environment access.
+  payment replay and return-overlap protection checks, real Stripe refund-event
+  settlement, partial/full return restocking, and parent order-status propagation
+  in addition to payment, return, shipment, GoCoins, and notification invariants.
+  Local protected Clerk-backed journeys still require external environment access.
 
 - [ ] **Phase 12.1 — Test infrastructure**
   - [x] Add Vitest unit-test tooling and deterministic fixtures
@@ -707,17 +708,21 @@ Goal: protect the critical marketplace workflows before production deployment.
   - [x] Keep the existing focused unit coverage for payment security/status,
         fulfillment transitions, return rules/reconciliation, notifications,
         email rendering/outbox, and loyalty helpers
-  - [ ] Cover real database permissions, totals, coupon usage, inventory changes,
-        order transitions, and query invalidation
+  - [x] Cover real database permissions, totals, coupon usage, inventory changes,
+        and order transitions against the isolated PostgreSQL database
+  - [ ] Cover query invalidation against the real application runtime
     - [x] Add a local Docker integration smoke check for seeded role permissions,
           order/group/item totals, coupon usage limits, order transitions, and
           non-negative inventory quantities, plus paid amount/payment-event
           uniqueness invariants, return/refund quantities, and shipment/carrier
           idempotency invariants, GoCoins balance/idempotency invariants, and
           domain-event/notification uniqueness invariants
-  - [ ] Cover payment webhook signature verification, event idempotency, retries,
-        provider reconciliation, and refund reconciliation against the database
-  - [ ] Cover return eligibility, concurrent partial returns, disputes, and restocking
+  - [x] Cover payment webhook event idempotency, provider reconciliation, and
+        refund reconciliation against the database; signature verification remains
+        covered at the provider boundary
+  - [x] Cover concurrent partial returns, full settlement, parent status
+        propagation, and idempotent restocking against the database
+  - [ ] Cover dispute workflows and their refund/return consequences
   - [x] Cover split/consolidated shipment invariants and carrier-event idempotency
   - [x] Cover concurrent GoCoins award/redemption invariants with an atomic
         balance-guarded redemption decrement and idempotency checks
@@ -727,7 +732,8 @@ Goal: protect the critical marketplace workflows before production deployment.
   - [x] Add Stripe signature-boundary tests, PayPal verification tests, and
         Stripe/PayPal provider event-mapping tests for ignored, paid, duplicate,
         and refund-related events
-  - [ ] **Test**: Critical server workflows pass against an isolated test database
+  - [x] **Test**: Critical server workflows pass against an isolated test database
+        with 1,000 seeded orders (`bun run test:integration:local`)
 
 - [ ] **Phase 12.3 — End-to-end commerce journeys**
   - [x] Add public browse-route and unauthenticated checkout-redirect smoke coverage
