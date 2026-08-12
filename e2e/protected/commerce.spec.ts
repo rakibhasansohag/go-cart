@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { demoFixtureId, demoPackageReference, signInAs } from './fixtures';
+import { demoFixtureId, demoPackageReference, demoReturnReference, signInAs } from './fixtures';
 
 test.skip(
   process.env.E2E_PROTECTED !== 'true' || process.env.E2E_COMMERCE !== 'true',
@@ -169,9 +169,25 @@ test('seller can advance a demo package to Accepted', async ({ page }) => {
   await expect(page.getByRole('row').filter({ hasText: demoPackageReference(0) }).getByRole('button', { name: /Change package status\. Current status: Accepted/i })).toBeVisible();
 });
 
+test('admin can advance a handed-off demo shipment to Delivered', async ({ page }) => {
+  await signInAs(page, 'admin');
+  await page.goto('/dashboard/admin/orders', { waitUntil: 'domcontentloaded', timeout: 120_000 });
+
+  await page.getByPlaceholder(/Search order, package/i).fill(demoPackageReference(4));
+  const demoRow = page.getByRole('row').filter({ hasText: demoPackageReference(4) });
+  await expect(demoRow).toBeVisible();
+  const shipmentStatus = demoRow.getByRole('button', { name: /Change shipment status\. Current status: Received at hub/i });
+  await expect(shipmentStatus).toBeVisible();
+  await shipmentStatus.click();
+  await page.getByRole('menuitem', { name: 'Delivered', exact: true }).click();
+  await expect(page.getByRole('dialog')).toContainText('Confirm shipment update');
+  await page.getByRole('button', { name: 'Confirm update' }).click();
+  await expect(demoRow.getByLabel('Shipment complete: Delivered')).toBeVisible({ timeout: 30_000 });
+});
+
 test('customer can submit a return request for the delivered demo item', async ({ page }, testInfo) => {
   await signInAs(page, 'customer');
-  const itemId = demoFixtureId('item', 5);
+  const itemId = demoFixtureId('item', 11);
   await page.goto(`/profile/returns/new?itemId=${itemId}`);
 
   await expect(page.getByRole('heading', { name: 'Request a return' })).toBeVisible();
@@ -184,6 +200,63 @@ test('customer can submit a return request for the delivered demo item', async (
     contentType: 'application/json',
   });
   await expect(page.getByText(/Return request/i).first()).toBeVisible();
+});
+
+test('seller can approve and receive the seeded return workflow', async ({ page }) => {
+  await signInAs(page, 'seller');
+  await page.goto('/dashboard/seller/stores/gocart-demo-store/returns', { waitUntil: 'domcontentloaded', timeout: 120_000 });
+  await page.getByPlaceholder(/Search return/i).fill(demoFixtureId('return', 5).slice(-8).toUpperCase());
+  await expect(page.getByRole('row')).toHaveCount(2, { timeout: 30_000 });
+
+  const returnRow = page.getByRole('row').filter({ hasText: demoReturnReference(5) });
+  await expect(returnRow).toBeVisible();
+  const statusButton = returnRow.getByRole('button', { name: /Change return status from Requested/i });
+  await statusButton.press('Space');
+  await expect(page.getByText('Return next steps', { exact: true })).toBeVisible();
+  await page.getByRole('menuitem', { name: 'Approved', exact: true }).click();
+  await expect(returnRow.getByText('Approved', { exact: true })).toBeVisible({ timeout: 30_000 });
+
+  const approvedStatusButton = returnRow.getByRole('button', { name: /Change return status from Approved/i });
+  await approvedStatusButton.click({ force: true });
+  await expect(page.getByText('Return next steps', { exact: true })).toBeVisible();
+  await page.getByRole('menuitem', { name: 'Awaiting shipment', exact: true }).click();
+  await expect(returnRow.getByText('Awaiting shipment', { exact: true })).toBeVisible({ timeout: 30_000 });
+});
+
+test('customer can mark the seeded return as shipped', async ({ page }) => {
+  await signInAs(page, 'customer');
+  await page.goto(`/profile/returns/${demoFixtureId('return', 5)}`, { waitUntil: 'domcontentloaded', timeout: 120_000 });
+  await expect(page.getByText('Awaiting shipment', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Mark as shipped' }).click();
+  await expect(page.getByText('Return in transit', { exact: true })).toBeVisible({ timeout: 30_000 });
+});
+
+test('seller can receive the shipped return', async ({ page }) => {
+  await signInAs(page, 'seller');
+  await page.goto('/dashboard/seller/stores/gocart-demo-store/returns', { waitUntil: 'domcontentloaded', timeout: 120_000 });
+  await page.getByPlaceholder(/Search return/i).fill(demoFixtureId('return', 5).slice(-8).toUpperCase());
+  await expect(page.getByRole('row')).toHaveCount(2, { timeout: 30_000 });
+  const returnRow = page.getByRole('row').filter({ hasText: demoReturnReference(5) });
+  await expect(returnRow).toBeVisible();
+  const transitStatusButton = returnRow.getByRole('button', { name: /Change return status from Return in transit/i });
+  await transitStatusButton.click();
+  await expect(page.getByText('Return next steps', { exact: true })).toBeVisible();
+  await page.getByRole('menuitem', { name: 'Received', exact: true }).click();
+  await expect(returnRow.getByText('Received', { exact: true })).toBeVisible({ timeout: 30_000 });
+});
+
+test('admin can move the seeded return to refund pending', async ({ page }) => {
+  await signInAs(page, 'admin');
+  await page.goto('/dashboard/admin/returns', { waitUntil: 'domcontentloaded', timeout: 120_000 });
+  await page.getByPlaceholder(/Search return/i).fill(demoFixtureId('return', 5).slice(-8).toUpperCase());
+  await expect(page.getByRole('row')).toHaveCount(2, { timeout: 30_000 });
+  const adminRow = page.getByRole('row').filter({ hasText: demoReturnReference(5) });
+  await expect(adminRow).toBeVisible();
+  const adminStatusButton = adminRow.getByRole('button', { name: 'Choose next step' });
+  await adminStatusButton.click();
+  await expect(page.getByText('Admin resolution steps', { exact: true })).toBeVisible();
+  await page.getByRole('menuitem', { name: 'Refund pending', exact: true }).click();
+  await expect(adminRow.getByText('Refund pending', { exact: true })).toBeVisible({ timeout: 30_000 });
 });
 
 test('admin can reach delivery health operations', async ({ page }) => {

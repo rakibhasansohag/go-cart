@@ -1,9 +1,15 @@
-import { PrismaClient } from '@prisma/client';
+import { createHash } from 'node:crypto';
+import { PrismaClient, ReturnReason, ReturnRequestStatus, ReturnResolution } from '@prisma/client';
 import { assertSafeE2ERuntime } from '../src/lib/runtime-safety';
 
 assertSafeE2ERuntime();
 
 const db = new PrismaClient();
+
+function demoFixtureId(kind: string, index: number) {
+	const hex = createHash('sha256').update(`gocart-demo:${kind}:${index}`).digest('hex').slice(0, 32);
+	return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-4${hex.slice(13, 16)}-8${hex.slice(17, 20)}-${hex.slice(20, 32)}`;
+}
 
 async function main() {
 	const customerEmail = process.env.E2E_CUSTOMER_EMAIL;
@@ -77,8 +83,60 @@ async function main() {
 		},
 	});
 
+	const returnItem = await db.orderItem.findUnique({
+		where: { id: demoFixtureId('item', 5) },
+		include: { orderGroup: { include: { order: { include: { paymentDetails: true } } } } },
+	});
+	if (!returnItem || returnItem.status !== 'Delivered') {
+		throw new Error('The deterministic delivered return fixture is missing.');
+	}
+
+	const returnRequestId = demoFixtureId('return', 5);
+	await db.returnRequest.deleteMany({ where: { id: returnRequestId } });
+	await db.returnRequest.create({
+		data: {
+			id: returnRequestId,
+			status: ReturnRequestStatus.REQUESTED,
+			reason: ReturnReason.DAMAGED,
+			resolution: ReturnResolution.REFUND,
+			customerNote: 'Deterministic E2E return workflow fixture.',
+			requestedAmount: returnItem.price,
+			requestedSubtotal: returnItem.price,
+			requestedShipping: 0,
+			requestedDiscount: 0,
+			requestedTax: 0,
+			currency: 'USD',
+			customerId: customer.id,
+			orderId: returnItem.orderGroup.orderId,
+			orderGroupId: returnItem.orderGroupId,
+			storeId: product.storeId,
+			paymentDetailsId: returnItem.orderGroup.order.paymentDetails?.id,
+			items: {
+				create: {
+					id: demoFixtureId('return-item', 5),
+					quantity: 1,
+					unitAmount: returnItem.price,
+					requestedAmount: returnItem.price,
+					shippingAmount: 0,
+					discountAmount: 0,
+					taxAmount: 0,
+					orderItemId: returnItem.id,
+					activeRequestKey: `e2e-return:${returnItem.id}`,
+				},
+			},
+			events: {
+				create: {
+					actorRole: 'CUSTOMER',
+					eventType: 'return.requested',
+					toStatus: ReturnRequestStatus.REQUESTED,
+					actorId: customer.id,
+				},
+			},
+		},
+	});
+
 	console.log(`Seeded E2E commerce cart ${cart.id} for ${customerEmail}.`);
-	console.log(`E2E return fixture item: deterministic demo order item index 5.`);
+	console.log(`Seeded E2E return workflow: ${returnRequestId} for deterministic delivered item index 5.`);
 }
 
 main()

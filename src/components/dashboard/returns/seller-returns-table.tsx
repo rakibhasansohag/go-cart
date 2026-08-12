@@ -39,6 +39,7 @@ export default function SellerReturnsTable({ storeUrl, initialData }: Props) {
 	const [status, setStatus] = useState<ReturnRequestStatus | 'ALL'>('ALL');
 	const [search, setSearch] = useState('');
 	const [page, setPage] = useState(1);
+	const [openRequestId, setOpenRequestId] = useState<string | null>(null);
 	const filters = { status, page, pageSize: 10, search };
 	const query = useQuery({
 		queryKey: queryKeys.dashboard.returns(storeUrl, filters),
@@ -79,16 +80,16 @@ export default function SellerReturnsTable({ storeUrl, initialData }: Props) {
 								<td className='p-3 font-semibold'>{request.currency} {request.requestedAmount.toFixed(2)}</td>
 								<td className='p-3'>
 									{actions.length === 0 ? <ReturnStatus status={request.status} /> : (
-										<DropdownMenu>
+										<DropdownMenu open={openRequestId === request.id} onOpenChange={(open) => setOpenRequestId(open ? request.id : null)}>
 											<DropdownMenuTrigger asChild>
-												<button type='button' disabled={mutation.isPending} className='inline-flex cursor-pointer items-center gap-1 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-wait disabled:opacity-60' aria-label={`Change return status from ${getReturnStatusLabel(request.status)}`}>
+												<button type='button' disabled={mutation.isPending} onPointerDown={(event) => { if (event.button === 0 && !event.ctrlKey) { event.preventDefault(); setOpenRequestId(request.id); } }} className='inline-flex cursor-pointer items-center gap-1 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-wait disabled:opacity-60' aria-label={`Change return status from ${getReturnStatusLabel(request.status)}`}>
 													<ReturnStatus status={request.status} /><ChevronDown className='size-3.5' aria-hidden='true' />
 												</button>
 											</DropdownMenuTrigger>
 											<DropdownMenuContent align='start' className='z-[100000] w-64'>
 												<DropdownMenuLabel>Return next steps</DropdownMenuLabel>
 												<DropdownMenuSeparator />
-												{actions.map((next) => <DropdownMenuItem key={next} disabled={mutation.isPending} onSelect={() => mutation.mutate({ id: request.id, toStatus: next })}>{getReturnStatusLabel(next)}</DropdownMenuItem>)}
+												{actions.map((next) => <DropdownMenuItem key={next} disabled={mutation.isPending} onSelect={() => { setOpenRequestId(null); mutation.mutate({ id: request.id, toStatus: next }); }}>{getReturnStatusLabel(next)}</DropdownMenuItem>)}
 											</DropdownMenuContent>
 										</DropdownMenu>
 									)}

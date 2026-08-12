@@ -16,6 +16,10 @@ export function demoPackageReference(index: number): string {
   return `#PKG-${demoFixtureId('group', index).replaceAll('-', '').toUpperCase().slice(-7)}`;
 }
 
+export function demoReturnReference(index: number): string {
+  return `#${demoFixtureId('return', index).slice(-8).toUpperCase()}`;
+}
+
 const roleEnvKeys: Record<E2ERole, string> = {
   customer: 'E2E_CUSTOMER_EMAIL',
   seller: 'E2E_SELLER_EMAIL',
