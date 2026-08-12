@@ -14,9 +14,13 @@ function demoFixtureId(kind: string, index: number) {
 async function main() {
 	const customerEmail = process.env.E2E_CUSTOMER_EMAIL;
 	if (!customerEmail) throw new Error('E2E_CUSTOMER_EMAIL is required for commerce fixtures.');
+	const sellerEmail = process.env.E2E_SELLER_EMAIL;
+	if (!sellerEmail) throw new Error('E2E_SELLER_EMAIL is required for commerce fixtures.');
 
 	const customer = await db.user.findUnique({ where: { email: customerEmail } });
 	if (!customer) throw new Error(`Commerce fixture customer was not found: ${customerEmail}`);
+	const seller = await db.user.findUnique({ where: { email: sellerEmail } });
+	if (!seller || seller.role !== 'SELLER') throw new Error(`Commerce fixture seller was not found: ${sellerEmail}`);
 
 	const product = await db.product.findUnique({
 		where: { slug: 'gocart-demo-product-1' },
@@ -28,6 +32,7 @@ async function main() {
 	if (!product || !variant || !size || !image) {
 		throw new Error('The deterministic demo catalog is missing gocart-demo-product-1.');
 	}
+	await db.store.update({ where: { id: product.storeId }, data: { userId: seller.id } });
 
 	let address = await db.shippingAddress.findFirst({
 		where: { userId: customer.id },

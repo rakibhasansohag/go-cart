@@ -683,7 +683,11 @@ Goal: protect the critical marketplace workflows before production deployment.
   setup, customer, seller, and admin checks with a one-test opt-in Stripe
   sandbox payment that also passes end to end. A single local retry is supported
   for transient Next development-server failures during cold Windows compilation;
-  browser teardown can still emit non-blocking hook/stream warnings.
+  browser teardown can still emit non-blocking hook/stream warnings. The isolated
+  commerce seed now also creates a deterministic delivered return request for
+  the configured Clerk customer and seller store; its seller/admin mutation
+  journey remains deliberately open until the browser action and persisted state
+  are both stable.
 
 - [x] **Phase 12.1 — Test infrastructure**
   - [x] Add Vitest unit-test tooling and deterministic fixtures
@@ -756,10 +760,12 @@ Goal: protect the critical marketplace workflows before production deployment.
         payment → order details/order history; the protected browser flow passes
         with the opt-in `E2E_STRIPE_PAYMENT=true` flag
   - [ ] Cover seller fulfillment → shipment tracking → delivery (workspace,
-        package-status, and tracking read assertions are present; carrier/delivery
-        mutations remain)
+        package-status, and tracking read assertions are present; the first
+        delivery-mutation probe was not accepted because the admin search/action
+        path did not produce a stable persisted result)
   - [ ] Cover delivered item → return request → decision → refund/restock
-        (request submission is covered; seller/admin decision and refund effects
+        (a deterministic delivered return fixture is now seeded; request
+        submission is covered, while seller/admin decision and refund effects
         remain)
   - [ ] Cover keyboard-only search, checkout, and critical admin/seller actions
         end to end; public search/cart keyboard checks are complete, while

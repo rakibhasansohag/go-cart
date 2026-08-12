@@ -335,6 +335,14 @@ The next practical browser milestone is:
 
 When those are implemented, update this document and `plan.md` with the exact test names and pass counts. That keeps the project understandable months later and prevents “implemented” from being confused with “verified.”
 
+The current phase has added a deterministic delivered return fixture at
+`demoFixtureId('return', 5)`. `bun run db:e2e:prepare` recreates it safely in the
+isolated Docker database. The browser mutation probes exposed two remaining
+gaps rather than being counted as passes: the admin order search/action journey
+did not return a stable target row, and the seller return decision did not yet
+prove a persisted transition. Keep these items open until a rerun verifies both
+the visible state and the database state.
+
 ## Safety rules
 
 - Never run E2E commands against production or a production-like database URL.
