@@ -669,13 +669,16 @@ post-purchase workflow.
 
 Goal: protect the critical marketplace workflows before production deployment.
 
-- **Audit status (2026-08-11)**: In progress. The repository has 115 passing Vitest
+- **Audit status (2026-08-12)**: In progress. The repository has 115 passing Vitest
   tests, a deterministic demo seed, and an opt-in Playwright public smoke
   foundation. The isolated Docker integration check now performs concurrent
   payment replay and return-overlap protection checks, real Stripe refund-event
   settlement, partial/full return restocking, and parent order-status propagation
   in addition to payment, return, shipment, GoCoins, and notification invariants.
-  Local protected Clerk-backed journeys still require external environment access.
+  The public browser suite now passes six Chromium journeys covering browse,
+  keyboard search, empty search, empty cart continuation, and unauthenticated
+  checkout redirect. Local protected Clerk-backed journeys remain unstable and
+  require a reliable staging/test auth setup.
 
 - [ ] **Phase 12.1 — Test infrastructure**
   - [x] Add Vitest unit-test tooling and deterministic fixtures
@@ -737,12 +740,17 @@ Goal: protect the critical marketplace workflows before production deployment.
 
 - [ ] **Phase 12.3 — End-to-end commerce journeys**
   - [x] Add public browse-route and unauthenticated checkout-redirect smoke coverage
+  - [x] Add public keyboard search, deterministic empty-search, and empty-cart
+        keyboard-continuation coverage against the isolated test environment
   - [x] Add opt-in protected customer tracking, seller fulfillment workspace, and
         admin delivery-health authorization specs
   - [ ] Cover browse → cart → checkout → payment → order history
   - [ ] Cover seller fulfillment → shipment tracking → delivery
   - [ ] Cover delivered item → return request → decision → refund/restock
   - [ ] Cover keyboard-only search, checkout, and critical admin/seller actions
+        end to end; public search/cart keyboard checks are complete, while
+        authenticated checkout and dashboard keyboard paths still require Clerk
+        staging credentials
   - [ ] **Test**: The complete customer, seller, and admin journeys pass in supported browsers
 
 - [ ] **Phase 12.4 — Continuous integration**
