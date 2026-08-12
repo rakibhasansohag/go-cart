@@ -61,6 +61,9 @@ if (action === 'up') {
 		run('bun', ['prisma/sync-e2e-users.ts'], env);
 	}
 	run('bun', ['prisma/seed-demo.ts'], env);
+	if (env.E2E_COMMERCE?.toLowerCase() === 'true') {
+		run('bun', ['prisma/seed-e2e-commerce.ts'], env);
+	}
 } else if (action === 'sync-users') {
 	const env = validatedE2EEnv();
 	run('docker', [...compose, 'up', '-d', 'postgres']);

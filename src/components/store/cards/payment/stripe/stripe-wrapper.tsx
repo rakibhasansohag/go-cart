@@ -5,11 +5,8 @@ import { loadStripe } from '@stripe/stripe-js';
 import { Elements } from '@stripe/react-stripe-js';
 import { useTheme } from 'next-themes';
 
-if (process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY === undefined) {
-	throw new Error('NEXT_PUBLIC_STRIPE_PUBLIC_KEY is not defined');
-}
-
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY);
+const stripePublicKey = process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY;
+const stripePromise = stripePublicKey ? loadStripe(stripePublicKey) : null;
 export default function StripeWrapper({
 	children,
 	amount,
@@ -19,6 +16,14 @@ export default function StripeWrapper({
 }) {
 	const { resolvedTheme } = useTheme();
 	const isDark = resolvedTheme === 'dark';
+
+	if (!stripePromise) {
+		return (
+			<div role='status' className='rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-xs text-amber-700 dark:text-amber-300'>
+				Stripe sandbox payment is not configured for this environment.
+			</div>
+		);
+	}
 
 	return (
 		<Elements

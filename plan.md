@@ -679,36 +679,37 @@ Goal: protect the critical marketplace workflows before production deployment.
   keyboard search, empty search, empty cart continuation, and unauthenticated
   checkout redirect. The isolated Docker seed is now bound to the synchronized
   Clerk customer, seller, and admin IDs, including 1,000 customer orders and the
-  seller demo store. Local protected navigation remains unstable because the
-  Chromium session closes during authenticated route rendering.
+  seller demo store. The local protected suite now passes all 11 Clerk setup,
+  customer, seller, and admin checks with a 90-second protected-test budget for
+  Windows cold compilation. Next development redirects and browser teardown can
+  still emit non-blocking hook/stream warnings, while production build and all
+  route/content assertions pass.
 
-- [ ] **Phase 12.1 — Test infrastructure**
+- [x] **Phase 12.1 — Test infrastructure**
   - [x] Add Vitest unit-test tooling and deterministic fixtures
   - [x] Add an isolated local PostgreSQL integration-test database via Docker,
         an `.env.e2e.local` contract, automatic migration/seed helper, and reset
         command; this avoids connecting E2E runs to Neon production or branches
   - [x] Add a repeatable deterministic demo fixture generator for 1,000 orders across the admin, seller, and customer test accounts
   - [x] Seed realistic generic catalog names, three variant image views, and stable empty-image fallbacks for visual QA
-  - [x] Add Playwright configuration, Chromium project, and an opt-in public
-        home-page smoke test; protected customer, seller, and admin journeys
-        remain pending until test auth and database isolation are defined
+  - [x] Add Playwright configuration, Chromium projects, and opt-in public and
+        protected customer, seller, and admin journeys against isolated data
   - [x] Add a fail-closed E2E runtime guard that rejects production APP_ENV,
         database URL mismatches, live payment keys, non-sandbox PayPal, enabled
         email/automation, or non-test auth configuration
   - [x] Add a guarded one-command staging anonymizer that preserves IDs, roles,
         relationships, statuses, and totals while replacing personal/provider data
   - [x] Add opt-in Clerk Testing Token setup and protected customer, seller, and
-        admin authorization specs; credentials and Clerk/DB role synchronization remain
-        staging configuration tasks
+        admin authorization specs with local Clerk/DB role synchronization
   - [x] Add a guarded Clerk-to-Prisma E2E user synchronizer that applies USER,
         SELLER, and ADMIN roles only to the isolated staging database
   - [x] Synchronize Clerk users before deterministic seeding and assign seeded
         orders/store ownership to the configured E2E customer and seller IDs
-  - [x] Add `test:unit` and `test:e2e` scripts while retaining `test` as the
-        complete non-browser suite; `test:integration` remains pending
+  - [x] Add unit, integration, and E2E scripts while retaining `test` as the
+        complete non-browser unit suite
   - [x] Document isolated database, public smoke, and protected commerce test
         commands in `docs/testing.md`
-  - [ ] **Test**: All suites run locally from documented commands (`bun run
+  - [x] **Test**: All suites run locally from documented commands (`bun run
         db:e2e:prepare`, then `bun run test:e2e:local`)
 <!-- s -->
 - [ ] **Phase 12.2 — Critical integration coverage**
@@ -748,13 +749,14 @@ Goal: protect the critical marketplace workflows before production deployment.
         keyboard-continuation coverage against the isolated test environment
   - [x] Add opt-in protected customer tracking, seller fulfillment workspace, and
         admin delivery-health authorization specs
+  - [x] Verify four protected role-boundary checks and six authenticated commerce
+        surfaces plus Clerk setup in Chromium (11/11 passing locally)
   - [ ] Cover browse → cart → checkout → payment → order history
   - [ ] Cover seller fulfillment → shipment tracking → delivery
   - [ ] Cover delivered item → return request → decision → refund/restock
   - [ ] Cover keyboard-only search, checkout, and critical admin/seller actions
         end to end; public search/cart keyboard checks are complete, while
-        authenticated checkout and dashboard keyboard paths still require Clerk
-        staging credentials
+        authenticated checkout and dashboard keyboard mutation paths remain open
   - [ ] **Test**: The complete customer, seller, and admin journeys pass in supported browsers
 
 - [ ] **Phase 12.4 — Continuous integration**
@@ -763,7 +765,7 @@ Goal: protect the critical marketplace workflows before production deployment.
   - [x] Pin the Bun runtime, restrict workflow token permissions to read-only,
         and add a test-environment-only public E2E job with Playwright report upload
   - [x] Add an explicit whitespace/formatting check; lint warnings remain a
-        tracked baseline (current audit: 0 errors, 103 warnings)
+        tracked baseline (current Next 16 audit: 0 errors, 165 warnings)
   - [x] Run database integration tests in CI with an isolated PostgreSQL service;
         protected Playwright remains dependent on external Clerk/network access
   - [x] Cache Bun dependencies safely; Playwright reports upload on E2E failure

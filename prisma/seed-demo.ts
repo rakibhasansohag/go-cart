@@ -92,6 +92,10 @@ async function main() {
 	const paymentIds = Array.from({ length: COUNT }, (_, index) => id('payment', index));
 	await db.shipmentItem.deleteMany({ where: { orderItemId: { in: itemIds } } });
 	await db.shipment.deleteMany({ where: { packageAssignments: { some: { orderGroupId: { in: groupIds } } } } });
+	// Browser mutation tests can create return requests for deterministic demo
+	// orders. Remove those parent records first so their cascading ReturnItem,
+	// ReturnEvent, evidence, and refund records release the order-item FKs.
+	await db.returnRequest.deleteMany({ where: { orderId: { in: orderIds } } });
 	await db.orderItem.deleteMany({ where: { id: { in: itemIds } } });
 	await db.paymentDetails.deleteMany({ where: { id: { in: paymentIds } } });
 	await db.orderGroup.deleteMany({ where: { id: { in: groupIds } } });
