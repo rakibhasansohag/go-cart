@@ -57,10 +57,10 @@ if (action === 'up') {
 	const env = validatedE2EEnv();
 	run('docker', [...compose, 'up', '-d', 'postgres']);
 	run('bun', ['x', 'prisma', 'migrate', 'deploy'], env);
-	run('bun', ['prisma/seed-demo.ts'], env);
 	if (env.E2E_PROTECTED?.toLowerCase() === 'true') {
 		run('bun', ['prisma/sync-e2e-users.ts'], env);
 	}
+	run('bun', ['prisma/seed-demo.ts'], env);
 } else if (action === 'sync-users') {
 	const env = validatedE2EEnv();
 	run('docker', [...compose, 'up', '-d', 'postgres']);

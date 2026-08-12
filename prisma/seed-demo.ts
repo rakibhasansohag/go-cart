@@ -24,9 +24,9 @@ function dateFor(index: number) {
 }
 
 const users = {
-	admin: 'rakibhasansohag133@gmail.com',
-	seller: 'drdevil133@gmail.com',
-	customer: 'rakibdev133@gmail.com',
+	admin: process.env.E2E_ADMIN_EMAIL ?? 'rakibhasansohag133@gmail.com',
+	seller: process.env.E2E_SELLER_EMAIL ?? 'drdevil133@gmail.com',
+	customer: process.env.E2E_CUSTOMER_EMAIL ?? 'rakibdev133@gmail.com',
 } as const;
 
 const statusFixtures = [
@@ -57,9 +57,10 @@ async function main() {
 		db.user.upsert({ where: { email: users.customer }, update: { name: 'Demo Customer', role: Role.USER }, create: { name: 'Demo Customer', email: users.customer, role: Role.USER, picture: 'https://i.pravatar.cc/160?img=5' } }),
 	]);
 	const country = await db.country.upsert({ where: { code: 'US' }, update: {}, create: { name: 'United States', code: 'US' } });
-	const existingStore = await db.store.findFirst({ where: { userId: seller.id }, orderBy: { createdAt: 'asc' } });
-	const store = existingStore ?? await db.store.create({
-		data: { userId: seller.id, name: 'GoCart Demo Store', description: 'Deterministic store used for local testing.', email: users.seller.replace('@', '+demo@'), phone: '+15550001000', url: 'gocart-demo-store', logo: 'https://picsum.photos/seed/gocart-demo-logo/200/200', cover: 'https://picsum.photos/seed/gocart-demo-cover/1200/400', status: StoreStatus.ACTIVE },
+	const store = await db.store.upsert({
+		where: { url: 'gocart-demo-store' },
+		update: { userId: seller.id, name: 'GoCart Demo Store', description: 'Deterministic store used for local testing.', email: users.seller.replace('@', '+demo@'), phone: '+15550001000', logo: 'https://picsum.photos/seed/gocart-demo-logo/200/200', cover: 'https://picsum.photos/seed/gocart-demo-cover/1200/400', status: StoreStatus.ACTIVE },
+		create: { userId: seller.id, name: 'GoCart Demo Store', description: 'Deterministic store used for local testing.', email: users.seller.replace('@', '+demo@'), phone: '+15550001000', url: 'gocart-demo-store', logo: 'https://picsum.photos/seed/gocart-demo-logo/200/200', cover: 'https://picsum.photos/seed/gocart-demo-cover/1200/400', status: StoreStatus.ACTIVE },
 	});
 	const category = await db.category.upsert({ where: { url: 'gocart-demo-category' }, update: {}, create: { name: 'Demo Catalog', image: 'https://picsum.photos/seed/gocart-demo-category/600/400', url: 'gocart-demo-category', featured: true } });
 	const subCategory = await db.subCategory.upsert({ where: { url: 'gocart-demo-subcategory' }, update: {}, create: { name: 'Demo Products', image: 'https://picsum.photos/seed/gocart-demo-subcategory/600/400', url: 'gocart-demo-subcategory', categoryId: category.id, featured: true } });

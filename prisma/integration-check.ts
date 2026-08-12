@@ -19,6 +19,11 @@ assertSafeE2ERuntime();
 
 const db = new PrismaClient();
 const epsilon = 0.01;
+const testUsers = {
+	admin: process.env.E2E_ADMIN_EMAIL ?? 'rakibhasansohag133@gmail.com',
+	seller: process.env.E2E_SELLER_EMAIL ?? 'drdevil133@gmail.com',
+	customer: process.env.E2E_CUSTOMER_EMAIL ?? 'rakibdev133@gmail.com',
+} as const;
 
 function assert(condition: unknown, message: string): asserts condition {
 	if (!condition) throw new Error(`[integration] ${message}`);
@@ -201,7 +206,7 @@ async function assertConcurrentReturnOverlapProtection() {
 
 async function assertStripeRefundWebhookSettlement() {
 	const fixture = await db.order.findFirst({
-		where: { paymentStatus: 'Paid', user: { email: 'rakibdev133@gmail.com' } },
+		where: { paymentStatus: 'Paid', user: { email: testUsers.customer } },
 		select: {
 			id: true,
 			total: true,
@@ -317,10 +322,10 @@ async function assertStripeRefundWebhookSettlement() {
 }
 
 async function assertReturnInventoryReconciliation() {
-	const admin = await db.user.findUnique({ where: { email: 'rakibhasansohag133@gmail.com' }, select: { id: true } });
+	const admin = await db.user.findUnique({ where: { email: testUsers.admin }, select: { id: true } });
 	assert(admin, 'demo admin is required for return inventory coverage');
 	const fixture = await db.orderItem.findFirst({
-		where: { status: 'Delivered', quantity: { gte: 2 }, orderGroup: { order: { user: { email: 'rakibdev133@gmail.com' } } } },
+		where: { status: 'Delivered', quantity: { gte: 2 }, orderGroup: { order: { user: { email: testUsers.customer } } } },
 		select: {
 			id: true,
 			quantity: true,
@@ -392,13 +397,13 @@ async function assertReturnInventoryReconciliation() {
 
 async function main() {
 	const users = await db.user.findMany({
-		where: { email: { in: ['rakibdev133@gmail.com', 'drdevil133@gmail.com', 'rakibhasansohag133@gmail.com'] } },
+		where: { email: { in: [testUsers.customer, testUsers.seller, testUsers.admin] } },
 		select: { email: true, role: true },
 	});
 	const roles = new Map(users.map((user) => [user.email, user.role]));
-	assert(roles.get('rakibdev133@gmail.com') === Role.USER, 'demo customer role is incorrect');
-	assert(roles.get('drdevil133@gmail.com') === Role.SELLER, 'demo seller role is incorrect');
-	assert(roles.get('rakibhasansohag133@gmail.com') === Role.ADMIN, 'demo admin role is incorrect');
+	assert(roles.get(testUsers.customer) === Role.USER, 'demo customer role is incorrect');
+	assert(roles.get(testUsers.seller) === Role.SELLER, 'demo seller role is incorrect');
+	assert(roles.get(testUsers.admin) === Role.ADMIN, 'demo admin role is incorrect');
 
 	const orderCount = await db.order.count();
 	assert(orderCount >= 1000, `expected at least 1000 demo orders, found ${orderCount}`);
@@ -448,7 +453,7 @@ async function main() {
 		assert(Boolean(order.paymentDetails.currency), 'payment currency is missing');
 	}
 	const reconciliationOrder = await db.order.findFirst({
-		where: { paymentStatus: 'Paid', user: { email: 'rakibdev133@gmail.com' } },
+		where: { paymentStatus: 'Paid', user: { email: testUsers.customer } },
 		select: { id: true, total: true },
 	});
 	assert(reconciliationOrder, 'a paid demo order is required for payment reconciliation coverage');

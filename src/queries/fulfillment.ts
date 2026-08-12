@@ -16,7 +16,7 @@ import {
 	publishDomainEvent,
 } from '@/lib/notifications/domain-events';
 import { deriveOrderStatus } from '@/lib/orders/status-sync';
-import { currentUser } from '@clerk/nextjs/server';
+import { auth, currentUser } from '@clerk/nextjs/server';
 import {
 	CancellationReasonCode,
 	CancellationRequestStatus,
@@ -602,8 +602,8 @@ export async function updateShipmentCarrierInfo(input: {
 }
 
 export async function getShipmentTracking(orderId: string) {
-	const user = await currentUser();
-	if (!user) throw new Error('Unauthenticated.');
+	const { userId } = await auth();
+	if (!userId) throw new Error('Unauthenticated.');
 
 	const shipments = await db.shipment.findMany({
 		where: {
@@ -612,8 +612,8 @@ export async function getShipmentTracking(orderId: string) {
 					orderGroup: {
 						orderId,
 						OR: [
-							{ order: { userId: user.id } },
-							{ store: { userId: user.id } },
+							{ order: { userId } },
+							{ store: { userId } },
 						],
 					},
 				},

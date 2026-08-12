@@ -677,8 +677,10 @@ Goal: protect the critical marketplace workflows before production deployment.
   in addition to payment, return, shipment, GoCoins, and notification invariants.
   The public browser suite now passes six Chromium journeys covering browse,
   keyboard search, empty search, empty cart continuation, and unauthenticated
-  checkout redirect. Local protected Clerk-backed journeys remain unstable and
-  require a reliable staging/test auth setup.
+  checkout redirect. The isolated Docker seed is now bound to the synchronized
+  Clerk customer, seller, and admin IDs, including 1,000 customer orders and the
+  seller demo store. Local protected navigation remains unstable because the
+  Chromium session closes during authenticated route rendering.
 
 - [ ] **Phase 12.1 — Test infrastructure**
   - [x] Add Vitest unit-test tooling and deterministic fixtures
@@ -700,6 +702,8 @@ Goal: protect the critical marketplace workflows before production deployment.
         staging configuration tasks
   - [x] Add a guarded Clerk-to-Prisma E2E user synchronizer that applies USER,
         SELLER, and ADMIN roles only to the isolated staging database
+  - [x] Synchronize Clerk users before deterministic seeding and assign seeded
+        orders/store ownership to the configured E2E customer and seller IDs
   - [x] Add `test:unit` and `test:e2e` scripts while retaining `test` as the
         complete non-browser suite; `test:integration` remains pending
   - [x] Document isolated database, public smoke, and protected commerce test
