@@ -76,6 +76,9 @@ gocart_backup.sql
 scratch-test-mysql.ts
 migrate-to-neon.ts
 
-/docs
+/docs/*
+!/docs/
+!/docs/testing.md
+!/docs/testing-and-quality-overview.md
 
 .next-e2e
