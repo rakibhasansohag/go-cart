@@ -1,19 +1,34 @@
-import { dirname } from "path";
-import { fileURLToPath } from "url";
-import { FlatCompat } from "@eslint/eslintrc";
+import { defineConfig, globalIgnores } from 'eslint/config';
+import nextVitals from 'eslint-config-next/core-web-vitals';
+import nextTypeScript from 'eslint-config-next/typescript';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-const compat = new FlatCompat({
-  baseDirectory: __dirname,
-});
-
-const eslintConfig = [
+export default defineConfig([
+  ...nextVitals,
+  ...nextTypeScript,
   {
-    ignores: ["src/generated/**", "node_modules/**", ".next/**", ".next-e2e/**"],
+    // Next 16 enables React Compiler diagnostics for existing code. Keep the
+    // findings visible while preserving the current lint gate: hook-order
+    // violations remain errors, migration-oriented compiler findings are
+    // tracked as warnings until the affected components are refactored.
+    rules: {
+      'react-hooks/static-components': 'warn',
+      'react-hooks/use-memo': 'warn',
+      'react-hooks/preserve-manual-memoization': 'warn',
+      'react-hooks/immutability': 'warn',
+      'react-hooks/globals': 'warn',
+      'react-hooks/refs': 'warn',
+      'react-hooks/set-state-in-effect': 'warn',
+      'react-hooks/error-boundaries': 'warn',
+      'react-hooks/purity': 'warn',
+      'react-hooks/set-state-in-render': 'warn',
+      'react-hooks/config': 'warn',
+      'react-hooks/gating': 'warn',
+    },
   },
-  ...compat.extends("next/core-web-vitals", "next/typescript"),
-];
-
-export default eslintConfig;
+  globalIgnores([
+    'src/generated/**',
+    'node_modules/**',
+    '.next/**',
+    '.next-e2e/**',
+  ]),
+]);

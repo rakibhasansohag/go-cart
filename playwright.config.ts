@@ -1,6 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
 
 const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3100';
+const usesExternalServer = Boolean(process.env.PLAYWRIGHT_BASE_URL);
 
 export default defineConfig({
   testDir: './e2e',
@@ -17,12 +18,14 @@ export default defineConfig({
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
   },
-  webServer: {
-    command: 'bun --no-env-file scripts/e2e-local.ts server',
-    url: baseURL,
-    reuseExistingServer: false,
-    timeout: 120_000,
-  },
+  webServer: usesExternalServer
+    ? undefined
+    : {
+        command: 'bun --no-env-file scripts/e2e-local.ts server',
+        url: baseURL,
+        reuseExistingServer: false,
+        timeout: 120_000,
+      },
   projects: [
     {
       name: 'clerk-setup',
@@ -37,6 +40,9 @@ export default defineConfig({
       name: 'protected-chromium',
       testMatch: /protected\/.*\.spec\.ts/,
       dependencies: ['clerk-setup'],
+      // Clerk session creation plus a cold authenticated route compilation can
+      // exceed Playwright's 30-second default on local Windows development.
+      timeout: 90_000,
       use: { ...devices['Desktop Chrome'] },
     },
   ],
