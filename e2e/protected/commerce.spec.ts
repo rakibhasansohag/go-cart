@@ -10,14 +10,14 @@ test.describe.configure({ mode: 'serial' });
 
 test('customer can place the seeded cart order and see it in order history', async ({ page }, testInfo) => {
   await signInAs(page, 'customer');
-  await page.goto('/checkout');
+  await page.goto('/checkout', { waitUntil: 'domcontentloaded', timeout: 120_000 });
 
   await expect(page.getByRole('heading', { name: 'Shipping Addresses' })).toBeVisible();
   const placeOrder = page.getByRole('button', { name: 'Place order' });
   await expect(placeOrder).toBeEnabled();
   await placeOrder.click();
 
-  await page.waitForURL(/\/order\/[0-9a-f-]{36}$/);
+  await page.waitForURL(/\/order\/[0-9a-f-]{36}$/, { waitUntil: 'domcontentloaded', timeout: 120_000 });
   const orderId = new URL(page.url()).pathname.split('/').pop();
   await testInfo.attach('created-order.json', {
     body: JSON.stringify({ orderId, url: page.url() }, null, 2),
@@ -32,20 +32,27 @@ test('customer can place the seeded cart order and see it in order history', asy
 });
 
 test('customer can confirm a Stripe sandbox payment when explicitly enabled', async ({ page }, testInfo) => {
+  test.setTimeout(180_000);
   test.skip(
     process.env.E2E_STRIPE_PAYMENT !== 'true',
     'Set E2E_STRIPE_PAYMENT=true to run the external Stripe sandbox confirmation test.',
   );
 
   await signInAs(page, 'customer');
-  await page.goto('/checkout');
+  await page.goto('/checkout', { waitUntil: 'domcontentloaded', timeout: 120_000 });
   await page.getByRole('button', { name: 'Place order' }).click();
-  await page.waitForURL(/\/order\/[0-9a-f-]{36}$/);
+  await page.waitForURL(/\/order\/[0-9a-f-]{36}$/, { waitUntil: 'domcontentloaded', timeout: 120_000 });
   const orderId = new URL(page.url()).pathname.split('/').pop();
   await expect(page.getByRole('heading', { name: 'Complete your payment' })).toBeVisible();
   const closeRewardModal = page.getByRole('button', { name: 'Close modal' });
-  if (await closeRewardModal.count()) await closeRewardModal.click({ force: true });
-  await expect(page.getByRole('button', { name: 'Pay Now' })).toBeVisible({ timeout: 60_000 });
+  if (await closeRewardModal.count()) {
+    await closeRewardModal.evaluate((element) => (element as HTMLButtonElement).click());
+    await expect(closeRewardModal).toBeHidden();
+  }
+  const payNow = page.getByRole('button', { name: 'Pay Now' });
+  await expect(payNow).toBeVisible({ timeout: 60_000 });
+  await payNow.scrollIntoViewIfNeeded();
+  await page.waitForTimeout(1_000);
 
   const stripeFrames = page.frames().filter((frame) => frame.url().includes('js.stripe.com'));
   const stripeInputs = [] as Array<{ url: string; inputs: unknown }>;
@@ -66,23 +73,38 @@ test('customer can confirm a Stripe sandbox payment when explicitly enabled', as
     contentType: 'application/json',
   });
   let cardFrame = undefined;
-  for (const frame of stripeFrames) {
-    if (await frame.locator('input').count()) {
-      cardFrame = frame;
-      break;
+  let cardOptionClicked = false;
+  for (let attempt = 0; attempt < 30 && !cardFrame; attempt += 1) {
+    for (const frame of page.frames().filter((candidate) => candidate.url().includes('js.stripe.com'))) {
+      if (!cardOptionClicked) {
+        const cardOption = frame.getByText('Card', { exact: true });
+        if (await cardOption.count()) {
+          await cardOption.click();
+          cardOptionClicked = true;
+        }
+      }
+      if (await frame.locator('input').count()) {
+        cardFrame = frame;
+        break;
+      }
     }
+    if (!cardFrame) await page.waitForTimeout(500);
   }
   if (!cardFrame) {
     throw new Error(`Stripe card frame was not found. Frames: ${stripeFrames.map((frame) => frame.url()).join(' | ')}`);
   }
 
-  const inputs = cardFrame.locator('input');
-  const inputCount = await inputs.count();
-  if (inputCount < 3) throw new Error(`Stripe card frame exposed ${inputCount} input(s), expected card number, expiry, and CVC.`);
-  await inputs.nth(0).fill('4242424242424242');
-  await inputs.nth(1).fill('12/34');
-  await inputs.nth(2).fill('123');
-  if (inputCount > 3) await inputs.nth(3).fill('94105');
+  const cardNumber = cardFrame.locator('input[autocomplete="cc-number"]');
+  const expiry = cardFrame.locator('input[autocomplete="cc-exp"]');
+  const cvc = cardFrame.locator('input[autocomplete="cc-csc"]');
+  if ((await cardNumber.count()) === 0 || (await expiry.count()) === 0 || (await cvc.count()) === 0) {
+    throw new Error('Stripe card frame did not expose semantic card number, expiry, and CVC fields.');
+  }
+  await cardNumber.fill('4242424242424242');
+  await expiry.fill('12/34');
+  await cvc.fill('123');
+  const postalCode = cardFrame.locator('input[autocomplete="postal-code"]');
+  if (await postalCode.count()) await postalCode.fill('94105');
   await page.getByRole('button', { name: 'Pay Now' }).click();
 
   await expect(page.getByText('Payment confirmed. Your order is ready!')).toBeVisible({ timeout: 60_000 });
@@ -155,7 +177,7 @@ test('customer can submit a return request for the delivered demo item', async (
   await expect(page.getByRole('heading', { name: 'Request a return' })).toBeVisible();
   await page.getByLabel('Describe the issue').fill('E2E return request for the delivered demo item.');
   await page.getByRole('button', { name: 'Submit return request' }).click();
-  await page.waitForURL(/\/profile\/returns\/[0-9a-f-]{36}$/);
+  await page.waitForURL(/\/profile\/returns\/[0-9a-f-]{36}$/, { waitUntil: 'domcontentloaded', timeout: 120_000 });
 
   await testInfo.attach('created-return.json', {
     body: JSON.stringify({ returnUrl: page.url(), itemId }, null, 2),

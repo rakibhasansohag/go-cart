@@ -28,6 +28,12 @@ export async function signInAs(page: Page, role: E2ERole): Promise<void> {
     throw new Error(`${roleEnvKeys[role]} is required for protected E2E tests.`);
   }
 
+  // Keep the unrelated daily reward overlay from covering protected journeys.
+  await page.addInitScript(() => {
+    const today = new Date().toISOString().slice(0, 10);
+    window.localStorage.setItem(`gocart_checkin_dismissed_${today}`, 'true');
+  });
+
   // Clerk's server-side testing helper avoids UI MFA/email-code flows while
   // still exercising the real Clerk session and middleware integration.
   await page.goto('/');

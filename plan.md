@@ -679,11 +679,11 @@ Goal: protect the critical marketplace workflows before production deployment.
   keyboard search, empty search, empty cart continuation, and unauthenticated
   checkout redirect. The isolated Docker seed is now bound to the synchronized
   Clerk customer, seller, and admin IDs, including 1,000 customer orders and the
-  seller demo store. The local protected suite now passes all 11 Clerk setup,
-  customer, seller, and admin checks with a 90-second protected-test budget for
-  Windows cold compilation. Next development redirects and browser teardown can
-  still emit non-blocking hook/stream warnings, while production build and all
-  route/content assertions pass.
+  seller demo store. The local protected suite now passes 14/14 enabled Clerk
+  setup, customer, seller, and admin checks with a one-test opt-in Stripe
+  sandbox payment that also passes end to end. A single local retry is supported
+  for transient Next development-server failures during cold Windows compilation;
+  browser teardown can still emit non-blocking hook/stream warnings.
 
 - [x] **Phase 12.1 — Test infrastructure**
   - [x] Add Vitest unit-test tooling and deterministic fixtures
@@ -749,11 +749,18 @@ Goal: protect the critical marketplace workflows before production deployment.
         keyboard-continuation coverage against the isolated test environment
   - [x] Add opt-in protected customer tracking, seller fulfillment workspace, and
         admin delivery-health authorization specs
-  - [x] Verify four protected role-boundary checks and six authenticated commerce
-        surfaces plus Clerk setup in Chromium (11/11 passing locally)
-  - [ ] Cover browse → cart → checkout → payment → order history
-  - [ ] Cover seller fulfillment → shipment tracking → delivery
+  - [x] Verify four protected role-boundary checks and ten authenticated commerce
+        surfaces plus Clerk setup in Chromium (14/14 enabled tests passing
+        locally; Stripe payment is separately opt-in)
+  - [x] Cover public browse plus seeded customer cart → checkout → Stripe sandbox
+        payment → order details/order history; the protected browser flow passes
+        with the opt-in `E2E_STRIPE_PAYMENT=true` flag
+  - [ ] Cover seller fulfillment → shipment tracking → delivery (workspace,
+        package-status, and tracking read assertions are present; carrier/delivery
+        mutations remain)
   - [ ] Cover delivered item → return request → decision → refund/restock
+        (request submission is covered; seller/admin decision and refund effects
+        remain)
   - [ ] Cover keyboard-only search, checkout, and critical admin/seller actions
         end to end; public search/cart keyboard checks are complete, while
         authenticated checkout and dashboard keyboard mutation paths remain open

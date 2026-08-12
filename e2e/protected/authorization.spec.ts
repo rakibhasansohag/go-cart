@@ -8,24 +8,24 @@ test.skip(
 
 test('customer cannot access the admin dashboard', async ({ page }) => {
   await signInAs(page, 'customer');
-  await page.goto('/dashboard/admin');
+  await page.goto('/dashboard/admin', { waitUntil: 'domcontentloaded', timeout: 120_000 });
   await expect(page).toHaveURL(/\/$/);
 });
 
 test('seller cannot access the admin dashboard', async ({ page }) => {
   await signInAs(page, 'seller');
-  await page.goto('/dashboard/admin');
+  await page.goto('/dashboard/admin', { waitUntil: 'domcontentloaded', timeout: 120_000 });
   await expect(page).toHaveURL(/\/$/);
 });
 
 test('admin can access the admin dashboard', async ({ page }) => {
   await signInAs(page, 'admin');
-  await page.goto('/dashboard/admin');
+  await page.goto('/dashboard/admin', { waitUntil: 'domcontentloaded', timeout: 120_000 });
   await expect(page).toHaveURL(/\/dashboard\/admin/);
 });
 
 test('customer cannot access the seller dashboard', async ({ page }) => {
   await signInAs(page, 'customer');
-  await page.goto('/dashboard/seller');
+  await page.goto('/dashboard/seller', { waitUntil: 'domcontentloaded', timeout: 120_000 });
   await expect(page).toHaveURL(/\/$/);
 });
