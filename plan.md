@@ -580,15 +580,19 @@ shipment tracking → Phase 12 CI and end-to-end coverage`.
 issue an idempotent Stripe refund for a refund-pending request. The durable
 `RefundTransaction` records provider state and the signed `charge.refunded`
 webhook reconciles pending transactions, return status, payment status, and
-customer notifications. A live Stripe sandbox refund test remains required
-before marking the phase complete; PayPal refunds remain open.
+customer notifications. The live Stripe sandbox refund test now passes through
+provider refund creation, local webhook reconciliation, and partial inventory
+restock; PayPal refunds remain open.
 
 **Provider E2E checkpoint (August 13, 2026):** The opt-in protected Stripe
 sandbox checkout passed against the isolated Docker database and production E2E
 server (`e2e/protected/provider-payments.spec.ts`). PayPal sandbox OAuth
-authentication also passed. Full PayPal browser checkout and provider refund
-coverage remain pending until a dedicated PayPal sandbox buyer account and a
-captured sandbox payment are available.
+authentication also passed. The dedicated Stripe settlement probe
+(`test:stripe:refund:local`) created a real sandbox payment, issued a partial
+refund, reconciled the provider event, and verified one-unit idempotent
+restocking. Full PayPal browser checkout and provider refund coverage remain
+pending until a dedicated PayPal sandbox buyer account and a captured sandbox
+payment are available.
 
 - [x] **Phase 10.7 — Inventory and order synchronization**
   - [x] Restock only received and restockable returned quantities through an admin-only, idempotent reconciliation action
@@ -596,7 +600,7 @@ captured sandbox payment are available.
   - [x] Aggregate terminal partial-return quantities across requests and finalize an order line only when its full quantity is refunded or exchanged
   - [x] Handle damaged-item disposition and rejected-return inventory outcomes
   - [x] Refresh admin return, inventory, and order caches after reconciliation
-  - **Test**: Unit coverage for existing return transitions passes; a live partial/full restock scenario remains before phase completion
+  - **Test**: Unit coverage and a live partial refund/restock scenario pass; a live full-settlement restock scenario remains before phase completion
 
 ---
 
@@ -774,9 +778,10 @@ Goal: protect the critical marketplace workflows before production deployment.
         a stable browser result, although the server transition and database
         invariants pass in unit/integration coverage)
   - [ ] Cover delivered item → return request → decision → refund/restock
-        (the browser now covers seller approval, customer shipment, seller
-        receipt, and admin refund review through `REFUND_PENDING`; live provider
-        refund and inventory reconciliation remain)
+        (the browser covers seller approval, customer shipment, seller receipt,
+        and admin refund review through `REFUND_PENDING`; the isolated provider
+        probe covers live Stripe partial refund and restock, while the complete
+        browser refund action and PayPal path remain open)
   - [ ] Cover keyboard-only search, checkout, and critical admin/seller actions
         end to end; public search/cart keyboard checks are complete, while
         authenticated checkout and dashboard keyboard mutation paths remain open

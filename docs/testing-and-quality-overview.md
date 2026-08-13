@@ -1,6 +1,6 @@
 # GoCart Testing & Quality Overview
 
-**Last reviewed:** 2026-08-12  
+**Last reviewed:** 2026-08-13
 **Purpose:** explain what we test, why each layer exists, how to run it, how to inspect the output, and what must be updated when a new feature is added.
 
 This document is the project map for verification. `docs/testing.md` remains the short command reference. `plan.md` remains the roadmap and acceptance checklist.
@@ -44,17 +44,20 @@ The latest local verification established:
 - Public Chromium smoke passed 6/6.
 - Protected Chromium passed 14/14 enabled tests.
 - Stripe sandbox card confirmation passed separately with `E2E_STRIPE_PAYMENT=true`.
+- Stripe sandbox partial refund and inventory reconciliation passed with
+  `E2E_STRIPE_REFUND=true`.
 - Production Next.js build passed.
 - ESLint reported 0 errors and 165 existing warnings.
 - The isolated Docker database seeded 1,000 deterministic demo orders.
 - The deterministic return browser journey passed through seller approval,
   customer shipment, seller receipt, and `REFUND_PENDING`; the admin browser
-  view exposed the live-refund action. The fixture uses a fake Stripe payment
-  intent, so the external refund call is intentionally not triggered by this
-  browser test; provider refund settlement is covered by the isolated
-  integration/webhook checks.
+  view exposed the live-refund action. The browser fixture intentionally uses a
+  fake Stripe payment intent. The dedicated provider settlement probe creates a
+  real Stripe sandbox payment, issues a partial refund, replays the provider
+  refund event, and verifies one-unit inventory reconciliation with an
+  idempotent replay.
 
-This does not mean every production workflow is complete. The remaining high-value browser gaps are seller delivery/carrier mutations, external refund/restock effects, and authenticated keyboard-only actions. Track those in `plan.md` under Phase 12.3.
+This does not mean every production workflow is complete. The remaining high-value browser gaps are seller delivery/carrier mutations, full browser refund/restock actions, and authenticated keyboard-only actions. Track those in `plan.md` under Phase 12.3.
 
 ## How the test database works
 
@@ -181,7 +184,25 @@ account. The client ID and secret alone authenticate GoCart as the merchant;
 they cannot approve a buyer transaction. Do not add buyer credentials to source
 control or CI logs.
 
-### 7. Run static checks and the production build
+### 7. Run the real Stripe sandbox refund and restock
+
+This is opt-in because it creates a real Stripe test payment and refund. The
+local database fixture is restored afterward; the Stripe test objects remain in
+the test account for audit history:
+
+```powershell
+bun run db:e2e:prepare
+$env:E2E_STRIPE_REFUND='true'
+bun run test:stripe:refund:local
+Remove-Item Env:E2E_STRIPE_REFUND -ErrorAction SilentlyContinue
+```
+
+The command verifies the provider refund, local `RefundTransaction`, refund
+event reconciliation, partial `PaymentStatus`, one-unit inventory restock,
+and idempotent replay. It requires only the seeded E2E admin/customer and
+Stripe sandbox credentials.
+
+### 8. Run static checks and the production build
 
 ```powershell
 bun run typecheck

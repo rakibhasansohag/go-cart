@@ -73,6 +73,18 @@ if (action === 'up') {
 	run('docker', [...compose, 'up', '-d', 'postgres']);
 	run('bun', ['x', 'prisma', 'migrate', 'deploy'], env);
 	run('bun', ['prisma/integration-check.ts'], env);
+} else if (action === 'stripe-refund') {
+	const env = validatedE2EEnv();
+	const stripeRefundEnv = { ...env, E2E_STRIPE_REFUND: env.E2E_STRIPE_REFUND ?? process.env.E2E_STRIPE_REFUND ?? '' };
+	if (stripeRefundEnv.E2E_STRIPE_REFUND?.toLowerCase() !== 'true') {
+		throw new Error('Set E2E_STRIPE_REFUND=true to run the external Stripe refund test.');
+	}
+	run('docker', [...compose, 'up', '-d', 'postgres']);
+	run('bun', ['x', 'prisma', 'migrate', 'deploy'], stripeRefundEnv);
+	if (env.E2E_PROTECTED?.toLowerCase() === 'true') run('bun', ['prisma/sync-e2e-users.ts'], stripeRefundEnv);
+	run('bun', ['prisma/seed-demo.ts'], stripeRefundEnv);
+	run('bun', ['prisma/seed-e2e-commerce.ts'], stripeRefundEnv);
+	run('bun', ['scripts/e2e-stripe-refund.ts'], stripeRefundEnv);
 } else if (action === 'server') {
 	const env = validatedE2EEnv();
 	// Preparation already generated Prisma and applied migrations. Starting
@@ -103,5 +115,5 @@ if (action === 'up') {
 	}
 	run('bunx', ['playwright', 'test', ...process.argv.slice(3)], env);
 } else {
-	throw new Error(`Unknown action: ${action}. Use up, prepare, sync-users, integration, server, server:prod, build:e2e, test, reset, or down.`);
+	throw new Error(`Unknown action: ${action}. Use up, prepare, sync-users, integration, stripe-refund, server, server:prod, build:e2e, test, reset, or down.`);
 }
