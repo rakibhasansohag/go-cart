@@ -165,11 +165,21 @@ This is opt-in because it creates a Stripe test PaymentIntent and a local test o
 ```powershell
 bun run db:e2e:prepare
 $env:E2E_STRIPE_PAYMENT='true'
-bun run test:e2e:local --project=protected-chromium --workers=1 --grep=confirm
+bun run test:e2e:local e2e/protected/provider-payments.spec.ts --project=protected-chromium --workers=1
 Remove-Item Env:E2E_STRIPE_PAYMENT -ErrorAction SilentlyContinue
 ```
 
 This uses Stripe's test card flow, verifies the PaymentIntent on the server, and checks that the order becomes paid. It does not use live payment data.
+
+The provider test is a separate spec because the normal serial commerce suite
+consumes its seeded cart while testing order creation. Running the provider spec
+directly gives it a fresh cart from `db:e2e:prepare`.
+
+The PayPal merchant credentials can be checked safely with the sandbox OAuth
+probe, but a complete browser checkout also requires a PayPal sandbox buyer
+account. The client ID and secret alone authenticate GoCart as the merchant;
+they cannot approve a buyer transaction. Do not add buyer credentials to source
+control or CI logs.
 
 ### 7. Run static checks and the production build
 

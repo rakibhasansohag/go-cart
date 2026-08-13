@@ -583,6 +583,13 @@ webhook reconciles pending transactions, return status, payment status, and
 customer notifications. A live Stripe sandbox refund test remains required
 before marking the phase complete; PayPal refunds remain open.
 
+**Provider E2E checkpoint (August 13, 2026):** The opt-in protected Stripe
+sandbox checkout passed against the isolated Docker database and production E2E
+server (`e2e/protected/provider-payments.spec.ts`). PayPal sandbox OAuth
+authentication also passed. Full PayPal browser checkout and provider refund
+coverage remain pending until a dedicated PayPal sandbox buyer account and a
+captured sandbox payment are available.
+
 - [x] **Phase 10.7 — Inventory and order synchronization**
   - [x] Restock only received and restockable returned quantities through an admin-only, idempotent reconciliation action
   - [x] Update fully returned/refunded item, group, and overall order statuses consistently; preserve delivered aggregate status for partial returns
