@@ -46,18 +46,23 @@ The latest local verification established:
 - Stripe sandbox card confirmation passed separately with `E2E_STRIPE_PAYMENT=true`.
 - Stripe sandbox partial refund and inventory reconciliation passed with
   `E2E_STRIPE_REFUND=true`.
+- Protected admin browser refund and inventory reconciliation passed with
+  `E2E_BROWSER_REFUND=true`, including a real Stripe sandbox refund and
+  persisted `PartiallyRefunded` order state.
 - Production Next.js build passed.
 - ESLint reported 0 errors and 165 existing warnings.
 - The isolated Docker database seeded 1,000 deterministic demo orders.
 - The deterministic return browser journey passed through seller approval,
-  customer shipment, seller receipt, and `REFUND_PENDING`; the admin browser
-  view exposed the live-refund action. The browser fixture intentionally uses a
-  fake Stripe payment intent. The dedicated provider settlement probe creates a
-  real Stripe sandbox payment, issues a partial refund, replays the provider
-  refund event, and verifies one-unit inventory reconciliation with an
-  idempotent replay.
+  customer shipment, seller receipt, admin refund, and inventory reconciliation.
+  The browser refund fixture creates a real Stripe sandbox payment, performs
+  the admin mutation, verifies one-unit restocking, and restores the isolated
+  Docker fixture afterward. The dedicated provider settlement probe separately
+  verifies refund-event replay and idempotent reconciliation.
 
-This does not mean every production workflow is complete. The remaining high-value browser gaps are seller delivery/carrier mutations, full browser refund/restock actions, and authenticated keyboard-only actions. Track those in `plan.md` under Phase 12.3.
+This does not mean every production workflow is complete. The remaining
+high-value browser gaps are seller delivery/carrier mutations, authenticated
+keyboard-only actions, PayPal browser checkout/refund, and live full-settlement
+coverage. Track those in `plan.md` under Phase 12.3 and the payment roadmap.
 
 ## How the test database works
 
@@ -201,6 +206,22 @@ The command verifies the provider refund, local `RefundTransaction`, refund
 event reconciliation, partial `PaymentStatus`, one-unit inventory restock,
 and idempotent replay. It requires only the seeded E2E admin/customer and
 Stripe sandbox credentials.
+
+### 7b. Run the real browser refund journey
+
+This opt-in command creates a real Stripe sandbox payment for the deterministic
+delivered return, signs in as the synchronized Clerk admin, issues the refund
+from `/dashboard/admin/returns`, reconciles the received unit, verifies Stripe
+and PostgreSQL state, and reseeds the fixture during cleanup:
+
+```powershell
+$env:E2E_BROWSER_REFUND='true'
+bun run test:stripe:browser-refund:local
+Remove-Item Env:E2E_BROWSER_REFUND -ErrorAction SilentlyContinue
+```
+
+It is intentionally local/sandbox-only. The external Stripe test objects remain
+in the sandbox account for audit history; the Docker database fixture is reset.
 
 ### 8. Run static checks and the production build
 
@@ -378,23 +399,20 @@ Copy this section into a feature PR description, issue, or future planning note:
 
 Completed foundations include unit tooling, Docker integration data, deterministic seeding, public smoke tests, Clerk role synchronization, protected authorization, checkout/order creation, Stripe sandbox payment verification, seller package-status mutation, customer return submission, and CI build/test jobs.
 
-The next practical browser milestone is:
+The next practical browser milestones are:
 
 1. seller package progression through shipment and delivery;
-2. customer delivered-item return request;
-3. seller/admin decision;
-4. refund and inventory-restock confirmation;
-5. keyboard-only verification for authenticated checkout and dashboard actions.
+2. keyboard-only verification for authenticated checkout and dashboard actions;
+3. PayPal sandbox buyer checkout/refund and live full-settlement coverage.
 
 When those are implemented, update this document and `plan.md` with the exact test names and pass counts. That keeps the project understandable months later and prevents “implemented” from being confused with “verified.”
 
-The current phase has added a deterministic delivered return fixture at
+The current phase uses a deterministic delivered return fixture at
 `demoFixtureId('return', 5)`. `bun run db:e2e:prepare` recreates it safely in the
-isolated Docker database. The browser mutation probes exposed two remaining
-gaps rather than being counted as passes: the admin order search/action journey
-did not return a stable target row, and the seller return decision did not yet
-prove a persisted transition. Keep these items open until a rerun verifies both
-the visible state and the database state.
+isolated Docker database. The protected browser refund journey now verifies the
+visible admin mutation and persisted provider/database result; keep seller
+delivery and authenticated keyboard mutations open until their browser results
+are similarly verified.
 
 ## Safety rules
 

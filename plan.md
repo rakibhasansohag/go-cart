@@ -594,6 +594,14 @@ restocking. Full PayPal browser checkout and provider refund coverage remain
 pending until a dedicated PayPal sandbox buyer account and a captured sandbox
 payment are available.
 
+**Browser refund checkpoint (August 13, 2026):** The opt-in
+`test:stripe:browser-refund:local` journey passed with Clerk admin authorization,
+a real Stripe sandbox refund, `REFUNDED` return state, one-unit inventory
+reconciliation, Stripe refund verification, and `PartiallyRefunded` order
+payment status. The admin action uses a native accessible select and the test
+restores the deterministic Docker fixture after every run. PayPal browser
+refund coverage and live full-settlement coverage remain open.
+
 - [x] **Phase 10.7 — Inventory and order synchronization**
   - [x] Restock only received and restockable returned quantities through an admin-only, idempotent reconciliation action
   - [x] Update fully returned/refunded item, group, and overall order statuses consistently; preserve delivered aggregate status for partial returns
@@ -777,11 +785,10 @@ Goal: protect the critical marketplace workflows before production deployment.
         mutation remains open because the local protected runner timed out before
         a stable browser result, although the server transition and database
         invariants pass in unit/integration coverage)
-  - [ ] Cover delivered item → return request → decision → refund/restock
-        (the browser covers seller approval, customer shipment, seller receipt,
-        and admin refund review through `REFUND_PENDING`; the isolated provider
-        probe covers live Stripe partial refund and restock, while the complete
-        browser refund action and PayPal path remain open)
+  - [x] Cover delivered item → return request → decision → refund/restock
+        (the protected browser journey now performs the admin Stripe sandbox
+        refund and inventory reconciliation, then verifies the provider and
+        Docker database state; PayPal browser coverage remains open)
   - [ ] Cover keyboard-only search, checkout, and critical admin/seller actions
         end to end; public search/cart keyboard checks are complete, while
         authenticated checkout and dashboard keyboard mutation paths remain open

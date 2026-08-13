@@ -70,7 +70,7 @@ async function setup() {
 }
 
 async function verify() {
-	const { item, order, paymentDetails } = await getFixture();
+	const { order, paymentDetails } = await getFixture();
 	const request = await db.returnRequest.findUnique({
 		where: { id: demoFixtureId('return', 5) },
 		include: { items: true, transactions: { orderBy: { createdAt: 'desc' } } },
