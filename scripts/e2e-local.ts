@@ -34,14 +34,18 @@ function validatedE2EEnv(): Record<string, string> {
 	return env;
 }
 
-function run(command: string, args: string[], env?: Record<string, string>) {
+function run(command: string, args: string[], env?: Record<string, string>, exitOnFailure = true) {
 	const result = spawnSync(command, args, {
 		stdio: 'inherit',
 		env: env ? { ...process.env, ...env } : process.env,
 		shell: process.platform === 'win32',
 	});
 	if (result.error) throw result.error;
-	if (result.status !== 0) process.exit(result.status ?? 1);
+	if (result.status !== 0) {
+		if (exitOnFailure) process.exit(result.status ?? 1);
+		return result.status ?? 1;
+	}
+	return 0;
 }
 
 const action = process.argv[2] ?? 'prepare';
@@ -85,6 +89,23 @@ if (action === 'up') {
 	run('bun', ['prisma/seed-demo.ts'], stripeRefundEnv);
 	run('bun', ['prisma/seed-e2e-commerce.ts'], stripeRefundEnv);
 	run('bun', ['scripts/e2e-stripe-refund.ts'], stripeRefundEnv);
+} else if (action === 'stripe-browser-refund') {
+	const env = validatedE2EEnv();
+	const browserRefundEnv = { ...env, E2E_BROWSER_REFUND: env.E2E_BROWSER_REFUND ?? process.env.E2E_BROWSER_REFUND ?? '', E2E_SKIP_BROWSER_INSTALL: 'true' };
+	if (browserRefundEnv.E2E_BROWSER_REFUND?.toLowerCase() !== 'true') {
+		throw new Error('Set E2E_BROWSER_REFUND=true to run the browser refund test.');
+	}
+	let testStatus = 1;
+	try {
+		run('bun', ['--no-env-file', 'scripts/e2e-local.ts', 'prepare'], browserRefundEnv);
+		run('bun', ['scripts/e2e-stripe-browser-refund.ts', 'setup'], browserRefundEnv);
+		testStatus = run('bun', ['--no-env-file', 'scripts/e2e-local.ts', 'test', 'e2e/protected/provider-refund.spec.ts', '--project=protected-chromium', '--workers=1'], browserRefundEnv, false);
+		if (testStatus === 0) run('bun', ['scripts/e2e-stripe-browser-refund.ts', 'verify'], browserRefundEnv);
+	} finally {
+		// Recreate the deterministic request/payment fixture even if the browser fails midway.
+		run('bun', ['--no-env-file', 'scripts/e2e-local.ts', 'prepare'], browserRefundEnv);
+	}
+	if (testStatus !== 0) process.exit(testStatus);
 } else if (action === 'server') {
 	const env = validatedE2EEnv();
 	// Preparation already generated Prisma and applied migrations. Starting
@@ -115,5 +136,5 @@ if (action === 'up') {
 	}
 	run('bunx', ['playwright', 'test', ...process.argv.slice(3)], env);
 } else {
-	throw new Error(`Unknown action: ${action}. Use up, prepare, sync-users, integration, stripe-refund, server, server:prod, build:e2e, test, reset, or down.`);
+	throw new Error(`Unknown action: ${action}. Use up, prepare, sync-users, integration, stripe-refund, stripe-browser-refund, server, server:prod, build:e2e, test, reset, or down.`);
 }
