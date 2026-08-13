@@ -47,8 +47,14 @@ The latest local verification established:
 - Production Next.js build passed.
 - ESLint reported 0 errors and 165 existing warnings.
 - The isolated Docker database seeded 1,000 deterministic demo orders.
+- The deterministic return browser journey passed through seller approval,
+  customer shipment, seller receipt, and `REFUND_PENDING`; the admin browser
+  view exposed the live-refund action. The fixture uses a fake Stripe payment
+  intent, so the external refund call is intentionally not triggered by this
+  browser test; provider refund settlement is covered by the isolated
+  integration/webhook checks.
 
-This does not mean every production workflow is complete. The remaining high-value browser gaps are seller delivery/carrier mutations, return decisions, refund/restock effects, and authenticated keyboard-only actions. Track those in `plan.md` under Phase 12.3.
+This does not mean every production workflow is complete. The remaining high-value browser gaps are seller delivery/carrier mutations, external refund/restock effects, and authenticated keyboard-only actions. Track those in `plan.md` under Phase 12.3.
 
 ## How the test database works
 
@@ -125,6 +131,22 @@ bun run test:e2e:local --project=protected-chromium --workers=1
 ```
 
 The protected suite covers role boundaries, checkout/order creation, order history and tracking, seller fulfillment access, package status mutation, customer return submission, and admin operations. It uses the synchronized Clerk test users and the Docker database.
+
+For the most stable local Windows run, use the production-mode E2E server after
+building with the merged staging/E2E environment. This avoids repeated cold
+development compilation and keeps the normal Shopify/other-project server on
+port 3002 unrelated:
+
+```powershell
+bun run db:e2e:prepare
+bun run build:e2e
+# Terminal 1
+bun --no-env-file scripts/e2e-local.ts server:prod
+# Terminal 2
+$env:PLAYWRIGHT_BASE_URL='http://localhost:3100'
+$env:E2E_SKIP_BROWSER_INSTALL='true'
+bun run test:e2e:local --project=protected-chromium --workers=1
+```
 
 For a known cold-start timing issue on Windows, allow one local retry:
 

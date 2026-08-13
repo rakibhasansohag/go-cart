@@ -686,10 +686,10 @@ Goal: protect the critical marketplace workflows before production deployment.
   browser teardown can still emit non-blocking hook/stream warnings. The isolated
   commerce seed now also creates a deterministic delivered return request for
   the configured Clerk customer and seller store; its seller/admin mutation
-  journey remains deliberately open until the browser action and persisted state
-  are both stable. The latest source and database checks pass, but the local
-  protected runner timed out while starting the isolated Next server, so no new
-  browser mutation pass is claimed.
+  journey now passes through `REFUND_PENDING` with six audit events and one
+  received unit persisted in Docker; external refund settlement remains covered
+  by the isolated provider/webhook checks because the browser fixture uses fake
+  Stripe payment intent `demo_pi_6`.
 
 - [x] **Phase 12.1 — Test infrastructure**
   - [x] Add Vitest unit-test tooling and deterministic fixtures
@@ -767,9 +767,9 @@ Goal: protect the critical marketplace workflows before production deployment.
         a stable browser result, although the server transition and database
         invariants pass in unit/integration coverage)
   - [ ] Cover delivered item → return request → decision → refund/restock
-        (a deterministic delivered return fixture is now seeded; request
-        submission is covered, while seller/admin decision and refund effects
-        remain)
+        (the browser now covers seller approval, customer shipment, seller
+        receipt, and admin refund review through `REFUND_PENDING`; live provider
+        refund and inventory reconciliation remain)
   - [ ] Cover keyboard-only search, checkout, and critical admin/seller actions
         end to end; public search/cart keyboard checks are complete, while
         authenticated checkout and dashboard keyboard mutation paths remain open

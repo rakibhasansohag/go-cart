@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { demoFixtureId, demoPackageReference, signInAs } from './fixtures';
+import { demoFixtureId, demoPackageReference, demoReturnReference, signInAs } from './fixtures';
 
 test.skip(
   process.env.E2E_PROTECTED !== 'true' || process.env.E2E_COMMERCE !== 'true',
@@ -184,6 +184,54 @@ test('customer can submit a return request for the delivered demo item', async (
     contentType: 'application/json',
   });
   await expect(page.getByText(/Return request/i).first()).toBeVisible();
+});
+
+test('seller and customer can advance the deterministic return to Received', async ({ page }) => {
+  const returnReference = demoReturnReference(5);
+  const returnId = demoFixtureId('return', 5);
+
+  await signInAs(page, 'seller');
+  await page.goto('/dashboard/seller/stores/gocart-demo-store/returns');
+  const sellerRow = page.locator('tbody tr').filter({ hasText: returnReference });
+  await expect(sellerRow).toBeVisible({ timeout: 30_000 });
+
+  const sellerStatus = sellerRow.getByRole('button', { name: /Change return status from Requested/i });
+  await sellerStatus.click();
+  await page.getByRole('menuitem', { name: 'Approved', exact: true }).click();
+  await expect(sellerRow).toContainText('Approved', { timeout: 30_000 });
+
+  await sellerRow.getByRole('button', { name: /Change return status from Approved/i }).click();
+  await page.getByRole('menuitem', { name: 'Awaiting shipment', exact: true }).click();
+  await expect(sellerRow).toContainText('Awaiting shipment', { timeout: 30_000 });
+
+  await signInAs(page, 'customer');
+  await page.goto(`/profile/returns/${returnId}`);
+  await expect(page.getByText('Awaiting shipment', { exact: true }).first()).toBeVisible();
+  await page.getByRole('button', { name: 'Mark as shipped' }).click();
+  await expect(page.getByText('Return in transit', { exact: true }).first()).toBeVisible({ timeout: 30_000 });
+
+  await signInAs(page, 'seller');
+  await page.goto('/dashboard/seller/stores/gocart-demo-store/returns');
+  const inTransitRow = page.locator('tbody tr').filter({ hasText: returnReference });
+  await expect(inTransitRow).toContainText('Return in transit', { timeout: 30_000 });
+  await inTransitRow.getByRole('button', { name: /Change return status from Return in transit/i }).click();
+  await page.getByRole('menuitem', { name: 'Received', exact: true }).click();
+  await expect(inTransitRow).toContainText('Received', { timeout: 30_000 });
+
+  await inTransitRow.getByRole('button', { name: /Change return status from Received/i }).click();
+  await page.getByRole('menuitem', { name: 'Refund pending', exact: true }).click();
+  await expect(inTransitRow).toContainText('Refund pending', { timeout: 30_000 });
+});
+
+test('admin can review the deterministic refund-pending return without issuing a live refund', async ({ page }) => {
+  await signInAs(page, 'admin');
+  await page.goto('/dashboard/admin/returns');
+
+  const adminRow = page.locator('tbody tr').filter({ hasText: demoReturnReference(5) });
+  await expect(adminRow).toBeVisible({ timeout: 30_000 });
+  await expect(adminRow).toContainText('Refund pending');
+  await adminRow.getByRole('button', { name: 'Choose next step' }).click();
+  await expect(page.getByRole('menuitem', { name: 'Issue payment refund', exact: true })).toBeVisible();
 });
 
 test('admin can reach delivery health operations', async ({ page }) => {

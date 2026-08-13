@@ -82,6 +82,18 @@ if (action === 'up') {
 		...env,
 		PORT: env.E2E_PORT ?? '3100',
 	});
+} else if (action === 'server:prod') {
+	const env = validatedE2EEnv();
+	// Production-mode E2E avoids repeated cold development compilation on
+	// Windows while still using the isolated database and Clerk test users.
+	run('bun', ['x', 'next', 'start'], {
+		...env,
+		PORT: env.E2E_PORT ?? '3100',
+	});
+} else if (action === 'build:e2e') {
+	const env = validatedE2EEnv();
+	run('bun', ['prisma', 'generate'], env);
+	run('bun', ['x', 'next', 'build'], env);
 } else if (action === 'test') {
 	const env = validatedE2EEnv();
 	// Playwright keeps browser binaries outside node_modules. Installing the
@@ -91,5 +103,5 @@ if (action === 'up') {
 	}
 	run('bunx', ['playwright', 'test', ...process.argv.slice(3)], env);
 } else {
-	throw new Error(`Unknown action: ${action}. Use up, prepare, sync-users, integration, server, test, reset, or down.`);
+	throw new Error(`Unknown action: ${action}. Use up, prepare, sync-users, integration, server, server:prod, build:e2e, test, reset, or down.`);
 }
