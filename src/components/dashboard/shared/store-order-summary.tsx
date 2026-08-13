@@ -86,7 +86,6 @@ const StoreOrderSummary: FC<Props> = ({ group }) => {
 								groupId={group.id}
 								orderId={group.order.id}
 								status={group.packageStatus}
-								contentAlign='start'
 							/>
 							{group.shipment && (
 								<ShipmentStatusTag status={group.shipment.status} />

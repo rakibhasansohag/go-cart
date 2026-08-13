@@ -10,14 +10,6 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from '@/components/ui/dialog';
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuLabel,
-	DropdownMenuSeparator,
-	DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { Label } from '@/components/ui/label';
 import {
 	getAllowedShipmentTransitions,
@@ -34,7 +26,6 @@ import {
 } from '@prisma/client';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { Check, LockKeyhole } from 'lucide-react';
 
 const FAILURE_REASONS = [
 	['CUSTOMER_UNAVAILABLE', 'Customer unavailable'],
@@ -83,6 +74,7 @@ export default function ShipmentStatusSelect({
 	);
 	const [reasonCode, setReasonCode] = useState('CUSTOMER_UNAVAILABLE');
 	const [message, setMessage] = useState('');
+	const [selectedStatus, setSelectedStatus] = useState('');
 	const queryClient = useQueryClient();
 
 	useEffect(() => setCurrentStatus(status), [status]);
@@ -148,6 +140,7 @@ export default function ShipmentStatusSelect({
 	});
 
 	const chooseStatus = (nextStatus: ShipmentStatus) => {
+		setSelectedStatus('');
 		if (nextStatus === ShipmentStatus.DELIVERY_ATTEMPT_FAILED) {
 			setFailureOpen(true);
 			return;
@@ -180,74 +173,41 @@ export default function ShipmentStatusSelect({
 
 	return (
 		<>
-			<DropdownMenu>
-				<DropdownMenuTrigger asChild>
-					<button
-						type='button'
-						disabled={mutation.isPending}
-						aria-label={`Change shipment status. Current status: ${SHIPMENT_STATUS_LABELS[currentStatus]}`}
-						title={
-							mutation.isPending
-								? 'Updating shipment status…'
-								: `Change shipment status from ${SHIPMENT_STATUS_LABELS[currentStatus]}`
-						}
-						className='rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-60'
-					>
-						<ShipmentStatusTag status={currentStatus} />
-					</button>
-				</DropdownMenuTrigger>
-				<DropdownMenuContent
-					align='end'
-					sideOffset={6}
-					className='z-[100000] w-60'
-				>
-					<DropdownMenuLabel>Logistics steps</DropdownMenuLabel>
-					<DropdownMenuSeparator />
-					{SHIPMENT_STEPS.map((nextStatus) => {
-						const isCurrent = nextStatus === currentStatus;
-						const isAllowed = allowed.includes(nextStatus);
-						const currentIndex = SHIPMENT_STEPS.indexOf(
-							currentStatus as (typeof SHIPMENT_STEPS)[number],
-						);
-						const stepIndex = SHIPMENT_STEPS.indexOf(nextStatus);
-						return (
-							<DropdownMenuItem
-								key={nextStatus}
-								disabled={
-									mutation.isPending ||
-									isCurrent ||
-									!isAllowed ||
-									(currentStatus === ShipmentStatus.AWAITING_RECEIPT &&
-										packageStatus !== PackageStatus.HANDED_OFF)
-								}
-								onSelect={() => chooseStatus(nextStatus)}
-							>
-								<span className='flex w-full items-center justify-between gap-2'>
-									<span className='flex items-center gap-2'>
-										{stepIndex < currentIndex ? (
-											<Check
-												className='size-3.5 text-emerald-600'
-												aria-hidden='true'
-											/>
-										) : !isAllowed && !isCurrent ? (
-											<LockKeyhole
-												className='size-3.5 text-muted-foreground'
-												aria-hidden='true'
-											/>
-										) : null}
-										<ShipmentStatusTag status={nextStatus} />
-									</span>
-									{isCurrent && (
-										<span className='text-[11px] text-muted-foreground'>
-											Current
-										</span>
-									)}
-								</span>
-							</DropdownMenuItem>
-						);
-					})}
-				</DropdownMenuContent>
-			</DropdownMenu>
+			<select
+				aria-label={`Change shipment status. Current status: ${SHIPMENT_STATUS_LABELS[currentStatus]}`}
+				value={selectedStatus}
+				disabled={mutation.isPending}
+				className='rounded-md border border-border bg-background px-2 py-1 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-wait disabled:opacity-60'
+				onChange={(event) => {
+					const rawValue = event.currentTarget.value;
+					const nextStatus = (Object.values(ShipmentStatus).includes(rawValue as ShipmentStatus)
+						? rawValue
+						: Object.entries(SHIPMENT_STATUS_LABELS).find(([, label]) => label === rawValue)?.[0]) as ShipmentStatus | undefined;
+					if (nextStatus) chooseStatus(nextStatus);
+				}}
+			>
+				<option value='' disabled>
+					{SHIPMENT_STATUS_LABELS[currentStatus]}
+				</option>
+				{SHIPMENT_STEPS.map((nextStatus) => {
+					const isCurrent = nextStatus === currentStatus;
+					const isAllowed = allowed.includes(nextStatus);
+					const blockedUntilHandoff =
+						currentStatus === ShipmentStatus.AWAITING_RECEIPT &&
+						packageStatus !== PackageStatus.HANDED_OFF;
+					return (
+						<option
+							key={nextStatus}
+							value={nextStatus}
+							disabled={
+								mutation.isPending || isCurrent || !isAllowed || blockedUntilHandoff
+							}
+						>
+							{SHIPMENT_STATUS_LABELS[nextStatus]}
+						</option>
+					);
+				})}
+			</select>
 
 			<Dialog
 				open={confirmStatus !== null}

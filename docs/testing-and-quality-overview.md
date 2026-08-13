@@ -42,7 +42,9 @@ The latest local verification established:
 - 115/115 Vitest tests passed.
 - TypeScript passed.
 - Public Chromium smoke passed 6/6.
-- Protected Chromium passed 14/14 enabled tests.
+- Protected Chromium passed the previously enabled baseline journeys; the new
+  seller-handoff/delivery browser journey is still being stabilized on Windows
+  after the accessible status-control change.
 - Stripe sandbox card confirmation passed separately with `E2E_STRIPE_PAYMENT=true`.
 - Stripe sandbox partial refund and inventory reconciliation passed with
   `E2E_STRIPE_REFUND=true`.
@@ -188,6 +190,16 @@ probe, but a complete browser checkout also requires a PayPal sandbox buyer
 account. The client ID and secret alone authenticate GoCart as the merchant;
 they cannot approve a buyer transaction. Do not add buyer credentials to source
 control or CI logs.
+
+Run the merchant-only probe with:
+
+```powershell
+$env:E2E_PAYPAL_AUTH='true'
+bun run test:paypal:auth:local
+Remove-Item Env:E2E_PAYPAL_AUTH -ErrorAction SilentlyContinue
+```
+
+The probe authenticates against PayPal Sandbox without printing credentials.
 
 ### 7. Run the real Stripe sandbox refund and restock
 

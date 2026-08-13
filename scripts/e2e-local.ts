@@ -106,6 +106,13 @@ if (action === 'up') {
 		run('bun', ['--no-env-file', 'scripts/e2e-local.ts', 'prepare'], browserRefundEnv);
 	}
 	if (testStatus !== 0) process.exit(testStatus);
+} else if (action === 'paypal-auth') {
+	const env = validatedE2EEnv();
+	const paypalEnv = { ...env, E2E_PAYPAL_AUTH: env.E2E_PAYPAL_AUTH ?? process.env.E2E_PAYPAL_AUTH ?? '' };
+	if (paypalEnv.E2E_PAYPAL_AUTH?.toLowerCase() !== 'true') {
+		throw new Error('Set E2E_PAYPAL_AUTH=true to run the external PayPal sandbox authentication probe.');
+	}
+	run('bun', ['scripts/e2e-paypal.ts'], paypalEnv);
 } else if (action === 'server') {
 	const env = validatedE2EEnv();
 	// Preparation already generated Prisma and applied migrations. Starting
@@ -136,5 +143,5 @@ if (action === 'up') {
 	}
 	run('bunx', ['playwright', 'test', ...process.argv.slice(3)], env);
 } else {
-	throw new Error(`Unknown action: ${action}. Use up, prepare, sync-users, integration, stripe-refund, stripe-browser-refund, server, server:prod, build:e2e, test, reset, or down.`);
+	throw new Error(`Unknown action: ${action}. Use up, prepare, sync-users, integration, stripe-refund, stripe-browser-refund, paypal-auth, server, server:prod, build:e2e, test, reset, or down.`);
 }

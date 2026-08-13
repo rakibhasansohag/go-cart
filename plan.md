@@ -781,17 +781,18 @@ Goal: protect the critical marketplace workflows before production deployment.
         payment → order details/order history; the protected browser flow passes
         with the opt-in `E2E_STRIPE_PAYMENT=true` flag
   - [ ] Cover seller fulfillment → shipment tracking → delivery (workspace,
-        package-status, and tracking read assertions are present; the delivery
-        mutation remains open because the local protected runner timed out before
-        a stable browser result, although the server transition and database
-        invariants pass in unit/integration coverage)
+        package-status, and tracking read assertions are present; native
+        keyboard-accessible package/shipment controls are implemented, but the
+        complete local browser mutation remains open until a clean Windows run
+        completes without a timed-out worker changing the deterministic fixture)
   - [x] Cover delivered item → return request → decision → refund/restock
         (the protected browser journey now performs the admin Stripe sandbox
         refund and inventory reconciliation, then verifies the provider and
         Docker database state; PayPal browser coverage remains open)
   - [ ] Cover keyboard-only search, checkout, and critical admin/seller actions
-        end to end; public search/cart keyboard checks are complete, while
-        authenticated checkout and dashboard keyboard mutation paths remain open
+        end to end; public search/cart keyboard checks are complete, and the
+        authenticated checkout/dashboard specs now exercise native keyboard-safe
+        controls, pending a stable clean browser result
   - [ ] **Test**: The complete customer, seller, and admin journeys pass in supported browsers
 
 - [ ] **Phase 12.4 — Continuous integration**

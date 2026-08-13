@@ -15,7 +15,8 @@ test('customer can place the seeded cart order and see it in order history', asy
   await expect(page.getByRole('heading', { name: 'Shipping Addresses' })).toBeVisible();
   const placeOrder = page.getByRole('button', { name: 'Place order' });
   await expect(placeOrder).toBeEnabled();
-  await placeOrder.click();
+  await placeOrder.focus();
+  await placeOrder.press('Enter');
 
   await page.waitForURL(/\/order\/[0-9a-f-]{36}$/, { waitUntil: 'domcontentloaded', timeout: 120_000 });
   const orderId = new URL(page.url()).pathname.split('/').pop();
@@ -75,15 +76,63 @@ test('seller can advance a demo package to Accepted', async ({ page }) => {
   await page.goto('/dashboard/seller/stores/gocart-demo-store/orders');
 
   const demoRow = page.getByRole('row').filter({ hasText: demoPackageReference(0) });
-  const statusButton = demoRow.getByRole('button', { name: /Change package status\. Current status: Pending/i });
-  await expect(statusButton).toBeVisible();
-  await statusButton.click();
-  await expect(page.getByText('Preparation steps', { exact: true })).toBeVisible();
-  await page.getByRole('menuitem', { name: /Accepted/ }).click();
-  await expect(demoRow.getByRole('button', { name: /Change package status\. Current status: Accepted/i })).toBeVisible({ timeout: 30_000 });
+  const statusSelect = demoRow.getByRole('combobox', { name: /Change package status\. Current status: Pending/i });
+  await expect(statusSelect).toBeVisible();
+  await statusSelect.selectOption({ label: 'Accepted' });
+  await expect(demoRow.getByRole('combobox', { name: /Change package status\. Current status: Accepted/i })).toBeVisible({ timeout: 30_000 });
 
   await page.reload();
-  await expect(page.getByRole('row').filter({ hasText: demoPackageReference(0) }).getByRole('button', { name: /Change package status\. Current status: Accepted/i })).toBeVisible();
+  await expect(page.getByRole('row').filter({ hasText: demoPackageReference(0) }).getByRole('combobox', { name: /Change package status\. Current status: Accepted/i })).toBeVisible();
+});
+
+test('seller can advance a demo package through handoff with keyboard actions', async ({ page }) => {
+  test.setTimeout(180_000);
+  await signInAs(page, 'seller');
+  await page.goto('/dashboard/seller/stores/gocart-demo-store/orders');
+
+  const demoRow = page.getByRole('row').filter({ hasText: demoPackageReference(0) });
+  for (const [current, next] of [
+    ['Accepted', 'Processing'],
+    ['Processing', 'Ready for handoff'],
+    ['Ready for handoff', 'Handed off'],
+  ] as const) {
+    const statusSelect = demoRow.getByRole('combobox', { name: new RegExp(`Change package status\\. Current status: ${current}`, 'i') });
+    await expect(statusSelect).toBeVisible({ timeout: 30_000 });
+    await statusSelect.focus();
+    await statusSelect.selectOption({ label: next });
+    await expect(demoRow).toContainText(next, { timeout: 30_000 });
+  }
+});
+
+test('admin can advance the handed-off shipment to delivery with keyboard actions', async ({ page }) => {
+  test.setTimeout(240_000);
+  await signInAs(page, 'admin');
+  await page.goto('/dashboard/admin/orders');
+
+  const search = page.getByPlaceholder(/Search order, package, store, seller, customer, product or SKU/i);
+  await search.fill(demoPackageReference(0));
+  const demoRow = page.getByRole('row').filter({ hasText: demoPackageReference(0) });
+  await expect(demoRow).toBeVisible({ timeout: 30_000 });
+
+  for (const [current, next] of [
+    ['Awaiting receipt', 'Received at hub'],
+    ['Received at hub', 'Ready for dispatch'],
+    ['Ready for dispatch', 'In transit'],
+    ['In transit', 'Out for delivery'],
+    ['Out for delivery', 'Delivered'],
+  ] as const) {
+    const statusSelect = demoRow.getByRole('combobox', { name: new RegExp(`Change shipment status\\. Current status: ${current}`, 'i') });
+    await expect(statusSelect).toBeVisible({ timeout: 30_000 });
+    await statusSelect.focus();
+    await statusSelect.selectOption({ label: next });
+    await expect(demoRow).toContainText(next, { timeout: 30_000 });
+  }
+
+  await signInAs(page, 'customer');
+  await page.goto(`/order/${demoFixtureId('order', 0)}`);
+  await expect(page.getByRole('heading', { name: /Shipment tracking/i })).toBeVisible();
+  await expect(page.getByText('Delivered', { exact: true }).first()).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByText(/Tracking history/i)).toBeVisible();
 });
 
 test('customer can submit a return request for the delivered demo item', async ({ page }, testInfo) => {

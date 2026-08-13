@@ -40,10 +40,10 @@ export async function signInAs(page: Page, role: E2ERole): Promise<void> {
 
   // Clerk's server-side testing helper avoids UI MFA/email-code flows while
   // still exercising the real Clerk session and middleware integration.
-  await page.goto('/');
+  await page.goto('/', { waitUntil: 'domcontentloaded', timeout: 120_000 });
   // A single workflow may intentionally switch between customer, seller, and
   // admin actors. Clear the previous actor before creating the next session.
   await clerk.signOut({ page });
   await clerk.signIn({ page, emailAddress: email });
-  await page.goto('/');
+  await page.goto('/', { waitUntil: 'domcontentloaded', timeout: 120_000 });
 }

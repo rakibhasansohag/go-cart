@@ -17,6 +17,7 @@
 		"test:integration:local": "bun --no-env-file scripts/e2e-local.ts integration",
 		"test:stripe:refund:local": "bun --no-env-file scripts/e2e-local.ts stripe-refund",
 		"test:stripe:browser-refund:local": "bun --no-env-file scripts/e2e-local.ts stripe-browser-refund",
+		"test:paypal:auth:local": "bun --no-env-file scripts/e2e-local.ts paypal-auth",
 		"build:e2e": "bun --no-env-file scripts/e2e-local.ts build:e2e",
 		"db:e2e:reset": "bun --no-env-file scripts/e2e-local.ts reset",
 		"db:e2e:down": "bun --no-env-file scripts/e2e-local.ts down",
