@@ -42,9 +42,9 @@ The latest local verification established:
 - 115/115 Vitest tests passed.
 - TypeScript passed.
 - Public Chromium smoke passed 6/6.
-- Protected Chromium passed the previously enabled baseline journeys; the new
-  seller-handoff/delivery browser journey is still being stabilized on Windows
-  after the accessible status-control change.
+- Protected Chromium passed the baseline journeys plus the complete deterministic
+  seller handoff → admin delivery → customer tracking journey (4/4 checks in a
+  fresh isolated production-server run).
 - Stripe sandbox card confirmation passed separately with `E2E_STRIPE_PAYMENT=true`.
 - Stripe sandbox partial refund and inventory reconciliation passed with
   `E2E_STRIPE_REFUND=true`.
@@ -62,9 +62,9 @@ The latest local verification established:
   verifies refund-event replay and idempotent reconciliation.
 
 This does not mean every production workflow is complete. The remaining
-high-value browser gaps are seller delivery/carrier mutations, authenticated
-keyboard-only actions, PayPal browser checkout/refund, and live full-settlement
-coverage. Track those in `plan.md` under Phase 12.3 and the payment roadmap.
+provider-specific gap is PayPal browser checkout/refund, which requires a
+PayPal sandbox buyer account and an approved sandbox payment; the configured
+merchant credentials are sufficient only for OAuth authentication.
 
 ## How the test database works
 

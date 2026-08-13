@@ -40,7 +40,7 @@ test('customer can open the seeded order tracking timeline', async ({ page }) =>
   const response = await page.goto(`/order/${orderId}`);
   expect(response?.status()).toBe(200);
   await expect(page.getByRole('heading', { name: /Shipment tracking/i })).toBeVisible();
-  await expect(page.getByText(/Tracking history/i)).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Tracking history' })).toBeVisible();
 });
 
 test('customer can review order history and returns center', async ({ page }) => {
@@ -100,7 +100,11 @@ test('seller can advance a demo package through handoff with keyboard actions', 
     await expect(statusSelect).toBeVisible({ timeout: 30_000 });
     await statusSelect.focus();
     await statusSelect.selectOption({ label: next });
-    await expect(demoRow).toContainText(next, { timeout: 30_000 });
+    if (next === 'Handed off') {
+      await expect(demoRow.getByLabel('Package preparation complete: Handed off')).toBeVisible({ timeout: 30_000 });
+    } else {
+      await expect(demoRow.getByRole('combobox', { name: new RegExp(`Change package status\\. Current status: ${next}`, 'i') })).toBeVisible({ timeout: 30_000 });
+    }
   }
 });
 
@@ -125,7 +129,11 @@ test('admin can advance the handed-off shipment to delivery with keyboard action
     await expect(statusSelect).toBeVisible({ timeout: 30_000 });
     await statusSelect.focus();
     await statusSelect.selectOption({ label: next });
-    await expect(demoRow).toContainText(next, { timeout: 30_000 });
+    if (next === 'Delivered') {
+      await expect(demoRow.getByLabel('Shipment complete: Delivered')).toBeVisible({ timeout: 30_000 });
+    } else {
+      await expect(demoRow.getByRole('combobox', { name: new RegExp(`Change shipment status\\. Current status: ${next}`, 'i') })).toBeVisible({ timeout: 30_000 });
+    }
   }
 
   await signInAs(page, 'customer');

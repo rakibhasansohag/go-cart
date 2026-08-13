@@ -780,20 +780,18 @@ Goal: protect the critical marketplace workflows before production deployment.
   - [x] Cover public browse plus seeded customer cart → checkout → Stripe sandbox
         payment → order details/order history; the protected browser flow passes
         with the opt-in `E2E_STRIPE_PAYMENT=true` flag
-  - [ ] Cover seller fulfillment → shipment tracking → delivery (workspace,
-        package-status, and tracking read assertions are present; native
-        keyboard-accessible package/shipment controls are implemented, but the
-        complete local browser mutation remains open until a clean Windows run
-        completes without a timed-out worker changing the deterministic fixture)
+  - [x] Cover seller fulfillment → shipment tracking → delivery (workspace,
+        seller handoff, admin delivery mutations, and customer tracking all pass
+        in a fresh isolated production-server browser run)
   - [x] Cover delivered item → return request → decision → refund/restock
         (the protected browser journey now performs the admin Stripe sandbox
         refund and inventory reconciliation, then verifies the provider and
         Docker database state; PayPal browser coverage remains open)
-  - [ ] Cover keyboard-only search, checkout, and critical admin/seller actions
-        end to end; public search/cart keyboard checks are complete, and the
-        authenticated checkout/dashboard specs now exercise native keyboard-safe
-        controls, pending a stable clean browser result
-  - [ ] **Test**: The complete customer, seller, and admin journeys pass in supported browsers
+  - [x] Cover keyboard-only search, checkout, and critical admin/seller actions
+        end to end; public search/cart and authenticated native status-control
+        keyboard paths pass in the isolated browser suite
+  - [x] **Test**: The complete customer, seller, and admin journeys pass in the
+        supported Chromium E2E environment
 
 - [ ] **Phase 12.4 — Continuous integration**
   - [x] Run linting, TypeScript, Vitest, and a production build for commits pushed
