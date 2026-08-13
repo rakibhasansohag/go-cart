@@ -86,7 +86,9 @@ if (action === 'up') {
 	const env = validatedE2EEnv();
 	// Playwright keeps browser binaries outside node_modules. Installing the
 	// selected browser here makes a fresh developer machine self-starting.
-	run('bunx', ['playwright', 'install', 'chromium']);
+	if (env.E2E_SKIP_BROWSER_INSTALL?.toLowerCase() !== 'true') {
+		run('bunx', ['playwright', 'install', 'chromium']);
+	}
 	run('bunx', ['playwright', 'test', ...process.argv.slice(3)], env);
 } else {
 	throw new Error(`Unknown action: ${action}. Use up, prepare, sync-users, integration, server, test, reset, or down.`);

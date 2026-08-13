@@ -679,7 +679,7 @@ Goal: protect the critical marketplace workflows before production deployment.
   keyboard search, empty search, empty cart continuation, and unauthenticated
   checkout redirect. The isolated Docker seed is now bound to the synchronized
   Clerk customer, seller, and admin IDs, including 1,000 customer orders and the
-  seller demo store. The local protected suite now passes 14/14 enabled Clerk
+  seller demo store. The local protected suite previously passed 14/14 enabled Clerk
   setup, customer, seller, and admin checks with a one-test opt-in Stripe
   sandbox payment that also passes end to end. A single local retry is supported
   for transient Next development-server failures during cold Windows compilation;
@@ -687,7 +687,9 @@ Goal: protect the critical marketplace workflows before production deployment.
   commerce seed now also creates a deterministic delivered return request for
   the configured Clerk customer and seller store; its seller/admin mutation
   journey remains deliberately open until the browser action and persisted state
-  are both stable.
+  are both stable. The latest source and database checks pass, but the local
+  protected runner timed out while starting the isolated Next server, so no new
+  browser mutation pass is claimed.
 
 - [x] **Phase 12.1 — Test infrastructure**
   - [x] Add Vitest unit-test tooling and deterministic fixtures
@@ -760,9 +762,10 @@ Goal: protect the critical marketplace workflows before production deployment.
         payment → order details/order history; the protected browser flow passes
         with the opt-in `E2E_STRIPE_PAYMENT=true` flag
   - [ ] Cover seller fulfillment → shipment tracking → delivery (workspace,
-        package-status, and tracking read assertions are present; the first
-        delivery-mutation probe was not accepted because the admin search/action
-        path did not produce a stable persisted result)
+        package-status, and tracking read assertions are present; the delivery
+        mutation remains open because the local protected runner timed out before
+        a stable browser result, although the server transition and database
+        invariants pass in unit/integration coverage)
   - [ ] Cover delivered item → return request → decision → refund/restock
         (a deterministic delivered return fixture is now seeded; request
         submission is covered, while seller/admin decision and refund effects

@@ -1,7 +1,7 @@
 'use client';
 
 // React imports
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 // Custom components
 import { Input } from '@/components/ui/input';
@@ -91,22 +91,23 @@ export default function DataTable<TData, TValue>({
 
 	const isServerMode = Boolean(onPageChange);
 	const [searchInput, setSearchInput] = useState(searchValue);
+	const onSearchChangeRef = useRef(onSearchChange);
+	const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+	useEffect(() => {
+		onSearchChangeRef.current = onSearchChange;
+	}, [onSearchChange]);
 
 	// Synchronize search input if external searchValue changes
 	useEffect(() => {
 		setSearchInput(searchValue);
 	}, [searchValue]);
 
-	// Debounce search input for server-side search
 	useEffect(() => {
-		if (!isServerMode || !onSearchChange) return;
-		const timer = setTimeout(() => {
-			if (searchInput !== searchValue) {
-				onSearchChange(searchInput);
-			}
-		}, 300);
-		return () => clearTimeout(timer);
-	}, [searchInput, isServerMode, onSearchChange, searchValue]);
+		return () => {
+			if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+		};
+	}, []);
 
 	// React table instance
 	const table = useReactTable({
@@ -149,6 +150,10 @@ export default function DataTable<TData, TValue>({
 								const val = event.target.value;
 								if (isServerMode) {
 									setSearchInput(val);
+									if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+									searchTimerRef.current = setTimeout(() => {
+										onSearchChangeRef.current?.(val);
+									}, 300);
 								} else if (filterValue) {
 									table.getColumn(filterValue)?.setFilterValue(val);
 								}
