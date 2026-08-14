@@ -7,7 +7,7 @@ import type { PaymentStatus } from '@prisma/client';
 import type Stripe from 'stripe';
 import { SettlementLedgerEntryType, SettlementStatus } from '@prisma/client';
 import { reconcileStripeAccountUpdatedEvent } from './connect';
-import { recordRefundForReturnRequest } from '@/lib/settlement/service';
+import { recordChargebackForOrder, recordRefundForReturnRequest } from '@/lib/settlement/service';
 
 async function findOrderId(
 	providerPaymentId: string,
@@ -43,8 +43,45 @@ function intentPaymentStatus(
 	}
 }
 
+async function handleStripeDisputeEvent(event: Stripe.Event) {
+	const dispute = event.data.object as Stripe.Dispute;
+	const charge = typeof dispute.charge === 'string' ? null : dispute.charge;
+	const paymentIntentId = typeof dispute.payment_intent === 'string'
+		? dispute.payment_intent
+		: dispute.payment_intent?.id;
+	const providerPaymentId = paymentIntentId ?? charge?.id ?? dispute.id;
+	const metadataOrderId = dispute.metadata?.orderId ?? charge?.metadata?.orderId;
+	const orderId = await findOrderId(providerPaymentId, metadataOrderId);
+	if (!orderId) return { ignored: true };
+
+	const paymentResult = await reconcilePaymentEvent({
+		orderId,
+		provider: 'Stripe',
+		providerEventId: event.id,
+		providerPaymentId,
+		eventType: event.type,
+		providerStatus: dispute.status,
+		paymentStatus: 'Chargeback',
+		amount: dispute.amount / 100,
+		currency: dispute.currency,
+		metadata: { disputeId: dispute.id, reason: dispute.reason, status: dispute.status },
+	});
+	const settlementResult = await recordChargebackForOrder({
+		orderId,
+		disputeId: dispute.id,
+		providerEventId: event.id,
+		amountCents: dispute.amount,
+		status: dispute.status,
+		reason: dispute.reason,
+	});
+	return { duplicate: paymentResult.duplicate, settlement: settlementResult };
+}
+
 export async function handleStripeEvent(event: Stripe.Event) {
 	if (event.type === 'account.updated') return reconcileStripeAccountUpdatedEvent(event);
+	if (event.type === 'charge.dispute.created' || event.type === 'charge.dispute.updated' || event.type === 'charge.dispute.closed') {
+		return handleStripeDisputeEvent(event);
+	}
 	if (event.type === 'payout.paid' || event.type === 'payout.failed' || event.type === 'payout.canceled') {
 		const payout = event.data.object as Stripe.Payout;
 		const providerAccountId = event.account;

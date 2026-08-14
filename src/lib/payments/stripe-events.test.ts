@@ -1,12 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { dbMock, reconcilePaymentEventMock } = vi.hoisted(() => ({
+const { dbMock, reconcilePaymentEventMock, recordChargebackForOrderMock } = vi.hoisted(() => ({
 	dbMock: {
 		order: { findUnique: vi.fn() },
 		paymentDetails: { findFirst: vi.fn(), findUnique: vi.fn() },
 		refundTransaction: { findFirst: vi.fn() },
 	},
 	reconcilePaymentEventMock: vi.fn(),
+	recordChargebackForOrderMock: vi.fn(),
 }));
 
 vi.mock('@/lib/db', () => ({ db: dbMock }));
@@ -16,6 +17,10 @@ vi.mock('@/lib/notifications/domain-events', () => ({
 	publishDomainEvent: vi.fn(),
 }));
 vi.mock('@/lib/email/schedule', () => ({ scheduleEmailOutboxDispatch: vi.fn() }));
+vi.mock('@/lib/settlement/service', () => ({
+	recordChargebackForOrder: recordChargebackForOrderMock,
+	recordRefundForReturnRequest: vi.fn(),
+}));
 
 import { handleStripeEvent } from './stripe-events';
 
@@ -23,6 +28,7 @@ describe('Stripe provider event mapping', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		reconcilePaymentEventMock.mockResolvedValue({ duplicate: false });
+		recordChargebackForOrderMock.mockResolvedValue({ appliedCents: 1000, restored: false });
 	});
 
 	it('ignores unsupported payment intent events', async () => {
@@ -105,5 +111,43 @@ describe('Stripe provider event mapping', () => {
 			amount: 49.99,
 			providerEventId: 'evt_refunded',
 		}));
+	});
+
+	it('maps a dispute webhook to a chargeback settlement adjustment', async () => {
+		dbMock.paymentDetails.findFirst.mockResolvedValue({ orderId: 'order-1' });
+
+		const result = await handleStripeEvent({
+			id: 'evt_dispute_created',
+			type: 'charge.dispute.created',
+			data: {
+				object: {
+					id: 'dp_1',
+					charge: 'ch_1',
+					payment_intent: 'pi_1',
+					amount: 1000,
+					currency: 'usd',
+					reason: 'fraudulent',
+					status: 'needs_response',
+					metadata: {},
+				},
+			},
+		} as never);
+
+		expect(result).toEqual({ duplicate: false, settlement: { appliedCents: 1000, restored: false } });
+		expect(reconcilePaymentEventMock).toHaveBeenCalledWith(expect.objectContaining({
+			orderId: 'order-1',
+			providerEventId: 'evt_dispute_created',
+			providerPaymentId: 'pi_1',
+			paymentStatus: 'Chargeback',
+			amount: 10,
+		}));
+		expect(recordChargebackForOrderMock).toHaveBeenCalledWith({
+			orderId: 'order-1',
+			disputeId: 'dp_1',
+			providerEventId: 'evt_dispute_created',
+			amountCents: 1000,
+			status: 'needs_response',
+			reason: 'fraudulent',
+		});
 	});
 });

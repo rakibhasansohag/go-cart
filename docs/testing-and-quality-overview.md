@@ -294,7 +294,8 @@ idempotent and capability/country guarded, but the integration suite injects a
 mock transfer creator so it never moves external money. Admins manage the
 commission rate at `/dashboard/admin/settings`; the database defaults to 2%,
 updates apply to new settlements, and each settlement preserves its historical
-rate.
+rate. Stripe dispute-created/updated/closed fixtures also verify chargeback
+ledger debits, replay protection, and recovery when the dispute is won.
 
 The production application migration is intentionally not run by this check.
 Review and back up the production database before running the normal migration

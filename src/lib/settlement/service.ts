@@ -309,6 +309,109 @@ export async function recordSettlementRefund(input: {
 	});
 }
 
+const CHARGEBACK_ENTRY_PREFIX = 'settlement:chargeback:';
+
+function settlementStatusFromMetadata(metadata: Prisma.JsonValue | null): SettlementStatus {
+	if (metadata && typeof metadata === 'object' && !Array.isArray(metadata) && 'previousStatus' in metadata) {
+		const previousStatus = metadata.previousStatus;
+		if (typeof previousStatus === 'string' && Object.values(SettlementStatus).includes(previousStatus as SettlementStatus)) {
+			return previousStatus as SettlementStatus;
+		}
+	}
+	return SettlementStatus.BLOCKED;
+}
+
+export async function recordChargebackForOrder(input: {
+	orderId: string;
+	disputeId: string;
+	providerEventId: string;
+	amountCents: number;
+	status: string;
+	reason?: string | null;
+}) {
+	assertUsdSettlement(CANONICAL_SETTLEMENT_CURRENCY);
+	const disputeEntryPrefix = CHARGEBACK_ENTRY_PREFIX + input.disputeId + ':';
+	const existingEntries = await db.settlementLedgerEntry.findMany({
+		where: { idempotencyKey: { startsWith: disputeEntryPrefix } },
+		select: { id: true, settlementId: true, sellerPayableCents: true, reversalCents: true, metadata: true },
+	});
+
+	if (input.status === 'won') {
+		if (existingEntries.length === 0) return { appliedCents: 0, restored: false };
+		return db.$transaction(async (tx) => {
+			let restoredCents = 0;
+			for (const entry of existingEntries) {
+				const idempotencyKey = CHARGEBACK_ENTRY_PREFIX + 'recovery:' + input.disputeId + ':' + entry.settlementId;
+				const recoveryExists = await tx.settlementLedgerEntry.findUnique({ where: { idempotencyKey }, select: { id: true } });
+				if (recoveryExists) continue;
+				const sellerRecoveryCents = Math.max(0, -entry.sellerPayableCents);
+				if (sellerRecoveryCents === 0) continue;
+				await tx.settlementLedgerEntry.create({
+					data: {
+						settlementId: entry.settlementId,
+						entryType: SettlementLedgerEntryType.ADJUSTMENT,
+						idempotencyKey,
+						currency: CANONICAL_SETTLEMENT_CURRENCY,
+						reversalCents: -entry.reversalCents,
+						sellerPayableCents: sellerRecoveryCents,
+						metadata: { kind: 'CHARGEBACK_RECOVERY', providerDisputeId: input.disputeId, providerEventId: input.providerEventId },
+					},
+				});
+				await tx.sellerSettlement.update({
+					where: { id: entry.settlementId },
+					data: {
+						reversedCents: { decrement: entry.reversalCents },
+						remainingPayableCents: { increment: sellerRecoveryCents },
+						status: settlementStatusFromMetadata(entry.metadata),
+					},
+				});
+				restoredCents += sellerRecoveryCents;
+			}
+			return { appliedCents: restoredCents, restored: restoredCents > 0 };
+		});
+	}
+
+	if (existingEntries.length > 0 || input.amountCents <= 0) return { appliedCents: 0, restored: false };
+	const settlements = await db.sellerSettlement.findMany({
+		where: { orderGroup: { orderId: input.orderId } },
+		select: { id: true, status: true, grossCents: true, sellerPayableCents: true },
+		orderBy: { id: 'asc' },
+	});
+	const allocations = allocateProportionally(
+		Math.max(0, Math.trunc(input.amountCents)),
+		settlements.map((settlement) => ({ key: settlement.id, weightCents: Math.max(0, settlement.sellerPayableCents || settlement.grossCents) })),
+	);
+	return db.$transaction(async (tx) => {
+		let appliedCents = 0;
+		for (const allocation of allocations) {
+			if (allocation.cents <= 0) continue;
+			const settlement = settlements.find((item) => item.id === allocation.key);
+			if (!settlement) continue;
+			await tx.settlementLedgerEntry.create({
+				data: {
+					settlementId: settlement.id,
+					entryType: SettlementLedgerEntryType.ADJUSTMENT,
+					idempotencyKey: disputeEntryPrefix + settlement.id,
+					currency: CANONICAL_SETTLEMENT_CURRENCY,
+					reversalCents: allocation.cents,
+					sellerPayableCents: -allocation.cents,
+					metadata: { kind: 'CHARGEBACK', providerDisputeId: input.disputeId, providerEventId: input.providerEventId, reason: input.reason ?? null, previousStatus: settlement.status },
+				},
+			});
+			await tx.sellerSettlement.update({
+				where: { id: settlement.id },
+				data: {
+					reversedCents: { increment: allocation.cents },
+					remainingPayableCents: { decrement: allocation.cents },
+					status: settlement.status === SettlementStatus.RELEASED || settlement.status === SettlementStatus.PROCESSING ? SettlementStatus.REVERSED : SettlementStatus.BLOCKED,
+				},
+			});
+			appliedCents += allocation.cents;
+		}
+		return { appliedCents, restored: false };
+	});
+}
+
 export async function recordRefundForReturnRequest(returnRequestId: string, amountCents: number) {
 	const request = await db.returnRequest.findUnique({ where: { id: returnRequestId }, select: { orderGroupId: true } });
 	if (!request || amountCents <= 0) return null;

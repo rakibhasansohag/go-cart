@@ -967,8 +967,11 @@ customer to each seller before adding more optional growth features.
   - [x] Added the admin marketplace settings page and protected API for the
         database-backed commission rate. New settlements read the current
         setting, while historical settlements retain their stored percentage.
-  - [ ] Remaining: provider dispute/chargeback webhooks and a protected
-        browser test for a real provider-backed seller payday transfer.
+  - [x] Added Stripe dispute-created/updated/closed mapping to terminal
+        Chargeback payment state, proportional seller ledger debits, replay
+        protection, and recovery when a dispute closes as won.
+  - [ ] Remaining: a protected browser test for a real provider-backed seller
+        payday transfer.
 
 - [x] **Phase 14.1 — Business and responsibility decisions**
   - [x] Confirm whether goCart or each seller is the merchant the customer is
@@ -1008,9 +1011,10 @@ customer to each seller before adding more optional growth features.
   - [x] Protected browser coverage proves seller earnings, admin settlement
         operations, and seller-to-admin access boundaries against the isolated
         Docker database using the existing E2E role fixtures
-  - [ ] Remaining hardening: provider dispute/chargeback webhooks and a protected
-        browser test that exercises the real provider-backed seller payday
-        transfer end-to-end
+  - [x] Provider dispute/chargeback webhook mapping and isolated Docker
+        chargeback recovery invariants
+  - [ ] Remaining hardening: a protected browser test that exercises the real
+        provider-backed seller payday transfer end-to-end
 
 ---
 

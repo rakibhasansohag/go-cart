@@ -510,6 +510,60 @@ async function assertSettlementLedgerAndTransferReplay() {
 	}
 }
 
+async function assertStripeChargebackWebhookSettlement() {
+	const order = await db.order.findFirst({
+		where: { paymentStatus: 'Paid', user: { email: testUsers.customer } },
+		select: { id: true, paymentStatus: true, paymentMethod: true, paymentDetails: true, groups: { select: { id: true } } },
+	});
+	assert(order?.paymentDetails && order.groups.length, 'a paid order with payment details is required for chargeback coverage');
+	const settlements = await createSettlementsForPaidOrder(order.id);
+	const settlement = settlements[0];
+	const amountCents = Math.min(250, Math.max(1, settlement.sellerPayableCents));
+	const originalSettlement = await db.sellerSettlement.findUniqueOrThrow({ where: { id: settlement.id }, select: { status: true, reversedCents: true, remainingPayableCents: true } });
+	const disputeId = 'dp_integration_' + randomUUID().replaceAll('-', '');
+	const createdEventId = 'integration-dispute-created:' + randomUUID();
+	const wonEventId = 'integration-dispute-won:' + randomUUID();
+	const disputeEvent = (eventId: string, type: string, status: string) => ({
+		id: eventId,
+		object: 'event',
+		created: Math.floor(Date.now() / 1000),
+		data: { object: { id: disputeId, object: 'dispute', charge: 'ch_integration_' + randomUUID().replaceAll('-', ''), payment_intent: order.paymentDetails?.paymentInetntId, amount: amountCents, currency: 'usd', reason: 'fraudulent', status, metadata: {} } },
+		livemode: false,
+		pending_webhooks: 0,
+		request: null,
+		type,
+	}) as unknown as Stripe.Event;
+	try {
+		const createdEvent = disputeEvent(createdEventId, 'charge.dispute.created', 'needs_response');
+		const firstCreated = await handleStripeEvent(createdEvent);
+		const secondCreated = await handleStripeEvent(createdEvent);
+		assert(!('ignored' in firstCreated) && firstCreated.duplicate === false, 'chargeback webhook was not processed');
+		assert(!('ignored' in secondCreated) && secondCreated.duplicate === true, 'chargeback webhook replay was not idempotent');
+		const charged = await db.sellerSettlement.findUniqueOrThrow({ where: { id: settlement.id }, select: { status: true, reversedCents: true, remainingPayableCents: true } });
+		assert(['BLOCKED', 'REVERSED'].includes(charged.status), 'chargeback did not block or reverse the settlement');
+		assert(charged.reversedCents === originalSettlement.reversedCents + amountCents, 'chargeback did not record the seller debit');
+		assert(charged.remainingPayableCents === originalSettlement.remainingPayableCents - amountCents, 'chargeback did not reduce the remaining seller payable');
+		const wonEvent = disputeEvent(wonEventId, 'charge.dispute.closed', 'won');
+		const firstWon = await handleStripeEvent(wonEvent);
+		const secondWon = await handleStripeEvent(wonEvent);
+		assert(!('ignored' in firstWon) && firstWon.duplicate === false, 'won chargeback webhook was not processed');
+		assert(!('ignored' in secondWon) && secondWon.duplicate === true, 'won chargeback replay was not idempotent');
+		const restored = await db.sellerSettlement.findUniqueOrThrow({ where: { id: settlement.id }, select: { reversedCents: true, remainingPayableCents: true } });
+		assert(restored.reversedCents === originalSettlement.reversedCents && restored.remainingPayableCents === originalSettlement.remainingPayableCents, 'won chargeback did not restore the seller ledger');
+		const disputeEntryPrefix = 'settlement:chargeback:' + disputeId + ':';
+		const recoveryEntryPrefix = 'settlement:chargeback:recovery:' + disputeId + ':';
+		assert(await db.settlementLedgerEntry.count({ where: { idempotencyKey: { startsWith: disputeEntryPrefix } } }) === 1, 'chargeback adjustment entry count is incorrect');
+		assert(await db.settlementLedgerEntry.count({ where: { idempotencyKey: { startsWith: recoveryEntryPrefix } } }) === 1, 'chargeback recovery did not create one recovery entry');
+	} finally {
+		const disputeEntryPrefix = 'settlement:chargeback:' + disputeId + ':';
+		await db.settlementLedgerEntry.deleteMany({ where: { idempotencyKey: { startsWith: disputeEntryPrefix } } });
+		await db.sellerSettlement.update({ where: { id: settlement.id }, data: originalSettlement });
+		await db.paymentEvent.deleteMany({ where: { providerEventId: { in: [createdEventId, wonEventId] } } });
+		await db.order.update({ where: { id: order.id }, data: { paymentStatus: order.paymentStatus, paymentMethod: order.paymentMethod } });
+		await db.paymentDetails.update({ where: { id: order.paymentDetails.id }, data: { paymentInetntId: order.paymentDetails.paymentInetntId, providerCaptureId: order.paymentDetails.providerCaptureId, paymentMethod: order.paymentDetails.paymentMethod, status: order.paymentDetails.status, amount: order.paymentDetails.amount, currency: order.paymentDetails.currency } });
+	}
+}
+
 async function assertReturnInventoryReconciliation() {
 	const admin = await db.user.findUnique({ where: { email: testUsers.admin }, select: { id: true } });
 	assert(admin, 'demo admin is required for return inventory coverage');
@@ -681,6 +735,7 @@ async function main() {
 	assert(duplicateEventKeys.length === 0, 'duplicate payment webhook event IDs detected');
 	await assertStripeRefundWebhookSettlement();
 	await assertSettlementLedgerAndTransferReplay();
+	await assertStripeChargebackWebhookSettlement();
 
 	const limitedCoupons = await db.coupon.findMany({
 		where: { maxUses: { gt: 0 } },
