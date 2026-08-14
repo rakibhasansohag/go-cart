@@ -892,10 +892,42 @@ and automated search coverage.
 Goal: decide and implement how a real multi-vendor order moves money from the
 customer to each seller before adding more optional growth features.
 
-- **Audit status (2026-08-08)**: No connected-account onboarding, platform-fee,
-  transfer, payout, or transfer-reversal implementation was found. This phase is
-  a product-owner decision gate; do not select a charge or settlement pattern
-  until the owner confirms the business relationship and payout timing.
+- **Audit status (2026-08-14)**: Confirmed by architecture and payment-flow
+  audits that no connected-account onboarding, platform-fee, transfer, payout,
+  ledger, or transfer-reversal implementation exists. The current checkout uses
+  one order-level PaymentIntent while `OrderGroup` records may represent multiple
+  stores. This phase remains a product-owner decision gate; do not select a
+  charge or settlement pattern until the owner confirms merchant of record,
+  multi-seller checkout, payout timing, financial ownership, and countries/
+  currencies.
+
+- **Owner decisions recorded (2026-08-14)**:
+  - Seller settlement is held until the return-risk window ends.
+  - Eligible funds are reviewed and released in a weekly payday batch.
+  - GoCart commission is configurable, defaults to 2%, and is stored per order
+    so later rate changes do not alter historical payouts.
+  - Commission is calculated from the final settled seller amount after
+    discounts, GoCoins, tax, shipping, refunds, and other adjustments.
+  - GoCart absorbs Stripe/PayPal processing fees from its commission; provider
+    fees are shown for transparency but are not deducted from seller payouts.
+  - Post-payday refunds recover only the amount the seller actually received;
+    GoCart reverses its commission proportionally and continues absorbing the
+    payment-provider fee.
+  - Multi-seller coupons and GoCoins are allocated proportionally across the
+    participating sellers.
+  - Each seller receives their allocated shipping and tax amounts in the
+    settlement calculation; tax calculation and remittance remain country-
+    specific launch requirements.
+
+- **Marketplace research alignment (2026-08-14)**: Amazon, Etsy, and eBay
+  consistently separate pending/held funds from available funds, release funds
+  after delivery and risk checks, and expose transaction-level statements. GoCart
+  will adopt the simpler low-volume version: one ledger per `OrderGroup`,
+  delivery plus a configurable return-risk window, weekly admin-approved payday
+  batches, and pending/held/eligible/approved/released/reversed visibility.
+  Stripe separate charges and transfers fit GoCart's multi-store checkout;
+  GoCart remains responsible for platform fees, refunds, disputes, and transfer
+  reversals.
 
 - [ ] **Phase 14.1 — Business and responsibility decisions**
   - [ ] Confirm whether goCart or each seller is the merchant the customer is
