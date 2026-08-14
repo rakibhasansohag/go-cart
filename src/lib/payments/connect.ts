@@ -4,6 +4,16 @@ import type { PaymentAccountStatus, StorePaymentAccount } from '@prisma/client';
 import { db } from '@/lib/db';
 import { getStripeClient } from '@/lib/payments/stripe-client';
 
+// Accounts v2 is currently a Stripe preview API. Keep this version scoped to
+// raw Accounts v2 requests so the rest of the Stripe SDK remains on its
+// configured stable API version.
+const STRIPE_ACCOUNTS_V2_PREVIEW_VERSION = '2026-07-29.preview';
+const STRIPE_ACCOUNTS_V2_INCLUDE_FIELDS = [
+	'configuration.recipient',
+	'identity',
+	'requirements',
+] as const;
+
 type ConnectAccountSnapshot = {
 	id?: string;
 	identity?: { country?: string | null } | null;
@@ -43,6 +53,14 @@ export function accountStatusFromCapability(status?: string | null): PaymentAcco
 
 function readAccountSnapshot(value: unknown): ConnectAccountSnapshot {
 	return value && typeof value === 'object' ? (value as ConnectAccountSnapshot) : {};
+}
+
+export function buildAccountsV2IncludeQuery() {
+	const query = new URLSearchParams();
+	STRIPE_ACCOUNTS_V2_INCLUDE_FIELDS.forEach((field, index) => {
+		query.set(`include[${index}]`, field);
+	});
+	return query.toString();
 }
 
 async function requireOwnedStore(storeUrl: string) {
@@ -92,7 +110,10 @@ async function createRecipientAccount(store: Awaited<ReturnType<typeof requireOw
 			},
 			include: ['configuration.recipient', 'identity', 'requirements'],
 		},
-		{ idempotencyKey: `gocart-connect-account:${store.id}` },
+		{
+			idempotencyKey: `gocart-connect-account:${store.id}`,
+			apiVersion: STRIPE_ACCOUNTS_V2_PREVIEW_VERSION,
+		},
 	);
 
 	const snapshot = readAccountSnapshot(result);
@@ -102,14 +123,11 @@ async function createRecipientAccount(store: Awaited<ReturnType<typeof requireOw
 
 async function retrieveRecipientAccount(providerAccountId: string) {
 	const stripe = getStripeClient();
-	const query = new URLSearchParams([
-		['include[]', 'configuration.recipient'],
-		['include[]', 'identity'],
-		['include[]', 'requirements'],
-	]);
 	const result = await stripe.rawRequest(
 		'GET',
-		`/v2/core/accounts/${encodeURIComponent(providerAccountId)}?${query.toString()}`,
+		`/v2/core/accounts/${encodeURIComponent(providerAccountId)}?${buildAccountsV2IncludeQuery()}`,
+		undefined,
+		{ apiVersion: STRIPE_ACCOUNTS_V2_PREVIEW_VERSION },
 	);
 	return readAccountSnapshot(result);
 }
