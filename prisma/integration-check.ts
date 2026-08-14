@@ -13,6 +13,8 @@ import { randomUUID } from 'node:crypto';
 import { reconcilePaymentEvent } from '../src/lib/payments/reconcile';
 import { handleStripeEvent } from '../src/lib/payments/stripe-events';
 import { reconcileReturnInventoryForAdmin } from '../src/lib/returns/inventory';
+import { searchProducts } from '../src/lib/search';
+import { getProducts } from '../src/queries/product';
 import type Stripe from 'stripe';
 
 assertSafeE2ERuntime();
@@ -31,6 +33,111 @@ function assert(condition: unknown, message: string): asserts condition {
 
 function closeEnough(actual: number, expected: number): boolean {
 	return Math.abs(actual - expected) <= epsilon;
+}
+
+async function assertPostgresSearchAndBrowse() {
+	const store = await db.store.findUniqueOrThrow({ where: { url: 'gocart-demo-store' }, select: { id: true } });
+	const category = await db.category.findUniqueOrThrow({ where: { url: 'gocart-demo-category' }, select: { id: true } });
+	const subCategory = await db.subCategory.findUniqueOrThrow({ where: { url: 'gocart-demo-subcategory' }, select: { id: true } });
+	const offer = await db.offerTag.create({ data: { name: `Search Offer ${randomUUID()}`, url: `integration-search-${randomUUID()}` } });
+	const productIds = [randomUUID(), randomUUID()];
+	const variantIds = [randomUUID(), randomUUID(), randomUUID()];
+	const sizeIds = [randomUUID(), randomUUID(), randomUUID()];
+	const imageIds = [randomUUID(), randomUUID(), randomUUID()];
+	const colorIds = [randomUUID(), randomUUID()];
+
+	try {
+		await db.product.createMany({
+			data: [
+				{
+					id: productIds[0],
+					name: 'Café Chronograph Watch',
+					description: 'Accented search fixture with a precise chronograph movement.',
+					brand: 'Élan',
+					slug: `integration-search-watch-${productIds[0]}`,
+					rating: 4.9,
+					views: 1,
+					storeId: store.id,
+					categoryId: category.id,
+					subCategoryId: subCategory.id,
+					offerTagId: offer.id,
+				},
+				{
+					id: productIds[1],
+					name: 'Cafe Chronograph Case',
+					description: 'A second chronograph fixture for explicit sort verification.',
+					brand: 'GoCart Search',
+					slug: `integration-search-case-${productIds[1]}`,
+					rating: 4.1,
+					views: 100,
+					storeId: store.id,
+					categoryId: category.id,
+					subCategoryId: subCategory.id,
+				},
+			],
+		});
+		await db.productVariant.createMany({
+			data: [
+				{ id: variantIds[0], variantName: 'Standard', variantDescription: 'Crimson chronograph standard', variantImage: 'https://example.test/search-watch.png', slug: `integration-search-watch-standard-${variantIds[0]}`, sku: 'SEARCH-WATCH-001', keywords: 'cafe chronograph accented', weight: 1, productId: productIds[0] },
+				{ id: variantIds[1], variantName: 'Rose Edition', variantDescription: 'Duplicate product variant search row', variantImage: 'https://example.test/search-watch-rose.png', slug: `integration-search-watch-rose-${variantIds[1]}`, sku: 'SEARCH-WATCH-002', keywords: 'cafe chronograph rose', weight: 1, productId: productIds[0] },
+				{ id: variantIds[2], variantName: 'Standard', variantDescription: 'Protective chronograph case', variantImage: 'https://example.test/search-case.png', slug: `integration-search-case-standard-${variantIds[2]}`, sku: 'SEARCH-CASE-001', keywords: 'cafe chronograph case', weight: 1, productId: productIds[1] },
+			],
+		});
+		await db.size.createMany({
+			data: [
+				{ id: sizeIds[0], size: 'Standard', quantity: 10, price: 75, productVariantId: variantIds[0] },
+				{ id: sizeIds[1], size: 'Standard', quantity: 10, price: 80, productVariantId: variantIds[1] },
+				{ id: sizeIds[2], size: 'Standard', quantity: 10, price: 25, productVariantId: variantIds[2] },
+			],
+		});
+		await db.productVariantImage.createMany({
+			data: imageIds.map((id, index) => ({ id, url: `https://example.test/search-${index}.png`, alt: 'Search fixture', order: 0, productVariantId: variantIds[index] })),
+		});
+		await db.color.createMany({
+			data: [
+				{ id: colorIds[0], name: 'Crimson', productVariantId: variantIds[0] },
+				{ id: colorIds[1], name: 'Black', productVariantId: variantIds[2] },
+			],
+		});
+
+		const accented = await searchProducts('Cafe');
+		assert(accented.some((result) => result.name.startsWith('Café Chronograph Watch')), 'accent-insensitive autocomplete did not find the fixture');
+		assert(new Set(accented.map((result) => result.link)).size === accented.length, 'autocomplete returned duplicate variant links');
+		const typo = await searchProducts('Chronogrph');
+		assert(typo.some((result) => result.name.includes('Chronograph')), 'trigram typo search did not find the fixture');
+		const prefix = await searchProducts('Caf');
+		assert(prefix.some((result) => result.name.includes('Chronograph')), 'short-prefix search did not find the fixture');
+
+		const filtered = await getProducts({
+			store: 'gocart-demo-store',
+			category: 'gocart-demo-category',
+			subCategory: 'gocart-demo-subcategory',
+			offer: offer.url,
+			search: 'Cafe',
+			size: ['Standard'],
+			minPrice: 50,
+			maxPrice: 90,
+			color: ['Crimson'],
+		}, '', null, 10);
+		assert(filtered.products.length === 1 && filtered.products[0].id === productIds[0], 'ranked search did not compose with store/category/offer/price/size/color filters');
+
+		const rankedPage = await getProducts({ search: 'Chronograph' }, '', null, 1);
+		assert(rankedPage.products.length === 1 && rankedPage.hasNextPage && rankedPage.nextCursor, 'ranked browse search did not return a cursor page');
+		const nextRankedPage = await getProducts({ search: 'Chronograph' }, '', rankedPage.nextCursor, 1);
+		assert(nextRankedPage.products.length === 1 && nextRankedPage.products[0].id !== rankedPage.products[0].id, 'relevance cursor repeated or skipped a tied search result');
+
+		const popular = await getProducts({ search: 'Chronograph' }, 'most-popular', null, 10);
+		assert(popular.products[0]?.id === productIds[1], 'explicit most-popular sort was replaced by relevance ordering');
+		const topRated = await getProducts({ search: 'Chronograph' }, 'top-rated', null, 10);
+		assert(topRated.products[0]?.id === productIds[0], 'explicit top-rated sort was not preserved');
+	} finally {
+		await db.color.deleteMany({ where: { id: { in: colorIds } } });
+		await db.productVariantImage.deleteMany({ where: { id: { in: imageIds } } });
+		await db.size.deleteMany({ where: { id: { in: sizeIds } } });
+		await db.productVariant.deleteMany({ where: { id: { in: variantIds } } });
+		await db.product.deleteMany({ where: { id: { in: productIds } } });
+		await db.offerTag.delete({ where: { id: offer.id } });
+	}
 }
 
 async function assertConcurrentPaymentReplay(orderId: string, amount: number) {
@@ -585,6 +692,7 @@ async function main() {
 	assert(new Set(domainEvents.map((event) => event.eventKey)).size === domainEvents.length, 'duplicate domain event keys detected');
 	const notifications = await db.notification.findMany({ select: { sourceEventId: true, recipientId: true } });
 	assert(new Set(notifications.map((notification) => `${notification.sourceEventId}:${notification.recipientId}`)).size === notifications.length, 'duplicate notifications detected');
+	await assertPostgresSearchAndBrowse();
 
 	const raceEmail = `integration-race-${randomUUID()}@example.test`;
 	const raceUser = await db.user.create({ data: { name: 'Integration Race User', email: raceEmail, picture: '', role: Role.USER } });
@@ -606,7 +714,7 @@ async function main() {
 		await db.user.delete({ where: { id: raceUser.id } });
 	}
 
-	console.log(`Integration checks passed: ${orderCount} orders, permissions, totals, coupons, transitions, inventory, payments, returns, shipments, GoCoins, and notifications.`);
+	console.log(`Integration checks passed: ${orderCount} orders, permissions, totals, coupons, transitions, inventory, payments, returns, shipments, GoCoins, notifications, and PostgreSQL search/browse ranking.`);
 }
 
 main().catch((error) => {

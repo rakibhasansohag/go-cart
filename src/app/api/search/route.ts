@@ -1,12 +1,12 @@
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-import { searchProducts } from '@/lib/search';
+import { SEARCH_MAX_QUERY_LENGTH, searchProducts } from '@/lib/search';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(req: NextRequest) {
 	try {
-		const { searchParams } = new URL(req.url);
+		const { searchParams } = req.nextUrl;
 		const q = searchParams.get('q') || searchParams.get('search') || '';
 
 		if (!q || typeof q !== 'string' || q.trim().length === 0) {
@@ -17,7 +17,7 @@ export async function GET(req: NextRequest) {
 			});
 		}
 
-		if (q.length > 100) {
+		if (q.trim().length > SEARCH_MAX_QUERY_LENGTH) {
 			return NextResponse.json(
 				{ message: 'Search query too long' },
 				{ status: 400 },

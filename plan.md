@@ -817,15 +817,16 @@ Goal: replace the paid Elasticsearch dependency with zero-cost native PostgreSQL
 full-text search using `pg_trgm`, `tsvector`, and `unaccent` — all confirmed
 available on the Neon goCart project. The legacy Elasticsearch client and index
 routes have now been removed, and the header search UI is wired to
-`/api/search?q=`. The remaining work is browse relevance, query normalization,
+`/api/search?q=`. The native service, ranked browse integration, runtime query normalization,
 and automated search coverage.
 
-- **Audit status (2026-08-08)**: Reopened for search correctness and coverage.
-  Elasticsearch is removed, the migration is applied, autocomplete uses native
-  PostgreSQL search, and the UI is wired. Browse results still use Prisma
-  `contains` filters ordered mainly by views rather than PostgreSQL relevance;
-  runtime query normalization also strips accented characters instead of using
-  the same unaccented text-search pipeline.
+- **Audit status (2026-08-14)**: Completed. Native PostgreSQL search now applies
+  the same `immutable_unaccent` pipeline to runtime queries and the stored
+  vector, uses bounded trigram similarity with deterministic product/variant
+  ranking, and feeds filtered browse candidate IDs into relevance ordering with
+  stable cursors. The autocomplete UI has focused interaction coverage, and the
+  isolated Docker integration check verifies accent, typo, prefix, duplicate,
+  filter-composition, cursor, and explicit-sort behavior.
 
 **Why PostgreSQL over a third-party search service:**
 - `pg_trgm` + `tsvector` run inside Neon — zero extra infra, zero cost
@@ -842,15 +843,15 @@ and automated search coverage.
   - [x] Add a GIN trigram index on `ProductVariant.variantName` for variant-level search
   - **Test**: Migration `20260807150000_postgres_fts` applied successfully; Prisma Client generated
 
-- [ ] **Phase 13.2 — Remove Elasticsearch and create the search service**
+- [x] **Phase 13.2 — Remove Elasticsearch and create the search service**
   - [x] Delete `src/lib/elasticsearch.ts` and remove `@elastic/elasticsearch` from `package.json`
   - [x] Create `src/lib/search.ts` — a typed server-only search service using `db.$queryRaw` with:
     - Ranked full-text search: `ts_rank(searchVector, query)` for relevance sorting
     - Trigram similarity fallback: `similarity(name, $query)` for short/partial queries
-    - [ ] Apply `unaccent` normalization to runtime query tokens as well as the stored vector
+    - [x] Apply `unaccent` normalization to runtime query tokens as well as the stored vector
     - Result shape: `{ name, link, image }` — matches existing `SearchResult` type
     - [x] Maximum 20 results by default
-    - [ ] Add a bounded configurable `minSimilarity` threshold and deterministic
+    - [x] Add a bounded configurable `minSimilarity` threshold and deterministic
           ranking across product and variant matches
   - [x] Create `src/app/api/search/route.ts` (the route `search.tsx` calls):
     - Accept `?q=` or `?search=` query param; validate max 100 chars
@@ -858,16 +859,16 @@ and automated search coverage.
     - Mark `export const dynamic = 'force-dynamic'`
   - [x] Delete `src/app/api/search-products/route.ts` (replaced by above)
   - [x] Delete `src/app/api/index-products/route.ts` (no external index needed — PG maintains `tsvector` automatically via generated column)
-  - [ ] **Test**: Search service and endpoint cover empty, overlong, accented,
+  - [x] **Test**: Search service and endpoint cover empty, overlong, accented,
         typo, short-prefix, duplicate-variant, and database-error cases
 
-- [ ] **Phase 13.3 — Browse page: integrate ranked search with filters**
+- [x] **Phase 13.3 — Browse page: integrate ranked search with filters**
   - [x] Update `src/queries/product.ts` browse query to support case-insensitive and multi-field search across product name, description, brand, variantName, variantDescription, SKU, and keywords
   - [x] Ensure all existing browse filters (category, store, offer, price, rating, size, color) compose correctly with search
-  - [ ] Use PostgreSQL full-text/trigram candidate IDs and relevance as the
+  - [x] Use PostgreSQL full-text/trigram candidate IDs and relevance as the
         default browse ordering while preserving explicit user-selected sorts
-  - [ ] Keep cursor pagination stable when relevance scores tie
-  - [ ] **Test**: Browse search composes with every filter and returns stable,
+  - [x] Keep cursor pagination stable when relevance scores tie
+  - [x] **Test**: Browse search composes with every filter and returns stable,
         accent-insensitive, typo-tolerant ranked pages
 
 - [x] **Phase 13.4 — Search UI: debounced autocomplete suggestions**
@@ -875,13 +876,13 @@ and automated search coverage.
   - [x] Add keyboard navigation (ArrowDown, ArrowUp, Enter, Escape) to autocomplete suggestions
   - [x] Add ARIA combobox attributes (`role="combobox"`, `aria-expanded`, `aria-activedescendant`)
   - [x] Add "No products found for..." empty state and click-outside listener
-  - [ ] Add component/E2E tests for keyboard navigation, focus behavior,
+  - [x] Add component/E2E tests for keyboard navigation, focus behavior,
         AbortController cancellation, click-outside, loading, failure, and empty states
 
 - [x] **Phase 13.5 — Clean up environment and CI**
   - [x] Verified `.env.example` has no `ELASTICSEARCH` variables
   - [x] Verified `.github/workflows/ci.yml` has no Elasticsearch dependencies
-  - [x] Verified `bun run typecheck` and `bun run test` (91/91 tests) pass with zero Elasticsearch imports remaining
+  - [x] Verified `bun run typecheck` and `bun run test` (123/123 tests) pass with zero Elasticsearch imports remaining
   - [x] **Test**: `rg -i 'elasticsearch' src` returns zero matches
 
 ---

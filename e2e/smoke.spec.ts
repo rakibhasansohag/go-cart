@@ -36,6 +36,77 @@ test('catalog search exposes a deterministic empty state', async ({ page }) => {
   await expect(page.getByText('No products found matching your filters.')).toBeVisible();
 });
 
+test('autocomplete covers loading, keyboard navigation, focus, and outside click', async ({ page }) => {
+  await page.route('**/api/search*', async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, 700));
+    await route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify([
+        { name: 'Atlas Chronograph Watch · Standard', link: '/product/atlas?variant=standard', image: '' },
+        { name: 'Atlas Travel Case · Standard', link: '/product/atlas-case?variant=standard', image: '' },
+      ]),
+    });
+  });
+  await page.goto('/');
+
+  const search = page.locator('input[placeholder="Search products..."]');
+  await search.fill('Atlas');
+  await expect(page.getByText(/Searching for “Atlas”/i)).toBeVisible();
+  await expect(page.getByRole('option')).toHaveCount(2);
+
+  await search.press('ArrowDown');
+  await expect(page.getByRole('option').first()).toHaveAttribute('aria-selected', 'true');
+  await search.press('Escape');
+  await expect(page.getByRole('listbox')).toBeHidden();
+  await search.blur();
+  await search.focus();
+  await expect(page.getByRole('listbox')).toBeVisible();
+  await page.mouse.click(10, 10);
+  await expect(page.getByRole('listbox')).toBeHidden();
+});
+
+test('autocomplete cancellation keeps the newest query result', async ({ page }) => {
+  await page.route('**/api/search*', async (route) => {
+    const query = new URL(route.request().url()).searchParams.get('q');
+    if (query === 'Atlas') {
+      await new Promise((resolve) => setTimeout(resolve, 900));
+      try {
+        await route.fulfill({ contentType: 'application/json', body: JSON.stringify([{ name: 'Stale Atlas', link: '/stale', image: '' }]) });
+      } catch {
+        // The browser should abort this request when the query changes.
+      }
+      return;
+    }
+    await route.fulfill({ contentType: 'application/json', body: JSON.stringify([{ name: 'Aster Mug · Standard', link: '/product/aster?variant=standard', image: '' }]) });
+  });
+  await page.goto('/');
+
+  const search = page.locator('input[placeholder="Search products..."]');
+  await search.fill('Atlas');
+  await expect(page.getByText(/Searching for “Atlas”/i)).toBeVisible();
+  await search.fill('Aster');
+  await expect(page.getByRole('option', { name: /Aster Mug/i })).toBeVisible();
+  await expect(page.getByText('Stale Atlas')).toBeHidden();
+});
+
+test('autocomplete exposes failure and empty states', async ({ page }) => {
+  await page.route('**/api/search*', async (route) => {
+    const query = new URL(route.request().url()).searchParams.get('q');
+    if (query === 'broken') {
+      await route.fulfill({ status: 500, contentType: 'application/json', body: JSON.stringify({ error: 'test failure' }) });
+    } else {
+      await route.fulfill({ contentType: 'application/json', body: JSON.stringify([]) });
+    }
+  });
+  await page.goto('/');
+
+  const search = page.locator('input[placeholder="Search products..."]');
+  await search.fill('broken');
+  await expect(page.getByText('Unable to load search suggestions. Please try again.')).toBeVisible();
+  await search.fill('nothing');
+  await expect(page.getByText(/No products found for “nothing”/i)).toBeVisible();
+});
+
 test('empty cart provides a keyboard-accessible shopping continuation', async ({ page }) => {
   await page.goto('/cart');
 

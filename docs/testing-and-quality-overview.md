@@ -39,7 +39,7 @@ No single layer proves the whole system. A unit test can prove a calculation but
 
 The latest local verification established:
 
-- 115/115 Vitest tests passed.
+- 123/123 Vitest tests passed.
 - TypeScript passed.
 - Public Chromium smoke passed 6/6.
 - Protected Chromium passed the baseline journeys plus the complete deterministic
@@ -52,7 +52,7 @@ The latest local verification established:
   `E2E_BROWSER_REFUND=true`, including a real Stripe sandbox refund and
   persisted `PartiallyRefunded` order state.
 - Production Next.js build passed.
-- ESLint reported 0 errors and 165 existing warnings.
+- ESLint reported 0 errors and 166 existing warnings.
 - The isolated Docker database seeded 1,000 deterministic demo orders.
 - The deterministic return browser journey passed through seller approval,
   customer shipment, seller receipt, admin refund, and inventory reconciliation.
@@ -65,6 +65,27 @@ This does not mean every production workflow is complete. The remaining
 provider-specific gap is PayPal browser checkout/refund, which requires a
 PayPal sandbox buyer account and an approved sandbox payment; the configured
 merchant credentials are sufficient only for OAuth authentication.
+
+### Phase 13 search verification (August 14, 2026)
+
+The PostgreSQL search replacement is verified through these layers:
+
+- `src/lib/search.test.ts` and `src/app/api/search/route.test.ts`: 8/8 focused
+  service/route tests covering empty, overlong, accented, duplicate, bounded
+  threshold, and database-error behavior.
+- `bun run test:integration:local`: passed against Docker PostgreSQL with
+  accent-insensitive, typo-tolerant, short-prefix, duplicate-variant, filtered
+  browse, relevance-cursor, and explicit-sort fixtures.
+- Public Chromium: the focused autocomplete suite passed 3/3, and the
+  deterministic empty ranked-browse search passed 1/1 against the production
+  E2E server. The autocomplete checks cover keyboard navigation, focus restore,
+  click-outside, loading, AbortController stale-response cancellation, failure,
+  and empty states.
+- `bun run build:e2e` and `bun run build`: production compilation passed.
+
+The Phase 13 search fixture uses only the isolated Docker database and removes
+its temporary catalog records in `finally` cleanup. It does not use Neon or
+production data.
 
 ## How the test database works
 

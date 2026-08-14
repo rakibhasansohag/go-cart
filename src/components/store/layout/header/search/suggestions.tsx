@@ -9,6 +9,7 @@ interface Props {
 	query: string;
 	selectedIndex?: number;
 	isLoading?: boolean;
+	hasError?: boolean;
 	onSelect?: () => void;
 }
 
@@ -17,6 +18,7 @@ const SearchSuggestions: FC<Props> = ({
 	query,
 	selectedIndex = -1,
 	isLoading = false,
+	hasError = false,
 	onSelect,
 }) => {
 	const router = useRouter();
@@ -49,7 +51,11 @@ const SearchSuggestions: FC<Props> = ({
 			className='absolute top-11 w-full rounded-2xl bg-secondary text-main-primary shadow-2xl !z-[99] overflow-hidden border border-border/20'
 		>
 			<div className='py-2 max-h-96 overflow-y-auto'>
-				{isLoading && suggestions.length === 0 ? (
+				{hasError ? (
+					<div className='px-6 py-4 text-sm text-red-500'>
+						Unable to load search suggestions. Please try again.
+					</div>
+				) : isLoading && suggestions.length === 0 ? (
 					<div className='px-6 py-4 text-sm text-main-secondary animate-pulse'>
 						Searching for &ldquo;{query}&rdquo;...
 					</div>

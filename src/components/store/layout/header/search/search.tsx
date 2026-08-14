@@ -22,6 +22,7 @@ export default function Search() {
 	const [isOpen, setIsOpen] = useState<boolean>(false);
 	const [selectedIndex, setSelectedIndex] = useState<number>(-1);
 	const [isLoading, setIsLoading] = useState<boolean>(false);
+	const [hasError, setHasError] = useState<boolean>(false);
 
 	const containerRef = useRef<HTMLDivElement>(null);
 	const abortControllerRef = useRef<AbortController | null>(null);
@@ -47,6 +48,8 @@ export default function Search() {
 			setSuggestions([]);
 			setIsOpen(false);
 			setSelectedIndex(-1);
+			setIsLoading(false);
+			setHasError(false);
 			return;
 		}
 
@@ -58,6 +61,8 @@ export default function Search() {
 		abortControllerRef.current = controller;
 
 		setIsLoading(true);
+		setHasError(false);
+		setIsOpen(true);
 		const delayDebounceFn = setTimeout(async () => {
 			try {
 				const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`, {
@@ -65,15 +70,19 @@ export default function Search() {
 				});
 				if (!res.ok) throw new Error('Search request failed');
 				const data: SearchResult[] = await res.json();
+				if (abortControllerRef.current !== controller) return;
 				setSuggestions(data);
 				setIsOpen(true);
 				setSelectedIndex(-1);
 			} catch (error: unknown) {
-				if ((error as Error)?.name !== 'AbortError') {
+				if ((error as Error)?.name !== 'AbortError' && abortControllerRef.current === controller) {
 					console.error('Search autocomplete error:', error);
+					setSuggestions([]);
+					setHasError(true);
+					setIsOpen(true);
 				}
 			} finally {
-				setIsLoading(false);
+				if (abortControllerRef.current === controller) setIsLoading(false);
 			}
 		}, 300);
 
@@ -135,8 +144,9 @@ export default function Search() {
 					onChange={handleInputChange}
 					onKeyDown={handleKeyDown}
 					onFocus={() => {
-						if (searchQuery.trim() && suggestions.length > 0) setIsOpen(true);
+						if (searchQuery.trim()) setIsOpen(true);
 					}}
+					aria-busy={isLoading}
 					role='combobox'
 					aria-expanded={isOpen}
 					aria-autocomplete='list'
@@ -151,6 +161,7 @@ export default function Search() {
 						query={searchQuery}
 						selectedIndex={selectedIndex}
 						isLoading={isLoading}
+						hasError={hasError}
 						onSelect={() => setIsOpen(false)}
 					/>
 				)}

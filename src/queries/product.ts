@@ -16,6 +16,7 @@ import {
 	VariantSimplified,
 } from '@/lib/types';
 import { Prisma, ProductVariant, Size, Store } from '@prisma/client';
+import { getRankedProductCandidates } from '@/lib/search';
 
 // Clerk
 import { currentUser } from '@clerk/nextjs/server';
@@ -721,6 +722,10 @@ export const getProducts = async (
 	pageSize: number = 10,
 ) => {
 	const limit = pageSize;
+	let storeId: string | undefined;
+	let categoryId: string | undefined;
+	let subCategoryId: string | undefined;
+	let offerTagId: string | undefined;
 
 	// Construct the base query
 	const andConditions: Prisma.ProductWhereInput[] = [];
@@ -737,6 +742,7 @@ export const getProducts = async (
 			select: { id: true },
 		});
 		if (store) {
+			storeId = store.id;
 			andConditions.push({ storeId: store.id });
 		}
 	}
@@ -759,6 +765,7 @@ export const getProducts = async (
 			select: { id: true },
 		});
 		if (category) {
+			categoryId = category.id;
 			andConditions.push({ categoryId: category.id });
 		}
 	}
@@ -772,6 +779,7 @@ export const getProducts = async (
 			select: { id: true },
 		});
 		if (subCategory) {
+			subCategoryId = subCategory.id;
 			andConditions.push({ subCategoryId: subCategory.id });
 		}
 	}
@@ -802,38 +810,9 @@ export const getProducts = async (
 			select: { id: true },
 		});
 		if (offer) {
+			offerTagId = offer.id;
 			andConditions.push({ offerTagId: offer.id });
 		}
-	}
-
-	// Apply search filter (case-insensitive & accent-normalized search)
-	if (filters.search) {
-		const searchPattern = filters.search.trim();
-		andConditions.push({
-			OR: [
-				{
-					name: { contains: searchPattern, mode: 'insensitive' },
-				},
-				{
-					description: { contains: searchPattern, mode: 'insensitive' },
-				},
-				{
-					brand: { contains: searchPattern, mode: 'insensitive' },
-				},
-				{
-					variants: {
-						some: {
-							OR: [
-								{ variantName: { contains: searchPattern, mode: 'insensitive' } },
-								{ variantDescription: { contains: searchPattern, mode: 'insensitive' } },
-								{ keywords: { contains: searchPattern, mode: 'insensitive' } },
-								{ sku: { contains: searchPattern, mode: 'insensitive' } },
-							],
-						},
-					},
-				},
-			],
-		});
 	}
 
 	// Apply price filters (min and max price)
@@ -868,28 +847,83 @@ export const getProducts = async (
 		});
 	}
 
+	const searchPattern = filters.search?.trim() || '';
+	let rankedSearch: Awaited<ReturnType<typeof getRankedProductCandidates>> | null = null;
+
+	if (searchPattern) {
+		const searchFilters: Prisma.Sql[] = [];
+		if (storeId) searchFilters.push(Prisma.sql`p."storeId" = ${storeId}`);
+		if (filters.productId) searchFilters.push(Prisma.sql`p.id <> ${filters.productId}`);
+		if (categoryId) searchFilters.push(Prisma.sql`p."categoryId" = ${categoryId}`);
+		if (subCategoryId) searchFilters.push(Prisma.sql`p."subCategoryId" = ${subCategoryId}`);
+		if (offerTagId) searchFilters.push(Prisma.sql`p."offerTagId" = ${offerTagId}`);
+		if (filters.size?.length) {
+			const sizes = Prisma.join(filters.size.map((size) => Prisma.sql`${size}`));
+			searchFilters.push(Prisma.sql`EXISTS (
+				SELECT 1
+				FROM "ProductVariant" pv_size
+				JOIN "Size" size_filter ON size_filter."productVariantId" = pv_size.id
+				WHERE pv_size."productId" = p.id AND size_filter.size IN (${sizes})
+			)`);
+		}
+		if (filters.minPrice !== undefined || filters.maxPrice !== undefined) {
+			const minPrice = filters.minPrice ?? 0;
+			const maxPrice = filters.maxPrice ?? Number.MAX_SAFE_INTEGER;
+			searchFilters.push(Prisma.sql`EXISTS (
+				SELECT 1
+				FROM "ProductVariant" pv_price
+				JOIN "Size" price_filter ON price_filter."productVariantId" = pv_price.id
+				WHERE pv_price."productId" = p.id
+					AND price_filter.price >= ${minPrice}
+					AND price_filter.price <= ${maxPrice}
+			)`);
+		}
+		if (filters.color?.length) {
+			const colors = Prisma.join(filters.color.map((color) => Prisma.sql`${color}`));
+			searchFilters.push(Prisma.sql`EXISTS (
+				SELECT 1
+				FROM "ProductVariant" pv_color
+				JOIN "Color" color_filter ON color_filter."productVariantId" = pv_color.id
+				WHERE pv_color."productId" = p.id AND color_filter.name IN (${colors})
+			)`);
+		}
+
+		// Filter and paginate relevance candidates in PostgreSQL so a filter
+		// cannot create gaps or unstable pages in the ranked result set.
+		rankedSearch = await getRankedProductCandidates(
+			searchPattern,
+			searchFilters,
+			sortBy ? null : cursor,
+			sortBy ? Math.max(limit * 1000, 1000) : limit,
+		);
+		andConditions.push({
+			id: { in: rankedSearch.candidates.map((candidate) => candidate.productId) },
+		});
+	}
+
 	// Define the sort order
-	let orderBy: Record<string, SortOrder> = {};
+	let orderBy: Prisma.ProductOrderByWithRelationInput[] = [];
 	switch (sortBy) {
 		case 'most-popular':
-			orderBy = { views: 'desc' };
+			orderBy = [{ views: 'desc' }, { id: 'asc' }];
 			break;
 		case 'new-arrivals':
-			orderBy = { createdAt: 'desc' };
+			orderBy = [{ createdAt: 'desc' }, { id: 'asc' }];
 			break;
 		case 'top-rated':
-			orderBy = { rating: 'desc' };
+			orderBy = [{ rating: 'desc' }, { id: 'asc' }];
 			break;
 		default:
-			orderBy = { views: 'desc' };
+			orderBy = [{ views: 'desc' }, { id: 'asc' }];
 	}
 
 	// Get all filtered, sorted products using cursor-based pagination
+	const useRankedSearchOrder = Boolean(searchPattern && !sortBy && rankedSearch);
 	const rawProducts = await db.product.findMany({
 		where: wherClause,
-		orderBy,
-		take: limit + 1,
-		...(cursor
+		orderBy: useRankedSearchOrder ? [{ id: 'asc' }] : orderBy,
+		take: useRankedSearchOrder ? rankedSearch!.candidates.length : limit + 1,
+		...(cursor && !useRankedSearchOrder
 			? {
 				cursor: { id: cursor },
 				skip: 1,
@@ -910,10 +944,27 @@ export const getProducts = async (
 		},
 	});
 
-	const hasNextPage = rawProducts.length > limit;
+	if (useRankedSearchOrder && rankedSearch) {
+		const relevanceOrder = new Map(
+			rankedSearch.candidates.map((candidate, index) => [candidate.productId, index]),
+		);
+		rawProducts.sort(
+			(a, b) =>
+				(relevanceOrder.get(a.id) ?? Number.MAX_SAFE_INTEGER) -
+				(relevanceOrder.get(b.id) ?? Number.MAX_SAFE_INTEGER),
+		);
+	}
+
+	const hasNextPage = useRankedSearchOrder
+		? rankedSearch!.hasNextPage
+		: rawProducts.length > limit;
 	const products = hasNextPage ? rawProducts.slice(0, limit) : rawProducts;
 	const nextCursor =
-		hasNextPage && products.length > 0 ? products[products.length - 1].id : null;
+		useRankedSearchOrder
+			? rankedSearch!.nextCursor
+			: hasNextPage && products.length > 0
+				? products[products.length - 1].id
+				: null;
 
 	type VariantWithSizes = ProductVariant & { sizes: Size[] };
 
