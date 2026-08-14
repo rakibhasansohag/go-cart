@@ -1,5 +1,5 @@
 import { currentUser } from '@clerk/nextjs/server';
-import type { PaymentAccountStatus, StorePaymentAccount } from '@prisma/client';
+import type { PaymentAccountStatus, SellerPaymentAccount } from '@prisma/client';
 
 import { db } from '@/lib/db';
 import { getStripeClient } from '@/lib/payments/stripe-client';
@@ -71,7 +71,7 @@ async function requireOwnedStore(storeUrl: string) {
 
 	const store = await db.store.findFirst({
 		where: { url: storeUrl, userId: user.id },
-		select: { id: true, url: true, name: true, email: true },
+		select: { id: true, url: true, name: true, email: true, userId: true },
 	});
 
 	if (!store) throw new ConnectRequestError('Store not found for this seller.', 404);
@@ -111,7 +111,7 @@ async function createRecipientAccount(store: Awaited<ReturnType<typeof requireOw
 			include: ['configuration.recipient', 'identity', 'requirements'],
 		},
 		{
-			idempotencyKey: `gocart-connect-account:${store.id}`,
+			idempotencyKey: `gocart-connect-account:seller:${store.userId}`,
 			apiVersion: STRIPE_ACCOUNTS_V2_PREVIEW_VERSION,
 		},
 	);
@@ -133,7 +133,7 @@ async function retrieveRecipientAccount(providerAccountId: string) {
 }
 
 async function saveAccountSnapshot(
-	storeId: string,
+	userId: string,
 	providerAccountId: string,
 	snapshot: ConnectAccountSnapshot,
 ) {
@@ -142,10 +142,10 @@ async function saveAccountSnapshot(
 			?.status;
 	const status = accountStatusFromCapability(capability);
 
-	return db.storePaymentAccount.upsert({
-		where: { storeId },
+	return db.sellerPaymentAccount.upsert({
+		where: { userId },
 		create: {
-			storeId,
+			userId,
 			providerAccountId,
 			status,
 			country: snapshot.identity?.country ?? null,
@@ -169,12 +169,12 @@ export async function getOrCreateStripeOnboardingLink(
 	storeUrl: string,
 ) {
 	const store = await requireOwnedStore(storeUrl);
-	let paymentAccount = await db.storePaymentAccount.findUnique({ where: { storeId: store.id } });
+	let paymentAccount = await db.sellerPaymentAccount.findUnique({ where: { userId: store.userId } });
 	let snapshot: ConnectAccountSnapshot | undefined;
 
 	if (!paymentAccount) {
 		const created = await createRecipientAccount(store);
-		paymentAccount = await saveAccountSnapshot(store.id, created.id, created.snapshot);
+		paymentAccount = await saveAccountSnapshot(store.userId, created.id, created.snapshot);
 		snapshot = created.snapshot;
 	}
 
@@ -198,20 +198,20 @@ export async function getOrCreateStripeOnboardingLink(
 
 export async function refreshStripePaymentAccount(storeUrl: string) {
 	const store = await requireOwnedStore(storeUrl);
-	const paymentAccount = await db.storePaymentAccount.findUnique({ where: { storeId: store.id } });
+	const paymentAccount = await db.sellerPaymentAccount.findUnique({ where: { userId: store.userId } });
 	if (!paymentAccount) throw new ConnectRequestError('Start Stripe onboarding first.', 404);
 
 	const snapshot = await retrieveRecipientAccount(paymentAccount.providerAccountId);
-	return saveAccountSnapshot(store.id, paymentAccount.providerAccountId, snapshot);
+	return saveAccountSnapshot(store.userId, paymentAccount.providerAccountId, snapshot);
 }
 
 export async function getStripePaymentAccountStatus(storeUrl: string) {
 	const store = await requireOwnedStore(storeUrl);
-	const paymentAccount = await db.storePaymentAccount.findUnique({ where: { storeId: store.id } });
+	const paymentAccount = await db.sellerPaymentAccount.findUnique({ where: { userId: store.userId } });
 	if (!paymentAccount) return null;
 
 	const snapshot = await retrieveRecipientAccount(paymentAccount.providerAccountId);
-	return saveAccountSnapshot(store.id, paymentAccount.providerAccountId, snapshot);
+	return saveAccountSnapshot(store.userId, paymentAccount.providerAccountId, snapshot);
 }
 
-export type StripePaymentAccount = StorePaymentAccount;
+export type StripePaymentAccount = SellerPaymentAccount;

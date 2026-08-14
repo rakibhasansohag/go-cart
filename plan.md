@@ -950,9 +950,13 @@ customer to each seller before adding more optional growth features.
   reversals.
 
 - **Implementation evidence (2026-08-14, partial Phase 14.2)**:
-  - [x] Added a `StorePaymentAccount` record that stores only the provider
+  - [x] Added a `SellerPaymentAccount` record that stores only the provider
         account reference, capability/status summary, country, and timestamps;
-        no KYC or bank details are stored.
+        no KYC or bank details are stored. One seller account is reused across
+        all stores owned by that seller.
+  - [x] Added a guarded migration that backfills the existing account owner
+        from `Store.userId` and refuses to guess if a seller already has
+        multiple connected accounts.
   - [x] Added seller-owned Stripe Connect onboarding routes. Each request creates
         a fresh single-use Account Link, while the Stripe `refresh_url` creates
         another link after expiry and the return route re-checks capability state.
@@ -960,12 +964,13 @@ customer to each seller before adding more optional growth features.
         understand order hold, delivery, seven-day return protection, weekly
         payday review, and seller payout without Stripe credentials or personal
         information.
-  - [x] Verified with focused unit tests, full unit tests, isolated Docker
-        PostgreSQL migrations/invariants, Chromium smoke coverage, typecheck,
-        lint, and production build.
-  - [ ] Remaining: Connect webhooks, country/currency allowlist, seller/admin
-        earnings views, ledger/transfer implementation, and live Stripe Sandbox
-        onboarding with configured credentials.
+  - [x] Verified with focused Connect tests, Prisma validation/client generation,
+        isolated Docker PostgreSQL migration application, typecheck, lint, and
+        Graphify refresh. A local Stripe Sandbox onboarding was also manually
+        completed and reached an active transfer capability.
+  - [ ] Remaining: protected automated Connect onboarding coverage, Connect
+        webhooks, country/currency allowlist, seller/admin earnings views,
+        ledger/transfer implementation, and production settlement verification.
 
 - [ ] **Phase 14.1 — Business and responsibility decisions**
   - [ ] Confirm whether goCart or each seller is the merchant the customer is

@@ -44,6 +44,7 @@ model User {
   loyaltyAccount             LoyaltyAccount?
   personalCoupons            Coupon[]                    @relation("UserPersonalCoupons")
   dailyCheckIns              DailyCheckIn[]              @relation("UserDailyCheckIns")
+  paymentAccount             SellerPaymentAccount?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -178,27 +179,27 @@ model Store {
   orderGroups    OrderGroup[]    @relation("OrderGroupToStore")
   coupons        Coupon[]        @relation("CouponToStore")
   returnRequests ReturnRequest[] @relation("ReturnRequestToStore")
-  paymentAccount StorePaymentAccount?
 
   @@index([userId])
 }
 
-model StorePaymentAccount {
-  id                    String              @id @default(uuid())
-  storeId               String              @unique
-  provider              String              @default("STRIPE")
-  providerAccountId     String              @unique
-  status                PaymentAccountStatus @default(PENDING)
-  country               String?
-  transfersCapability   String?
-  detailsSubmitted      Boolean             @default(false)
-  lastCheckedAt         DateTime?
-  createdAt             DateTime            @default(now())
-  updatedAt             DateTime            @updatedAt
+model SellerPaymentAccount {
+  id                  String               @id @default(uuid())
+  userId              String               @unique
+  provider            String               @default("STRIPE")
+  providerAccountId   String               @unique
+  status              PaymentAccountStatus @default(PENDING)
+  country             String?
+  transfersCapability String?
+  detailsSubmitted    Boolean              @default(false)
+  lastCheckedAt       DateTime?
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
 
-  store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([provider, status])
+  @@map("StorePaymentAccount")
 }
 
 enum ShippingFeeMethod {

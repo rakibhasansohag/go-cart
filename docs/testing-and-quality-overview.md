@@ -269,7 +269,10 @@ seven-day return window, weekly admin payday review, and seller payout story.
 The Chromium smoke suite verifies the route, visible story, keyboard focus, and
 step/reset interactions. Stripe Connect onboarding remains a protected seller
 flow; the server creates a fresh single-use Account Link on demand and uses its
-refresh callback to regenerate expired links.
+refresh callback to regenerate expired links. The connected account is stored at
+seller level, so a seller's stores reuse one payout account. A local Stripe
+Sandbox onboarding was manually verified through the redirect and active
+transfer-capability status; this is not counted as an automated protected E2E.
 
 ### 8. Run static checks and the production build
 
