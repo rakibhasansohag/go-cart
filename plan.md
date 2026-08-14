@@ -902,6 +902,8 @@ customer to each seller before adding more optional growth features.
   - Eligible funds are reviewed and released in a weekly payday batch.
   - GoCart commission is configurable, defaults to 2%, and is stored per order
     so later rate changes do not alter historical payouts.
+  - The seller payout hold/return-risk window is configurable by an admin,
+    defaults to 7 days, and supports 0 days only for sandbox testing.
   - Commission is calculated from the final settled seller amount after
     discounts, GoCoins, tax, shipping, refunds, and other adjustments.
   - GoCart absorbs Stripe/PayPal processing fees from its commission; provider
@@ -967,6 +969,10 @@ customer to each seller before adding more optional growth features.
   - [x] Added the admin marketplace settings page and protected API for the
         database-backed commission rate. New settlements read the current
         setting, while historical settlements retain their stored percentage.
+  - [x] Added the admin-configurable payout hold/return-risk window. New
+        settlements calculate their eligibility date from the current setting,
+        while existing settlements retain their stored eligibility date and
+        seller-facing copy reads the configured value.
   - [x] Added Stripe dispute-created/updated/closed mapping to terminal
         Chargeback payment state, proportional seller ledger debits, replay
         protection, and recovery when a dispute closes as won.

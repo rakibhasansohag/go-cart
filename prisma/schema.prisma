@@ -55,6 +55,7 @@ model User {
 model PlatformSetting {
   id                String   @id @default("default")
   commissionPercent Int      @default(2)
+  payoutHoldDays    Int      @default(7)
   updatedById       String?
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt

@@ -1,0 +1,2 @@
+ALTER TABLE "PlatformSetting"
+ADD COLUMN "payoutHoldDays" INTEGER NOT NULL DEFAULT 7;

@@ -14,7 +14,7 @@ type Settlement = {
 
 type Batch = { id: string; weekStart: Date; weekEnd: Date; status: string; totalCents: number };
 
-export default function SettlementsTable({ initialSettlements, initialBatches }: { initialSettlements: Settlement[]; initialBatches: Batch[] }) {
+export default function SettlementsTable({ initialSettlements, initialBatches, payoutHoldDays }: { initialSettlements: Settlement[]; initialBatches: Batch[]; payoutHoldDays: number }) {
 	const [message, setMessage] = useState('');
 	const [busy, setBusy] = useState(false);
 	async function run(action: string, batchId?: string) {
@@ -27,7 +27,7 @@ export default function SettlementsTable({ initialSettlements, initialBatches }:
 	return (
 		<div className='mx-auto flex w-full max-w-[1600px] flex-col gap-6 pb-12'>
 			<header className='flex flex-wrap items-center justify-between gap-4 border-b border-border/60 pb-4'>
-				<div><h1 className='text-2xl font-bold tracking-tight'>Marketplace settlements</h1><p className='mt-1 text-sm text-muted-foreground'>Review held funds, approve the weekly Asia/Dhaka payday batch, and inspect transfer failures.</p></div>
+				<div><h1 className='text-2xl font-bold tracking-tight'>Marketplace settlements</h1><p className='mt-1 text-sm text-muted-foreground'>Review held funds, approve the weekly Asia/Dhaka payday batch, and inspect transfer failures. New settlements wait {payoutHoldDays} day{payoutHoldDays === 1 ? '' : 's'} after delivery evidence.</p></div>
 				<button disabled={busy} onClick={() => run('create-batch')} className='rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground disabled:opacity-50'>Create weekly batch</button>
 			</header>
 			{message && <p role='status' className='rounded-lg border border-border p-3 text-sm'>{message}</p>}

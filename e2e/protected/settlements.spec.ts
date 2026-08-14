@@ -39,17 +39,21 @@ test('admin can change the commission from marketplace settings', async ({ page 
     timeout: 120_000,
   });
 
-  const input = page.getByRole('spinbutton', { name: 'Commission percentage' });
-  await expect(page.getByRole('heading', { name: 'Marketplace settings' })).toBeVisible();
-  await expect(input).toHaveValue('2');
+	const input = page.getByRole('spinbutton', { name: 'Commission percentage' });
+	const holdDays = page.getByRole('spinbutton', { name: 'Seller payout hold / return-risk window' });
+	await expect(page.getByRole('heading', { name: 'Marketplace settings' })).toBeVisible();
+	await expect(input).toHaveValue('2');
+	await expect(holdDays).toHaveValue('7');
 
-  await input.fill('3');
-  await page.getByRole('button', { name: 'Save commission' }).click();
-  await expect(page.getByRole('status')).toContainText('New settlements will use 3% commission.');
+	await input.fill('3');
+	await holdDays.fill('0');
+	await page.getByRole('button', { name: 'Save marketplace settings' }).click();
+	await expect(page.getByRole('status')).toContainText('New settlements will use 3% commission and can become eligible immediately');
 
-  await input.fill('2');
-  await page.getByRole('button', { name: 'Save commission' }).click();
-  await expect(page.getByRole('status')).toContainText('New settlements will use 2% commission.');
+	await input.fill('2');
+	await holdDays.fill('7');
+	await page.getByRole('button', { name: 'Save marketplace settings' }).click();
+	await expect(page.getByRole('status')).toContainText('New settlements will use 2% commission and wait 7 days');
 });
 
 test('seller cannot access marketplace settlement operations', async ({ page }) => {

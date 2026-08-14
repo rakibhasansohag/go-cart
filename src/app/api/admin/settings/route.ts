@@ -2,10 +2,11 @@ import { auth } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { db } from '@/lib/db';
-import { getCommissionSettings, updateCommissionPercent } from '@/lib/settlement/service';
+import { getCommissionSettings, updatePlatformSettings } from '@/lib/settlement/service';
 
 const updateSchema = z.object({
 	commissionPercent: z.coerce.number().int().min(0).max(100),
+	payoutHoldDays: z.coerce.number().int().min(0).max(365),
 });
 
 async function getAdminId() {
@@ -29,8 +30,8 @@ export async function PATCH(request: Request) {
 	try {
 		const adminId = await getAdminId();
 		const input = updateSchema.parse(await request.json());
-		const setting = await updateCommissionPercent(input.commissionPercent, adminId);
-		return NextResponse.json({ commissionPercent: setting.commissionPercent });
+		const setting = await updatePlatformSettings(input, adminId);
+		return NextResponse.json({ commissionPercent: setting.commissionPercent, payoutHoldDays: setting.payoutHoldDays });
 	} catch (error) {
 		const status = error instanceof z.ZodError ? 400 : 403;
 		return NextResponse.json({ error: error instanceof Error ? error.message : 'Unable to update platform settings.' }, { status });

@@ -17,15 +17,30 @@ import {
 
 export const DEFAULT_PAYOUT_TIMEZONE = 'Asia/Dhaka';
 export const DEFAULT_PAYOUT_COUNTRIES = ['US', 'BD', 'CA', 'GB', 'AU', 'SG'];
+export const DEFAULT_PAYOUT_HOLD_DAYS = 7;
 export const PLATFORM_SETTING_ID = 'default';
 
 export async function getCommissionSettings() {
 	const setting = await db.platformSetting.findUnique({ where: { id: PLATFORM_SETTING_ID } });
-	return { commissionPercent: setting?.commissionPercent ?? DEFAULT_COMMISSION_PERCENT };
+	return {
+		commissionPercent: setting?.commissionPercent ?? DEFAULT_COMMISSION_PERCENT,
+		payoutHoldDays: setting?.payoutHoldDays ?? DEFAULT_PAYOUT_HOLD_DAYS,
+	};
 }
 
 export async function getConfiguredCommissionPercent() {
 	return percentFromConfig((await getCommissionSettings()).commissionPercent);
+}
+
+export function payoutHoldDaysFromConfig(value: number | null | undefined) {
+	if (value === null || value === undefined || !Number.isInteger(value) || value < 0 || value > 365) {
+		throw new Error('Payout hold days must be a whole number from 0 to 365.');
+	}
+	return value;
+}
+
+export async function getConfiguredPayoutHoldDays() {
+	return payoutHoldDaysFromConfig((await getCommissionSettings()).payoutHoldDays);
 }
 
 export async function updateCommissionPercent(commissionPercent: number, updatedById: string) {
@@ -33,7 +48,17 @@ export async function updateCommissionPercent(commissionPercent: number, updated
 	return db.platformSetting.upsert({
 		where: { id: PLATFORM_SETTING_ID },
 		update: { commissionPercent: Math.round(validated), updatedById },
-		create: { id: PLATFORM_SETTING_ID, commissionPercent: Math.round(validated), updatedById },
+		create: { id: PLATFORM_SETTING_ID, commissionPercent: Math.round(validated), payoutHoldDays: DEFAULT_PAYOUT_HOLD_DAYS, updatedById },
+	});
+}
+
+export async function updatePlatformSettings(input: { commissionPercent: number; payoutHoldDays: number }, updatedById: string) {
+	const commissionPercent = Math.round(percentFromConfig(input.commissionPercent));
+	const payoutHoldDays = payoutHoldDaysFromConfig(input.payoutHoldDays);
+	return db.platformSetting.upsert({
+		where: { id: PLATFORM_SETTING_ID },
+		update: { commissionPercent, payoutHoldDays, updatedById },
+		create: { id: PLATFORM_SETTING_ID, commissionPercent, payoutHoldDays, updatedById },
 	});
 }
 
@@ -87,8 +112,8 @@ function groupGrossCents(group: { items: Array<{ totalPrice: number }> }): numbe
 	return group.items.reduce((sum, item) => sum + toCents(item.totalPrice), 0);
 }
 
-export function settlementReleaseAt(deliveryAt: Date | null): Date | null {
-	return deliveryAt ? new Date(deliveryAt.getTime() + 7 * 24 * 60 * 60 * 1000) : null;
+export function settlementReleaseAt(deliveryAt: Date | null, payoutHoldDays = DEFAULT_PAYOUT_HOLD_DAYS): Date | null {
+	return deliveryAt ? new Date(deliveryAt.getTime() + payoutHoldDays * 24 * 60 * 60 * 1000) : null;
 }
 
 export async function createSettlementForOrderGroup(orderGroupId: string) {
@@ -121,7 +146,8 @@ export async function createSettlementForOrderGroup(orderGroupId: string) {
 		allGroups.map((candidate) => ({ key: candidate.id, weightCents: groupGrossCents(candidate) })),
 	);
 	const discountCents = couponDiscountCents + (allocations.find((item) => item.key === group.id)?.cents ?? 0);
-	const commissionPercent = await getConfiguredCommissionPercent();
+	const settings = await getCommissionSettings();
+	const commissionPercent = percentFromConfig(settings.commissionPercent);
 	const snapshot = calculateSettlementSnapshot({
 		grossCents,
 		discountCents,
@@ -131,7 +157,7 @@ export async function createSettlementForOrderGroup(orderGroupId: string) {
 		commissionPercent,
 	});
 	assertUsdSettlement(CANONICAL_SETTLEMENT_CURRENCY);
-	const releaseAt = settlementReleaseAt(deliveryEvidenceAt(group));
+	const releaseAt = settlementReleaseAt(deliveryEvidenceAt(group), payoutHoldDaysFromConfig(settings.payoutHoldDays));
 	const status = group.order.paymentStatus === 'Paid' || group.order.paymentStatus === 'PartiallyRefunded'
 		? releaseAt ? SettlementStatus.HELD : SettlementStatus.BLOCKED
 		: SettlementStatus.BLOCKED;

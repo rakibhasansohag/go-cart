@@ -1,7 +1,7 @@
-import { listPayoutBatches, listSettlementOperations } from '@/lib/settlement/service';
+import { getCommissionSettings, listPayoutBatches, listSettlementOperations } from '@/lib/settlement/service';
 import SettlementsTable from './settlements-table';
 
 export default async function AdminSettlementsPage() {
-	const [settlements, batches] = await Promise.all([listSettlementOperations(), listPayoutBatches()]);
-	return <SettlementsTable initialSettlements={settlements} initialBatches={batches} />;
+	const [settlements, batches, settings] = await Promise.all([listSettlementOperations(), listPayoutBatches(), getCommissionSettings()]);
+	return <SettlementsTable initialSettlements={settlements} initialBatches={batches} payoutHoldDays={settings.payoutHoldDays} />;
 }

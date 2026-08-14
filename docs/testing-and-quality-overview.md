@@ -256,6 +256,12 @@ Remove-Item Env:E2E_BROWSER_REFUND -ErrorAction SilentlyContinue
 It is intentionally local/sandbox-only. The external Stripe test objects remain
 in the sandbox account for audit history; the Docker database fixture is reset.
 
+The admin marketplace settings also expose the seller payout hold/return-risk
+window. It defaults to 7 days; setting it to 0 is supported for isolated
+sandbox testing so a delivered fixture can become eligible without waiting a
+week. This setting affects new settlements only, and the seller earnings copy
+uses the configured value.
+
 ### 7c. Explore the portfolio marketplace funds-flow demo
 
 The public demo is deterministic and does not call Stripe or mutate a database:
