@@ -56,6 +56,11 @@ export const adminDashboardSidebarOptions: DashboardSidebarMenuInterface[] = [
 		icon: 'box-list',
 		link: '/dashboard/admin/settlements',
 	},
+	{
+		label: 'Marketplace Settings',
+		icon: 'settings',
+		link: '/dashboard/admin/settings',
+	},
 ];
 
 export const SellerDashboardSidebarOptions: DashboardSidebarMenuInterface[] = [

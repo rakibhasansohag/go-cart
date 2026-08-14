@@ -10,12 +10,32 @@ import {
 	allocateProportionally,
 	CANONICAL_SETTLEMENT_CURRENCY,
 	calculateSettlementSnapshot,
+	DEFAULT_COMMISSION_PERCENT,
 	percentFromConfig,
 	toCents,
 } from './calculation';
 
 export const DEFAULT_PAYOUT_TIMEZONE = 'Asia/Dhaka';
 export const DEFAULT_PAYOUT_COUNTRIES = ['US', 'BD', 'CA', 'GB', 'AU', 'SG'];
+export const PLATFORM_SETTING_ID = 'default';
+
+export async function getCommissionSettings() {
+	const setting = await db.platformSetting.findUnique({ where: { id: PLATFORM_SETTING_ID } });
+	return { commissionPercent: setting?.commissionPercent ?? DEFAULT_COMMISSION_PERCENT };
+}
+
+export async function getConfiguredCommissionPercent() {
+	return percentFromConfig((await getCommissionSettings()).commissionPercent);
+}
+
+export async function updateCommissionPercent(commissionPercent: number, updatedById: string) {
+	const validated = percentFromConfig(commissionPercent);
+	return db.platformSetting.upsert({
+		where: { id: PLATFORM_SETTING_ID },
+		update: { commissionPercent: Math.round(validated), updatedById },
+		create: { id: PLATFORM_SETTING_ID, commissionPercent: Math.round(validated), updatedById },
+	});
+}
 
 export function payoutCountryAllowlist(): string[] {
 	const configured = process.env.GOCART_PAYOUT_COUNTRIES?.split(',')
@@ -101,13 +121,14 @@ export async function createSettlementForOrderGroup(orderGroupId: string) {
 		allGroups.map((candidate) => ({ key: candidate.id, weightCents: groupGrossCents(candidate) })),
 	);
 	const discountCents = couponDiscountCents + (allocations.find((item) => item.key === group.id)?.cents ?? 0);
+	const commissionPercent = await getConfiguredCommissionPercent();
 	const snapshot = calculateSettlementSnapshot({
 		grossCents,
 		discountCents,
 		shippingCents: toCents(group.shippingFees),
 		taxCents: 0,
 		providerFeeCents: 0,
-		commissionPercent: percentFromConfig(),
+		commissionPercent,
 	});
 	assertUsdSettlement(CANONICAL_SETTLEMENT_CURRENCY);
 	const releaseAt = settlementReleaseAt(deliveryEvidenceAt(group));
@@ -124,7 +145,7 @@ export async function createSettlementForOrderGroup(orderGroupId: string) {
 					currency: CANONICAL_SETTLEMENT_CURRENCY,
 					status,
 					...snapshot,
-					commissionPercent: Math.round(percentFromConfig()),
+					commissionPercent,
 					remainingPayableCents: snapshot.sellerPayableCents,
 					eligibleAt: releaseAt,
 				},

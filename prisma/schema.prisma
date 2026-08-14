@@ -41,6 +41,7 @@ model User {
   emailOutboxJobs            EmailOutbox[]               @relation("EmailOutboxRecipient")
   notificationDeliveryAudits NotificationDeliveryAudit[] @relation("NotificationDeliveryAuditRecipient")
   emailTemplatesEdited       EmailTemplate[]             @relation("EmailTemplateEditor")
+  platformSettingsUpdated    PlatformSetting[]           @relation("PlatformSettingUpdatedBy")
   loyaltyAccount             LoyaltyAccount?
   personalCoupons            Coupon[]                    @relation("UserPersonalCoupons")
   dailyCheckIns              DailyCheckIn[]              @relation("UserDailyCheckIns")
@@ -49,6 +50,16 @@ model User {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model PlatformSetting {
+  id                String   @id @default("default")
+  commissionPercent Int      @default(2)
+  updatedById       String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  updatedBy User? @relation("PlatformSettingUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
 }
 
 model DailyCheckIn {

@@ -291,7 +291,10 @@ reversal debits, and settlement creation replay. The admin operations surface is
 `/dashboard/admin/settlements`; seller statements are available at
 `/dashboard/seller/stores/<storeUrl>/earnings`. Stripe transfer processing is
 idempotent and capability/country guarded, but the integration suite injects a
-mock transfer creator so it never moves external money.
+mock transfer creator so it never moves external money. Admins manage the
+commission rate at `/dashboard/admin/settings`; the database defaults to 2%,
+updates apply to new settlements, and each settlement preserves its historical
+rate.
 
 The production application migration is intentionally not run by this check.
 Review and back up the production database before running the normal migration
@@ -478,7 +481,9 @@ The next practical browser milestones are:
 
 1. seller package progression through shipment and delivery;
 2. keyboard-only verification for authenticated checkout and dashboard actions;
-3. protected Stripe Connect payday browser coverage and provider dispute/chargeback mapping;
+3. provider-backed Stripe Connect payday transfer browser coverage and provider
+   dispute/chargeback mapping (protected seller/admin settlement route coverage
+   is now automated against the isolated Docker database);
 4. PayPal sandbox buyer checkout/refund. Live payment settlement remains out of scope.
 
 When those are implemented, update this document and `plan.md` with the exact test names and pass counts. That keeps the project understandable months later and prevents “implemented” from being confused with “verified.”

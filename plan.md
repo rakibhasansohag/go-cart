@@ -945,7 +945,7 @@ customer to each seller before adding more optional growth features.
   GoCart remains responsible for platform fees, refunds, disputes, and transfer
   reversals.
 
-- **Implementation evidence (2026-08-14, partial Phase 14.2)**:
+- **Implementation evidence (2026-08-14, Phase 14.4 hardening in progress)**:
   - [x] Added a `SellerPaymentAccount` record that stores only the provider
         account reference, capability/status summary, country, and timestamps;
         no KYC or bank details are stored. One seller account is reused across
@@ -964,11 +964,13 @@ customer to each seller before adding more optional growth features.
         isolated Docker PostgreSQL migration application, typecheck, lint, and
         Graphify refresh. A local Stripe Sandbox onboarding was also manually
         completed and reached an active transfer capability.
-  - [ ] Remaining: protected automated Connect onboarding coverage, Connect
-        webhooks, country/currency allowlist, seller/admin earnings views,
-        ledger/transfer implementation, and production settlement verification.
+  - [x] Added the admin marketplace settings page and protected API for the
+        database-backed commission rate. New settlements read the current
+        setting, while historical settlements retain their stored percentage.
+  - [ ] Remaining: provider dispute/chargeback webhooks and a protected
+        browser test for a real provider-backed seller payday transfer.
 
-- [ ] **Phase 14.1 — Business and responsibility decisions**
+- [x] **Phase 14.1 — Business and responsibility decisions**
   - [x] Confirm whether goCart or each seller is the merchant the customer is
         paying, including whose name appears on receipts/statements
   - [x] Confirm whether one checkout may contain multiple sellers and whether
@@ -978,7 +980,7 @@ customer to each seller before adding more optional growth features.
   - [x] Confirm launch countries/currencies and seller payout eligibility
   - [x] Produce and approve a dedicated marketplace payments recommendation
 
-- [ ] **Phase 14.2 — Seller financial onboarding**
+- [x] **Phase 14.2 — Seller financial onboarding**
   - [x] Add connected-account identity, onboarding status, capability status,
         requirements, and payout-readiness fields without storing sensitive KYC data
   - [x] Add hosted onboarding, seller earnings/admin settlement views,
@@ -986,7 +988,7 @@ customer to each seller before adding more optional growth features.
   - [x] Process authenticated account/capability and payout webhooks idempotently
   - [x] Prevent settlement when required capabilities or payout-country eligibility are inactive
 
-- [ ] **Phase 14.3 — Marketplace ledger, commissions, and settlement**
+- [x] **Phase 14.3 — Marketplace ledger, commissions, and settlement**
   - [x] Add immutable per-order-group ledger entries for gross amount, discounts,
         shipping, tax, provider fees, platform commission, refunds, reversals,
         seller payable, and payout status using decimal/minor-unit-safe arithmetic
@@ -1003,8 +1005,12 @@ customer to each seller before adding more optional growth features.
   - [x] **Test**: Multi-seller group creation, partial refund adjustment,
         transfer reversal, account/payout webhook replay, and settlement idempotency
         preserve exact Docker ledger invariants
+  - [x] Protected browser coverage proves seller earnings, admin settlement
+        operations, and seller-to-admin access boundaries against the isolated
+        Docker database using the existing E2E role fixtures
   - [ ] Remaining hardening: provider dispute/chargeback webhooks and a protected
-        browser test that exercises the real seller payday transfer end-to-end
+        browser test that exercises the real provider-backed seller payday
+        transfer end-to-end
 
 ---
 

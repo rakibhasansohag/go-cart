@@ -17,8 +17,8 @@ export function toCents(amount: number): number {
 	return Math.round(amount * 100);
 }
 
-export function percentFromConfig(value = process.env.GOCART_COMMISSION_PERCENT): number {
-	const percent = value == null || value.trim() === '' ? DEFAULT_COMMISSION_PERCENT : Number(value);
+export function percentFromConfig(value?: string | number | null): number {
+	const percent = value == null || value === '' ? DEFAULT_COMMISSION_PERCENT : Number(value);
 	if (!Number.isFinite(percent) || percent < 0 || percent > MAX_COMMISSION_PERCENT) {
 		throw new Error(`Commission percent must be between 0 and ${MAX_COMMISSION_PERCENT}.`);
 	}
@@ -87,4 +87,3 @@ export function allocateProportionally(
 	for (let index = 0; index < rows.length && remaining > 0; index += 1, remaining -= 1) rows[index].cents += 1;
 	return rows.sort((a, b) => a.key.localeCompare(b.key)).map(({ key, cents }) => ({ key, cents }));
 }
-
