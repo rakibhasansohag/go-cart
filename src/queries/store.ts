@@ -632,7 +632,7 @@ export const applySeller = async (store: StoreType) => {
 				...store,
 				defaultShippingService:
 					store.defaultShippingService || 'International Delivery',
-				returnPolicy: store.returnPolicy || 'Return in 30 days.',
+				returnPolicy: store.returnPolicy || 'Return within 7 days of confirmed delivery in good condition.',
 				userId: user.id,
 			},
 		});

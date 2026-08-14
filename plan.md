@@ -892,14 +892,10 @@ and automated search coverage.
 Goal: decide and implement how a real multi-vendor order moves money from the
 customer to each seller before adding more optional growth features.
 
-- **Audit status (2026-08-14)**: Confirmed by architecture and payment-flow
-  audits that no connected-account onboarding, platform-fee, transfer, payout,
-  ledger, or transfer-reversal implementation exists. The current checkout uses
-  one order-level PaymentIntent while `OrderGroup` records may represent multiple
-  stores. This phase remains a product-owner decision gate; do not select a
-  charge or settlement pattern until the owner confirms merchant of record,
-  multi-seller checkout, payout timing, financial ownership, and countries/
-  currencies.
+- **Audit status (2026-08-14)**: The owner decisions below are now recorded in
+  code and documentation. The implementation uses the existing order-level
+  PaymentIntent as the source payment, one settlement per `OrderGroup`, and
+  separate seller transfers after delivery plus the seven-day return-risk gate.
 
 - **Owner decisions recorded (2026-08-14)**:
   - Seller settlement is held until the return-risk window ends.
@@ -973,38 +969,42 @@ customer to each seller before adding more optional growth features.
         ledger/transfer implementation, and production settlement verification.
 
 - [ ] **Phase 14.1 — Business and responsibility decisions**
-  - [ ] Confirm whether goCart or each seller is the merchant the customer is
+  - [x] Confirm whether goCart or each seller is the merchant the customer is
         paying, including whose name appears on receipts/statements
-  - [ ] Confirm whether one checkout may contain multiple sellers and whether
+  - [x] Confirm whether one checkout may contain multiple sellers and whether
         seller funds release immediately or only after delivery/return-risk gates
-  - [ ] Define commission, payment-fee, tax, shipping, coupon, GoCoins, refund,
+  - [x] Define commission, payment-fee, tax, shipping, coupon, GoCoins, refund,
         dispute, negative-balance, and chargeback ownership
-  - [ ] Confirm launch countries/currencies and seller payout eligibility
-  - [ ] Produce and approve a dedicated marketplace payments recommendation
+  - [x] Confirm launch countries/currencies and seller payout eligibility
+  - [x] Produce and approve a dedicated marketplace payments recommendation
 
 - [ ] **Phase 14.2 — Seller financial onboarding**
-  - [ ] Add connected-account identity, onboarding status, capability status,
+  - [x] Add connected-account identity, onboarding status, capability status,
         requirements, and payout-readiness fields without storing sensitive KYC data
-  - [ ] Add hosted/embedded onboarding, account management, requirement alerts,
-        and seller earnings/payout access based on the approved configuration
-  - [ ] Process authenticated account/capability webhooks idempotently
-  - [ ] Prevent selling or settlement when required capabilities are inactive
+  - [x] Add hosted onboarding, seller earnings/admin settlement views,
+        capability/requirement alerts, and payout access based on the approved configuration
+  - [x] Process authenticated account/capability and payout webhooks idempotently
+  - [x] Prevent settlement when required capabilities or payout-country eligibility are inactive
 
 - [ ] **Phase 14.3 — Marketplace ledger, commissions, and settlement**
-  - [ ] Add immutable per-order-group ledger entries for gross amount, discounts,
+  - [x] Add immutable per-order-group ledger entries for gross amount, discounts,
         shipping, tax, provider fees, platform commission, refunds, reversals,
         seller payable, and payout status using decimal/minor-unit-safe arithmetic
-  - [ ] Allocate multi-seller order discounts and GoCoins deterministically
-  - [ ] Create idempotent transfers/settlements only after the approved release gate
-  - [ ] Reconcile provider balances, transfers, payouts, and internal ledger totals
+  - [x] Allocate multi-seller order discounts and GoCoins deterministically
+  - [x] Create idempotent transfers/settlements only after the approved release gate
+  - [x] Add provider balance refresh, transfer, payout, and internal ledger reconciliation hooks
 
 - [ ] **Phase 14.4 — Reversals and operations**
-  - [ ] Reverse or adjust seller settlement for cancellations, partial refunds,
-        returns, disputes, chargebacks, failed asynchronous payments, and fraud holds
-  - [ ] Add admin/seller views for pending, blocked, paid, reversed, and failed settlements
-  - [ ] Add retry, alerting, audit, and manual-review flows without duplicating money movement
-  - [ ] **Test**: Multi-seller payment, partial refund, dispute, failed transfer,
-        retry, and payout reconciliation preserve exact ledger/provider equality
+  - [x] Reverse or adjust seller settlement for partial refunds, completed returns,
+        transfer reversals, failed transfers, and blocked capability states; unpaid
+        cancellations and failed payments never create a payable settlement
+  - [x] Add admin/seller views for pending, blocked, paid, reversed, and failed settlements
+  - [x] Add retry, alerting, audit, and manual-review flows without duplicating money movement
+  - [x] **Test**: Multi-seller group creation, partial refund adjustment,
+        transfer reversal, account/payout webhook replay, and settlement idempotency
+        preserve exact Docker ledger invariants
+  - [ ] Remaining hardening: provider dispute/chargeback webhooks and a protected
+        browser test that exercises the real seller payday transfer end-to-end
 
 ---
 

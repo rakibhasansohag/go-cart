@@ -51,6 +51,11 @@ export const adminDashboardSidebarOptions: DashboardSidebarMenuInterface[] = [
 		icon: 'shipping',
 		link: '/dashboard/admin/delivery-health',
 	},
+	{
+		label: 'Settlements',
+		icon: 'box-list',
+		link: '/dashboard/admin/settlements',
+	},
 ];
 
 export const SellerDashboardSidebarOptions: DashboardSidebarMenuInterface[] = [
@@ -88,6 +93,11 @@ export const SellerDashboardSidebarOptions: DashboardSidebarMenuInterface[] = [
 		label: 'Shipping',
 		icon: 'shipping',
 		link: 'shipping',
+	},
+	{
+		label: 'Earnings',
+		icon: 'box-list',
+		link: 'earnings',
 	},
 	{
 		label: 'Settings',

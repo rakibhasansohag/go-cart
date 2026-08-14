@@ -45,6 +45,7 @@ model User {
   personalCoupons            Coupon[]                    @relation("UserPersonalCoupons")
   dailyCheckIns              DailyCheckIn[]              @relation("UserDailyCheckIns")
   paymentAccount             SellerPaymentAccount?
+  settlements                SellerSettlement[]          @relation("SettlementSeller")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -154,9 +155,9 @@ model Store {
   averageRating                       Float       @default(0)
   numReviews                          Int         @default(0)
   featured                            Boolean     @default(false)
-  returnPolicy                        String      @default("Return in 30 days.")
+  returnPolicy                        String      @default("Return within 7 days of confirmed delivery in good condition.")
   returnsAccepted                     Boolean     @default(true)
-  returnWindowDays                    Int         @default(30)
+  returnWindowDays                    Int         @default(7)
   returnShippingFees                  Boolean     @default(false)
   defaultShippingService              String      @default("International Delivery")
   defaultShippingFeePerItem           Float       @default(0)
@@ -184,22 +185,58 @@ model Store {
 }
 
 model SellerPaymentAccount {
-  id                  String               @id @default(uuid())
-  userId              String               @unique
-  provider            String               @default("STRIPE")
-  providerAccountId   String               @unique
-  status              PaymentAccountStatus @default(PENDING)
-  country             String?
-  transfersCapability String?
-  detailsSubmitted    Boolean              @default(false)
-  lastCheckedAt       DateTime?
-  createdAt           DateTime             @default(now())
-  updatedAt           DateTime             @updatedAt
+  id                    String               @id @default(uuid())
+  userId                String               @unique
+  provider              String               @default("STRIPE")
+  providerAccountId     String               @unique
+  status                PaymentAccountStatus @default(PENDING)
+  country               String?
+  transfersCapability   String?
+  detailsSubmitted      Boolean              @default(false)
+  requirementsDueCount  Int                  @default(0)
+  availableBalanceCents Int?
+  pendingBalanceCents   Int?
+  lastCheckedAt         DateTime?
+  createdAt             DateTime             @default(now())
+  updatedAt             DateTime             @updatedAt
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user          User                        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  webhookEvents SellerPaymentAccountEvent[]
+  payouts       SellerPayoutRecord[]
 
   @@index([provider, status])
   @@map("StorePaymentAccount")
+}
+
+model SellerPaymentAccountEvent {
+  id                String   @id @default(uuid())
+  providerEventId   String   @unique
+  providerAccountId String
+  eventType         String
+  payload           Json?
+  processedAt       DateTime @default(now())
+
+  paymentAccount SellerPaymentAccount @relation(fields: [providerAccountId], references: [providerAccountId], onDelete: Cascade)
+
+  @@index([providerAccountId, eventType])
+}
+
+model SellerPayoutRecord {
+  id                String    @id @default(uuid())
+  providerPayoutId  String    @unique
+  providerAccountId String
+  amountCents       Int
+  currency          String
+  status            String
+  arrivalAt         DateTime?
+  failureCode       String?
+  lastEventId       String?   @unique
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  paymentAccount SellerPaymentAccount @relation(fields: [providerAccountId], references: [providerAccountId], onDelete: Cascade)
+
+  @@index([providerAccountId, status])
 }
 
 enum ShippingFeeMethod {
@@ -661,6 +698,35 @@ enum PaymentMethod {
   Stripe
 }
 
+enum SettlementStatus {
+  HELD
+  ELIGIBLE
+  APPROVED
+  PROCESSING
+  RELEASED
+  REVERSED
+  FAILED
+  BLOCKED
+}
+
+enum SettlementLedgerEntryType {
+  INITIAL
+  REFUND
+  REVERSAL
+  ADJUSTMENT
+  PAYOUT
+}
+
+enum PayoutBatchStatus {
+  DRAFT
+  APPROVED
+  PROCESSING
+  PAID
+  PARTIAL
+  FAILED
+  CANCELLED
+}
+
 model Order {
   id           String @id @default(uuid())
   shippingFees Float
@@ -727,6 +793,7 @@ model OrderGroup {
   shipmentAssignments  ShipmentPackageAssignment[] @relation("OrderGroupToShipmentAssignments")
   fulfillmentEvents    FulfillmentTransition[]     @relation("FulfillmentTransitionToOrderGroup")
   cancellationRequests CancellationRequest[]       @relation("CancellationRequestToOrderGroup")
+  settlement           SellerSettlement?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -735,6 +802,91 @@ model OrderGroup {
   @@index([storeId])
   @@index([couponId])
   @@index([automationMode, automationPaused, nextTransitionAt])
+}
+
+/// Mutable operational state for one seller's share of one order group.
+/// Monetary facts are snapshotted in SettlementLedgerEntry rows and never
+/// updated in place.
+model SellerSettlement {
+  id                    String           @id @default(uuid())
+  orderGroupId          String           @unique
+  sellerId              String
+  currency              String           @default("USD")
+  status                SettlementStatus @default(HELD)
+  grossCents            Int
+  discountCents         Int              @default(0)
+  shippingCents         Int              @default(0)
+  taxCents              Int              @default(0)
+  providerFeeCents      Int              @default(0)
+  commissionCents       Int              @default(0)
+  commissionPercent     Int              @default(2)
+  refundedCents         Int              @default(0)
+  reversedCents         Int              @default(0)
+  sellerPayableCents    Int
+  remainingPayableCents Int
+  eligibleAt            DateTime?
+  approvedAt            DateTime?
+  releasedAt            DateTime?
+  providerTransferId    String?          @unique
+  failureReason         String?          @db.Text
+  payoutBatchId         String?
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
+
+  orderGroup  OrderGroup              @relation(fields: [orderGroupId], references: [id], onDelete: Cascade)
+  seller      User                    @relation("SettlementSeller", fields: [sellerId], references: [id])
+  payoutBatch PayoutBatch?            @relation(fields: [payoutBatchId], references: [id])
+  entries     SettlementLedgerEntry[]
+
+  @@index([sellerId, status])
+  @@index([status, eligibleAt])
+  @@index([payoutBatchId])
+}
+
+/// Append-only money facts. Corrections are new entries; existing entries are
+/// never overwritten.
+model SettlementLedgerEntry {
+  id                 String                    @id @default(uuid())
+  settlementId       String
+  entryType          SettlementLedgerEntryType
+  idempotencyKey     String                    @unique
+  currency           String                    @default("USD")
+  grossCents         Int                       @default(0)
+  discountCents      Int                       @default(0)
+  shippingCents      Int                       @default(0)
+  taxCents           Int                       @default(0)
+  providerFeeCents   Int                       @default(0)
+  commissionCents    Int                       @default(0)
+  refundCents        Int                       @default(0)
+  reversalCents      Int                       @default(0)
+  sellerPayableCents Int                       @default(0)
+  metadata           Json?
+  createdAt          DateTime                  @default(now())
+
+  settlement SellerSettlement @relation(fields: [settlementId], references: [id], onDelete: Cascade)
+
+  @@index([settlementId, createdAt])
+  @@index([entryType, createdAt])
+}
+
+model PayoutBatch {
+  id             String            @id @default(uuid())
+  weekStart      DateTime
+  weekEnd        DateTime
+  timezone       String            @default("Asia/Dhaka")
+  currency       String            @default("USD")
+  status         PayoutBatchStatus @default(DRAFT)
+  totalCents     Int               @default(0)
+  idempotencyKey String            @unique
+  approvedAt     DateTime?
+  processedAt    DateTime?
+  failureReason  String?           @db.Text
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  settlements SellerSettlement[]
+
+  @@index([status, weekStart])
 }
 
 enum ProductStatus {

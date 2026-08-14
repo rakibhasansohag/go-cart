@@ -274,6 +274,30 @@ seller level, so a seller's stores reuse one payout account. A local Stripe
 Sandbox onboarding was manually verified through the redirect and active
 transfer-capability status; this is not counted as an automated protected E2E.
 
+### 7d. Validate marketplace settlement in isolated Docker PostgreSQL
+
+The database integration suite now covers the Phase 14 settlement path without
+creating live transfers:
+
+```powershell
+bun run db:e2e:prepare
+bun run test:integration:local
+```
+
+It verifies seller-level account-event replay, payout-event replay, one
+immutable initial ledger entry per paid order group, USD/minor-unit arithmetic,
+deterministic discount/GoCoins allocation, seven-day release gating, transfer
+reversal debits, and settlement creation replay. The admin operations surface is
+`/dashboard/admin/settlements`; seller statements are available at
+`/dashboard/seller/stores/<storeUrl>/earnings`. Stripe transfer processing is
+idempotent and capability/country guarded, but the integration suite injects a
+mock transfer creator so it never moves external money.
+
+The production application migration is intentionally not run by this check.
+Review and back up the production database before running the normal migration
+deployment. The remaining external gate is a protected browser test against a
+Stripe sandbox connected account; no live or PayPal settlement test is required.
+
 ### 8. Run static checks and the production build
 
 ```powershell
@@ -448,13 +472,14 @@ Copy this section into a feature PR description, issue, or future planning note:
 
 ## Current roadmap after this phase
 
-Completed foundations include unit tooling, Docker integration data, deterministic seeding, public smoke tests, Clerk role synchronization, protected authorization, checkout/order creation, Stripe sandbox payment verification, seller package-status mutation, customer return submission, and CI build/test jobs.
+Completed foundations include unit tooling, Docker integration data, deterministic seeding, public smoke tests, Clerk role synchronization, protected authorization, checkout/order creation, Stripe sandbox payment verification, seller package-status mutation, customer return submission, seller-level Connect onboarding, USD settlement ledger, weekly payday operations, transfer/payout webhook replay protection, and CI build/test jobs.
 
 The next practical browser milestones are:
 
 1. seller package progression through shipment and delivery;
 2. keyboard-only verification for authenticated checkout and dashboard actions;
-3. PayPal sandbox buyer checkout/refund and live full-settlement coverage.
+3. protected Stripe Connect payday browser coverage and provider dispute/chargeback mapping;
+4. PayPal sandbox buyer checkout/refund. Live payment settlement remains out of scope.
 
 When those are implemented, update this document and `plan.md` with the exact test names and pass counts. That keeps the project understandable months later and prevents “implemented” from being confused with “verified.”
 

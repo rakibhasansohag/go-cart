@@ -1,5 +1,7 @@
 import { currentUser } from '@clerk/nextjs/server';
 import type { PaymentAccountStatus, SellerPaymentAccount } from '@prisma/client';
+import { Prisma } from '@prisma/client';
+import type Stripe from 'stripe';
 
 import { db } from '@/lib/db';
 import { getStripeClient } from '@/lib/payments/stripe-client';
@@ -17,6 +19,7 @@ const STRIPE_ACCOUNTS_V2_INCLUDE_FIELDS = [
 type ConnectAccountSnapshot = {
 	id?: string;
 	identity?: { country?: string | null } | null;
+	requirements?: { currently_due?: unknown[] | null; past_due?: unknown[] | null } | null;
 	configuration?: {
 		recipient?: {
 			capabilities?: {
@@ -53,6 +56,10 @@ export function accountStatusFromCapability(status?: string | null): PaymentAcco
 
 function readAccountSnapshot(value: unknown): ConnectAccountSnapshot {
 	return value && typeof value === 'object' ? (value as ConnectAccountSnapshot) : {};
+}
+
+function requirementsDueCount(snapshot: ConnectAccountSnapshot) {
+	return (snapshot.requirements?.currently_due?.length ?? 0) + (snapshot.requirements?.past_due?.length ?? 0);
 }
 
 export function buildAccountsV2IncludeQuery() {
@@ -151,6 +158,7 @@ async function saveAccountSnapshot(
 			country: snapshot.identity?.country ?? null,
 			transfersCapability: capability ?? null,
 			detailsSubmitted: status === 'ACTIVE',
+			requirementsDueCount: requirementsDueCount(snapshot),
 			lastCheckedAt: new Date(),
 		},
 		update: {
@@ -159,6 +167,7 @@ async function saveAccountSnapshot(
 			country: snapshot.identity?.country ?? undefined,
 			transfersCapability: capability ?? null,
 			detailsSubmitted: status === 'ACTIVE',
+			requirementsDueCount: requirementsDueCount(snapshot),
 			lastCheckedAt: new Date(),
 		},
 	});
@@ -215,3 +224,51 @@ export async function getStripePaymentAccountStatus(storeUrl: string) {
 }
 
 export type StripePaymentAccount = SellerPaymentAccount;
+
+export async function refreshStripeAccountBalance(providerAccountId: string) {
+	const stripe = getStripeClient();
+	const balance = await stripe.balance.retrieve({}, { stripeAccount: providerAccountId });
+	const availableBalanceCents = balance.available.filter((item) => item.currency === 'usd').reduce((sum, item) => sum + item.amount, 0);
+	const pendingBalanceCents = balance.pending.filter((item) => item.currency === 'usd').reduce((sum, item) => sum + item.amount, 0);
+	return db.sellerPaymentAccount.update({
+		where: { providerAccountId },
+		data: { availableBalanceCents, pendingBalanceCents, lastCheckedAt: new Date() },
+	});
+}
+
+/** Reconciles platform webhook snapshots without persisting KYC or bank data. */
+export async function reconcileStripeAccountUpdatedEvent(event: Stripe.Event) {
+	const account = event.data.object as Stripe.Account;
+	const providerAccountId = account.id || event.account;
+	if (!providerAccountId) return { ignored: true };
+	const paymentAccount = await db.sellerPaymentAccount.findUnique({ where: { providerAccountId } });
+	if (!paymentAccount) return { ignored: true };
+	try {
+		await db.$transaction(async (tx) => {
+			await tx.sellerPaymentAccountEvent.create({
+				data: {
+					providerEventId: event.id,
+					providerAccountId,
+					eventType: event.type,
+					payload: { id: providerAccountId, country: account.country ?? null, detailsSubmitted: account.details_submitted ?? false, transfers: account.capabilities?.transfers ?? null },
+				},
+			});
+			const capability = account.capabilities?.transfers ?? null;
+			await tx.sellerPaymentAccount.update({
+				where: { providerAccountId },
+				data: {
+					country: account.country ?? undefined,
+					transfersCapability: capability,
+					status: accountStatusFromCapability(capability),
+					detailsSubmitted: account.details_submitted ?? false,
+					requirementsDueCount: (account.requirements?.currently_due?.length ?? 0) + (account.requirements?.past_due?.length ?? 0),
+					lastCheckedAt: new Date(),
+				},
+			});
+		});
+		return { duplicate: false };
+	} catch (error) {
+		if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') return { duplicate: true };
+		throw error;
+	}
+}

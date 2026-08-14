@@ -5,6 +5,7 @@ import { getStripeClient } from '@/lib/payments/stripe-client';
 import { paypalRequest } from '@/lib/payments/paypal-client';
 import { DOMAIN_EVENT_TYPES, publishDomainEvent } from '@/lib/notifications/domain-events';
 import { scheduleEmailOutboxDispatch } from '@/lib/email/schedule';
+import { recordRefundForReturnRequest } from '@/lib/settlement/service';
 
 const REFUND_TRANSACTION_OPTIONS = { maxWait: 10_000, timeout: 30_000 } as const;
 
@@ -115,6 +116,7 @@ export async function issueReturnRefundForAdmin(
 			return { request: updatedRequest, eventId: event.id };
 		}, REFUND_TRANSACTION_OPTIONS);
 		if (updated.eventId) scheduleEmailOutboxDispatch([updated.eventId]);
+		if (succeeded) await recordRefundForReturnRequest(request.id, amount);
 		return db.refundTransaction.findUniqueOrThrow({ where: { id: transaction.id } });
 	} catch (error) {
 		await db.refundTransaction.update({

@@ -15,6 +15,7 @@ import { handleStripeEvent } from '../src/lib/payments/stripe-events';
 import { reconcileReturnInventoryForAdmin } from '../src/lib/returns/inventory';
 import { searchProducts } from '../src/lib/search';
 import { getProducts } from '../src/queries/product';
+import { createSettlementsForPaidOrder } from '../src/lib/settlement/service';
 import type Stripe from 'stripe';
 
 assertSafeE2ERuntime();
@@ -428,6 +429,87 @@ async function assertStripeRefundWebhookSettlement() {
 	}
 }
 
+async function assertSettlementLedgerAndTransferReplay() {
+	const order = await db.order.findFirst({
+		where: { paymentStatus: 'Paid', user: { email: testUsers.customer } },
+		select: { id: true, groups: { select: { id: true } } },
+	});
+	assert(order?.groups.length, 'a paid order with groups is required for settlement coverage');
+	const settlements = await createSettlementsForPaidOrder(order.id);
+	assert(settlements.length === order.groups.length, 'every paid order group must create one settlement');
+	for (const settlement of settlements) {
+		const replay = await createSettlementsForPaidOrder(order.id);
+		assert(replay.find((item) => item.id === settlement.id), 'settlement creation was not idempotent');
+		const entries = await db.settlementLedgerEntry.findMany({ where: { settlementId: settlement.id, entryType: 'INITIAL' } });
+		assert(entries.length === 1, 'settlement replay created a duplicate initial ledger entry');
+		assert(settlement.currency === 'USD', 'settlement currency must be canonical USD');
+		assert(settlement.remainingPayableCents <= settlement.sellerPayableCents, 'remaining seller payable cannot exceed the immutable snapshot');
+	}
+
+	const settlement = settlements[0];
+	const originalAccount = await db.sellerPaymentAccount.findUnique({ where: { userId: settlement.sellerId } });
+	const webhookAccount = await db.sellerPaymentAccount.upsert({
+		where: { userId: settlement.sellerId },
+		update: { providerAccountId: `acct_integration_${randomUUID().replaceAll('-', '')}`, status: 'PENDING', transfersCapability: 'pending' },
+		create: { userId: settlement.sellerId, providerAccountId: `acct_integration_${randomUUID().replaceAll('-', '')}`, status: 'PENDING', transfersCapability: 'pending' },
+	});
+	const accountEvent = {
+		id: `integration-account-updated:${randomUUID()}`,
+		object: 'event',
+		created: Math.floor(Date.now() / 1000),
+		data: { object: { id: webhookAccount.providerAccountId, object: 'account', country: 'US', details_submitted: true, capabilities: { transfers: 'active' } } },
+		livemode: false,
+		pending_webhooks: 0,
+		request: null,
+		type: 'account.updated',
+	} as unknown as Stripe.Event;
+	try {
+		const firstAccount = await handleStripeEvent(accountEvent);
+		const secondAccount = await handleStripeEvent(accountEvent);
+		assert(!('ignored' in firstAccount) && firstAccount.duplicate === false, 'account webhook was not processed');
+		assert(!('ignored' in secondAccount) && secondAccount.duplicate === true, 'account webhook replay was not idempotent');
+		const refreshedAccount = await db.sellerPaymentAccount.findUniqueOrThrow({ where: { userId: settlement.sellerId } });
+		assert(refreshedAccount.status === 'ACTIVE' && refreshedAccount.transfersCapability === 'active', 'account webhook did not activate transfers');
+		const payoutEvent = { id: `integration-payout:${randomUUID()}`, object: 'event', account: webhookAccount.providerAccountId, created: Math.floor(Date.now() / 1000), data: { object: { id: `po_integration_${randomUUID().replaceAll('-', '')}`, object: 'payout', amount: 1250, currency: 'usd', status: 'paid', arrival_date: Math.floor(Date.now() / 1000) } }, livemode: false, pending_webhooks: 0, request: null, type: 'payout.paid' } as unknown as Stripe.Event;
+		const firstPayout = await handleStripeEvent(payoutEvent);
+		const secondPayout = await handleStripeEvent(payoutEvent);
+		assert(!('ignored' in firstPayout) && firstPayout.duplicate === false, 'payout webhook was not processed');
+		assert(!('ignored' in secondPayout) && secondPayout.duplicate === true, 'payout webhook replay was not idempotent');
+		assert(await db.sellerPayoutRecord.count({ where: { lastEventId: payoutEvent.id } }) === 1, 'payout webhook created duplicate reconciliation records');
+		await db.sellerPayoutRecord.deleteMany({ where: { lastEventId: payoutEvent.id } });
+	} finally {
+		await db.sellerPaymentAccountEvent.deleteMany({ where: { providerEventId: accountEvent.id } });
+		if (originalAccount) await db.sellerPaymentAccount.update({ where: { userId: settlement.sellerId }, data: { providerAccountId: originalAccount.providerAccountId, status: originalAccount.status, transfersCapability: originalAccount.transfersCapability, country: originalAccount.country, detailsSubmitted: originalAccount.detailsSubmitted } });
+		else await db.sellerPaymentAccount.delete({ where: { userId: settlement.sellerId } });
+	}
+
+	const original = await db.sellerSettlement.findUniqueOrThrow({ where: { id: settlement.id }, select: { status: true, reversedCents: true, remainingPayableCents: true, providerTransferId: true } });
+	const providerTransferId = `tr_integration_${randomUUID().replaceAll('-', '')}`;
+	await db.sellerSettlement.update({ where: { id: settlement.id }, data: { providerTransferId } });
+	const event = {
+		id: `integration-transfer-reversal:${randomUUID()}`,
+		object: 'event',
+		created: Math.floor(Date.now() / 1000),
+		data: { object: { id: providerTransferId, object: 'transfer', amount: 1000, amount_reversed: 250 } },
+		livemode: false,
+		pending_webhooks: 0,
+		request: null,
+		type: 'transfer.reversed',
+	} as unknown as Stripe.Event;
+	try {
+		const first = await handleStripeEvent(event);
+		const second = await handleStripeEvent(event);
+		assert(!('ignored' in first) && first.duplicate === false, 'transfer reversal was not processed');
+		assert(!('ignored' in second) && second.duplicate === true, 'transfer reversal replay was not idempotent');
+		const refreshed = await db.sellerSettlement.findUniqueOrThrow({ where: { id: settlement.id }, select: { status: true, reversedCents: true, remainingPayableCents: true } });
+		assert(refreshed.status === 'REVERSED' && refreshed.reversedCents === original.reversedCents + 250, 'transfer reversal did not update settlement state');
+		assert(refreshed.remainingPayableCents === original.remainingPayableCents - 250, 'transfer reversal did not create the seller debit');
+	} finally {
+		await db.settlementLedgerEntry.deleteMany({ where: { idempotencyKey: event.id ? `stripe:transfer-reversal:${event.id}` : '' } });
+		await db.sellerSettlement.update({ where: { id: settlement.id }, data: { providerTransferId: original.providerTransferId, status: original.status, reversedCents: original.reversedCents, remainingPayableCents: original.remainingPayableCents } });
+	}
+}
+
 async function assertReturnInventoryReconciliation() {
 	const admin = await db.user.findUnique({ where: { email: testUsers.admin }, select: { id: true } });
 	assert(admin, 'demo admin is required for return inventory coverage');
@@ -598,6 +680,7 @@ async function main() {
 	});
 	assert(duplicateEventKeys.length === 0, 'duplicate payment webhook event IDs detected');
 	await assertStripeRefundWebhookSettlement();
+	await assertSettlementLedgerAndTransferReplay();
 
 	const limitedCoupons = await db.coupon.findMany({
 		where: { maxUses: { gt: 0 } },

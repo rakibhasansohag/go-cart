@@ -529,7 +529,7 @@ export const CouponFormSchema = z
 
 export const StoreShippingSchema = z
 	.object({
-		returnPolicy: z.string().default('Return in 30 days.'),
+	returnPolicy: z.string().default('Return within 7 days of confirmed delivery in good condition.'),
 		defaultShippingService: z.string().default('International Delivery'),
 
 		defaultShippingFeePerItem: z.preprocess(

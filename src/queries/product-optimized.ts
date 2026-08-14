@@ -281,7 +281,7 @@ export const getShippingDetails = async (
 		deliveryTimeMax: store.defaultDeliveryTimeMax || 0,
 		returnPolicy:
 			store.returnPolicy ||
-			'We understand things don’t always work out. You can return this item within 30 days of delivery for a full refund or exchange. Please ensure the item is in its original condition.',
+			'We understand things don’t always work out. You can return this item within 7 days of confirmed delivery for a full refund or exchange. Please ensure the item is in good condition.',
 		countryCode: userCountry.code,
 		countryName: userCountry.name,
 		city: userCountry.city,

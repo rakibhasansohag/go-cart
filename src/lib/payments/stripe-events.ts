@@ -5,6 +5,9 @@ import { DOMAIN_EVENT_TYPES, publishDomainEvent } from '@/lib/notifications/doma
 import { scheduleEmailOutboxDispatch } from '@/lib/email/schedule';
 import type { PaymentStatus } from '@prisma/client';
 import type Stripe from 'stripe';
+import { SettlementLedgerEntryType, SettlementStatus } from '@prisma/client';
+import { reconcileStripeAccountUpdatedEvent } from './connect';
+import { recordRefundForReturnRequest } from '@/lib/settlement/service';
 
 async function findOrderId(
 	providerPaymentId: string,
@@ -41,6 +44,56 @@ function intentPaymentStatus(
 }
 
 export async function handleStripeEvent(event: Stripe.Event) {
+	if (event.type === 'account.updated') return reconcileStripeAccountUpdatedEvent(event);
+	if (event.type === 'payout.paid' || event.type === 'payout.failed' || event.type === 'payout.canceled') {
+		const payout = event.data.object as Stripe.Payout;
+		const providerAccountId = event.account;
+		if (!providerAccountId) return { ignored: true };
+		const account = await db.sellerPaymentAccount.findUnique({ where: { providerAccountId }, select: { providerAccountId: true } });
+		if (!account) return { ignored: true };
+		const replay = await db.sellerPayoutRecord.findUnique({ where: { lastEventId: event.id }, select: { id: true } });
+		if (replay) return { duplicate: true };
+		await db.sellerPayoutRecord.upsert({
+			where: { providerPayoutId: payout.id },
+			update: { amountCents: payout.amount, currency: payout.currency.toUpperCase(), status: payout.status ?? event.type.slice('payout.'.length), arrivalAt: payout.arrival_date ? new Date(payout.arrival_date * 1000) : null, failureCode: payout.failure_code ?? null, lastEventId: event.id },
+			create: { providerPayoutId: payout.id, providerAccountId, amountCents: payout.amount, currency: payout.currency.toUpperCase(), status: payout.status ?? event.type.slice('payout.'.length), arrivalAt: payout.arrival_date ? new Date(payout.arrival_date * 1000) : null, failureCode: payout.failure_code ?? null, lastEventId: event.id },
+		});
+		return { duplicate: false };
+	}
+
+	if (event.type === 'transfer.created' || event.type === 'transfer.updated') {
+		const transfer = event.data.object as Stripe.Transfer;
+		const settlement = await db.sellerSettlement.findUnique({ where: { providerTransferId: transfer.id }, select: { id: true, status: true } });
+		if (!settlement) return { ignored: true };
+		if (settlement.status !== SettlementStatus.RELEASED) {
+			await db.sellerSettlement.update({ where: { id: settlement.id }, data: { status: SettlementStatus.RELEASED, failureReason: null } });
+		}
+		return { duplicate: false };
+	}
+
+	if (event.type === 'transfer.reversed') {
+		const transfer = event.data.object as Stripe.Transfer;
+		const settlement = await db.sellerSettlement.findUnique({ where: { providerTransferId: transfer.id }, select: { id: true } });
+		if (!settlement) return { ignored: true };
+		const idempotencyKey = `stripe:transfer-reversal:${event.id}`;
+		const reversalCents = Math.max(0, transfer.amount_reversed ?? transfer.amount);
+		const existing = await db.settlementLedgerEntry.findUnique({ where: { idempotencyKey }, select: { id: true } });
+		if (existing) return { duplicate: true };
+		await db.$transaction(async (tx) => {
+			await tx.settlementLedgerEntry.create({ data: {
+				settlementId: settlement.id,
+				entryType: SettlementLedgerEntryType.REVERSAL,
+				idempotencyKey,
+				currency: 'USD',
+				reversalCents,
+				sellerPayableCents: -reversalCents,
+				metadata: { providerTransferId: transfer.id, providerEventId: event.id },
+			} });
+			await tx.sellerSettlement.update({ where: { id: settlement.id }, data: { status: SettlementStatus.REVERSED, reversedCents: { increment: reversalCents }, remainingPayableCents: { decrement: reversalCents } } });
+		});
+		return { duplicate: false };
+	}
+
 	if (event.type.startsWith('payment_intent.')) {
 		const paymentStatus = intentPaymentStatus(event.type);
 		if (!paymentStatus) return { ignored: true };
@@ -103,7 +156,7 @@ export async function handleStripeEvent(event: Stripe.Event) {
 				status: { in: [RefundTransactionStatus.PENDING, RefundTransactionStatus.PROCESSING] },
 			},
 			orderBy: { createdAt: 'asc' },
-			select: { id: true, returnRequestId: true },
+			select: { id: true, returnRequestId: true, amount: true },
 		});
 		if (!pendingRefund) return paymentResult;
 
@@ -150,6 +203,7 @@ export async function handleStripeEvent(event: Stripe.Event) {
 			return { sourceEventId: domainEvent.id };
 		}, { maxWait: 10_000, timeout: 30_000 });
 		if (result.sourceEventId) scheduleEmailOutboxDispatch([result.sourceEventId]);
+		if (result.sourceEventId) await recordRefundForReturnRequest(pendingRefund.returnRequestId, Math.round(pendingRefund.amount * 100));
 		return paymentResult;
 	}
 

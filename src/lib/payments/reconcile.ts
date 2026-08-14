@@ -5,6 +5,7 @@ import { resolvePaymentStatus } from './status';
 import { publishPaidOrderNotifications } from '@/lib/notifications/domain-events';
 import { scheduleEmailOutboxDispatch } from '@/lib/email/schedule';
 import { awardCoins } from '@/lib/loyalty/coins';
+import { createSettlementsForPaidOrder } from '@/lib/settlement/service';
 
 export type ReconcilePaymentInput = {
 	orderId: string;
@@ -144,6 +145,9 @@ export async function reconcilePaymentEvent(input: ReconcilePaymentInput) {
 			{ maxWait: 10_000, timeout: 30_000 },
 		);
 		scheduleEmailOutboxDispatch(result.sourceEventIds);
+		if (!result.duplicate && result.order?.paymentStatus === PaymentStatus.Paid) {
+			await createSettlementsForPaidOrder(result.order.id);
+		}
 		if (result.duplicate) {
 			return { duplicate: true, order: result.order };
 		}
