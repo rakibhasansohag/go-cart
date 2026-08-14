@@ -2,6 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import StoreDetails from '@/components/dashboard/forms/store-details';
+import StripeConnectCard from '@/components/dashboard/payments/stripe-connect-card';
 import { getStoreByUrl } from '@/queries/store';
 import { queryKeys } from '@/lib/query-keys';
 import { Store } from '@prisma/client';
@@ -25,6 +26,7 @@ export default function StoreSettingsView({
 
 	return (
 		<div>
+			<StripeConnectCard storeUrl={storeUrl} />
 			<StoreDetails data={storeDetails} />
 		</div>
 	);

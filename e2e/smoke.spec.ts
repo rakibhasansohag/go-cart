@@ -124,3 +124,27 @@ test('checkout redirects unauthenticated visitors to sign-in', async ({ page }) 
   expect(response?.status()).toBe(200);
   await expect(page).toHaveURL(/\/sign-in\?redirect_url=.*%2Fcheckout/);
 });
+
+test('marketplace funds demo tells the payout story and supports keyboard progression', async ({ page }) => {
+  const response = await page.goto('/demo/marketplace');
+
+  expect(response?.status(), '/demo/marketplace').toBe(200);
+  await expect(page.getByRole('heading', { name: /From checkout to a confident seller payday/i })).toBeVisible();
+  await expect(page.getByText('Every dollar has a visible state.')).toBeVisible();
+
+  const next = page.getByRole('button', { name: /Play the 30-second story/i });
+  await next.focus();
+  await expect(next).toBeFocused();
+  await next.press('Enter');
+  await expect(page.getByText('Simulation running')).toBeVisible();
+
+  const heldStage = page.getByRole('button', { name: /Show Funds held/i });
+  await heldStage.click();
+  await expect(page.getByRole('heading', { name: /Funds held/i })).toBeVisible();
+
+  const reset = page.getByRole('button', { name: /Reset demo/i });
+  await reset.focus();
+  await expect(reset).toBeFocused();
+  await reset.press('Enter');
+  await expect(page.getByRole('heading', { name: /Order placed/i })).toBeVisible();
+});

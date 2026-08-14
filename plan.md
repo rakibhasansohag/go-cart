@@ -918,6 +918,26 @@ customer to each seller before adding more optional growth features.
   - Each seller receives their allocated shipping and tax amounts in the
     settlement calculation; tax calculation and remittance remain country-
     specific launch requirements.
+  - Standard returns/refunds are available for 7 days after confirmed delivery
+    and require the product to be returned in good condition. A seller or admin
+    may reject/cancel a pending refund request under the policy; a completed
+    refund is immutable and cannot be cancelled.
+  - GoCart's canonical settlement currency is USD. Any display or provider
+    conversion must record the applied exchange rate and preserve the USD ledger;
+    connected-account payout-country support still requires verification.
+  - The launch targets multiple seller countries from day one, using an explicit
+    country/currency allowlist. Sellers may onboard and receive payouts only
+    when the platform-to-seller transfer region, connected-account capability,
+    and settlement currency are supported by the payment provider.
+  - Delivery eligibility uses carrier delivery events or proof of delivery
+    first. If tracking is missing, use the shipment's estimated delivery date
+    plus the 7-day return window; if no reliable estimate exists, keep funds on
+    hold until an admin confirms delivery evidence.
+  - Failed transfers move to a failed state, notify the seller and admin, and
+    are retried only after correction with idempotency protection. Unrecovered
+    seller debits offset future eligible earnings rather than being silently
+    discarded.
+  - Weekly payday uses `Asia/Dhaka` as the initial configurable timezone.
 
 - **Marketplace research alignment (2026-08-14)**: Amazon, Etsy, and eBay
   consistently separate pending/held funds from available funds, release funds
@@ -928,6 +948,24 @@ customer to each seller before adding more optional growth features.
   Stripe separate charges and transfers fit GoCart's multi-store checkout;
   GoCart remains responsible for platform fees, refunds, disputes, and transfer
   reversals.
+
+- **Implementation evidence (2026-08-14, partial Phase 14.2)**:
+  - [x] Added a `StorePaymentAccount` record that stores only the provider
+        account reference, capability/status summary, country, and timestamps;
+        no KYC or bank details are stored.
+  - [x] Added seller-owned Stripe Connect onboarding routes. Each request creates
+        a fresh single-use Account Link, while the Stripe `refresh_url` creates
+        another link after expiry and the return route re-checks capability state.
+  - [x] Added the public `/demo/marketplace` workspace so portfolio reviewers can
+        understand order hold, delivery, seven-day return protection, weekly
+        payday review, and seller payout without Stripe credentials or personal
+        information.
+  - [x] Verified with focused unit tests, full unit tests, isolated Docker
+        PostgreSQL migrations/invariants, Chromium smoke coverage, typecheck,
+        lint, and production build.
+  - [ ] Remaining: Connect webhooks, country/currency allowlist, seller/admin
+        earnings views, ledger/transfer implementation, and live Stripe Sandbox
+        onboarding with configured credentials.
 
 - [ ] **Phase 14.1 — Business and responsibility decisions**
   - [ ] Confirm whether goCart or each seller is the merchant the customer is

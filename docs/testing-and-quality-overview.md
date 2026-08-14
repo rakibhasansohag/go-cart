@@ -256,6 +256,21 @@ Remove-Item Env:E2E_BROWSER_REFUND -ErrorAction SilentlyContinue
 It is intentionally local/sandbox-only. The external Stripe test objects remain
 in the sandbox account for audit history; the Docker database fixture is reset.
 
+### 7c. Explore the portfolio marketplace funds-flow demo
+
+The public demo is deterministic and does not call Stripe or mutate a database:
+
+```text
+http://localhost:3000/demo/marketplace
+```
+
+It demonstrates the buyer payment, protected hold, delivery confirmation,
+seven-day return window, weekly admin payday review, and seller payout story.
+The Chromium smoke suite verifies the route, visible story, keyboard focus, and
+step/reset interactions. Stripe Connect onboarding remains a protected seller
+flow; the server creates a fresh single-use Account Link on demand and uses its
+refresh callback to regenerate expired links.
+
 ### 8. Run static checks and the production build
 
 ```powershell
