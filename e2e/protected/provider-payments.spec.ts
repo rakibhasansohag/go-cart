@@ -21,7 +21,8 @@ test('customer can confirm a Stripe sandbox payment when explicitly enabled', as
   await expect(page.getByRole('heading', { name: 'Complete your payment' })).toBeVisible();
   const closeRewardModal = page.getByRole('button', { name: 'Close modal' });
   if (await closeRewardModal.count()) {
-    await closeRewardModal.evaluate((element) => (element as HTMLButtonElement).click());
+    await expect(closeRewardModal).toBeVisible();
+    await closeRewardModal.click();
     await expect(closeRewardModal).toBeHidden();
   }
   const payNow = page.getByRole('button', { name: 'Pay Now' });

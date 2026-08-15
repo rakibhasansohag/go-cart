@@ -34,10 +34,15 @@ export default function CheckInModal() {
 	}, [statusData]);
 
 	const handleClose = () => {
-		if (statusData?.todayDateStr) {
-			localStorage.setItem(`gocart_checkin_dismissed_${statusData.todayDateStr}`, 'true');
+		try {
+			if (statusData?.todayDateStr) {
+				localStorage.setItem(`gocart_checkin_dismissed_${statusData.todayDateStr}`, 'true');
+			}
+		} catch {
+			// Closing the modal must still work if browser storage is unavailable.
+		} finally {
+			setIsOpen(false);
 		}
-		setIsOpen(false);
 	};
 
 	if (!isSignedIn || !statusData) return null;
@@ -55,9 +60,14 @@ export default function CheckInModal() {
 					>
 						{/* Close Button */}
 						<button
-							onClick={handleClose}
+							type='button'
+							onClick={(event) => {
+								event.preventDefault();
+								event.stopPropagation();
+								handleClose();
+							}}
 							aria-label='Close modal'
-							className='absolute top-3 right-3 sm:top-4 sm:right-4 z-10 w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-black/30 hover:bg-black/50 text-white flex items-center justify-center backdrop-blur-md transition-colors'
+							className='absolute top-3 right-3 sm:top-4 sm:right-4 z-10 w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-black/30 hover:bg-black/50 text-white flex items-center justify-center backdrop-blur-md transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80'
 						>
 							<X className='w-4 h-4 sm:w-5 sm:h-5' />
 						</button>

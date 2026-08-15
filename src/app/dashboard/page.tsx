@@ -1,6 +1,5 @@
 import { redirect } from 'next/navigation';
 import { currentUser } from '@clerk/nextjs/server';
-import { notFound } from 'next/navigation';
 
 export default async function DashboardPage() {
 	const user = await currentUser();
@@ -24,10 +23,6 @@ export default async function DashboardPage() {
 
 	const role = (user?.privateMetadata?.role || '').toString().toUpperCase();
 
-	if (!role || role === 'USER') {
-		return redirect('/');
-	}
-
 	if (role === 'ADMIN') {
 		return redirect('/dashboard/admin');
 	}
@@ -36,6 +31,7 @@ export default async function DashboardPage() {
 		return redirect('/dashboard/seller');
 	}
 
-	// fallback
-	return notFound();
+	// Customers and users do not have a dashboard. Send them to the profile
+	// workspace instead of rendering the dashboard 404 boundary.
+	return redirect('/profile');
 }

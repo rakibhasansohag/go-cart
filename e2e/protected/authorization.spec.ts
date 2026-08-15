@@ -12,6 +12,12 @@ test('customer cannot access the admin dashboard', async ({ page }) => {
   await expect(page).toHaveURL(/\/$/);
 });
 
+test('customer visiting the generic dashboard is returned to the profile workspace', async ({ page }) => {
+  await signInAs(page, 'customer');
+  await page.goto('/dashboard', { waitUntil: 'domcontentloaded', timeout: 120_000 });
+  await expect(page).toHaveURL(/\/profile$/);
+});
+
 test('seller cannot access the admin dashboard', async ({ page }) => {
   await signInAs(page, 'seller');
   await page.goto('/dashboard/admin', { waitUntil: 'domcontentloaded', timeout: 120_000 });
