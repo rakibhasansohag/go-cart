@@ -1,9 +1,10 @@
 import { NotificationCategory, NotificationChannel, Prisma, Role } from '@prisma/client';
+import type { PrismaClient } from '@prisma/client';
 import { formatOrderId, formatPackageId } from '@/lib/orders/references';
 import { demoFulfillmentAutomationEnabled, demoFulfillmentStepHours } from '@/lib/orders/demo-config';
 import { validateDomainEventPayload } from './contracts';
 
-type TransactionClient = Prisma.TransactionClient;
+type NotificationDbClient = Prisma.TransactionClient | PrismaClient;
 
 export const DOMAIN_EVENT_TYPES = {
 	PAYMENT_SUCCEEDED: 'payment.succeeded',
@@ -35,6 +36,8 @@ export type PublishDomainEventInput = {
 	orderId?: string;
 	storeId?: string;
 	payload: Prisma.InputJsonObject;
+	/** Persist the event now and defer recipient/notification fan-out until after commit. */
+	persistEventOnly?: boolean;
 };
 
 type Recipient = {
@@ -56,7 +59,7 @@ function humanizeStatus(value: string) {
 }
 
 async function resolveRecipients(
-	tx: TransactionClient,
+	tx: NotificationDbClient,
 	input: PublishDomainEventInput,
 ): Promise<Recipient[]> {
 	const recipientIds = new Set<string>();
@@ -276,7 +279,7 @@ function notificationFor(input: PublishDomainEventInput, recipient: Recipient) {
 }
 
 export async function publishPaidOrderNotifications(
-	tx: TransactionClient,
+	tx: NotificationDbClient,
 	input: {
 		orderId: string;
 		provider: string;
@@ -442,7 +445,7 @@ export async function publishPaidOrderNotifications(
 }
 
 export async function publishDomainEvent(
-	tx: TransactionClient,
+	tx: NotificationDbClient,
 	input: PublishDomainEventInput,
 ) {
 	validateDomainEventPayload(input.eventType, input.payload);
@@ -458,6 +461,7 @@ export async function publishDomainEvent(
 			payload: input.payload,
 		},
 	});
+	if (input.persistEventOnly) return event;
 
 	const recipients = await resolveRecipients(tx, input);
 	const preferenceRows = await tx.notificationPreference.findMany({

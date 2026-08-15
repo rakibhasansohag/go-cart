@@ -22,6 +22,50 @@ export type ReconcilePaymentInput = {
 	metadata?: Record<string, string | number | boolean | null>;
 };
 
+async function runPaidPaymentSideEffects(input: {
+	orderId: string;
+	userId: string;
+	provider: PaymentMethod;
+	providerPaymentId: string;
+	amount: number;
+	currency: string;
+	paidAt: Date;
+	idempotencyKey: string;
+}) {
+	let sourceEventIds: string[] = [];
+	try {
+		// Notifications are idempotent, but they fan out into many reads and
+		// writes. Keep them out of the payment-state transaction so slow
+		// preferences/email work cannot expire the payment commit.
+		sourceEventIds = await publishPaidOrderNotifications(db, {
+			orderId: input.orderId,
+			provider: input.provider,
+			providerPaymentId: input.providerPaymentId,
+			amount: input.amount,
+			currency: input.currency,
+			paidAt: input.paidAt,
+		});
+	} catch (error) {
+		console.error('Paid-order notifications could not be published:', error);
+	}
+
+	try {
+		await db.$transaction(
+			(tx) => awardCoins(tx, {
+				userId: input.userId,
+				orderId: input.orderId,
+				amountPaid: input.amount,
+				idempotencyKey: input.idempotencyKey,
+			}),
+			{ maxWait: 10_000, timeout: 10_000 },
+		);
+	} catch (error) {
+		console.error('Paid-order GoCoins award could not be completed:', error);
+	}
+
+	return sourceEventIds;
+}
+
 export async function reconcilePaymentEvent(input: ReconcilePaymentInput) {
 	try {
 		const result = await db.$transaction(
@@ -35,7 +79,7 @@ export async function reconcilePaymentEvent(input: ReconcilePaymentInput) {
 						where: { id: existingEvent.orderId },
 						include: { paymentDetails: true },
 					});
-					return { duplicate: true, order, sourceEventIds: [] as string[] };
+					return { duplicate: true, order, paymentDetails: order?.paymentDetails ?? null };
 				}
 
 				const order = await tx.order.findUnique({
@@ -116,35 +160,28 @@ export async function reconcilePaymentEvent(input: ReconcilePaymentInput) {
 					include: { paymentDetails: true },
 				});
 
-				let sourceEventIds: string[] = [];
-				if (nextStatus === PaymentStatus.Paid) {
-					sourceEventIds = await publishPaidOrderNotifications(tx, {
-						orderId: order.id,
-						provider: input.provider,
-						providerPaymentId: input.providerPaymentId,
-						amount: storedAmount,
-						currency: normalizedCurrency,
-						paidAt: paymentDetails.updatedAt,
-					});
-
-					await awardCoins(tx, {
-						userId: order.userId,
-						orderId: order.id,
-						amountPaid: storedAmount,
-						idempotencyKey: `earn:${input.providerEventId}`,
-					});
-				}
-
 				return {
 					duplicate: false,
 					order: updatedOrder,
 					paymentDetails,
-					sourceEventIds,
 				};
 			},
 			{ maxWait: 10_000, timeout: 30_000 },
 		);
-		scheduleEmailOutboxDispatch(result.sourceEventIds);
+		let sourceEventIds: string[] = [];
+		if (result.order?.paymentStatus === PaymentStatus.Paid && result.paymentDetails) {
+			sourceEventIds = await runPaidPaymentSideEffects({
+				orderId: result.order.id,
+				userId: result.order.userId,
+				provider: input.provider,
+				providerPaymentId: input.providerPaymentId,
+				amount: result.paymentDetails.amount ?? result.order.total,
+				currency: result.paymentDetails.currency ?? 'USD',
+				paidAt: result.paymentDetails.updatedAt,
+				idempotencyKey: `earn:${input.providerEventId}`,
+			});
+		}
+		scheduleEmailOutboxDispatch(sourceEventIds);
 		if (!result.duplicate && result.order?.paymentStatus === PaymentStatus.Paid) {
 			await createSettlementsForPaidOrder(result.order.id);
 		}
@@ -152,7 +189,7 @@ export async function reconcilePaymentEvent(input: ReconcilePaymentInput) {
 			return { duplicate: true, order: result.order };
 		}
 		return {
-			duplicate: false,
+			duplicate: result.duplicate,
 			order: result.order,
 			paymentDetails: result.paymentDetails,
 		};

@@ -202,10 +202,10 @@ export default function OrderGroupTable({
 						<summary className='cursor-pointer text-xs font-semibold text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'>
 							Tracking history ({group.fulfillmentEvents.length})
 						</summary>
-						<ol className='mt-3 space-y-3 border-l border-border/60 pl-4'>
+						<ol className='relative mt-3 space-y-4 pl-6 before:absolute before:bottom-2 before:left-[0.4375rem] before:top-2 before:w-px before:bg-border/60'>
 							{group.fulfillmentEvents.map((event) => (
 								<li key={event.id} className='relative text-xs'>
-									<span className='absolute -left-[1.18rem] top-1 size-2 rounded-full bg-primary' />
+									<span className='absolute -left-[1.375rem] top-0.5 z-10 size-2.5 rounded-full border-2 border-background bg-primary shadow-sm' />
 									<p className='font-medium text-foreground'>
 										{event.entityType === 'PACKAGE' ? 'Package' : 'Shipment'}:{' '}
 										{formatStage(event.nextStatus)}

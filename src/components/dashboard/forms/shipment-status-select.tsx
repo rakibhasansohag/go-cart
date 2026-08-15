@@ -12,6 +12,13 @@ import {
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from '@/components/ui/select';
+import {
 	getAllowedShipmentTransitions,
 	SHIPMENT_STATUS_LABELS,
 } from '@/lib/orders/fulfillment-state-machine';
@@ -173,22 +180,16 @@ export default function ShipmentStatusSelect({
 
 	return (
 		<>
-			<select
+			<Select
 				aria-label={`Change shipment status. Current status: ${SHIPMENT_STATUS_LABELS[currentStatus]}`}
 				value={selectedStatus}
 				disabled={mutation.isPending}
-				className='rounded-md border border-border bg-background px-2 py-1 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-wait disabled:opacity-60'
-				onChange={(event) => {
-					const rawValue = event.currentTarget.value;
-					const nextStatus = (Object.values(ShipmentStatus).includes(rawValue as ShipmentStatus)
-						? rawValue
-						: Object.entries(SHIPMENT_STATUS_LABELS).find(([, label]) => label === rawValue)?.[0]) as ShipmentStatus | undefined;
-					if (nextStatus) chooseStatus(nextStatus);
-				}}
+				onValueChange={(value) => chooseStatus(value as ShipmentStatus)}
 			>
-				<option value='' disabled>
-					{SHIPMENT_STATUS_LABELS[currentStatus]}
-				</option>
+				<SelectTrigger size='sm' className='w-[160px] text-xs'>
+					<SelectValue placeholder={SHIPMENT_STATUS_LABELS[currentStatus]} />
+				</SelectTrigger>
+				<SelectContent>
 				{SHIPMENT_STEPS.map((nextStatus) => {
 					const isCurrent = nextStatus === currentStatus;
 					const isAllowed = allowed.includes(nextStatus);
@@ -196,7 +197,7 @@ export default function ShipmentStatusSelect({
 						currentStatus === ShipmentStatus.AWAITING_RECEIPT &&
 						packageStatus !== PackageStatus.HANDED_OFF;
 					return (
-						<option
+						<SelectItem
 							key={nextStatus}
 							value={nextStatus}
 							disabled={
@@ -204,10 +205,11 @@ export default function ShipmentStatusSelect({
 							}
 						>
 							{SHIPMENT_STATUS_LABELS[nextStatus]}
-						</option>
+						</SelectItem>
 					);
 				})}
-			</select>
+				</SelectContent>
+			</Select>
 
 			<Dialog
 				open={confirmStatus !== null}

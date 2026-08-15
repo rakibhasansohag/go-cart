@@ -11,6 +11,13 @@ import {
 	DialogTitle,
 } from '@/components/ui/dialog';
 import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from '@/components/ui/select';
+import {
 	getAllowedPackageTransitions,
 	PACKAGE_PREPARATION_STEPS,
 	PACKAGE_STATUS_LABELS,
@@ -110,26 +117,27 @@ export default function PackageStatusSelect({
 
 	return (
 		<>
-			<select
+			<Select
 				aria-label={`Change package status. Current status: ${PACKAGE_STATUS_LABELS[currentStatus]}`}
 				value={selectedStatus}
 				disabled={mutation.isPending}
-				className="rounded-md border border-border bg-background px-2 py-1 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-wait disabled:opacity-60"
-				onChange={(event) => {
-					const rawValue = event.currentTarget.value;
-					const nextStatus = (Object.values(PackageStatus).includes(rawValue as PackageStatus)
-						? rawValue
-						: Object.entries(PACKAGE_STATUS_LABELS).find(([, label]) => label === rawValue)?.[0]) as PackageStatus | undefined;
-					if (nextStatus) selectStatus(nextStatus);
-				}}
+				onValueChange={(value) => selectStatus(value as PackageStatus)}
 			>
-				<option value="" disabled>{PACKAGE_STATUS_LABELS[currentStatus]}</option>
-				{PACKAGE_PREPARATION_STEPS.map((nextStatus) => (
-					<option key={nextStatus} value={nextStatus} disabled={nextStatus === currentStatus || !allowed.includes(nextStatus)}>
-						{PACKAGE_STATUS_LABELS[nextStatus]}
-					</option>
-				))}
-			</select>
+				<SelectTrigger size='sm' className='w-[136px] text-xs'>
+					<SelectValue placeholder={PACKAGE_STATUS_LABELS[currentStatus]} />
+				</SelectTrigger>
+				<SelectContent>
+					{PACKAGE_PREPARATION_STEPS.map((nextStatus) => (
+						<SelectItem
+							key={nextStatus}
+							value={nextStatus}
+							disabled={nextStatus === currentStatus || !allowed.includes(nextStatus)}
+						>
+							{PACKAGE_STATUS_LABELS[nextStatus]}
+						</SelectItem>
+					))}
+				</SelectContent>
+			</Select>
 			<Dialog
 				open={confirmStatus !== null}
 				onOpenChange={(open) => !open && setConfirmStatus(null)}

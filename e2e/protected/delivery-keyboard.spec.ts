@@ -23,9 +23,12 @@ test.describe('deterministic delivery journey', () => {
   ] as const) {
     const statusSelect = sellerRow.getByRole('combobox', { name: new RegExp(`Change package status\\. Current status: ${current}`, 'i') });
     await expect(statusSelect).toBeVisible({ timeout: 30_000 });
-    await expect(statusSelect.locator(`option[value="${next === 'Accepted' ? 'ACCEPTED' : next === 'Processing' ? 'PROCESSING' : next === 'Ready for handoff' ? 'READY_FOR_HANDOFF' : 'HANDED_OFF'}"]`)).toBeEnabled();
     await statusSelect.focus();
-    await statusSelect.selectOption({ value: next === 'Accepted' ? 'ACCEPTED' : next === 'Processing' ? 'PROCESSING' : next === 'Ready for handoff' ? 'READY_FOR_HANDOFF' : 'HANDED_OFF' });
+    await statusSelect.press('Enter');
+    const option = page.getByRole('option', { name: next, exact: true });
+    await expect(option).toBeVisible();
+    await expect(option).toBeEnabled();
+    await option.press('Enter');
     if (next === 'Handed off') {
       await expect(sellerRow.getByLabel('Package preparation complete: Handed off')).toBeVisible({ timeout: 30_000 });
     } else {
@@ -58,7 +61,10 @@ test.describe('deterministic delivery journey', () => {
     const statusSelect = adminRow.getByRole('combobox', { name: new RegExp(`Change shipment status\\. Current status: ${current}`, 'i') });
     await expect(statusSelect).toBeVisible({ timeout: 30_000 });
     await statusSelect.focus();
-    await statusSelect.selectOption({ label: next });
+    await statusSelect.press('Enter');
+    const option = page.getByRole('option', { name: next, exact: true });
+    await expect(option).toBeVisible();
+    await option.press('Enter');
     if (next === 'Delivered') {
       await expect(adminRow.getByLabel('Shipment complete: Delivered')).toBeVisible({ timeout: 30_000 });
     } else {

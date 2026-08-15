@@ -2,6 +2,7 @@
 
 import { db } from '@/lib/db';
 import { scheduleEmailOutboxDispatch } from '@/lib/email/schedule';
+import { after } from 'next/server';
 import {
 	assertPackageTransition,
 	assertShipmentTransition,
@@ -14,6 +15,7 @@ import {
 import {
 	DOMAIN_EVENT_TYPES,
 	publishDomainEvent,
+	type PublishDomainEventInput,
 } from '@/lib/notifications/domain-events';
 import { deriveOrderStatus } from '@/lib/orders/status-sync';
 import { auth, currentUser } from '@clerk/nextjs/server';
@@ -45,6 +47,30 @@ function requiredIdempotencyKey(value: string): string {
 		throw new Error('A valid idempotency key is required.');
 	}
 	return key;
+}
+
+async function scheduleFulfillmentEventNotifications(
+	input: PublishDomainEventInput,
+	sourceEventId: string,
+) {
+	const fanOut = async () => {
+		try {
+			const event = await publishDomainEvent(db, input);
+			scheduleEmailOutboxDispatch([event.id]);
+		} catch (error) {
+			console.error('Fulfillment notifications could not be published:', error);
+			// The event is durable even if notification fan-out needs recovery.
+			scheduleEmailOutboxDispatch([sourceEventId]);
+		}
+	};
+
+	try {
+		after(fanOut);
+	} catch {
+		// Maintenance scripts and unit tests have no request scope; finish the
+		// same work synchronously in those contexts.
+		await fanOut();
+	}
 }
 
 export async function syncLegacyFulfillmentSummary(
@@ -119,6 +145,7 @@ export async function updatePackageStatus(input: {
 			return {
 				status: duplicate.nextStatus as PackageStatus,
 				sourceEventId: null,
+				notificationInput: null,
 			};
 		}
 
@@ -167,7 +194,7 @@ export async function updatePackageStatus(input: {
 			},
 		});
 
-		const domainEvent = await publishDomainEvent(tx, {
+		const notificationInput: PublishDomainEventInput = {
 			eventKey: `fulfillment:${idempotencyKey}`,
 			eventType: DOMAIN_EVENT_TYPES.PACKAGE_STATUS_CHANGED,
 			aggregateType: 'ORDER_PACKAGE',
@@ -198,6 +225,11 @@ export async function updatePackageStatus(input: {
 					storeName: group.store.name,
 				})),
 			},
+		};
+
+		const domainEvent = await publishDomainEvent(tx, {
+			...notificationInput,
+			persistEventOnly: true,
 		});
 
 		await syncLegacyFulfillmentSummary(tx, {
@@ -205,12 +237,19 @@ export async function updatePackageStatus(input: {
 			packageStatus: input.nextStatus,
 			shipment,
 		});
-		return { status: input.nextStatus, sourceEventId: domainEvent.id };
+		return {
+			status: input.nextStatus,
+			sourceEventId: domainEvent.id,
+			notificationInput,
+		};
 	}, FULFILLMENT_TRANSACTION_OPTIONS);
 
-	scheduleEmailOutboxDispatch(
-		result.sourceEventId ? [result.sourceEventId] : [],
-	);
+	if (result.notificationInput && result.sourceEventId) {
+		await scheduleFulfillmentEventNotifications(
+			result.notificationInput,
+			result.sourceEventId,
+		);
+	}
 	updateTag('user-orders');
 	return result.status;
 }
@@ -238,6 +277,7 @@ export async function updateShipmentStatus(input: {
 			return {
 				status: duplicate.nextStatus as ShipmentStatus,
 				sourceEventId: null,
+				notificationInput: null,
 			};
 		}
 
@@ -320,7 +360,7 @@ export async function updateShipmentStatus(input: {
 			},
 		});
 
-		const domainEvent = await publishDomainEvent(tx, {
+		const notificationInput: PublishDomainEventInput = {
 			eventKey: `fulfillment:${idempotencyKey}`,
 			eventType: DOMAIN_EVENT_TYPES.SHIPMENT_STATUS_CHANGED,
 			aggregateType: 'SHIPMENT',
@@ -358,18 +398,29 @@ export async function updateShipmentStatus(input: {
 					storeName: group.store.name,
 				})),
 			},
+		};
+		const domainEvent = await publishDomainEvent(tx, {
+			...notificationInput,
+			persistEventOnly: true,
 		});
 
 		await syncLegacyFulfillmentSummary(tx, {
 			...group,
 			shipment: { status: input.nextStatus },
 		});
-		return { status: input.nextStatus, sourceEventId: domainEvent.id };
+		return {
+			status: input.nextStatus,
+			sourceEventId: domainEvent.id,
+			notificationInput,
+		};
 	}, FULFILLMENT_TRANSACTION_OPTIONS);
 
-	scheduleEmailOutboxDispatch(
-		result.sourceEventId ? [result.sourceEventId] : [],
-	);
+	if (result.notificationInput && result.sourceEventId) {
+		await scheduleFulfillmentEventNotifications(
+			result.notificationInput,
+			result.sourceEventId,
+		);
+	}
 	updateTag('user-orders');
 	return result.status;
 }
