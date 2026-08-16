@@ -11,6 +11,7 @@ const {
 	dbMock: {
 		$transaction: vi.fn(),
 		store: { findFirst: vi.fn() },
+		sellerSettlement: { findUnique: vi.fn().mockResolvedValue(null) },
 	},
 	currentUserMock: vi.fn(),
 	publishDomainEventMock: vi.fn(),

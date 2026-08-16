@@ -8,6 +8,7 @@ import {
 import { syncLegacyFulfillmentSummary } from '@/queries/fulfillment';
 import { DOMAIN_EVENT_TYPES, publishDomainEvent } from '@/lib/notifications/domain-events';
 import { scheduleEmailOutboxDispatch } from '@/lib/email/schedule';
+import { refreshSettlementEligibilityForOrderGroup } from '@/lib/settlement/service';
 import { currentUser } from '@clerk/nextjs/server';
 import {
 	FulfillmentActorRole,
@@ -209,10 +210,10 @@ export async function recordShipmentTrackingEvent(input: {
 	const result = await db.$transaction(async (tx) => {
 		if (input.providerEventId) {
 			const duplicate = await tx.trackingEvent.findUnique({ where: { providerEventId: input.providerEventId } });
-			if (duplicate) return { duplicate: true, trackingEventId: duplicate.id, sourceEventIds: [] as string[] };
+			if (duplicate) return { duplicate: true, trackingEventId: duplicate.id, sourceEventIds: [] as string[], orderGroupId: null };
 		}
 		const transitionDuplicate = await tx.fulfillmentTransition.findUnique({ where: { idempotencyKey } });
-		if (transitionDuplicate) return { duplicate: true, trackingEventId: null, sourceEventIds: [] as string[] };
+		if (transitionDuplicate) return { duplicate: true, trackingEventId: null, sourceEventIds: [] as string[], orderGroupId: null };
 		const shipment = await shipmentContext(tx, input.shipmentId);
 		const group = primaryGroup(shipment);
 		const previousStatus = shipment.status;
@@ -300,9 +301,10 @@ export async function recordShipmentTrackingEvent(input: {
 		});
 		eventIds.push(trackingEventNotification.id);
 		await syncLegacyFulfillmentSummary(tx, { ...group, shipment: { status: input.status } });
-		return { duplicate: false, trackingEventId: trackingEvent.id, sourceEventIds: eventIds };
+		return { duplicate: false, trackingEventId: trackingEvent.id, sourceEventIds: eventIds, orderGroupId: group.id };
 	}, TRANSACTION_OPTIONS);
 	scheduleEmailOutboxDispatch(result.sourceEventIds);
+	if (result.orderGroupId) await refreshSettlementEligibilityForOrderGroup(result.orderGroupId);
 	return result;
 }
 

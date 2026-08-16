@@ -97,7 +97,17 @@ function maxDate(values: Array<Date | null | undefined>): Date | null {
 	return dates.length ? new Date(Math.max(...dates.map((date) => date.getTime()))) : null;
 }
 
-function deliveryEvidenceAt(group: SettlementGroup): Date | null {
+function deliveryEvidenceAt(group: {
+	items: Array<{ deliveredAt: Date | null }>;
+	shipmentAssignments: Array<{
+		shipment: {
+			status: string;
+			proofOfDeliveryAt: Date | null;
+			estimatedDeliveryAt: Date | null;
+			updatedAt: Date;
+		};
+	}>;
+}): Date | null {
 	const itemEvidence = maxDate(group.items.map((item) => item.deliveredAt));
 	const shipmentEvidence = maxDate(group.shipmentAssignments.flatMap(({ shipment }) => [
 		shipment.status === 'DELIVERED' ? shipment.proofOfDeliveryAt ?? shipment.updatedAt : null,
@@ -205,7 +215,87 @@ export async function refreshEligibleSettlements(now = new Date()) {
 		where: { status: SettlementStatus.HELD, eligibleAt: { lte: now } },
 		data: { status: SettlementStatus.ELIGIBLE },
 	});
-	return result.count;
+	const blocked = await db.sellerSettlement.findMany({
+		where: {
+			status: SettlementStatus.BLOCKED,
+			payoutBatchId: null,
+			providerTransferId: null,
+		},
+		select: { orderGroupId: true },
+	});
+	const repaired = await Promise.all(blocked.map(({ orderGroupId }) => refreshSettlementEligibilityForOrderGroup(orderGroupId, now)));
+	return result.count + repaired.filter((settlement) => settlement?.status === SettlementStatus.ELIGIBLE).length;
+}
+
+/**
+ * Re-check a settlement after fulfillment or carrier evidence changes.
+ * A settlement created before delivery has no eligibleAt and starts BLOCKED;
+ * it must be recalculated when delivery evidence is later recorded.
+ */
+export async function refreshSettlementEligibilityForOrderGroup(
+	orderGroupId: string,
+	now = new Date(),
+) {
+	const settlement = await db.sellerSettlement.findUnique({
+		where: { orderGroupId },
+		select: {
+			id: true,
+			status: true,
+			payoutBatchId: true,
+			providerTransferId: true,
+			eligibleAt: true,
+		},
+	});
+	if (!settlement || settlement.payoutBatchId || settlement.providerTransferId) {
+		return settlement;
+	}
+
+	const group = await db.orderGroup.findUnique({
+		where: { id: orderGroupId },
+		include: {
+			order: { select: { paymentStatus: true } },
+			items: { select: { deliveredAt: true } },
+			shipmentAssignments: {
+				include: {
+					shipment: {
+						select: {
+							status: true,
+							proofOfDeliveryAt: true,
+							estimatedDeliveryAt: true,
+							updatedAt: true,
+						},
+					},
+				},
+			},
+		},
+	});
+	if (!group) return settlement;
+
+	const settings = await getCommissionSettings();
+	const releaseAt = settlementReleaseAt(
+		deliveryEvidenceAt(group),
+		payoutHoldDaysFromConfig(settings.payoutHoldDays),
+	);
+	const paid = group.order.paymentStatus === 'Paid' || group.order.paymentStatus === 'PartiallyRefunded';
+	const nextStatus = paid && releaseAt
+		? releaseAt <= now ? SettlementStatus.ELIGIBLE : SettlementStatus.HELD
+		: SettlementStatus.BLOCKED;
+
+	if (
+		settlement.status === nextStatus &&
+		(settlement.eligibleAt?.getTime() ?? null) === (releaseAt?.getTime() ?? null)
+	) {
+		return settlement;
+	}
+
+	return db.sellerSettlement.update({
+		where: { id: settlement.id },
+		data: {
+			status: nextStatus,
+			eligibleAt: releaseAt,
+			failureReason: null,
+		},
+	});
 }
 
 export async function createWeeklyPayoutBatch(now = new Date()) {
@@ -217,7 +307,7 @@ export async function createWeeklyPayoutBatch(now = new Date()) {
 	weekStart.setUTCHours(0, 0, 0, 0);
 	const idempotencyKey = `payout-batch:${DEFAULT_PAYOUT_TIMEZONE}:${weekStart.toISOString().slice(0, 10)}`;
 	const eligible = await db.sellerSettlement.findMany({
-		where: { status: SettlementStatus.ELIGIBLE, currency: CANONICAL_SETTLEMENT_CURRENCY },
+		where: { status: SettlementStatus.ELIGIBLE, payoutBatchId: null, currency: CANONICAL_SETTLEMENT_CURRENCY },
 		select: { id: true, sellerPayableCents: true, remainingPayableCents: true },
 	});
 	const totalCents = eligible.reduce((sum, settlement) => sum + Math.max(0, settlement.remainingPayableCents ?? settlement.sellerPayableCents), 0);
@@ -240,6 +330,7 @@ export async function createWeeklyPayoutBatch(now = new Date()) {
 				where: { id: { in: eligible.map((item) => item.id) }, status: SettlementStatus.ELIGIBLE },
 				data: { payoutBatchId: batch.id },
 			});
+			return tx.payoutBatch.update({ where: { id: batch.id }, data: { totalCents } });
 		}
 		return batch;
 	});
@@ -272,6 +363,9 @@ export async function processPayoutBatch(batchId: string, transferCreator: Trans
 	const batch = await db.payoutBatch.findUnique({ where: { id: batchId }, include: { settlements: true } });
 	if (!batch) throw new Error('Payout batch not found.');
 	if (batch.status !== PayoutBatchStatus.APPROVED && batch.status !== PayoutBatchStatus.PARTIAL) throw new Error('Only an approved payout batch can be processed.');
+	if (!batch.settlements.some((settlement) => settlement.status === SettlementStatus.APPROVED)) {
+		throw new Error('This batch has no approved seller settlements to transfer. Create a new batch after delivery evidence makes funds eligible.');
+	}
 	await db.payoutBatch.update({ where: { id: batch.id }, data: { status: PayoutBatchStatus.PROCESSING } });
 
 	let failed = 0;
@@ -461,5 +555,5 @@ export async function listSettlementOperations() {
 }
 
 export async function listPayoutBatches() {
-	return db.payoutBatch.findMany({ orderBy: { weekStart: 'desc' }, take: 20, select: { id: true, weekStart: true, weekEnd: true, status: true, totalCents: true } });
+	return db.payoutBatch.findMany({ orderBy: { weekStart: 'desc' }, take: 20, select: { id: true, weekStart: true, weekEnd: true, status: true, totalCents: true, _count: { select: { settlements: true } } } });
 }

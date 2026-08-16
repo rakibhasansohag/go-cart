@@ -18,6 +18,7 @@ import {
 	type PublishDomainEventInput,
 } from '@/lib/notifications/domain-events';
 import { deriveOrderStatus } from '@/lib/orders/status-sync';
+import { refreshSettlementEligibilityForOrderGroup } from '@/lib/settlement/service';
 import { auth, currentUser } from '@clerk/nextjs/server';
 import {
 	CancellationReasonCode,
@@ -250,6 +251,7 @@ export async function updatePackageStatus(input: {
 			result.sourceEventId,
 		);
 	}
+	await refreshSettlementEligibilityForOrderGroup(input.groupId);
 	updateTag('user-orders');
 	return result.status;
 }
@@ -421,6 +423,7 @@ export async function updateShipmentStatus(input: {
 			result.sourceEventId,
 		);
 	}
+	await refreshSettlementEligibilityForOrderGroup(input.groupId);
 	updateTag('user-orders');
 	return result.status;
 }
@@ -605,7 +608,7 @@ export async function updateShipmentCarrierInfo(input: {
 		throw new Error('Admin logistics privileges are required.');
 	}
 
-	const updated = await db.$transaction(async (tx) => {
+	const result = await db.$transaction(async (tx) => {
 		const shipment = await tx.shipment.findUnique({
 			where: { id: input.shipmentId },
 			include: { packageAssignments: { orderBy: { createdAt: 'asc' }, take: 1, include: { orderGroup: { select: { id: true, orderId: true } } } } },
@@ -645,11 +648,12 @@ export async function updateShipmentCarrierInfo(input: {
 				});
 			}
 		}
-		return updated;
+		return { updated, orderGroupId: shipment.packageAssignments[0].orderGroup.id };
 	}, FULFILLMENT_TRANSACTION_OPTIONS);
 
+	await refreshSettlementEligibilityForOrderGroup(result.orderGroupId);
 	updateTag('user-orders');
-	return updated;
+	return result.updated;
 }
 
 export async function getShipmentTracking(orderId: string) {
