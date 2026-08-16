@@ -976,6 +976,10 @@ customer to each seller before adding more optional growth features.
   - [x] Added Stripe dispute-created/updated/closed mapping to terminal
         Chargeback payment state, proportional seller ledger debits, replay
         protection, and recovery when a dispute closes as won.
+  - [x] Added the scheduled weekly payout-review job for 09:00 Asia/Dhaka. It
+        creates the idempotent draft batch, alerts admins only when eligible
+        seller funds are attached, and links to protected review—not approval or
+        transfer—from the notification email.
   - [ ] Remaining: a protected browser test for a real provider-backed seller
         payday transfer.
 

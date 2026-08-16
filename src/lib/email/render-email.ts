@@ -304,7 +304,7 @@ export async function renderEmailTemplate(input: {
 								: '',
 						],
 					]
-				: input.templateKey === 'shipment.status_changed'
+			: input.templateKey === 'shipment.status_changed'
 					? [
 							['Shipment', payload.shipmentId],
 							['Order', payload.orderId],
@@ -315,6 +315,13 @@ export async function renderEmailTemplate(input: {
 							['Status', payload.nextStatus],
 							['Delivery note', payload.failureReason],
 						]
+					: input.templateKey === 'payout.batch_ready_for_review'
+						? [
+								['Payout batch', payload.payoutBatchId],
+								['Review period', [payload.weekStart, payload.weekEnd].filter(Boolean).join(' – ')],
+								['Eligible settlements', payload.settlementCount],
+								['Amount awaiting review', typeof payload.total === 'number' || typeof payload.total === 'string' ? formatMoney(payload.total, payload.currency) : ''],
+							]
 					: [
 							['Order', payload.orderId],
 							['Package', payload.orderGroupId],

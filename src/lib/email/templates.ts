@@ -30,6 +30,10 @@ export const EMAIL_TEMPLATE_VARIABLES = [
 	'requestedAmount',
 	'customerNote',
 	'cartId',
+	'payoutBatchId',
+	'weekStart',
+	'weekEnd',
+	'settlementCount',
 ] as const;
 
 export type EmailTemplateVariable = (typeof EMAIL_TEMPLATE_VARIABLES)[number];
@@ -149,6 +153,20 @@ export const EMAIL_TEMPLATE_DEFINITIONS: EmailTemplateDefinition[] = [
 		ctaLabel: 'Return to cart',
 		allowedVariables: commonVariables,
 	},
+	{
+		key: 'payout.batch_ready_for_review',
+		name: 'Weekly payout batch needs review',
+		category: 'Marketplace operations',
+		description: 'Sent to platform admins when the scheduled weekly payout batch contains eligible seller funds.',
+		audience: 'Admin',
+		trigger: 'The weekly payout review job creates or finds a draft batch with eligible settlements',
+		subject: 'Payout review needed: {{settlementCount}} seller settlement(s)',
+		preheader: '{{total}} {{currency}} is ready for your review; no transfer has been started.',
+		bodyHtml:
+			'<p>{{message}}</p><p>Open the protected admin review screen to inspect the delivery evidence, seller amounts, and transfer readiness. The email link cannot approve or send money.</p>',
+		ctaLabel: 'Review payout batch',
+		allowedVariables: commonVariables,
+	},
 ];
 
 export function getEmailTemplateDefinition(templateKey: string) {
@@ -189,6 +207,10 @@ export function getEmailTemplateTestPayload(templateKey: string) {
 		requestedAmount: '299.99',
 		customerNote: 'The item arrived with visible damage near the clasp.',
 		cartId: 'CART-DEMO123',
+		payoutBatchId: 'PAY-DEMO123',
+		weekStart: 'August 10, 2026',
+		weekEnd: 'August 16, 2026',
+		settlementCount: '3',
 		items: [
 			{
 				name: 'Apex Chronos Premium Timepiece',
@@ -253,6 +275,12 @@ export function getEmailTemplateTestPayload(templateKey: string) {
 				message: 'Your saved GoCart checkout has been waiting for you.',
 				nextStatus: 'Saved cart',
 				actionUrl: '/cart',
+			};
+		case 'payout.batch_ready_for_review':
+			return {
+				...basePayload,
+				message: 'Three eligible seller settlements are ready for your approval. No Stripe transfer has been started.',
+				actionUrl: '/dashboard/admin/settlements?batchId=PAY-DEMO123',
 			};
 		default:
 			return basePayload;

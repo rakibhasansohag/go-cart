@@ -1,27 +1,19 @@
 import { redirect } from 'next/navigation';
-import { currentUser } from '@clerk/nextjs/server';
+import { auth } from '@clerk/nextjs/server';
+import { db } from '@/lib/db';
 
 export default async function DashboardPage() {
-	const user = await currentUser();
-
-	// debug
-	// console.log(
-	// 	'[dashboard] server user:',
-	// 	!!user,
-	// 	'id=',
-	// 	user?.id,
-	// 	'role=',
-	// 	user?.privateMetadata?.role,
-	// );
-
-	if (!user) {
-		// If no user on server, send them to sign-in
+	const { userId } = await auth();
+	if (!userId) {
 		return redirect(
 			`/sign-in?redirect_url=${encodeURIComponent('/dashboard')}`,
 		);
 	}
-
-	const role = (user?.privateMetadata?.role || '').toString().toUpperCase();
+	const user = await db.user.findUnique({
+		where: { id: userId },
+		select: { role: true },
+	});
+	const role = user?.role;
 
 	if (role === 'ADMIN') {
 		return redirect('/dashboard/admin');
@@ -31,7 +23,5 @@ export default async function DashboardPage() {
 		return redirect('/dashboard/seller');
 	}
 
-	// Customers and users do not have a dashboard. Send them to the profile
-	// workspace instead of rendering the dashboard 404 boundary.
 	return redirect('/profile');
 }

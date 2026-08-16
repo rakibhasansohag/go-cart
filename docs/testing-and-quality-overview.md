@@ -1,6 +1,6 @@
 # GoCart Testing & Quality Overview
 
-**Last reviewed:** 2026-08-13
+**Last reviewed:** 2026-08-16
 **Purpose:** explain what we test, why each layer exists, how to run it, how to inspect the output, and what must be updated when a new feature is added.
 
 This document is the project map for verification. `docs/testing.md` remains the short command reference. `plan.md` remains the roadmap and acceptance checklist.
@@ -307,6 +307,17 @@ The production application migration is intentionally not run by this check.
 Review and back up the production database before running the normal migration
 deployment. The remaining external gate is a protected browser test against a
 Stripe sandbox connected account; no live or PayPal settlement test is required.
+
+### 7e. Verify the automatic weekly payout-review notice
+
+The scheduled review job runs each Monday at 09:00 Asia/Dhaka (03:00 UTC) on
+Vercel. It creates the idempotent weekly draft batch, then sends platform admins
+an in-app/email notification only when eligible seller funds are attached. Its
+email CTA opens `/dashboard/admin/settlements?batchId=...`; it cannot approve a
+batch or initiate a Stripe transfer. Approval and processing remain protected
+admin actions on the dashboard. Focused Vitest coverage verifies unauthorized
+cron rejection, authorized review-job execution, empty-batch suppression, and
+the safe review-only email link.
 
 ### 8. Run static checks and the production build
 

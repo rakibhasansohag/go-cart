@@ -60,10 +60,12 @@ export default function SettlementsTable({
 	initialSettlements,
 	initialBatches,
 	payoutHoldDays,
+	selectedBatchId,
 }: {
 	initialSettlements: Settlement[];
 	initialBatches: Batch[];
 	payoutHoldDays: number;
+	selectedBatchId?: string;
 }) {
 	const router = useRouter();
 	const [message, setMessage] = useState('');
@@ -128,12 +130,14 @@ export default function SettlementsTable({
 				</div>
 			</section>
 
+			{selectedBatchId && <p role='status' className='rounded-lg border border-primary/30 bg-primary/5 p-3 text-sm'>This payout batch was opened from an admin review notification. Review its contents before you approve it; no email link can approve or transfer funds.</p>}
+
 			{initialBatches.length > 0 && <section className='rounded-xl border border-border p-4'>
 				<h2 className='font-semibold'>Weekly payday batches</h2>
 				<div className='mt-3 space-y-3'>
 					{initialBatches.map((batch) => {
 						const actionKey = batch.id;
-						return <div key={batch.id} className='rounded-lg bg-muted/40 p-3 text-sm'>
+						return <div id={`payout-batch-${batch.id}`} key={batch.id} className={`rounded-lg bg-muted/40 p-3 text-sm ${batch.id === selectedBatchId ? 'ring-2 ring-primary/50' : ''}`}>
 							<div className='flex flex-wrap items-center justify-between gap-3'>
 								<span className='font-medium'>{batch.weekStart.toLocaleDateString()} – {batch.weekEnd.toLocaleDateString()} · ${(batch.totalCents / 100).toFixed(2)} · {batch.status}</span>
 								<span className='text-xs text-muted-foreground'>{batch._count.settlements} settlement{batch._count.settlements === 1 ? '' : 's'} attached</span>

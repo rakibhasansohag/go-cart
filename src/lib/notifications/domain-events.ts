@@ -21,6 +21,7 @@ export const DOMAIN_EVENT_TYPES = {
 	EXCHANGE_APPROVED: 'exchange.approved',
 	RETURN_INVENTORY_RECONCILED: 'return.inventory_reconciled',
 	CHECKOUT_ABANDONED: 'checkout.abandoned',
+	PAYOUT_BATCH_READY_FOR_REVIEW: 'payout.batch_ready_for_review',
 } as const;
 
 export type DomainEventType =
@@ -30,7 +31,7 @@ export type PublishDomainEventInput = {
 	eventKey: string;
 	eventType: DomainEventType;
 	aggregateType:
-		'ORDER' | 'ORDER_PACKAGE' | 'SHIPMENT' | 'RETURN_REQUEST' | 'CART';
+		'ORDER' | 'ORDER_PACKAGE' | 'SHIPMENT' | 'RETURN_REQUEST' | 'CART' | 'PAYOUT_BATCH';
 	aggregateId: string;
 	actorUserId?: string | null;
 	orderId?: string;
@@ -136,6 +137,13 @@ async function resolveRecipients(
 		input.eventType === DOMAIN_EVENT_TYPES.RETURN_INVENTORY_RECONCILED
 	) {
 		const admins = await tx.user.findMany({ where: { role: Role.ADMIN }, select: { id: true } });
+		for (const admin of admins) recipientIds.add(admin.id);
+	}
+	if (input.eventType === DOMAIN_EVENT_TYPES.PAYOUT_BATCH_READY_FOR_REVIEW) {
+		const admins = await tx.user.findMany({
+			where: { role: Role.ADMIN },
+			select: { id: true },
+		});
 		for (const admin of admins) recipientIds.add(admin.id);
 	}
 
@@ -274,6 +282,13 @@ function notificationFor(input: PublishDomainEventInput, recipient: Recipient) {
 				title: 'Your cart is waiting',
 				message: 'You still have saved items ready for checkout.',
 				actionUrl: '/cart',
+			};
+		case DOMAIN_EVENT_TYPES.PAYOUT_BATCH_READY_FOR_REVIEW:
+			return {
+				category: NotificationCategory.SYSTEM,
+				title: 'Weekly payout batch needs review',
+				message: `${payloadText(input.payload, 'settlementCount') || 'Eligible'} seller settlement(s) are ready for approval. Review the batch before any Stripe transfer is processed.`,
+				actionUrl: `/dashboard/admin/settlements?batchId=${encodeURIComponent(payloadText(input.payload, 'payoutBatchId'))}`,
 			};
 	}
 }

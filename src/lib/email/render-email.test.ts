@@ -123,4 +123,14 @@ describe('renderEmailTemplate', () => {
 		expect(email.html).toContain('https://gocart.example/cart');
 		expect(email.text).toContain('Cart total');
 	});
+
+	it('renders a payout review email that links only to the protected admin review page', async () => {
+		process.env.APP_URL = 'https://gocart.example';
+		const email = await renderEmailTemplate({ templateKey: 'payout.batch_ready_for_review' });
+
+		expect(email.subject).toContain('Payout review needed');
+		expect(email.html).toContain('No Stripe transfer has been started');
+		expect(email.html).toContain('https://gocart.example/dashboard/admin/settlements?batchId=PAY-DEMO123');
+		expect(email.html).not.toContain('Approve payout batch');
+	});
 });

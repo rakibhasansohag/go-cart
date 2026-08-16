@@ -75,6 +75,14 @@ export const DOMAIN_EVENT_PAYLOAD_SCHEMAS = {
 		orderGroupId: z.string().min(1),
 	}),
 	'checkout.abandoned': commonPayload,
+	'payout.batch_ready_for_review': commonPayload.extend({
+		payoutBatchId: z.string().min(1),
+		weekStart: z.string().min(1),
+		weekEnd: z.string().min(1),
+		totalCents: z.number().int().nonnegative(),
+		settlementCount: z.number().int().nonnegative(),
+		currency: z.string().min(1),
+	}),
 } as const;
 
 export type DomainEventPayload = z.infer<
