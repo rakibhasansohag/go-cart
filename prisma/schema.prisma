@@ -840,6 +840,7 @@ model SellerSettlement {
   approvedAt            DateTime?
   releasedAt            DateTime?
   providerTransferId    String?          @unique
+  transferAttempt       Int              @default(0)
   failureReason         String?          @db.Text
   payoutBatchId         String?
   createdAt             DateTime         @default(now())

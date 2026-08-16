@@ -89,6 +89,26 @@ if (action === 'up') {
 	run('bun', ['prisma/seed-demo.ts'], stripeRefundEnv);
 	run('bun', ['prisma/seed-e2e-commerce.ts'], stripeRefundEnv);
 	run('bun', ['scripts/e2e-stripe-refund.ts'], stripeRefundEnv);
+	} else if (action === 'stripe-payout') {
+	const env = validatedE2EEnv();
+	const stripePayoutEnv = { ...env, E2E_STRIPE_PAYOUT: env.E2E_STRIPE_PAYOUT ?? process.env.E2E_STRIPE_PAYOUT ?? '' };
+	if (stripePayoutEnv.E2E_STRIPE_PAYOUT?.toLowerCase() !== 'true') {
+		throw new Error('Set E2E_STRIPE_PAYOUT=true to run the external Stripe seller payout test.');
+	}
+	run('docker', [...compose, 'up', '-d', 'postgres']);
+	run('bun', ['x', 'prisma', 'migrate', 'deploy'], stripePayoutEnv);
+	if (env.E2E_PROTECTED?.toLowerCase() === 'true') run('bun', ['prisma/sync-e2e-users.ts'], stripePayoutEnv);
+	run('bun', ['prisma/seed-demo.ts'], stripePayoutEnv);
+	run('bun', ['prisma/seed-e2e-commerce.ts'], stripePayoutEnv);
+	let payoutStatus = 1;
+	try {
+		payoutStatus = run('bun', ['scripts/e2e-stripe-payout.ts'], stripePayoutEnv, false);
+	} finally {
+		// Restore deterministic Docker fixtures even when Stripe rejects a transfer.
+		run('bun', ['prisma/seed-demo.ts'], stripePayoutEnv);
+		run('bun', ['prisma/seed-e2e-commerce.ts'], stripePayoutEnv);
+	}
+	if (payoutStatus !== 0) process.exit(payoutStatus);
 } else if (action === 'stripe-browser-refund') {
 	const env = validatedE2EEnv();
 	const browserRefundEnv = { ...env, E2E_BROWSER_REFUND: env.E2E_BROWSER_REFUND ?? process.env.E2E_BROWSER_REFUND ?? '', E2E_SKIP_BROWSER_INSTALL: 'true' };
@@ -143,5 +163,5 @@ if (action === 'up') {
 	}
 	run('bunx', ['playwright', 'test', ...process.argv.slice(3)], env);
 } else {
-	throw new Error(`Unknown action: ${action}. Use up, prepare, sync-users, integration, stripe-refund, stripe-browser-refund, paypal-auth, server, server:prod, build:e2e, test, reset, or down.`);
+	throw new Error(`Unknown action: ${action}. Use up, prepare, sync-users, integration, stripe-refund, stripe-payout, stripe-browser-refund, paypal-auth, server, server:prod, build:e2e, test, reset, or down.`);
 }

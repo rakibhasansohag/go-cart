@@ -305,8 +305,29 @@ ledger debits, replay protection, and recovery when the dispute is won.
 
 The production application migration is intentionally not run by this check.
 Review and back up the production database before running the normal migration
-deployment. The remaining external gate is a protected browser test against a
-Stripe sandbox connected account; no live or PayPal settlement test is required.
+deployment. No live or PayPal settlement test is required.
+
+### 7d.1 Run the real Stripe sandbox seller-payout probe
+
+This opt-in Docker-only probe creates real Stripe test transfers to the
+configured sandbox connected account. It verifies the zero-day eligibility
+transition, transfer amount/destination, local transfer-event reconciliation,
+seller balance refresh, payout-ledger release, a controlled provider failure,
+and retry with a second real transfer. It reverses successful test transfers
+when Stripe permits it and always restores the deterministic local fixture:
+
+```powershell
+$env:E2E_STRIPE_PAYOUT='true'
+bun run test:stripe:payout:local
+Remove-Item Env:E2E_STRIPE_PAYOUT -ErrorAction SilentlyContinue
+```
+
+Set `E2E_STRIPE_CONNECTED_ACCOUNT_ID` only in `.env.e2e.local` to a transfer-
+ready **Stripe test-mode** connected account. The test never prints keys or
+environment values. It directly invokes GoCart's transfer-event reconciliation
+with the real transfer object; Stripe webhook signature and HTTP-boundary tests
+remain separately covered by the Stripe webhook suite. A protected browser
+journey for payout operations remains a distinct UI coverage goal.
 
 ### 7e. Verify the automatic weekly payout-review notice
 

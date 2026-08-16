@@ -346,15 +346,48 @@ export async function approvePayoutBatch(batchId: string) {
 	});
 }
 
-export type TransferCreator = (input: { amountCents: number; destination: string; idempotencyKey: string; settlementId: string }) => Promise<{ id: string }>;
+export type TransferCreator = (input: {
+	amountCents: number;
+	destination: string;
+	idempotencyKey: string;
+	settlementId: string;
+	transferAttempt: number;
+}) => Promise<{ id: string }>;
 
-export const createStripeTransfer: TransferCreator = async ({ amountCents, destination, idempotencyKey, settlementId }) => {
-	const transfer = await getStripeClient().transfers.create({
+export const createStripeTransfer: TransferCreator = async ({ amountCents, destination, idempotencyKey, settlementId, transferAttempt }) => {
+	const stripe = getStripeClient();
+	// If a network response was lost after Stripe accepted a prior attempt, reuse
+	// the provider object instead of risking a second seller transfer.
+	const previousTransfers = await stripe.transfers.list({ limit: 100 });
+	const previousTransfer = previousTransfers.data.find((transfer) => transfer.metadata.settlementId === settlementId);
+	if (previousTransfer) return { id: previousTransfer.id };
+
+	const settlement = await db.sellerSettlement.findUniqueOrThrow({
+		where: { id: settlementId },
+		select: {
+			orderGroup: {
+				select: {
+					order: { select: { paymentDetails: { select: { paymentInetntId: true, paymentMethod: true } } } },
+				},
+			},
+		},
+	});
+	const payment = settlement.orderGroup.order.paymentDetails;
+	let sourceTransaction: string | undefined;
+	if (payment?.paymentMethod === 'Stripe' && payment.paymentInetntId.startsWith('pi_')) {
+		const intent = await stripe.paymentIntents.retrieve(payment.paymentInetntId, { expand: ['latest_charge'] });
+		const latestCharge = intent.latest_charge;
+		sourceTransaction = typeof latestCharge === 'string' ? latestCharge : latestCharge?.id;
+		if (!sourceTransaction) throw new Error('Stripe payment is missing a settled source charge for this seller transfer.');
+	}
+
+	const transfer = await stripe.transfers.create({
 		amount: amountCents,
 		currency: 'usd',
 		destination,
+		...(sourceTransaction ? { source_transaction: sourceTransaction } : {}),
 		description: `GoCart seller settlement ${settlementId}`,
-		metadata: { settlementId },
+		metadata: { settlementId, transferAttempt: String(transferAttempt) },
 	}, { idempotencyKey });
 	return { id: transfer.id };
 };
@@ -381,9 +414,19 @@ export async function processPayoutBatch(batchId: string, transferCreator: Trans
 			await db.sellerSettlement.update({ where: { id: settlement.id }, data: { status: SettlementStatus.RELEASED, releasedAt: new Date() } });
 			continue;
 		}
-		await db.sellerSettlement.updateMany({ where: { id: settlement.id, status: SettlementStatus.APPROVED }, data: { status: SettlementStatus.PROCESSING } });
+		const processingSettlement = await db.sellerSettlement.update({
+			where: { id: settlement.id },
+			data: { status: SettlementStatus.PROCESSING, transferAttempt: { increment: 1 } },
+			select: { transferAttempt: true },
+		});
 		try {
-			const transfer = await transferCreator({ amountCents, destination: account.providerAccountId, idempotencyKey: `settlement:transfer:${settlement.id}`, settlementId: settlement.id });
+			const transfer = await transferCreator({
+				amountCents,
+				destination: account.providerAccountId,
+				idempotencyKey: `settlement:transfer:${settlement.id}:${processingSettlement.transferAttempt}`,
+				settlementId: settlement.id,
+				transferAttempt: processingSettlement.transferAttempt,
+			});
 			await db.$transaction(async (tx) => {
 				await tx.sellerSettlement.update({ where: { id: settlement.id }, data: { status: SettlementStatus.RELEASED, providerTransferId: transfer.id, releasedAt: new Date(), remainingPayableCents: 0, failureReason: null } });
 				await tx.settlementLedgerEntry.create({ data: { settlementId: settlement.id, entryType: SettlementLedgerEntryType.PAYOUT, idempotencyKey: `settlement:payout:${settlement.id}`, currency: 'USD', sellerPayableCents: -amountCents, metadata: { providerTransferId: transfer.id } } });
