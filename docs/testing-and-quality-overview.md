@@ -322,8 +322,10 @@ bun run test:stripe:payout:local
 Remove-Item Env:E2E_STRIPE_PAYOUT -ErrorAction SilentlyContinue
 ```
 
-Set `E2E_STRIPE_CONNECTED_ACCOUNT_ID` only in `.env.e2e.local` to a transfer-
-ready **Stripe test-mode** connected account. The test never prints keys or
+Optionally set `E2E_STRIPE_CONNECTED_ACCOUNT_ID` only in `.env.e2e.local` to a
+transfer-ready **Stripe test-mode** connected account. Without it, the probe
+selects an existing transfer-ready US account from the configured Stripe
+sandbox; it never creates an account or prints keys, identifiers, or
 environment values. It directly invokes GoCart's transfer-event reconciliation
 with the real transfer object; Stripe webhook signature and HTTP-boundary tests
 remain separately covered by the Stripe webhook suite. A protected browser

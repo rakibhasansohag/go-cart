@@ -33,6 +33,21 @@ function assert(condition: unknown, message: string): asserts condition {
 	if (!condition) throw new Error(message);
 }
 
+async function resolveConnectedAccountId(stripe: Stripe, configuredAccountId?: string) {
+	if (configuredAccountId) return configuredAccountId;
+	const accounts = await stripe.accounts.list({ limit: 100 });
+	const transferReadyAccount = accounts.data.find((account) => (
+		!account.deleted
+		&& account.capabilities?.transfers === 'active'
+		&& account.country === 'US'
+	));
+	assert(
+		transferReadyAccount,
+		'No active US Stripe test connected account was found. Set E2E_STRIPE_CONNECTED_ACCOUNT_ID to a transfer-ready sandbox account.',
+	);
+	return transferReadyAccount.id;
+}
+
 function transferEvent(id: string, type: 'transfer.created' | 'transfer.reversed', transfer: Stripe.Transfer) {
 	return {
 		id,
@@ -83,9 +98,9 @@ async function main() {
 
 	const sellerEmail = process.env.E2E_SELLER_EMAIL;
 	const adminEmail = process.env.E2E_ADMIN_EMAIL;
-	const connectedAccountId = process.env.E2E_STRIPE_CONNECTED_ACCOUNT_ID?.trim();
 	assert(sellerEmail && adminEmail, 'E2E seller and admin emails are required.');
-	assert(connectedAccountId, 'E2E_STRIPE_CONNECTED_ACCOUNT_ID must identify an active Stripe test connected account.');
+	const stripe = getStripeClient();
+	const connectedAccountId = await resolveConnectedAccountId(stripe, process.env.E2E_STRIPE_CONNECTED_ACCOUNT_ID?.trim());
 
 	const [seller, admin] = await Promise.all([
 		db.user.findUnique({ where: { email: sellerEmail }, select: { id: true, role: true } }),
@@ -103,7 +118,6 @@ async function main() {
 
 	const originalSettings = await db.platformSetting.findUnique({ where: { id: 'default' } });
 	const originalAccount = await db.sellerPaymentAccount.findUnique({ where: { userId: seller.id } });
-	const stripe = getStripeClient();
 	const createdTransferIds: string[] = [];
 	const eventIds: string[] = [];
 

@@ -980,8 +980,14 @@ customer to each seller before adding more optional growth features.
         creates the idempotent draft batch, alerts admins only when eligible
         seller funds are attached, and links to protected review—not approval or
         transfer—from the notification email.
-  - [ ] Remaining: a protected browser test for a real provider-backed seller
-        payday transfer.
+  - [x] Ran the opt-in `test:stripe:payout:local` probe against `gocart_e2e`
+        and an active Stripe test connected account: real source-charge
+        transfers, local transfer-event reconciliation, seller balance refresh,
+        payout-ledger release, real provider rejection, and safe retry passed.
+        The probe reverses successful test transfers when Stripe permits it and
+        restores the deterministic Docker fixture.
+  - [ ] Remaining: a protected browser journey with a signed Stripe listener
+        that exercises provider delivery through the webhook HTTP boundary.
 
 - [x] **Phase 14.1 — Business and responsibility decisions**
   - [x] Confirm whether goCart or each seller is the merchant the customer is
@@ -1023,8 +1029,8 @@ customer to each seller before adding more optional growth features.
         Docker database using the existing E2E role fixtures
   - [x] Provider dispute/chargeback webhook mapping and isolated Docker
         chargeback recovery invariants
-  - [ ] Remaining hardening: a protected browser test that exercises the real
-        provider-backed seller payday transfer end-to-end
+  - [ ] Remaining hardening: a protected browser test with signed provider
+        delivery that exercises the real seller payday transfer end-to-end
 
 - [ ] **Phase 14.5 — Admin seller financial profile and performance drill-down**
   - [ ] Make the seller/store cell in settlement operations open a protected
