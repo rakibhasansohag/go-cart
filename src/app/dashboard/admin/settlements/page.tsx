@@ -4,12 +4,16 @@ import SettlementsTable from './settlements-table';
 export default async function AdminSettlementsPage({
 	searchParams,
 }: {
-	searchParams: Promise<{ batchId?: string }>;
+	searchParams: Promise<{ batchId?: string; batchPage?: string; settlementPage?: string }>;
 }) {
-	const [settlements, batches, settings] = await Promise.all([listSettlementOperations(), listPayoutBatches(), getCommissionSettings()]);
-	const { batchId } = await searchParams;
-	const selectedBatchId = typeof batchId === 'string' && batches.some((batch) => batch.id === batchId)
+	const { batchId, batchPage, settlementPage } = await searchParams;
+	const [settlements, batches, settings] = await Promise.all([
+		listSettlementOperations({ page: Number(settlementPage) }),
+		listPayoutBatches({ page: Number(batchPage) }),
+		getCommissionSettings(),
+	]);
+	const selectedBatchId = typeof batchId === 'string' && batches.items.some((batch) => batch.id === batchId)
 		? batchId
 		: undefined;
-	return <SettlementsTable initialSettlements={settlements} initialBatches={batches} payoutHoldDays={settings.payoutHoldDays} selectedBatchId={selectedBatchId} />;
+	return <SettlementsTable initialSettlements={settlements.items} initialBatches={batches.items} settlementPagination={settlements.pagination} batchPagination={batches.pagination} payoutHoldDays={settings.payoutHoldDays} selectedBatchId={selectedBatchId} />;
 }

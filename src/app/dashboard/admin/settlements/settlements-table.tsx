@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { UrlPagination } from '@/components/ui/url-pagination';
 
 type Settlement = {
 	id: string;
@@ -23,6 +24,8 @@ type Batch = {
 	totalCents: number;
 	_count: { settlements: number };
 };
+
+type Pagination = { page: number; pageSize: number; total: number; totalPages: number };
 
 const BATCH_STATUS_COPY: Record<string, string> = {
 	DRAFT: 'Needs admin approval. Seller funds are not being transferred yet.',
@@ -59,11 +62,15 @@ function settlementCopy(settlement: Settlement) {
 export default function SettlementsTable({
 	initialSettlements,
 	initialBatches,
+	settlementPagination,
+	batchPagination,
 	payoutHoldDays,
 	selectedBatchId,
 }: {
 	initialSettlements: Settlement[];
 	initialBatches: Batch[];
+	settlementPagination: Pagination;
+	batchPagination: Pagination;
 	payoutHoldDays: number;
 	selectedBatchId?: string;
 }) {
@@ -150,6 +157,7 @@ export default function SettlementsTable({
 						</div>;
 					})}
 				</div>
+				<UrlPagination label='Weekly payday batch pages' param='batchPage' {...batchPagination} />
 			</section>}
 
 			<div className='overflow-x-auto rounded-xl border border-border'>
@@ -164,6 +172,7 @@ export default function SettlementsTable({
 					</tr>)}
 					{initialSettlements.length === 0 && <tr><td colSpan={6} className='p-8 text-center text-muted-foreground'>No settlement entries yet. Paid order groups will appear here.</td></tr>}
 				</tbody></table>
+				<UrlPagination label='Settlement record pages' param='settlementPage' {...settlementPagination} />
 			</div>
 		</div>
 	);

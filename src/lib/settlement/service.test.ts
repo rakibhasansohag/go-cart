@@ -3,9 +3,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const { dbMock } = vi.hoisted(() => ({
 	dbMock: {
 		platformSetting: { findUnique: vi.fn() },
-		sellerSettlement: { findUnique: vi.fn(), update: vi.fn() },
+		sellerSettlement: { findUnique: vi.fn(), findMany: vi.fn(), count: vi.fn(), groupBy: vi.fn(), update: vi.fn() },
 		orderGroup: { findUnique: vi.fn() },
-		payoutBatch: { findUnique: vi.fn(), update: vi.fn() },
+		payoutBatch: { findUnique: vi.fn(), findMany: vi.fn(), count: vi.fn(), update: vi.fn() },
 	},
 }));
 
@@ -14,6 +14,9 @@ vi.mock('@/lib/payments/stripe-client', () => ({ getStripeClient: vi.fn() }));
 
 import {
 	payoutHoldDaysFromConfig,
+	listPayoutBatches,
+	listSellerSettlements,
+	listSettlementOperations,
 	processPayoutBatch,
 	refreshSettlementEligibilityForOrderGroup,
 	settlementReleaseAt,
@@ -38,6 +41,53 @@ describe('settlement payout hold configuration', () => {
 	it('rejects invalid payout hold values', () => {
 		expect(() => payoutHoldDaysFromConfig(-1)).toThrow('0 to 365');
 		expect(() => payoutHoldDaysFromConfig(1.5)).toThrow('whole number');
+	});
+});
+
+describe('settlement history pagination', () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+	});
+
+	it('uses stable database ordering and clamps an admin history page to the available range', async () => {
+		dbMock.sellerSettlement.count.mockResolvedValue(26);
+		dbMock.sellerSettlement.findMany.mockResolvedValue([]);
+
+		const result = await listSettlementOperations({ page: 9 });
+
+		expect(result.pagination).toEqual({ page: 2, pageSize: 25, total: 26, totalPages: 2 });
+		expect(dbMock.sellerSettlement.findMany).toHaveBeenCalledWith(expect.objectContaining({
+			orderBy: [{ createdAt: 'desc' }, { id: 'desc' }], skip: 25, take: 25,
+		}));
+	});
+
+	it('paginates seller records at the store query and preserves ledger totals across pages', async () => {
+		dbMock.sellerSettlement.count.mockResolvedValue(28);
+		dbMock.sellerSettlement.findMany.mockResolvedValue([]);
+		dbMock.sellerSettlement.groupBy.mockResolvedValue([
+			{ status: 'BLOCKED', _sum: { sellerPayableCents: 0, remainingPayableCents: 300 } },
+			{ status: 'RELEASED', _sum: { sellerPayableCents: 1200, remainingPayableCents: 0 } },
+		]);
+
+		const result = await listSellerSettlements({ sellerId: 'seller-1', storeUrl: 'crafts', page: 2 });
+
+		expect(result.pagination).toEqual({ page: 2, pageSize: 25, total: 28, totalPages: 2 });
+		expect(result.summary).toEqual({ heldCents: 300, releasedCents: 1200 });
+		expect(dbMock.sellerSettlement.findMany).toHaveBeenCalledWith(expect.objectContaining({
+			where: { sellerId: 'seller-1', orderGroup: { store: { url: 'crafts' } } }, skip: 25, take: 25,
+		}));
+	});
+
+	it('keeps weekly batch history reachable beyond the old twenty-batch limit', async () => {
+		dbMock.payoutBatch.count.mockResolvedValue(21);
+		dbMock.payoutBatch.findMany.mockResolvedValue([]);
+
+		const result = await listPayoutBatches({ page: 3 });
+
+		expect(result.pagination).toEqual({ page: 3, pageSize: 10, total: 21, totalPages: 3 });
+		expect(dbMock.payoutBatch.findMany).toHaveBeenCalledWith(expect.objectContaining({
+			orderBy: [{ weekStart: 'desc' }, { id: 'desc' }], skip: 20, take: 10,
+		}));
 	});
 });
 

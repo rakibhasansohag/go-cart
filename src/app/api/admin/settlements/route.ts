@@ -10,10 +10,12 @@ async function assertAdmin() {
 	if (user?.role !== 'ADMIN') throw new Error('Admin access required.');
 }
 
-export async function GET() {
+export async function GET(request: Request) {
 	try {
 		await assertAdmin();
-		return NextResponse.json({ settlements: await listSettlementOperations() });
+		const page = Number(new URL(request.url).searchParams.get('page'));
+		const result = await listSettlementOperations({ page });
+		return NextResponse.json({ settlements: result.items, pagination: result.pagination });
 	} catch (error) {
 		return NextResponse.json({ error: error instanceof Error ? error.message : 'Unable to load settlements.' }, { status: 403 });
 	}

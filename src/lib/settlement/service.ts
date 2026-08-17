@@ -589,14 +589,68 @@ export async function recordRefundForReturnRequest(returnRequestId: string, amou
 	});
 }
 
-export async function listSellerSettlements(sellerId: string) {
-	return db.sellerSettlement.findMany({ where: { sellerId }, orderBy: { createdAt: 'desc' }, include: { orderGroup: { select: { id: true, store: { select: { name: true, url: true } } } }, entries: { orderBy: { createdAt: 'desc' }, take: 10 } } });
+export const SETTLEMENT_PAGE_SIZE = 25;
+export const PAYOUT_BATCH_PAGE_SIZE = 10;
+
+export type SettlementPagination = {
+	page: number;
+	pageSize: number;
+	total: number;
+	totalPages: number;
+};
+
+function buildPagination(total: number, requestedPage: number | undefined, pageSize: number): SettlementPagination {
+	const totalPages = Math.max(1, Math.ceil(total / pageSize));
+	const parsedPage = Number.isFinite(requestedPage) ? Math.floor(requestedPage as number) : 1;
+	const page = Math.min(Math.max(parsedPage, 1), totalPages);
+	return { page, pageSize, total, totalPages };
 }
 
-export async function listSettlementOperations() {
-	return db.sellerSettlement.findMany({ orderBy: { createdAt: 'desc' }, take: 100, include: { seller: { select: { id: true, name: true, email: true } }, orderGroup: { select: { id: true, store: { select: { name: true, url: true } } } }, payoutBatch: { select: { id: true, status: true, weekStart: true } } } });
+export async function listSellerSettlements({ sellerId, storeUrl, page }: { sellerId: string; storeUrl?: string; page?: number }) {
+	const where = {
+		sellerId,
+		...(storeUrl ? { orderGroup: { store: { url: storeUrl } } } : {}),
+	};
+	const total = await db.sellerSettlement.count({ where });
+	const pagination = buildPagination(total, page, SETTLEMENT_PAGE_SIZE);
+	const [items, statusTotals] = await Promise.all([
+		db.sellerSettlement.findMany({
+			where,
+			orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+			skip: (pagination.page - 1) * pagination.pageSize,
+			take: pagination.pageSize,
+			include: { orderGroup: { select: { id: true, store: { select: { name: true, url: true } } } }, entries: { orderBy: { createdAt: 'desc' }, take: 10 } },
+		}),
+		db.sellerSettlement.groupBy({ by: ['status'], where, _sum: { sellerPayableCents: true, remainingPayableCents: true } }),
+	]);
+	const summary = statusTotals.reduce((totals, row) => {
+		if (row.status === 'RELEASED') totals.releasedCents += row._sum.sellerPayableCents ?? 0;
+		if (row.status === 'HELD' || row.status === 'BLOCKED') totals.heldCents += row._sum.remainingPayableCents ?? 0;
+		return totals;
+	}, { heldCents: 0, releasedCents: 0 });
+	return { items, pagination, summary };
 }
 
-export async function listPayoutBatches() {
-	return db.payoutBatch.findMany({ orderBy: { weekStart: 'desc' }, take: 20, select: { id: true, weekStart: true, weekEnd: true, status: true, totalCents: true, _count: { select: { settlements: true } } } });
+export async function listSettlementOperations({ page }: { page?: number } = {}) {
+	const total = await db.sellerSettlement.count();
+	const pagination = buildPagination(total, page, SETTLEMENT_PAGE_SIZE);
+	const items = await db.sellerSettlement.findMany({
+		orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+		skip: (pagination.page - 1) * pagination.pageSize,
+		take: pagination.pageSize,
+		include: { seller: { select: { id: true, name: true, email: true } }, orderGroup: { select: { id: true, store: { select: { name: true, url: true } } } }, payoutBatch: { select: { id: true, status: true, weekStart: true } } },
+	});
+	return { items, pagination };
+}
+
+export async function listPayoutBatches({ page }: { page?: number } = {}) {
+	const total = await db.payoutBatch.count();
+	const pagination = buildPagination(total, page, PAYOUT_BATCH_PAGE_SIZE);
+	const items = await db.payoutBatch.findMany({
+		orderBy: [{ weekStart: 'desc' }, { id: 'desc' }],
+		skip: (pagination.page - 1) * pagination.pageSize,
+		take: pagination.pageSize,
+		select: { id: true, weekStart: true, weekEnd: true, status: true, totalCents: true, _count: { select: { settlements: true } } },
+	});
+	return { items, pagination };
 }
