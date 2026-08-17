@@ -6,6 +6,7 @@ import { getDailyCheckInStatus } from '@/queries/checkin';
 import CheckInCalendar from './checkin-calendar';
 import { X, Sparkles, Trophy } from 'lucide-react';
 import { useUser } from '@clerk/nextjs';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 
@@ -50,13 +51,17 @@ export default function CheckInModal() {
 	return (
 		<AnimatePresence>
 			{isOpen && (
-				<div className='fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-6 bg-black/60 backdrop-blur-md overflow-y-auto'>
+				<div
+					className='fixed inset-0 z-50 flex items-center justify-center overflow-hidden bg-black/60 p-2.5 backdrop-blur-md sm:p-6'
+					onClick={handleClose}
+				>
 					<motion.div
 						initial={{ opacity: 0, scale: 0.92, y: 15 }}
 						animate={{ opacity: 1, scale: 1, y: 0 }}
 						exit={{ opacity: 0, scale: 0.92, y: 15 }}
 						transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-						className='relative w-full max-w-3xl max-h-[94vh] sm:max-h-[90vh] overflow-y-auto rounded-2xl sm:rounded-3xl shadow-2xl border border-white/10 my-auto'
+						onClick={(event) => event.stopPropagation()}
+						className='relative flex h-[min(94vh,52rem)] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-white/10 shadow-2xl sm:h-[min(90vh,52rem)] sm:rounded-3xl'
 					>
 						{/* Close Button */}
 						<button
@@ -67,7 +72,7 @@ export default function CheckInModal() {
 								handleClose();
 							}}
 							aria-label='Close modal'
-							className='absolute top-3 right-3 sm:top-4 sm:right-4 z-10 w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-black/30 hover:bg-black/50 text-white flex items-center justify-center backdrop-blur-md transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80'
+							className='absolute top-3 right-3 z-10 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-black/30 text-white backdrop-blur-md transition-colors hover:bg-black/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 sm:top-4 sm:right-4 sm:h-9 sm:w-9'
 						>
 							<X className='w-4 h-4 sm:w-5 sm:h-5' />
 						</button>
@@ -90,19 +95,24 @@ export default function CheckInModal() {
 							</div>
 						</div>
 
-						{/* Calendar Container */}
-						<div className='bg-background p-3 sm:p-5'>
-							<CheckInCalendar
-								hasClaimedToday={statusData.hasClaimedToday}
-								claimedDaysCount={statusData.claimedDaysCount}
-								daysInMonth={statusData.daysInMonth}
-								todayDateStr={statusData.todayDateStr}
-								checkIns={statusData.checkIns}
-								onClaimSuccess={() => {
-									queryClient.invalidateQueries({ queryKey: ['daily-checkin-status'] });
-								}}
-							/>
-						</div>
+						<ScrollArea
+							className='min-h-0 flex-1 bg-background'
+							scrollBarClassName='w-3 border-l-0 bg-slate-950/5 p-1.5 hover:bg-slate-950/10'
+							thumbClassName='bg-slate-400/70 hover:bg-slate-500 active:bg-slate-600'
+						>
+							<div className='p-3 sm:p-5'>
+								<CheckInCalendar
+									hasClaimedToday={statusData.hasClaimedToday}
+									claimedDaysCount={statusData.claimedDaysCount}
+									daysInMonth={statusData.daysInMonth}
+									todayDateStr={statusData.todayDateStr}
+									checkIns={statusData.checkIns}
+									onClaimSuccess={() => {
+										queryClient.invalidateQueries({ queryKey: ['daily-checkin-status'] });
+									}}
+								/>
+							</div>
+						</ScrollArea>
 					</motion.div>
 				</div>
 			)}
