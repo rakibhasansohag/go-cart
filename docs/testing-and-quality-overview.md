@@ -212,6 +212,27 @@ account. The client ID and secret alone authenticate GoCart as the merchant;
 they cannot approve a buyer transaction. Do not add buyer credentials to source
 control or CI logs.
 
+### Phase 14.4 seller payout boundary verification
+
+The guarded payout probe uses an isolated Docker database and Stripe sandbox
+connected account. It creates real source-charge transfers, exercises a real
+provider rejection and retry, and sends the resulting transfer-created and
+transfer-reversed events through the signed `/api/webhooks/stripe` route with
+the raw-body signature check. Run it with:
+
+```powershell
+bun run db:e2e:prepare
+$env:E2E_STRIPE_PAYOUT='true'
+bun run test:stripe:payout:local
+Remove-Item Env:E2E_STRIPE_PAYOUT -ErrorAction SilentlyContinue
+```
+
+This proves the application webhook boundary, but it is not a claim that
+Stripe's hosted service delivered the HTTP request. Final Phase 14.4 evidence
+still requires a Stripe CLI listener or Stripe Dashboard webhook pointed at a
+staging URL with an isolated database, followed by a protected browser payday
+journey. Never point this test at production or Neon.
+
 Run the merchant-only probe with:
 
 ```powershell

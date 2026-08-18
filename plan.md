@@ -986,6 +986,10 @@ customer to each seller before adding more optional growth features.
         payout-ledger release, real provider rejection, and safe retry passed.
         The probe reverses successful test transfers when Stripe permits it and
         restores the deterministic Docker fixture.
+  - [x] Extended the isolated payout probe so real provider transfer objects are
+        serialized, signed with the configured test webhook secret, and sent
+        through the application `/api/webhooks/stripe` route; reversal replay
+        remains idempotent at that signed route boundary.
   - [ ] Remaining: a protected browser journey with a signed Stripe listener
         that exercises provider delivery through the webhook HTTP boundary.
 

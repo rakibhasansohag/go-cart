@@ -10,7 +10,7 @@ import type Stripe from 'stripe';
 import { db } from '../src/lib/db';
 import { refreshStripeAccountBalance } from '../src/lib/payments/connect';
 import { getStripeClient } from '../src/lib/payments/stripe-client';
-import { handleStripeEvent } from '../src/lib/payments/stripe-events';
+import { POST as stripeWebhookPost } from '../src/app/api/webhooks/stripe/route';
 import {
 	approvePayoutBatch,
 	createSettlementForOrderGroup,
@@ -60,6 +60,21 @@ function transferEvent(id: string, type: 'transfer.created' | 'transfer.reversed
 		request: null,
 		type,
 	} as unknown as Stripe.Event;
+}
+
+async function deliverSignedStripeEvent(stripe: Stripe, event: Stripe.Event) {
+	const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+	assert(webhookSecret, 'STRIPE_WEBHOOK_SECRET is required for the signed Stripe webhook boundary check.');
+	const payload = JSON.stringify(event);
+	const signature = stripe.webhooks.generateTestHeaderString({ payload, secret: webhookSecret });
+	const response = await stripeWebhookPost(new Request('http://localhost/api/webhooks/stripe', {
+		method: 'POST',
+		headers: { 'content-type': 'application/json', 'stripe-signature': signature },
+		body: payload,
+	}));
+	const body = await response.json() as { error?: string; duplicate?: boolean; ignored?: boolean };
+	assert(response.ok, `Signed Stripe webhook boundary returned ${response.status}: ${body.error ?? 'unknown error'}.`);
+	return body;
 }
 
 async function createSandboxChargeForOrderGroup(stripe: Stripe, orderGroupId: string) {
@@ -154,8 +169,8 @@ async function main() {
 		);
 		const createdEventId = `gocart-e2e-transfer-created:${randomUUID()}`;
 		eventIds.push(createdEventId);
-		const webhook = await handleStripeEvent(transferEvent(createdEventId, 'transfer.created', transfer));
-		assert(!('ignored' in webhook), 'The real Stripe transfer was not accepted by webhook reconciliation.');
+		const webhook = await deliverSignedStripeEvent(stripe, transferEvent(createdEventId, 'transfer.created', transfer));
+		assert(webhook.ignored !== true, 'The real Stripe transfer was not accepted by signed webhook reconciliation.');
 		const balance = await refreshStripeAccountBalance(connectedAccountId);
 		assert(balance.lastCheckedAt, 'Seller provider balance refresh did not persist a timestamp.');
 		assert(await db.settlementLedgerEntry.count({ where: { settlementId: firstSettlement.id, entryType: SettlementLedgerEntryType.PAYOUT } }) === 1, 'Real transfer did not create exactly one payout ledger entry.');
@@ -181,7 +196,7 @@ async function main() {
 		assert(retried.status === SettlementStatus.RELEASED && retried.providerTransferId, 'Retried seller transfer was not released.');
 		createdTransferIds.push(retried.providerTransferId);
 
-		console.log('Stripe sandbox seller payout passed: real source-charge transfers, reconciliation, seller ledger release, provider failure, and retry.');
+		console.log('Stripe sandbox seller payout passed: real source-charge transfers, signed webhook-route reconciliation, seller ledger release, provider failure, and retry.');
 	} finally {
 		for (const transferId of createdTransferIds.reverse()) {
 			try {
@@ -189,10 +204,10 @@ async function main() {
 				const reversedTransfer = await stripe.transfers.retrieve(transferId);
 				const reversalEventId = `gocart-e2e-transfer-reversed:${randomUUID()}`;
 				eventIds.push(reversalEventId);
-				const first = await handleStripeEvent(transferEvent(reversalEventId, 'transfer.reversed', reversedTransfer));
-				const replay = await handleStripeEvent(transferEvent(reversalEventId, 'transfer.reversed', reversedTransfer));
-				assert(!('ignored' in first) && first.duplicate === false, 'Real Stripe transfer reversal was not reconciled.');
-				assert(!('ignored' in replay) && replay.duplicate === true, 'Real Stripe transfer reversal replay was not idempotent.');
+				const first = await deliverSignedStripeEvent(stripe, transferEvent(reversalEventId, 'transfer.reversed', reversedTransfer));
+				const replay = await deliverSignedStripeEvent(stripe, transferEvent(reversalEventId, 'transfer.reversed', reversedTransfer));
+				assert(first.duplicate === false, 'Real Stripe transfer reversal was not reconciled.');
+				assert(replay.duplicate === true, 'Real Stripe transfer reversal replay was not idempotent.');
 			} catch (error) {
 				console.error('Stripe payout test cleanup reversal failed:', error instanceof Error ? error.message : error);
 			}
