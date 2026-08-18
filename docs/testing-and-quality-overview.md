@@ -381,6 +381,14 @@ suite also verifies that a seller cannot open the admin profile route. A full
 browser profile walkthrough requires an isolated E2E database containing a
 settlement row; it must not be run against production or Neon.
 
+Latest isolated validation on 2026-08-18: `bun run db:e2e:prepare` succeeded,
+including migrations, Clerk user synchronization, 1,000 demo orders, commerce
+fixtures, and the delivered return fixture. `bun run test:integration:local`
+passed all 1,024-order PostgreSQL checks. The full protected Chromium command
+and a narrowed admin-settlements browser command both exceeded their local
+timeouts before Playwright emitted a result; investigate Clerk/browser
+bootstrap separately before counting protected browser coverage as passed.
+
 ### 8. Run static checks and the production build
 
 ```powershell
