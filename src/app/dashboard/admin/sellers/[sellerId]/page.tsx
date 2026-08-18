@@ -1,5 +1,13 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import {
+	Table,
+	TableBody,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow,
+} from '@/components/ui/table';
 import { UrlPagination } from '@/components/ui/url-pagination';
 import { getAdminSellerProfile } from '@/queries/admin-seller-profile';
 import PerformanceDateRange from './performance-date-range';
@@ -13,9 +21,9 @@ function date(value: Date | null | undefined) {
 }
 
 function statusClass(status: string) {
-	if (['ACTIVE', 'RELEASED', 'PAID'].includes(status)) return 'border-emerald-300 bg-emerald-50 text-emerald-700';
-	if (['DISABLED', 'FAILED', 'BLOCKED', 'REJECTED'].includes(status)) return 'border-red-300 bg-red-50 text-red-700';
-	return 'border-amber-300 bg-amber-50 text-amber-700';
+	if (['ACTIVE', 'RELEASED', 'PAID'].includes(status)) return 'border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300';
+	if (['DISABLED', 'FAILED', 'BLOCKED', 'REJECTED'].includes(status)) return 'border-red-300 bg-red-50 text-red-700 dark:border-red-800 dark:bg-red-950/40 dark:text-red-300';
+	return 'border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-300';
 }
 
 function withParams(values: Record<string, string | null>) {
@@ -96,22 +104,29 @@ export default async function AdminSellerProfilePage({
 					].map(([label, cents]) => <div key={label} className='rounded-lg bg-muted/40 p-3'><p className='text-xs text-muted-foreground'>{label}</p><p className='mt-1 font-semibold'>{usd(Number(cents))}</p></div>)}
 				</div>
 
-				<div className='mt-6 overflow-x-auto rounded-lg border border-border'>
-					<table className='w-full min-w-[900px] text-left text-sm'><thead className='bg-muted/50'><tr><th className='p-3'>Order group</th><th className='p-3'>Store</th><th className='p-3'>Status</th><th className='p-3'>Gross</th><th className='p-3'>Commission</th><th className='p-3'>Seller payable</th><th className='p-3'>Ledger facts</th></tr></thead><tbody>
-						{profile.settlements.map((settlement) => <tr key={settlement.id} className='border-t border-border/60 align-top'><td className='p-3 font-mono text-xs'>{settlement.orderGroup.id.slice(0, 8)}<div className='mt-1 font-sans text-xs text-muted-foreground'>{date(settlement.createdAt)}</div></td><td className='p-3'>{settlement.orderGroup.store.name}</td><td className='p-3'><span className={`rounded-full border px-2 py-1 text-xs font-semibold ${statusClass(settlement.status)}`}>{settlement.status}</span>{settlement.failureReason && <p className='mt-2 max-w-xs text-xs text-red-700'>{settlement.failureReason}</p>}</td><td className='p-3'>{usd(settlement.grossCents)}</td><td className='p-3'>{usd(settlement.commissionCents)}</td><td className='p-3'>{usd(settlement.remainingPayableCents)}<div className='mt-1 text-xs text-muted-foreground'>of {usd(settlement.sellerPayableCents)}</div></td><td className='p-3 text-xs text-muted-foreground'>{settlement.entries.map((entry) => <div key={entry.id}>{entry.entryType}: {usd(entry.sellerPayableCents)}</div>)}</td></tr>)}
-						{profile.settlements.length === 0 && <tr><td colSpan={7} className='p-8 text-center text-muted-foreground'>No settlement ledger entries for this seller scope.</td></tr>}
-					</tbody></table>
+				<div className='mt-6 rounded-lg border border-border'>
+					<Table className='min-w-[900px] text-left text-sm'>
+						<TableHeader className='bg-muted/50'>
+							<TableRow className='hover:bg-muted/50'>
+								<TableHead className='p-3'>Order group</TableHead><TableHead className='p-3'>Store</TableHead><TableHead className='p-3'>Status</TableHead><TableHead className='p-3'>Gross</TableHead><TableHead className='p-3'>Commission</TableHead><TableHead className='p-3'>Seller payable</TableHead><TableHead className='p-3'>Ledger facts</TableHead>
+							</TableRow>
+						</TableHeader>
+						<TableBody>
+							{profile.settlements.map((settlement) => <TableRow key={settlement.id} className='align-top border-border/60 transition-colors duration-150 hover:bg-accent/60 dark:hover:bg-accent/20'><TableCell className='p-3 font-mono text-xs'>{settlement.orderGroup.id.slice(0, 8)}<div className='mt-1 font-sans text-xs text-muted-foreground'>{date(settlement.createdAt)}</div></TableCell><TableCell className='p-3'>{settlement.orderGroup.store.name}</TableCell><TableCell className='p-3'><span className={`rounded-full border px-2 py-1 text-xs font-semibold ${statusClass(settlement.status)}`}>{settlement.status}</span>{settlement.failureReason && <p className='mt-2 max-w-xs text-red-700 dark:text-red-300'>{settlement.failureReason}</p>}</TableCell><TableCell className='p-3'>{usd(settlement.grossCents)}</TableCell><TableCell className='p-3'>{usd(settlement.commissionCents)}</TableCell><TableCell className='p-3'>{usd(settlement.remainingPayableCents)}<div className='mt-1 text-xs text-muted-foreground'>of {usd(settlement.sellerPayableCents)}</div></TableCell><TableCell className='p-3 text-xs text-muted-foreground'>{settlement.entries.map((entry) => <div key={entry.id}>{entry.entryType}: {usd(entry.sellerPayableCents)}</div>)}</TableCell></TableRow>)}
+							{profile.settlements.length === 0 && <TableRow className='hover:bg-transparent'><TableCell colSpan={7} className='p-8 text-center text-muted-foreground'>No settlement ledger entries for this seller scope.</TableCell></TableRow>}
+						</TableBody>
+					</Table>
 					<UrlPagination label='Seller ledger pages' param='ledgerPage' {...profile.settlementPagination} />
 				</div>
 
-				<div className='mt-6'><h3 className='font-semibold'>Payout-batch history</h3><div className='mt-3 overflow-x-auto rounded-lg border border-border'><table className='w-full min-w-[800px] text-left text-sm'><thead className='bg-muted/50'><tr><th className='p-3'>Payday window</th><th className='p-3'>Status</th><th className='p-3'>Seller amount</th><th className='p-3'>Settlements</th><th className='p-3'>Processed</th></tr></thead><tbody>{profile.batches.map((batch) => <tr key={batch.id} className='border-t border-border/60'><td className='p-3'>{date(batch.weekStart)} – {date(batch.weekEnd)}<div className='text-xs text-muted-foreground'>{batch.timezone}</div></td><td className='p-3'><span className={`rounded-full border px-2 py-1 text-xs font-semibold ${statusClass(batch.status)}`}>{batch.status}</span>{batch.failureReason && <p className='mt-1 text-xs text-red-700'>{batch.failureReason}</p>}</td><td className='p-3'>{usd(batch.sellerTotalCents)}</td><td className='p-3'>{batch.settlementCount}</td><td className='p-3'>{date(batch.processedAt)}</td></tr>)}{profile.batches.length === 0 && <tr><td colSpan={5} className='p-8 text-center text-muted-foreground'>No payout batches for this seller scope.</td></tr>}</tbody></table><UrlPagination label='Seller payout batch pages' param='batchPage' {...profile.batchPagination} /></div></div>
+				<div className='mt-6'><h3 className='font-semibold'>Payout-batch history</h3><div className='mt-3 rounded-lg border border-border'><Table className='min-w-[800px] text-left text-sm'><TableHeader className='bg-muted/50'><TableRow className='hover:bg-muted/50'><TableHead className='p-3'>Payday window</TableHead><TableHead className='p-3'>Status</TableHead><TableHead className='p-3'>Seller amount</TableHead><TableHead className='p-3'>Settlements</TableHead><TableHead className='p-3'>Processed</TableHead></TableRow></TableHeader><TableBody>{profile.batches.map((batch) => <TableRow key={batch.id} className='border-border/60 transition-colors duration-150 hover:bg-accent/60 dark:hover:bg-accent/20'><TableCell className='p-3'>{date(batch.weekStart)} – {date(batch.weekEnd)}<div className='text-xs text-muted-foreground'>{batch.timezone}</div></TableCell><TableCell className='p-3'><span className={`rounded-full border px-2 py-1 text-xs font-semibold ${statusClass(batch.status)}`}>{batch.status}</span>{batch.failureReason && <p className='mt-1 text-red-700 dark:text-red-300'>{batch.failureReason}</p>}</TableCell><TableCell className='p-3'>{usd(batch.sellerTotalCents)}</TableCell><TableCell className='p-3'>{batch.settlementCount}</TableCell><TableCell className='p-3'>{date(batch.processedAt)}</TableCell></TableRow>)}{profile.batches.length === 0 && <TableRow className='hover:bg-transparent'><TableCell colSpan={5} className='p-8 text-center text-muted-foreground'>No payout batches for this seller scope.</TableCell></TableRow>}</TableBody></Table><UrlPagination label='Seller payout batch pages' param='batchPage' {...profile.batchPagination} /></div></div>
 			</section>
 
 			<section className='rounded-xl border border-border p-5'>
 				<div className='flex flex-wrap items-end justify-between gap-4'><div><h2 className='text-lg font-semibold'>Performance drill-down</h2><p className='mt-1 text-sm text-muted-foreground'>Paid orders only · {rangeLabel}{selectedStore ? ` · ${selectedStore.name}` : ''}</p></div><form className='flex flex-wrap items-end gap-2' method='get'><input type='hidden' name='storeId' value={profile.selectedStoreId ?? ''} /><PerformanceDateRange from={query.from} to={query.to} /></form></div>
-				{!profile.dateRange.valid && <p role='alert' className='mt-3 rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-700'>Choose valid dates where the From date is on or before the To date.</p>}
+				{!profile.dateRange.valid && <p role='alert' className='mt-3 rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-950/40 dark:text-red-300'>Choose valid dates where the From date is on or before the To date.</p>}
 				<div className='mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5'><div className='rounded-lg bg-muted/40 p-3'><p className='text-xs text-muted-foreground'>Paid orders</p><p className='mt-1 text-xl font-semibold'>{performance.paidOrders}</p></div><div className='rounded-lg bg-muted/40 p-3'><p className='text-xs text-muted-foreground'>Units sold</p><p className='mt-1 text-xl font-semibold'>{performance.unitsSold}</p></div><div className='rounded-lg bg-muted/40 p-3'><p className='text-xs text-muted-foreground'>Net sales</p><p className='mt-1 text-xl font-semibold'>{usd(performance.netSalesCents)}</p></div><div className='rounded-lg bg-muted/40 p-3'><p className='text-xs text-muted-foreground'>Average order value</p><p className='mt-1 text-xl font-semibold'>{usd(performance.averageOrderValueCents)}</p></div><div className='rounded-lg bg-muted/40 p-3'><p className='text-xs text-muted-foreground'>Reviews / rating</p><p className='mt-1 text-xl font-semibold'>{performance.reviewCount} · {performance.averageRating.toFixed(1)} / 5</p></div></div>
-				<div className='mt-5 overflow-x-auto rounded-lg border border-border'><table className='w-full min-w-[700px] text-left text-sm'><thead className='bg-muted/50'><tr><th className='p-3'>Top product</th><th className='p-3'>Units sold</th><th className='p-3'>Revenue</th></tr></thead><tbody>{performance.topProducts.map((product) => <tr key={`${product.productId}-${product.productSlug}`} className='border-t border-border/60'><td className='p-3'><div className='font-medium'>{product.name}</div><div className='text-xs text-muted-foreground'>{product.productSlug}</div></td><td className='p-3'>{product.unitsSold}</td><td className='p-3'>{usd(product.revenueCents)}</td></tr>)}{performance.topProducts.length === 0 && <tr><td colSpan={3} className='p-8 text-center text-muted-foreground'>No paid product sales in this date range.</td></tr>}</tbody></table></div>
+				<div className='mt-5 rounded-lg border border-border'><Table className='min-w-[700px] text-left text-sm'><TableHeader className='bg-muted/50'><TableRow className='hover:bg-muted/50'><TableHead className='p-3'>Top product</TableHead><TableHead className='p-3'>Units sold</TableHead><TableHead className='p-3'>Revenue</TableHead></TableRow></TableHeader><TableBody>{performance.topProducts.map((product) => <TableRow key={`${product.productId}-${product.productSlug}`} className='border-border/60 transition-colors duration-150 hover:bg-accent/60 dark:hover:bg-accent/20'><TableCell className='p-3'><div className='font-medium'>{product.name}</div><div className='text-xs text-muted-foreground'>{product.productSlug}</div></TableCell><TableCell className='p-3'>{product.unitsSold}</TableCell><TableCell className='p-3'>{usd(product.revenueCents)}</TableCell></TableRow>)}{performance.topProducts.length === 0 && <TableRow className='hover:bg-transparent'><TableCell colSpan={3} className='p-8 text-center text-muted-foreground'>No paid product sales in this date range.</TableCell></TableRow>}</TableBody></Table></div>
 			</section>
 		</div>
 	);
