@@ -1037,21 +1037,21 @@ customer to each seller before adding more optional growth features.
         delivery that exercises the real seller payday transfer end-to-end
 
 - [ ] **Phase 14.5 — Admin seller financial profile and performance drill-down**
-  - [ ] Make the seller/store cell in settlement operations open a protected
+  - [x] Make the seller/store cell in settlement operations open a protected
         admin seller profile, scoped by the seller's user ID rather than a
         single store URL
-  - [ ] Show seller identity, payout-account readiness (without KYC/bank data),
+  - [x] Show seller identity, payout-account readiness (without KYC/bank data),
         all owned stores, store count, and the active/disabled store state
-  - [ ] Add an immutable seller financial statement across every owned store:
+  - [x] Add an immutable seller financial statement across every owned store:
         gross sales, discounts, GoCart commission, refunds/reversals, held,
         eligible, approved, released, failed, and outstanding USD balances;
         paginate the underlying order-group ledger and payout-batch history
-  - [ ] Add operational performance with an explicit date range: paid orders,
+  - [x] Add operational performance with an explicit date range: paid orders,
         units sold, net sales, average order value, review count/rating where
         available, and top products by revenue and units sold
-  - [ ] Preserve per-store drill-down from the seller profile so an admin can
+  - [x] Preserve per-store drill-down from the seller profile so an admin can
         distinguish a seller's combined performance from each individual store
-  - [ ] Enforce admin-only access and test that seller/customer/other-seller
+  - [x] Enforce admin-only access and test that seller/customer/other-seller
         accounts cannot read another seller's financial, review, or analytics
         data; verify deterministic totals for a seller with multiple stores
 

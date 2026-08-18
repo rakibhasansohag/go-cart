@@ -75,3 +75,15 @@ test('seller cannot access marketplace settings', async ({ page }) => {
 
   await expect(page).toHaveURL(/\/$/);
 });
+
+test('seller and customer cannot access the admin seller financial profile route', async ({ page }) => {
+  for (const role of ['seller', 'customer'] as const) {
+    await signInAs(page, role);
+    await page.goto('/dashboard/admin/sellers/not-a-seller-the-seller-can-read', {
+      waitUntil: 'domcontentloaded',
+      timeout: 120_000,
+    });
+
+    await expect(page).toHaveURL(/\/$/);
+  }
+});

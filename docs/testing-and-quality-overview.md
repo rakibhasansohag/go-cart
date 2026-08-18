@@ -363,6 +363,24 @@ admin actions on the dashboard. Focused Vitest coverage verifies unauthorized
 cron rejection, authorized review-job execution, empty-batch suppression, and
 the safe review-only email link.
 
+### 7f. Validate the admin seller financial profile
+
+The protected admin seller profile is available from each seller/store link in
+`/dashboard/admin/settlements` at
+`/dashboard/admin/sellers/<sellerUserId>`. It is scoped to the seller user ID,
+not a single store URL, and supports an optional `storeId` drill-down plus an
+explicit `from`/`to` performance range. The profile shows payout readiness
+without provider account, bank, or KYC data; combines the immutable settlement
+ledger across all owned stores; paginates settlement and payout-batch history;
+and limits operating metrics to paid orders.
+
+Focused Vitest coverage verifies invalid/reversed date ranges, append-only
+ledger/status totals, admin-only authorization, multi-store seller scoping,
+paid-order filtering, and deterministic performance totals. The protected E2E
+suite also verifies that a seller cannot open the admin profile route. A full
+browser profile walkthrough requires an isolated E2E database containing a
+settlement row; it must not be run against production or Neon.
+
 ### 8. Run static checks and the production build
 
 ```powershell

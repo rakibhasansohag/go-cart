@@ -1,6 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { UrlPagination } from '@/components/ui/url-pagination';
@@ -11,7 +12,7 @@ type Settlement = {
 	sellerPayableCents: number;
 	remainingPayableCents: number;
 	failureReason: string | null;
-	seller: { name: string; email: string };
+	seller: { id: string; name: string; email: string };
 	orderGroup: { id: string; store: { name: string; url: string } };
 	payoutBatch: { id: string; status: string; weekStart: Date } | null;
 };
@@ -163,7 +164,7 @@ export default function SettlementsTable({
 			<div className='overflow-x-auto rounded-xl border border-border'>
 				<table className='w-full text-left text-sm'><thead className='bg-muted/50'><tr><th className='p-3'>Seller / store</th><th className='p-3'>Order group</th><th className='p-3'>Status</th><th className='p-3'>Payable</th><th className='p-3'>What happens next</th><th className='p-3'>Action</th></tr></thead><tbody>
 					{initialSettlements.map((settlement) => <tr key={settlement.id} className='border-t border-border/60 align-top'>
-						<td className='p-3'>{settlement.seller.name}<div className='text-xs text-muted-foreground'>{settlement.orderGroup.store.name}</div><div className='text-xs text-muted-foreground'>{settlement.seller.email}</div></td>
+						<td className='p-3'><Link href={`/dashboard/admin/sellers/${settlement.seller.id}`} className='font-medium text-primary underline-offset-4 hover:underline'>{settlement.seller.name}</Link><div className='text-xs text-muted-foreground'>{settlement.orderGroup.store.name}</div><div className='text-xs text-muted-foreground'>{settlement.seller.email}</div></td>
 						<td className='p-3 font-mono text-xs'>{settlement.orderGroup.id.slice(0, 8)}</td>
 						<td className='p-3 font-semibold'>{settlement.status}<div className='mt-1 text-xs font-normal text-muted-foreground'>{settlement.payoutBatch ? `Batch: ${settlement.payoutBatch.status}` : 'No batch attached'}</div></td>
 						<td className='p-3'>${(settlement.remainingPayableCents / 100).toFixed(2)} USD</td>
