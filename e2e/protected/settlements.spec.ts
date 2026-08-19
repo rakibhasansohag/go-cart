@@ -32,6 +32,32 @@ test('admin can review marketplace settlement operations', async ({ page }) => {
   await expect(page.getByText(/No settlement entries yet|Seller \/ store/)).toBeVisible();
 });
 
+test('admin can browse seller and store operations directories', async ({ page }) => {
+  await signInAs(page, 'admin');
+  await page.goto('/dashboard/admin/sellers', {
+    waitUntil: 'domcontentloaded',
+    timeout: 120_000,
+  });
+
+  await expect(page).toHaveURL(/\/dashboard\/admin\/sellers/);
+  await expect(page.getByRole('heading', { name: 'Sellers' })).toBeVisible();
+  await expect(page.getByText('Seller directory')).toBeVisible();
+
+  await page.goto('/dashboard/admin/stores', {
+    waitUntil: 'domcontentloaded',
+    timeout: 120_000,
+  });
+
+  await expect(page).toHaveURL(/\/dashboard\/admin\/stores/);
+  await expect(page.getByRole('heading', { name: 'Stores' })).toBeVisible();
+  await expect(page.getByText('Store directory')).toBeVisible();
+  const detailLink = page.getByRole('link', { name: /Details/ }).first();
+  await expect(detailLink).toBeVisible();
+  await detailLink.click();
+  await expect(page).toHaveURL(/\/dashboard\/admin\/stores\/[\w-]+/);
+  await expect(page.getByText('Store financial statement')).toBeVisible();
+});
+
 test('admin can change the commission from marketplace settings', async ({ page }) => {
   await signInAs(page, 'admin');
   await page.goto('/dashboard/admin/settings', {
@@ -76,10 +102,17 @@ test('seller cannot access marketplace settings', async ({ page }) => {
   await expect(page).toHaveURL(/\/$/);
 });
 
-test('seller and customer cannot access the admin seller financial profile route', async ({ page }) => {
+test('seller and customer cannot access seller or store financial operations routes', async ({ page }) => {
   for (const role of ['seller', 'customer'] as const) {
     await signInAs(page, role);
-    await page.goto('/dashboard/admin/sellers/not-a-seller-the-seller-can-read', {
+    await page.goto('/dashboard/admin/sellers', {
+      waitUntil: 'domcontentloaded',
+      timeout: 120_000,
+    });
+
+    await expect(page).toHaveURL(/\/$/);
+
+    await page.goto('/dashboard/admin/stores/not-a-store-the-user-can-read', {
       waitUntil: 'domcontentloaded',
       timeout: 120_000,
     });

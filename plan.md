@@ -1051,9 +1051,19 @@ customer to each seller before adding more optional growth features.
         available, and top products by revenue and units sold
   - [x] Preserve per-store drill-down from the seller profile so an admin can
         distinguish a seller's combined performance from each individual store
-  - [x] Enforce admin-only access and test that seller/customer/other-seller
-        accounts cannot read another seller's financial, review, or analytics
-        data; verify deterministic totals for a seller with multiple stores
+  - [x] Add the protected `/dashboard/admin/sellers` directory and upgrade the
+        store directory with seller links, status/featured state, ratings,
+        product/order counts, paid sales, GoCart commission, outstanding seller
+        balance, responsive cards, and paginated results; add a protected
+        `/dashboard/admin/stores/<storeId>` operations view with immutable
+        store ledger, payout readiness, delivery/return policy, paid-order
+        performance, recent order groups, and top products by paid revenue
+  - [x] Enforce admin-only access and unit-test that non-admin actors cannot
+        read seller/store financial, review, or analytics data; verify
+        deterministic multi-store seller and single-store totals
+  - [ ] Browser-verify the protected seller/store directories, financial
+        profile, and role boundaries once the current local Clerk/Chromium
+        bootstrap timeout is resolved
 
 ---
 

@@ -389,6 +389,30 @@ and a narrowed admin-settlements browser command both exceeded their local
 timeouts before Playwright emitted a result; investigate Clerk/browser
 bootstrap separately before counting protected browser coverage as passed.
 
+### 7g. Validate the admin seller and store operations directories
+
+`/dashboard/admin/sellers` is the protected seller directory. It lists every
+account that owns at least one store and links to the seller-level financial
+profile. `/dashboard/admin/stores` is the protected operational store directory;
+each result links both to its accountable seller and to
+`/dashboard/admin/stores/<storeId>`. The detail view scopes settlement facts,
+paid-order performance, customer ratings, top paid products, recent paid order
+groups, delivery/returns configuration, and payout readiness to one store.
+
+The UI intentionally labels GoCart commission as marketplace revenue instead
+of profit: operating costs are not stored, so a true profit value would be
+misleading. Directories use server pagination, preserve all rows across pages,
+and render as shared tables on wide screens with responsive cards on small
+screens.
+
+Focused Vitest coverage in `src/queries/admin-store-operations.test.ts`
+verifies admin authorization, store-to-seller linking, paid-sales and
+commission/outstanding-balance mapping, multi-store seller aggregation without
+provider account identifiers, date-scoped store performance, immutable ledger
+totals, and top-product revenue. Browser verification remains subject to the
+existing protected Chromium bootstrap timeout; do not use production or Neon
+to compensate for that gap.
+
 ### 8. Run static checks and the production build
 
 ```powershell

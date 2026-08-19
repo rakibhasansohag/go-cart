@@ -21,7 +21,7 @@ function displayValue(date?: Date) {
 	return date ? format(date, 'MMM d, yyyy') : 'Choose date';
 }
 
-export default function PerformanceDateRange({ from, to }: { from?: string; to?: string }) {
+export function AnalyticsDateRange({ from, to, prefix = 'analytics' }: { from?: string; to?: string; prefix?: string }) {
 	const [fromDate, setFromDate] = useState(() => parseInputDate(from));
 	const [toDate, setToDate] = useState(() => parseInputDate(to));
 	const [openPicker, setOpenPicker] = useState<'from' | 'to' | null>(null);
@@ -30,10 +30,10 @@ export default function PerformanceDateRange({ from, to }: { from?: string; to?:
 		<input type='hidden' name='from' value={inputValue(fromDate)} />
 		<input type='hidden' name='to' value={inputValue(toDate)} />
 		<div className='space-y-1'>
-			<label className='block text-xs font-medium' htmlFor='performance-from-date'>From</label>
+			<label className='block text-xs font-medium' htmlFor={`${prefix}-from-date`}>From</label>
 			<Popover open={openPicker === 'from'} onOpenChange={(open) => setOpenPicker(open ? 'from' : null)}>
 				<PopoverTrigger asChild>
-					<Button id='performance-from-date' type='button' variant='outline' className='w-[156px] justify-between font-normal'>
+					<Button id={`${prefix}-from-date`} type='button' variant='outline' className='w-[156px] justify-between font-normal'>
 						<span className='flex items-center gap-2'><CalendarIcon className='size-4 text-muted-foreground' />{displayValue(fromDate)}</span>
 						<ChevronDownIcon className='size-4 text-muted-foreground' />
 					</Button>
@@ -44,10 +44,10 @@ export default function PerformanceDateRange({ from, to }: { from?: string; to?:
 			</Popover>
 		</div>
 		<div className='space-y-1'>
-			<label className='block text-xs font-medium' htmlFor='performance-to-date'>To</label>
+			<label className='block text-xs font-medium' htmlFor={`${prefix}-to-date`}>To</label>
 			<Popover open={openPicker === 'to'} onOpenChange={(open) => setOpenPicker(open ? 'to' : null)}>
 				<PopoverTrigger asChild>
-					<Button id='performance-to-date' type='button' variant='outline' className='w-[156px] justify-between font-normal'>
+					<Button id={`${prefix}-to-date`} type='button' variant='outline' className='w-[156px] justify-between font-normal'>
 						<span className='flex items-center gap-2'><CalendarIcon className='size-4 text-muted-foreground' />{displayValue(toDate)}</span>
 						<ChevronDownIcon className='size-4 text-muted-foreground' />
 					</Button>
