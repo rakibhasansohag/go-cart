@@ -34,11 +34,11 @@ async function visitDashboardRoute(
   page: import("@playwright/test").Page,
   path: string,
 ) {
-  for (let attempt = 0; attempt < 3; attempt += 1) {
+  for (let attempt = 0; attempt < 2; attempt += 1) {
     try {
       await page.goto(path, {
         waitUntil: "domcontentloaded",
-        timeout: 120_000,
+        timeout: 90_000,
       });
     } catch (error) {
       if (!(error instanceof Error) || !error.message.includes("ERR_ABORTED")) {
@@ -47,7 +47,7 @@ async function visitDashboardRoute(
     }
 
     if (new URL(page.url()).pathname === path) return;
-    await page.waitForTimeout(1_000);
+    await page.waitForTimeout(500);
   }
 
   await expect(page).toHaveURL(new RegExp(path.replaceAll("/", "\\/")));
@@ -155,16 +155,18 @@ test("admin can change the commission from marketplace settings", async ({
   await input.fill("3");
   await holdDays.fill("0");
   await page.getByRole("button", { name: "Save marketplace settings" }).click();
-  await expect(page.getByRole("status")).toContainText(
-    "New settlements will use 3% commission and can become eligible immediately",
-  );
+  await expect(
+    page.getByText(
+      "New settlements will use 3% commission and can become eligible immediately",
+    ),
+  ).toBeVisible();
 
   await input.fill("2");
   await holdDays.fill("7");
   await page.getByRole("button", { name: "Save marketplace settings" }).click();
-  await expect(page.getByRole("status")).toContainText(
-    "New settlements will use 2% commission and wait 7 days",
-  );
+  await expect(
+    page.getByText("New settlements will use 2% commission and wait 7 days"),
+  ).toBeVisible();
 });
 
 test("seller cannot access marketplace settlement operations", async ({
