@@ -6,13 +6,21 @@ import {
 	DashboardIcon,
 	StoreIcon,
 	SettingsIcon,
-	ThreeBoxesIcon,
 	ProductsIcon,
 	InventoryIcon,
 	CouponIcon,
 	ShippingIcon,
 	OfferIcon,
 } from '@/components/dashboard/icons';
+import {
+	FolderTree,
+	Landmark,
+	Mail,
+	RotateCcw,
+	Settings2,
+	UserRound,
+	WalletCards,
+} from 'lucide-react';
 
 export const icons = [
 	{
@@ -51,9 +59,39 @@ export const icons = [
 		path: SettingsIcon,
 	},
 	{
-		label: 'ThreeBoxes',
-		value: 'threeboxes',
-		path: ThreeBoxesIcon,
+		label: 'Sellers',
+		value: 'sellers',
+		path: UserRound,
+	},
+	{
+		label: 'Returns',
+		value: 'returns',
+		path: RotateCcw,
+	},
+	{
+		label: 'Sub-Categories',
+		value: 'sub-categories',
+		path: FolderTree,
+	},
+	{
+		label: 'Email Templates',
+		value: 'email-templates',
+		path: Mail,
+	},
+	{
+		label: 'Settlements',
+		value: 'settlements',
+		path: Landmark,
+	},
+	{
+		label: 'Marketplace Settings',
+		value: 'marketplace-settings',
+		path: Settings2,
+	},
+	{
+		label: 'Earnings',
+		value: 'earnings',
+		path: WalletCards,
 	},
 	{
 		label: 'Products',

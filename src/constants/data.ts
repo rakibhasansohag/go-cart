@@ -13,7 +13,7 @@ export const adminDashboardSidebarOptions: DashboardSidebarMenuInterface[] = [
 	},
 	{
 		label: 'Sellers',
-		icon: 'threeboxes',
+		icon: 'sellers',
 		link: '/dashboard/admin/sellers',
 	},
 	{
@@ -23,7 +23,7 @@ export const adminDashboardSidebarOptions: DashboardSidebarMenuInterface[] = [
 	},
 	{
 		label: 'Returns & Refunds',
-		icon: 'box-list',
+		icon: 'returns',
 		link: '/dashboard/admin/returns',
 	},
 	{
@@ -33,7 +33,7 @@ export const adminDashboardSidebarOptions: DashboardSidebarMenuInterface[] = [
 	},
 	{
 		label: 'Sub-Categories',
-		icon: 'categories',
+		icon: 'sub-categories',
 		link: '/dashboard/admin/subCategories',
 	},
 	{
@@ -48,7 +48,7 @@ export const adminDashboardSidebarOptions: DashboardSidebarMenuInterface[] = [
 	},
 	{
 		label: 'Email Templates',
-		icon: 'settings',
+		icon: 'email-templates',
 		link: '/dashboard/admin/email-templates',
 	},
 	{
@@ -58,12 +58,12 @@ export const adminDashboardSidebarOptions: DashboardSidebarMenuInterface[] = [
 	},
 	{
 		label: 'Settlements',
-		icon: 'box-list',
+		icon: 'settlements',
 		link: '/dashboard/admin/settlements',
 	},
 	{
 		label: 'Marketplace Settings',
-		icon: 'settings',
+		icon: 'marketplace-settings',
 		link: '/dashboard/admin/settings',
 	},
 ];
@@ -86,7 +86,7 @@ export const SellerDashboardSidebarOptions: DashboardSidebarMenuInterface[] = [
 	},
 	{
 		label: 'Returns',
-		icon: 'box-list',
+		icon: 'returns',
 		link: 'returns',
 	},
 	{
@@ -106,7 +106,7 @@ export const SellerDashboardSidebarOptions: DashboardSidebarMenuInterface[] = [
 	},
 	{
 		label: 'Earnings',
-		icon: 'box-list',
+		icon: 'earnings',
 		link: 'earnings',
 	},
 	{
