@@ -10,12 +10,6 @@ export default function PlatformSettingsForm({
   initialCommissionPercent: number;
   initialPayoutHoldDays: number;
 }) {
-  const [commissionPercent, setCommissionPercent] = useState(
-    String(initialCommissionPercent),
-  );
-  const [payoutHoldDays, setPayoutHoldDays] = useState(
-    String(initialPayoutHoldDays),
-  );
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
@@ -26,10 +20,14 @@ export default function PlatformSettingsForm({
     setError("");
     setSaving(true);
     try {
+      const formData = new FormData(event.currentTarget);
       const response = await fetch("/api/admin/settings", {
         method: "PATCH",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ commissionPercent, payoutHoldDays }),
+        body: JSON.stringify({
+          commissionPercent: formData.get("commissionPercent"),
+          payoutHoldDays: formData.get("payoutHoldDays"),
+        }),
       });
       const data = (await response.json()) as {
         commissionPercent?: number;
@@ -43,8 +41,6 @@ export default function PlatformSettingsForm({
         data.payoutHoldDays === undefined
       )
         throw new Error("The server returned incomplete marketplace settings.");
-      setCommissionPercent(String(data.commissionPercent));
-      setPayoutHoldDays(String(data.payoutHoldDays));
       const successMessage =
         data.payoutHoldDays === 0
           ? `Saved. New settlements will use ${data.commissionPercent}% commission and can become eligible immediately after delivery evidence (testing mode).`
@@ -98,8 +94,7 @@ export default function PlatformSettingsForm({
               max="100"
               step="1"
               required
-              value={commissionPercent}
-              onChange={(event) => setCommissionPercent(event.target.value)}
+              defaultValue={initialCommissionPercent}
               className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary"
             />
             <span className="text-sm text-muted-foreground">%</span>
@@ -122,8 +117,7 @@ export default function PlatformSettingsForm({
               max="365"
               step="1"
               required
-              value={payoutHoldDays}
-              onChange={(event) => setPayoutHoldDays(event.target.value)}
+              defaultValue={initialPayoutHoldDays}
               className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary"
             />
             <span className="text-sm text-muted-foreground">days</span>

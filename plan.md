@@ -410,20 +410,20 @@ closed and reopened.
 #### SMTP email and admin-controlled templates
 
 - **Checkout and targeted-delivery checkpoint (August 2, 2026):** Cart
-      rehydration now restores the product store identity required for
-      store-scoped coupon totals, and checkout keeps its submit control locked
-      with an accessible progress skeleton until the secure payment page takes
-      over. Immediate SMTP dispatch is scoped to only the domain events created
-      by the current payment, fulfillment, or return action; older pending jobs
-      remain available exclusively to the recovery cron instead of being sent as
-      an unrelated burst. Payment receipts show the original subtotal, coupon
-      code/discount, shipping, products, and final paid amount, while the paid
-      package event targets each affected seller. A secured, idempotent daily
-      abandoned-checkout job can remind customers about unchanged saved carts
-      after a configurable inactivity window and is disabled by default.
-      Seller operational delivery now uses the store contact email rather than
-      stale legacy profile data, while invalid addresses are excluded from the
-      outbox without suppressing the corresponding in-app notification.
+  rehydration now restores the product store identity required for
+  store-scoped coupon totals, and checkout keeps its submit control locked
+  with an accessible progress skeleton until the secure payment page takes
+  over. Immediate SMTP dispatch is scoped to only the domain events created
+  by the current payment, fulfillment, or return action; older pending jobs
+  remain available exclusively to the recovery cron instead of being sent as
+  an unrelated burst. Payment receipts show the original subtotal, coupon
+  code/discount, shipping, products, and final paid amount, while the paid
+  package event targets each affected seller. A secured, idempotent daily
+  abandoned-checkout job can remind customers about unchanged saved carts
+  after a configurable inactivity window and is disabled by default.
+  Seller operational delivery now uses the store contact email rather than
+  stale legacy profile data, while invalid addresses are excluded from the
+  outbox without suppressing the corresponding in-app notification.
 
 - [x] Restore store-scoped coupon calculations after local-cart rehydration and
       prevent duplicate checkout submissions during the order-to-payment handoff
@@ -445,20 +445,20 @@ closed and reopened.
       country catalog, prefetching the route, and showing a route-level skeleton
 
 - **Template-management checkpoint (August 2, 2026):** The SMTP outbox now uses
-      a responsive code-owned MJML 4 shell and records the source/version used
-      for each successful send. Admins can edit a sanitized Jodit body, save a
-      draft, preview desktop/mobile output, test-send, publish a versioned
-      override, or restore the immutable default. The five currently emitted
-      payment, paid-package, preparation, shipment, and return events have
-      distinct event-specific defaults and realistic previews. Payment,
-      paid-package, preparation, shipment, and return emails now include the
-      relevant immutable item snapshots, quantities, SKU/size, safe product
-      images, store, and applicable totals. Shipment messages also include the
-      current service, delivery estimate, and failure note; return messages include
-      the reason, requested resolution/refund, and customer note. The desktop
-      template workspace keeps its template list in place while only the editor
-      and preview pane scrolls. The remaining event families, locale support,
-      preferences, and template activity history remain intentionally open.
+  a responsive code-owned MJML 4 shell and records the source/version used
+  for each successful send. Admins can edit a sanitized Jodit body, save a
+  draft, preview desktop/mobile output, test-send, publish a versioned
+  override, or restore the immutable default. The five currently emitted
+  payment, paid-package, preparation, shipment, and return events have
+  distinct event-specific defaults and realistic previews. Payment,
+  paid-package, preparation, shipment, and return emails now include the
+  relevant immutable item snapshots, quantities, SKU/size, safe product
+  images, store, and applicable totals. Shipment messages also include the
+  current service, delivery estimate, and failure note; return messages include
+  the reason, requested resolution/refund, and customer note. The desktop
+  template workspace keeps its template list in place while only the editor
+  and preview pane scrolls. The remaining event families, locale support,
+  preferences, and template activity history remain intentionally open.
 
 - [x] Add `nodemailer` and `mjml` server dependencies and their required type
       declarations; reuse the already-installed `jodit-react` package for admin
@@ -634,9 +634,9 @@ post-purchase workflow.
   - [x] Allow compatible packages to be consolidated without forcing a ready
         package to wait indefinitely for another store
   - [x] **Test**: Multiple shipments can safely represent different items from one
-    store order, and one shipment can carry compatible packages without merging
-    their seller ownership or audit history (`src/lib/shipments/assignments.test.ts`
-    and `prisma/integration-check.ts`)
+        store order, and one shipment can carry compatible packages without merging
+        their seller ownership or audit history (`src/lib/shipments/assignments.test.ts`
+        and `prisma/integration-check.ts`)
 
 - [x] **Phase 11.2 — Seller handoff and centralized logistics workflow**
   - [x] Let sellers prepare and hand off their own package, but never claim
@@ -649,8 +649,8 @@ post-purchase workflow.
         synchronize them with item, package,
         shipment, and derived order statuses
   - [x] **Test**: Assignment invariants, failed-attempt fixtures, duplicate provider
-    event protection, and full shipment invariants pass in the integration check;
-    seller/admin authorization remains enforced by the existing server actions
+        event protection, and full shipment invariants pass in the integration check;
+        seller/admin authorization remains enforced by the existing server actions
 
 - [x] **Phase 11.3 — Customer tracking experience**
   - [x] Add a shipment status card and fulfillment-transition history to order details
@@ -661,7 +661,7 @@ post-purchase workflow.
   - [x] Add a centralized tracking query key, server prefetch/hydration, and
         targeted order/tracking invalidation after mutations
   - [x] **Test**: Customer tracking uses the authenticated `getShipmentTracking(orderId)`
-    query and the seeded split/consolidated records pass the integration check
+        query and the seeded split/consolidated records pass the integration check
 
 - [x] **Phase 11.4 — Notification coverage and operations**
   - [x] Reuse the Phase 10.3.3 event/outbox pipeline for package, shipment, and
@@ -679,8 +679,8 @@ post-purchase workflow.
   - [x] Document how to replace Gmail SMTP or the database outbox with a
         dedicated provider/queue without changing domain mutation code
   - [x] **Test**: Existing notification uniqueness checks plus the delivery-audit
-    CAS paths and integration notification invariants pass; SMTP remains disabled
-    in the isolated E2E profile by design
+        CAS paths and integration notification invariants pass; SMTP remains disabled
+        in the isolated E2E profile by design
 
 ---
 
@@ -735,8 +735,10 @@ Goal: protect the critical marketplace workflows before production deployment.
   - [x] Document isolated database, public smoke, and protected commerce test
         commands in `docs/testing.md`
   - [x] **Test**: All suites run locally from documented commands (`bun run
-        db:e2e:prepare`, then `bun run test:e2e:local`)
+db:e2e:prepare`, then `bun run test:e2e:local`)
+
 <!-- s -->
+
 - [ ] **Phase 12.2 — Critical integration coverage**
   - [x] Keep the existing focused unit coverage for payment security/status,
         fulfillment transitions, return rules/reconciliation, notifications,
@@ -829,6 +831,7 @@ and automated search coverage.
   filter-composition, cursor, and explicit-sort behavior.
 
 **Why PostgreSQL over a third-party search service:**
+
 - `pg_trgm` + `tsvector` run inside Neon — zero extra infra, zero cost
 - `unaccent` removes accent sensitivity (important for international product names)
 - `pg_trgm` provides trigram similarity for typo-tolerance
@@ -1061,9 +1064,9 @@ customer to each seller before adding more optional growth features.
   - [x] Enforce admin-only access and unit-test that non-admin actors cannot
         read seller/store financial, review, or analytics data; verify
         deterministic multi-store seller and single-store totals
-  - [ ] Browser-verify the protected seller/store directories, financial
-        profile, and role boundaries once the current local Clerk/Chromium
-        bootstrap timeout is resolved
+  - [x] Browser-verified the protected seller/store directories, financial
+        profile, marketplace-settings feedback, and role boundaries against the
+        isolated Docker database with the production-mode local server
 
 ---
 
