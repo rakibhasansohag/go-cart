@@ -1,9 +1,9 @@
-
 ## graphify
 
 This project has a graphify knowledge graph at graphify-out/.
 
 Rules:
+
 - ALWAYS consult graphify FIRST before starting work on any task, feature, refactoring, or architectural change.
 - Read `graphify-out/GRAPH_REPORT.md` for god nodes and community structure to understand affected dependencies.
 - If `graphify-out/wiki/index.md` exists, navigate it to trace relationships instead of reading raw files directly.
@@ -52,14 +52,17 @@ Safe to do — the runtime value is correct; the error is purely a type-declarat
 **Files**: `src/components/ui/select.tsx`, `src/components/dashboard/shared/custom-modal.tsx`, `src/components/dashboard/forms/product-details.tsx`
 
 **Symptom**:
+
 1. Radix Select dropdown options (Category, Subcategory, Offer) could not be clicked or selected inside `CustomModal` dialog.
 2. `getAllCategoriesForCategory(undefined)` triggered unnecessary ~900ms server queries on mount when no category was selected.
 
 **Root cause**:
+
 1. `SelectContent` in `@/components/ui/select.tsx` had `z-50`. When portaled to `document.body`, it rendered **below** `CustomModal`'s `DialogContent` (`z-[999]`).
 2. `product-details.tsx` watched `form.watch().categoryId` directly inside `useEffect`, causing `getAllCategoriesForCategory(undefined)` to execute on initial render before a category was selected.
 
 **Fix**:
+
 1. Set `z-[99999]` on `SelectContent` in `select.tsx` so portaled select menus render above the dialog.
 2. In `globals.css` & `select.tsx`, added explicit `[data-slot="select-item"]:hover` and `[data-highlighted]` styling with `cursor-pointer` so hovering options shows a high-contrast highlight background effect.
 3. In `product-details.tsx`:
@@ -108,6 +111,7 @@ Safe to do — the runtime value is correct; the error is purely a type-declarat
 
 **CRITICAL MANDATE**:
 Before implementing any new feature, bug fix, or schema change:
+
 1. **End-to-End Dependency & Wiring Inspection**: Trace the entire data pipeline across all connected layers before modifying code:
    - **Database Schema**: Prisma models, relations, default values, and migration constraints.
    - **Backend / Queries**: Server queries, mutations, filtering parameters, and database calculations (`saveUserCart`, `updateCheckoutProductstWithLatest`, `validateCouponCode`, `createOrderGroup`, `getAllAdminCoupons`, etc.).
@@ -115,3 +119,20 @@ Before implementing any new feature, bug fix, or schema change:
    - **Forms / Inputs**: React Hook Form schemas, `z.preprocess` type coercions, number input empty state handling, and modal triggers.
    - **UI Views / Display Components**: Customer cart summary, checkout totals, order details modal, admin tables, seller dashboard analytics.
 2. **Atomic Simultaneous Updates**: When creating or modifying a feature, ALWAYS update all connected components, queries, models, and calculation handlers in the same step. Never leave disconnected wiring, missing properties, or broken calculations across connected modules.
+
+---
+
+## Data Tables and Data-Row Interaction Rule
+
+**CRITICAL MANDATE**:
+
+1. Use semantic `<table>` markup with the shared `@/components/ui/table` primitives or `DataTable` for genuinely tabular data: comparable columns, dense records, sortable/filterable results, ledgers, and paginated directories. Do not replace a table with generic `<div>` markup only for styling.
+2. Use a reusable data-list component for compact summary rows that combine content such as avatars, status badges, metadata, and actions. `RecentTransactions` is the reference implementation for this pattern; it is a list, not a table.
+3. Every non-static record row—whether it comes from a shared table, a direct HTML table, or a reusable data list—MUST have the same clear hover affordance in light and dark themes:
+   - visible background tint;
+   - a stable left accent where layout permits;
+   - 150–200ms color-only transition;
+   - no layout shift;
+   - `prefers-reduced-motion` support.
+4. Do not rely on faint `muted` hover colors alone. Table/list hover treatment must remain visible beside status badges, borders, and dark backgrounds. Preserve selected, disabled, empty, and static rows as explicit exceptions where appropriate.
+5. When adding a direct HTML table or a new reusable data list, verify it inherits the shared hover contract. For dashboard changes, add or update focused Playwright coverage that checks the computed hover background and accent on at least one shared-table route and one direct-table/list route in the isolated E2E environment.

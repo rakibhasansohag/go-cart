@@ -47,7 +47,7 @@ export default function RecentTransactions({
               return (
                 <div
                   key={order.id}
-                  className="group relative -mx-2 flex items-center justify-between gap-4 rounded-md px-2 py-3.5 transition-[background-color,box-shadow] duration-200 ease-out hover:bg-primary/10 hover:shadow-[inset_3px_0_0_hsl(var(--primary))] dark:hover:bg-primary/20 first:pt-0 last:pb-0 motion-reduce:transition-none"
+                  className="group relative -mx-2 flex items-center justify-between gap-4 rounded-md px-2 py-3.5 transition-[background-color,box-shadow] duration-200 ease-out hover:bg-blue-primary/10 hover:ring-1 hover:ring-inset hover:ring-blue-primary/35 dark:hover:bg-blue-primary/20 dark:hover:ring-blue-primary/45 first:pt-0 last:pb-0 motion-reduce:transition-none"
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <Avatar className="h-9 w-9 shrink-0">
