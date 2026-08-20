@@ -1022,7 +1022,7 @@ customer to each seller before adding more optional growth features.
   - [x] Create idempotent transfers/settlements only after the approved release gate
   - [x] Add provider balance refresh, transfer, payout, and internal ledger reconciliation hooks
 
-- [ ] **Phase 14.4 — Reversals and operations**
+- [x] **Phase 14.4 — Reversals and operations**
   - [x] Reverse or adjust seller settlement for partial refunds, completed returns,
         transfer reversals, failed transfers, and blocked capability states; unpaid
         cancellations and failed payments never create a payable settlement
@@ -1036,10 +1036,14 @@ customer to each seller before adding more optional growth features.
         Docker database using the existing E2E role fixtures
   - [x] Provider dispute/chargeback webhook mapping and isolated Docker
         chargeback recovery invariants
-  - [ ] Remaining hardening: a protected browser test with signed provider
-        delivery that exercises the real seller payday transfer end-to-end
+  - [x] **Test**: A protected Chromium admin journey creates, approves, and
+        processes a real Stripe sandbox source-charge seller transfer. It then
+        verifies signed raw-body delivery through the live isolated
+        `/api/webhooks/stripe` HTTP endpoint, the released seller ledger, and
+        replay-safe payout accounting; cleanup reverses the test transfer and
+        rebuilds the Docker fixture.
 
-- [ ] **Phase 14.5 — Admin seller financial profile and performance drill-down**
+- [x] **Phase 14.5 — Admin seller financial profile and performance drill-down**
   - [x] Make the seller/store cell in settlement operations open a protected
         admin seller profile, scoped by the seller's user ID rather than a
         single store URL

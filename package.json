@@ -18,6 +18,7 @@
 		"test:stripe:refund:local": "bun --no-env-file scripts/e2e-local.ts stripe-refund",
 		"test:stripe:payout:local": "bun --no-env-file scripts/e2e-local.ts stripe-payout",
 		"test:stripe:browser-refund:local": "bun --no-env-file scripts/e2e-local.ts stripe-browser-refund",
+		"test:stripe:browser-payout:local": "bun --no-env-file scripts/e2e-local.ts stripe-browser-payout",
 		"test:paypal:auth:local": "bun --no-env-file scripts/e2e-local.ts paypal-auth",
 		"build:e2e": "bun --no-env-file scripts/e2e-local.ts build:e2e",
 		"db:e2e:reset": "bun --no-env-file scripts/e2e-local.ts reset",

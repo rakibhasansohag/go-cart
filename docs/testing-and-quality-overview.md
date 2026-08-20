@@ -25,15 +25,15 @@ No single layer proves the whole system. A unit test can prove a calculation but
 
 ## What each layer protects
 
-| Layer | Main question | Environment | Typical output |
-| --- | --- | --- | --- |
-| TypeScript | Can the application be compiled safely? | Local/CI | `tsc --noEmit` result |
-| ESLint and formatting | Are code-quality and whitespace checks clean? | Local/CI | Error/warning summary |
-| Unit tests | Do isolated rules behave correctly? | Local/CI | Vitest pass/fail counts |
-| Database integration | Do real PostgreSQL transactions preserve invariants? | Docker PostgreSQL | Integration summary and failure details |
-| Public browser smoke | Can an unauthenticated visitor browse and search? | Chromium + isolated app | Playwright report |
-| Protected browser journeys | Can real Clerk roles perform allowed actions? | Chromium + Clerk test users + isolated DB | Playwright report, screenshots, attachments |
-| Production build | Can Next.js compile and prerender the production application? | Local/CI | Next.js route/build summary |
+| Layer                      | Main question                                                 | Environment                               | Typical output                              |
+| -------------------------- | ------------------------------------------------------------- | ----------------------------------------- | ------------------------------------------- |
+| TypeScript                 | Can the application be compiled safely?                       | Local/CI                                  | `tsc --noEmit` result                       |
+| ESLint and formatting      | Are code-quality and whitespace checks clean?                 | Local/CI                                  | Error/warning summary                       |
+| Unit tests                 | Do isolated rules behave correctly?                           | Local/CI                                  | Vitest pass/fail counts                     |
+| Database integration       | Do real PostgreSQL transactions preserve invariants?          | Docker PostgreSQL                         | Integration summary and failure details     |
+| Public browser smoke       | Can an unauthenticated visitor browse and search?             | Chromium + isolated app                   | Playwright report                           |
+| Protected browser journeys | Can real Clerk roles perform allowed actions?                 | Chromium + Clerk test users + isolated DB | Playwright report, screenshots, attachments |
+| Production build           | Can Next.js compile and prerender the production application? | Local/CI                                  | Next.js route/build summary                 |
 
 ## Current verified status
 
@@ -227,11 +227,28 @@ bun run test:stripe:payout:local
 Remove-Item Env:E2E_STRIPE_PAYOUT -ErrorAction SilentlyContinue
 ```
 
-This proves the application webhook boundary, but it is not a claim that
-Stripe's hosted service delivered the HTTP request. Final Phase 14.4 evidence
-still requires a Stripe CLI listener or Stripe Dashboard webhook pointed at a
-staging URL with an isolated database, followed by a protected browser payday
-journey. Never point this test at production or Neon.
+For the complete protected browser payout journey, first start the isolated
+production server in a separate terminal, then run the guarded test command:
+
+```powershell
+bun run build:e2e
+bun --no-env-file scripts/e2e-local.ts server:prod
+```
+
+```powershell
+$env:E2E_BROWSER_PAYOUT='true'
+$env:PLAYWRIGHT_BASE_URL='http://127.0.0.1:3100'
+bun run test:stripe:browser-payout:local
+Remove-Item Env:E2E_BROWSER_PAYOUT,Env:PLAYWRIGHT_BASE_URL -ErrorAction SilentlyContinue
+```
+
+The browser signs in as the isolated admin, creates the weekly batch, approves
+it, and processes the real source-charge transfer to the Stripe test connected
+account. Verification sends the raw signed transfer event to the live local
+`/api/webhooks/stripe` endpoint, checks the seller ledger release and replay
+safety, reverses the external test transfer, and rebuilds the Docker fixture.
+It is deliberately local-only: never point it at production, Neon, or a public
+application URL.
 
 Run the merchant-only probe with:
 
@@ -347,10 +364,9 @@ Optionally set `E2E_STRIPE_CONNECTED_ACCOUNT_ID` only in `.env.e2e.local` to a
 transfer-ready **Stripe test-mode** connected account. Without it, the probe
 selects an existing transfer-ready US account from the configured Stripe
 sandbox; it never creates an account or prints keys, identifiers, or
-environment values. It directly invokes GoCart's transfer-event reconciliation
-with the real transfer object; Stripe webhook signature and HTTP-boundary tests
-remain separately covered by the Stripe webhook suite. A protected browser
-journey for payout operations remains a distinct UI coverage goal.
+environment values. Its direct route check complements the protected browser
+journey above; together they cover real transfer, reconciliation, failure, and
+retry behavior.
 
 ### 7e. Verify the automatic weekly payout-review notice
 
@@ -499,17 +515,17 @@ Before coding, record:
 
 Use this decision guide:
 
-| Feature type | Required verification |
-| --- | --- |
-| Pure calculation or mapper | Unit test |
-| Server action, query, authorization, or transaction | Unit test plus database integration test |
-| Database schema or migration | Migration check plus integration invariant |
-| Customer-facing route | Public or protected browser test |
-| Seller/admin permission or mutation | Role-boundary browser test plus server authorization test |
-| Payment, webhook, or provider integration | Security/unit tests, provider-event integration tests, and sandbox browser/API verification where practical |
-| Inventory, shipment, return, or refund state | Transition tests, concurrency/idempotency checks, and a browser mutation journey |
-| Keyboard/accessibility-critical action | Keyboard-only browser test |
-| Notification/email/outbox behavior | Domain/integration test; provider delivery test only when explicitly enabled |
+| Feature type                                        | Required verification                                                                                       |
+| --------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| Pure calculation or mapper                          | Unit test                                                                                                   |
+| Server action, query, authorization, or transaction | Unit test plus database integration test                                                                    |
+| Database schema or migration                        | Migration check plus integration invariant                                                                  |
+| Customer-facing route                               | Public or protected browser test                                                                            |
+| Seller/admin permission or mutation                 | Role-boundary browser test plus server authorization test                                                   |
+| Payment, webhook, or provider integration           | Security/unit tests, provider-event integration tests, and sandbox browser/API verification where practical |
+| Inventory, shipment, return, or refund state        | Transition tests, concurrency/idempotency checks, and a browser mutation journey                            |
+| Keyboard/accessibility-critical action              | Keyboard-only browser test                                                                                  |
+| Notification/email/outbox behavior                  | Domain/integration test; provider delivery test only when explicitly enabled                                |
 
 ### Step 3: Add deterministic data
 
@@ -547,56 +563,57 @@ Run the relevant browser project for route or role changes. Run `bun run build` 
 
 Copy this section into a feature PR description, issue, or future planning note:
 
-```md
+````md
 ## Feature verification: <feature name>
 
 ### Scope
+
 - Actor(s): customer / seller / admin / guest / system
 - Routes or server actions:
 - Data models changed:
 - External providers:
 
 ### Invariants
+
 - <rule that must always remain true>
 - <authorization or ownership rule>
 - <retry/idempotency/concurrency rule>
 
 ### Tests added
+
 - [ ] Unit: <file and behavior>
 - [ ] Integration: <database/provider invariant>
 - [ ] Browser: <user journey and role>
 - [ ] Keyboard/accessibility: <if applicable>
 
 ### Verification commands
+
 ```powershell
 <commands>
 ```
 
 ### Evidence
+
 - Result:
 - Report or attachment:
 - Known warnings or remaining gaps:
 
 ### Documentation updated
+
 - [ ] docs/testing-and-quality-overview.md
 - [ ] docs/testing.md
 - [ ] plan.md
 - [ ] .env.e2e.example, if needed
 - [ ] .github/workflows/ci.yml, if needed
-```
+
+````
 
 ## Current roadmap after this phase
 
 Completed foundations include unit tooling, Docker integration data, deterministic seeding, public smoke tests, Clerk role synchronization, protected authorization, checkout/order creation, Stripe sandbox payment verification, seller package-status mutation, customer return submission, seller-level Connect onboarding, USD settlement ledger, weekly payday operations, transfer/payout webhook replay protection, and CI build/test jobs.
 
-The next practical browser milestones are:
-
-1. seller package progression through shipment and delivery;
-2. keyboard-only verification for authenticated checkout and dashboard actions;
-3. provider-backed Stripe Connect payday transfer browser coverage and provider
-   dispute/chargeback mapping (protected seller/admin settlement route coverage
-   is now automated against the isolated Docker database);
-4. PayPal sandbox buyer checkout/refund. Live payment settlement remains out of scope.
+The next practical browser milestone is PayPal sandbox buyer checkout/refund.
+Live payment settlement remains out of scope.
 
 When those are implemented, update this document and `plan.md` with the exact test names and pass counts. That keeps the project understandable months later and prevents “implemented” from being confused with “verified.”
 
@@ -615,3 +632,4 @@ are similarly verified.
 - Do not enable email or fulfillment automation in the isolated E2E profile unless the test explicitly controls and cleans it up.
 - Treat a passing route status as insufficient proof for a browser workflow; assert the visible state and persisted result.
 - Treat integration invariants as complementary to, not a replacement for, browser mutation coverage.
+```
