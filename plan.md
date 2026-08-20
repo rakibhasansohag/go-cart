@@ -1099,7 +1099,9 @@ Goal: make the application safe and operable under real customer traffic.
     An additive PostgreSQL migration now adds `User.accountStatus` with
     `ACTIVE`/`SUSPENDED`; the Node.js Next.js proxy centrally blocks suspended
     accounts from documents and authenticated API requests, while an
-    admin-only, same-origin endpoint changes another account's status.
+    admin-only, same-origin endpoint changes another account's status. The
+    admin seller profile visibly reports the status and provides a confirmed
+    suspend/reactivate control (self-suspension is rejected).
   - [ ] Test every server action and route for customer, seller-owner, other-seller,
         admin, unauthenticated, and suspended-account access
   - [ ] Fix existing analytics ownership leakage before exposing seller analytics

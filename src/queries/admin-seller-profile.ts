@@ -73,6 +73,7 @@ export async function getAdminSellerProfile(sellerId: string, options: AdminSell
 			email: true,
 			picture: true,
 			role: true,
+			accountStatus: true,
 			createdAt: true,
 			paymentAccount: {
 				select: {

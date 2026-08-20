@@ -11,6 +11,7 @@ import {
 import { UrlPagination } from '@/components/ui/url-pagination';
 import { getAdminSellerProfile } from '@/queries/admin-seller-profile';
 import { AnalyticsDateRange } from '@/components/dashboard/admin/analytics-date-range';
+import { AccountStatusControl } from './account-status-control';
 
 function usd(cents: number) {
 	return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(cents / 100);
@@ -58,7 +59,7 @@ export default async function AdminSellerProfilePage({
 					<h1 className='text-2xl font-bold tracking-tight'>{seller.name}</h1>
 					<p className='mt-1 text-sm text-muted-foreground'>{seller.email} · Seller since {date(seller.createdAt)} · All monetary values are USD.</p>
 				</div>
-				<Link href='/dashboard/admin/settlements' className='rounded-lg border border-border px-3 py-2 text-sm font-medium hover:bg-muted'>Back to settlements</Link>
+				<div className='flex flex-wrap items-center gap-2'><AccountStatusControl userId={seller.id} accountStatus={seller.accountStatus} /><Link href='/dashboard/admin/settlements' className='rounded-lg border border-border px-3 py-2 text-sm font-medium hover:bg-muted'>Back to settlements</Link></div>
 			</header>
 
 			<section className='grid gap-4 lg:grid-cols-[1.2fr_1fr]'>
@@ -67,6 +68,7 @@ export default async function AdminSellerProfilePage({
 					<div className='mt-4 grid gap-3 text-sm sm:grid-cols-2'>
 						<div><p className='text-muted-foreground'>Stores</p><p className='mt-1 text-xl font-semibold'>{profile.storeCount}</p></div>
 						<div><p className='text-muted-foreground'>Account role</p><p className='mt-1 font-medium'>{seller.role}</p></div>
+						<div><p className='text-muted-foreground'>Account access</p><p className={`mt-1 font-medium ${seller.accountStatus === 'SUSPENDED' ? 'text-destructive' : 'text-emerald-600 dark:text-emerald-400'}`}>{seller.accountStatus}</p></div>
 						<div><p className='text-muted-foreground'>Profile email</p><p className='mt-1'>{seller.email}</p></div>
 						<div><p className='text-muted-foreground'>Selected scope</p><p className='mt-1'>{selectedStore?.name ?? 'All owned stores'}</p></div>
 					</div>
