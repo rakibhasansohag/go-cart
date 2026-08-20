@@ -1,6 +1,11 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { consumeRateLimit, resetRateLimitsForTests } from "./rate-limit";
+import {
+  consumeRateLimit,
+  enforceRateLimit,
+  RateLimitError,
+  resetRateLimitsForTests,
+} from "./rate-limit";
 
 describe("consumeRateLimit", () => {
   beforeEach(resetRateLimitsForTests);
@@ -59,5 +64,23 @@ describe("consumeRateLimit", () => {
       allowed: true,
       remaining: 0,
     });
+  });
+
+  it("turns a rejected request into a retryable action error", () => {
+    enforceRateLimit({
+      key: "seller-1",
+      limit: 1,
+      windowMs: 1_000,
+      now: 1_000,
+    });
+
+    expect(() =>
+      enforceRateLimit({
+        key: "seller-1",
+        limit: 1,
+        windowMs: 1_000,
+        now: 1_001,
+      }),
+    ).toThrow(RateLimitError);
   });
 });

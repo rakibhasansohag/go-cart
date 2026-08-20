@@ -2,12 +2,26 @@ name: GoCart Continuous Integration
 
 on:
   push:
-    branches: [ main, dev ]
+    branches: [main, dev]
 
 permissions:
   contents: read
 
 jobs:
+  secret-scan:
+    name: Secret Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Scan committed history and changes
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
   validate-and-test:
     name: Build, Typecheck & Test Suite
     runs-on: ubuntu-latest
@@ -112,14 +126,14 @@ jobs:
           --health-retries 30
     env:
       APP_ENV: local
-      E2E_TEST_MODE: 'true'
+      E2E_TEST_MODE: "true"
       DATABASE_URL: postgresql://gocart:gocart@localhost:55432/gocart_e2e?schema=public
       E2E_DATABASE_URL: postgresql://gocart:gocart@localhost:55432/gocart_e2e?schema=public
       E2E_AUTH_MODE: test
       E2E_PROVIDER_MODE: sandbox
-      EMAIL_NOTIFICATIONS_ENABLED: 'false'
-      ABANDONED_CHECKOUT_EMAIL_ENABLED: 'false'
-      DEMO_FULFILLMENT_AUTOMATION_ENABLED: 'false'
+      EMAIL_NOTIFICATIONS_ENABLED: "false"
+      ABANDONED_CHECKOUT_EMAIL_ENABLED: "false"
+      DEMO_FULFILLMENT_AUTOMATION_ENABLED: "false"
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -181,7 +195,7 @@ jobs:
         run: bun run test:e2e:protected
         env:
           PLAYWRIGHT_BASE_URL: ${{ vars.E2E_BASE_URL }}
-          E2E_PROTECTED: 'true'
+          E2E_PROTECTED: "true"
           CLERK_PUBLISHABLE_KEY: ${{ vars.E2E_CLERK_PUBLISHABLE_KEY }}
           NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ vars.E2E_CLERK_PUBLISHABLE_KEY }}
           CLERK_SECRET_KEY: ${{ secrets.E2E_CLERK_SECRET_KEY }}

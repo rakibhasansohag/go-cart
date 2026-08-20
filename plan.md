@@ -1089,7 +1089,17 @@ Goal: make the application safe and operable under real customer traffic.
     seller generation routes now require a same-origin authenticated seller,
     enforce bounded payloads, return generic provider-failure responses, and
     apply bounded per-process rate limits with `429` and `Retry-After`.
-    The anonymous country-cookie mutation has the same origin protection.
+    The anonymous country-cookie mutation has the same origin protection. The
+    same bounded control now covers public search, payment creation/capture
+    and verification, daily check-ins, and admin email-retry actions; admin
+    settings, payout, and Stripe Connect onboarding mutations also reject
+    cross-origin requests. Focused guard, rate-limit, analytics, payment, and
+    search tests pass 21/21; the full unit suite passes 176/176 and the
+    Docker/PostgreSQL integration suite passes its 1,024-order workflow.
+    An additive PostgreSQL migration now adds `User.accountStatus` with
+    `ACTIVE`/`SUSPENDED`; the Node.js Next.js proxy centrally blocks suspended
+    accounts from documents and authenticated API requests, while an
+    admin-only, same-origin endpoint changes another account's status.
   - [ ] Test every server action and route for customer, seller-owner, other-seller,
         admin, unauthenticated, and suspended-account access
   - [ ] Fix existing analytics ownership leakage before exposing seller analytics
@@ -1098,6 +1108,14 @@ Goal: make the application safe and operable under real customer traffic.
   - [ ] Add CSRF/origin protections where cookie-authenticated mutations need them
 
 - [ ] **Phase 15.2 — Secrets and browser security**
+  - **Implementation evidence (2026-08-20, in progress)**: a tested static
+    CSP and baseline browser-security header set now cover the known Clerk,
+    Stripe, PayPal, Cloudinary, image-generation, geolocation, and websocket
+    integrations without granting an unrestricted `https:` source. A
+    production-mode isolated Chromium smoke test passes the header assertions.
+    CI now scans committed history with Gitleaks and Dependabot opens weekly
+    package and GitHub Actions update PRs; the quality guide documents the
+    review and deployment/rollback/restore baseline.
   - [ ] Use least-privilege provider credentials, separate environments, rotation
         procedures, and automated secret scanning
   - [ ] Add a tested Content Security Policy and security headers compatible with
@@ -1105,6 +1123,15 @@ Goal: make the application safe and operable under real customer traffic.
   - [ ] Add dependency vulnerability review and a documented patch cadence
 
 - [ ] **Phase 15.3 — Observability and recovery**
+  - **Implementation evidence (2026-08-20, in progress)**: requests now carry
+    an `x-request-id` response header and proxy logs use a structured JSON
+    logger that redacts credential-like fields, email addresses, and user IDs;
+    the isolated browser assertion confirms the response correlation header.
+    `GET /api/health` is a minimal database-backed uptime probe that returns
+    only `ok` or `unavailable`, ready for an external monitor. The admin
+    delivery-health view now exposes the oldest queued email and latest
+    automation-run timestamp/status, making outbox lag and cron freshness
+    explicit operational signals.
   - [ ] Add structured logs with request/event correlation IDs and secret/PII redaction
   - [ ] Add free-tier or self-hostable error tracking, uptime checks, and alerts for
         payments, webhooks, email outbox, cron jobs, search, and settlement

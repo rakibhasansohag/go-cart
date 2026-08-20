@@ -14,6 +14,13 @@ type Bucket = { count: number; resetAt: number };
 const MAX_BUCKETS = 10_000;
 const buckets = new Map<string, Bucket>();
 
+export class RateLimitError extends Error {
+  constructor(public readonly retryAfterSeconds: number) {
+    super("Too many requests. Please try again shortly.");
+    this.name = "RateLimitError";
+  }
+}
+
 function trimBuckets(now: number) {
   for (const [key, bucket] of buckets) {
     if (bucket.resetAt <= now) buckets.delete(key);
@@ -65,6 +72,12 @@ export function consumeRateLimit({
     remaining: limit - existing.count,
     retryAfterSeconds: 0,
   };
+}
+
+export function enforceRateLimit(input: RateLimitInput) {
+  const result = consumeRateLimit(input);
+  if (!result.allowed) throw new RateLimitError(result.retryAfterSeconds);
+  return result;
 }
 
 export function resetRateLimitsForTests() {

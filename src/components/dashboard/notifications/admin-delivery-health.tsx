@@ -100,7 +100,7 @@ export default function AdminDeliveryHealth({ initialData }: Props) {
 	return (
 		<div className='space-y-6 text-sm'>
 			{/* Stat Widgets */}
-			<div className='grid grid-cols-1 sm:grid-cols-3 gap-4'>
+			<div className='grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4'>
 				<button
 					onClick={() => handleTabChange('SENT')}
 					className={`rounded-xl border p-4 flex items-center gap-3.5 text-left transition-all ${
@@ -117,6 +117,17 @@ export default function AdminDeliveryHealth({ initialData }: Props) {
 						<span className='text-xl font-bold text-foreground'>{stats.sentCount}</span>
 					</div>
 				</button>
+
+				<div className='rounded-xl border border-border/60 bg-background p-4'>
+					<span className='text-xs text-muted-foreground block font-medium'>Oldest queued email</span>
+					<span className='mt-1 block text-sm font-semibold text-foreground'>{stats.oldestPendingAt ? new Date(stats.oldestPendingAt).toLocaleString() : 'Queue clear'}</span>
+				</div>
+
+				<div className='rounded-xl border border-border/60 bg-background p-4'>
+					<span className='text-xs text-muted-foreground block font-medium'>Latest automation run</span>
+					<span className='mt-1 block text-sm font-semibold text-foreground'>{stats.latestAutomationRunAt ? new Date(stats.latestAutomationRunAt).toLocaleString() : 'No run recorded'}</span>
+					{stats.latestAutomationRunStatus && <span className='mt-1 block text-xs text-muted-foreground'>{stats.latestAutomationRunStatus}</span>}
+				</div>
 
 				<button
 					onClick={() => handleTabChange('QUEUE')}

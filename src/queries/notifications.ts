@@ -1,320 +1,377 @@
-'use server';
+"use server";
 
-import { db } from '@/lib/db';
-import { auth } from '@clerk/nextjs/server';
-import { NotificationCategory, NotificationChannel, Prisma } from '@prisma/client';
-import { z } from 'zod';
+import { db } from "@/lib/db";
+import { auth } from "@clerk/nextjs/server";
+import {
+  NotificationCategory,
+  NotificationChannel,
+  Prisma,
+} from "@prisma/client";
+import { z } from "zod";
+import { enforceRateLimit } from "@/lib/security/rate-limit";
 
 const preferenceInput = z.object({
-	category: z.nativeEnum(NotificationCategory),
-	channel: z.literal(NotificationChannel.EMAIL),
-	enabled: z.boolean(),
+  category: z.nativeEnum(NotificationCategory),
+  channel: z.literal(NotificationChannel.EMAIL),
+  enabled: z.boolean(),
 });
 
 const requiredEmailCategories = new Set<NotificationCategory>([
-	NotificationCategory.PAYMENT,
-	NotificationCategory.REFUND,
+  NotificationCategory.PAYMENT,
+  NotificationCategory.REFUND,
 ]);
 
 function emptyNotificationPage(page: number, limit: number) {
-	return {
-		notifications: [],
-		totalCount: 0,
-		unreadCount: 0,
-		page,
-		limit,
-		totalPages: 1,
-	};
+  return {
+    notifications: [],
+    totalCount: 0,
+    unreadCount: 0,
+    page,
+    limit,
+    totalPages: 1,
+  };
 }
 
 export async function getNotificationSummary() {
-	const { userId } = await auth();
-	if (!userId) return { unreadCount: 0 };
+  const { userId } = await auth();
+  if (!userId) return { unreadCount: 0 };
 
-	return {
-		unreadCount: await db.notification.count({
-			where: { recipientId: userId, readAt: null },
-		}),
-	};
+  return {
+    unreadCount: await db.notification.count({
+      where: { recipientId: userId, readAt: null },
+    }),
+  };
 }
 
 export async function getNotifications({
-	page = 1,
-	limit = 10,
-	unreadOnly = false,
-	category,
+  page = 1,
+  limit = 10,
+  unreadOnly = false,
+  category,
 }: {
-	page?: number;
-	limit?: number;
-	unreadOnly?: boolean;
-	category?: NotificationCategory;
+  page?: number;
+  limit?: number;
+  unreadOnly?: boolean;
+  category?: NotificationCategory;
 } = {}) {
-	const { userId } = await auth();
-	const safePage = Math.max(1, page);
-	const safeLimit = Math.min(50, Math.max(1, limit));
-	// Header polling can overlap a Clerk sign-out/session switch. Returning an
-	// empty, authorized projection avoids noisy 500s and never exposes data.
-	if (!userId) return emptyNotificationPage(safePage, safeLimit);
+  const { userId } = await auth();
+  const safePage = Math.max(1, page);
+  const safeLimit = Math.min(50, Math.max(1, limit));
+  // Header polling can overlap a Clerk sign-out/session switch. Returning an
+  // empty, authorized projection avoids noisy 500s and never exposes data.
+  if (!userId) return emptyNotificationPage(safePage, safeLimit);
 
-	const where: Prisma.NotificationWhereInput = {
-		recipientId: userId,
-		...(unreadOnly ? { readAt: null } : {}),
-		...(category ? { category } : {}),
-	};
+  const where: Prisma.NotificationWhereInput = {
+    recipientId: userId,
+    ...(unreadOnly ? { readAt: null } : {}),
+    ...(category ? { category } : {}),
+  };
 
-	const [notifications, totalCount, unreadCount] = await Promise.all([
-		db.notification.findMany({
-			where,
-			orderBy: { createdAt: 'desc' },
-			skip: (safePage - 1) * safeLimit,
-			take: safeLimit,
-		}),
-		db.notification.count({ where }),
-		db.notification.count({ where: { recipientId: userId, readAt: null } }),
-	]);
+  const [notifications, totalCount, unreadCount] = await Promise.all([
+    db.notification.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+      skip: (safePage - 1) * safeLimit,
+      take: safeLimit,
+    }),
+    db.notification.count({ where }),
+    db.notification.count({ where: { recipientId: userId, readAt: null } }),
+  ]);
 
-	return {
-		notifications,
-		totalCount,
-		unreadCount,
-		page: safePage,
-		limit: safeLimit,
-		totalPages: Math.max(1, Math.ceil(totalCount / safeLimit)),
-	};
+  return {
+    notifications,
+    totalCount,
+    unreadCount,
+    page: safePage,
+    limit: safeLimit,
+    totalPages: Math.max(1, Math.ceil(totalCount / safeLimit)),
+  };
 }
 
 export async function markNotificationRead(notificationId: string) {
-	const { userId } = await auth();
-	if (!userId) throw new Error('Unauthenticated.');
+  const { userId } = await auth();
+  if (!userId) throw new Error("Unauthenticated.");
 
-	return db.notification.updateMany({
-		where: { id: notificationId, recipientId: userId, readAt: null },
-		data: { readAt: new Date() },
-	});
+  return db.notification.updateMany({
+    where: { id: notificationId, recipientId: userId, readAt: null },
+    data: { readAt: new Date() },
+  });
 }
 
 export async function markAllNotificationsRead() {
-	const { userId } = await auth();
-	if (!userId) throw new Error('Unauthenticated.');
+  const { userId } = await auth();
+  if (!userId) throw new Error("Unauthenticated.");
 
-	return db.notification.updateMany({
-		where: { recipientId: userId, readAt: null },
-		data: { readAt: new Date() },
-	});
+  return db.notification.updateMany({
+    where: { recipientId: userId, readAt: null },
+    data: { readAt: new Date() },
+  });
 }
 
 export async function getNotificationPreferences() {
-	const { userId } = await auth();
-	if (!userId) return [];
+  const { userId } = await auth();
+  if (!userId) return [];
 
-	const rows = await db.notificationPreference.findMany({
-		where: { userId },
-		orderBy: [{ category: 'asc' }, { channel: 'asc' }],
-	});
-	return rows.map((row) => ({
-		...row,
-		// In-app notifications are always available for auditability. Critical
-		// payment/refund email cannot be disabled by an optional preference.
-		enabled: row.channel === NotificationChannel.IN_APP ||
-			(requiredEmailCategories.has(row.category) ? true : row.enabled),
-	}));
+  const rows = await db.notificationPreference.findMany({
+    where: { userId },
+    orderBy: [{ category: "asc" }, { channel: "asc" }],
+  });
+  return rows.map((row) => ({
+    ...row,
+    // In-app notifications are always available for auditability. Critical
+    // payment/refund email cannot be disabled by an optional preference.
+    enabled:
+      row.channel === NotificationChannel.IN_APP ||
+      (requiredEmailCategories.has(row.category) ? true : row.enabled),
+  }));
 }
 
 export async function updateNotificationEmailPreference(input: unknown) {
-	const { userId } = await auth();
-	if (!userId) throw new Error('Unauthenticated.');
-	const parsed = preferenceInput.parse(input);
-	if (requiredEmailCategories.has(parsed.category)) {
-		throw new Error('Payment and refund emails are required for account safety.');
-	}
+  const { userId } = await auth();
+  if (!userId) throw new Error("Unauthenticated.");
+  const parsed = preferenceInput.parse(input);
+  if (requiredEmailCategories.has(parsed.category)) {
+    throw new Error(
+      "Payment and refund emails are required for account safety.",
+    );
+  }
 
-	return db.notificationPreference.upsert({
-		where: {
-			userId_category_channel: {
-				userId,
-				category: parsed.category,
-				channel: parsed.channel,
-			},
-		},
-		update: { enabled: parsed.enabled },
-		create: {
-			userId,
-			category: parsed.category,
-			channel: parsed.channel,
-			enabled: parsed.enabled,
-		},
-	});
+  return db.notificationPreference.upsert({
+    where: {
+      userId_category_channel: {
+        userId,
+        category: parsed.category,
+        channel: parsed.channel,
+      },
+    },
+    update: { enabled: parsed.enabled },
+    create: {
+      userId,
+      category: parsed.category,
+      channel: parsed.channel,
+      enabled: parsed.enabled,
+    },
+  });
 }
 
 export async function getAdminDeliveryHealth(input?: {
-	statusFilter?: 'ALL' | 'PENDING' | 'FAILED' | 'SENT';
-	page?: number;
-	pageSize?: number;
+  statusFilter?: "ALL" | "PENDING" | "FAILED" | "SENT";
+  page?: number;
+  pageSize?: number;
 }) {
-	const { userId } = await auth();
-	if (!userId) throw new Error('Unauthenticated.');
-	const user = await db.user.findUnique({
-		where: { id: userId },
-		select: { role: true },
-	});
-	if (user?.role !== 'ADMIN') {
-		throw new Error('Admin privileges required.');
-	}
+  const { userId } = await auth();
+  if (!userId) throw new Error("Unauthenticated.");
+  const user = await db.user.findUnique({
+    where: { id: userId },
+    select: { role: true },
+  });
+  if (user?.role !== "ADMIN") {
+    throw new Error("Admin privileges required.");
+  }
 
-	const statusFilter = input?.statusFilter || 'ALL';
-	const page = Math.max(1, input?.page || 1);
-	const pageSize = Math.min(100, Math.max(5, input?.pageSize || 10));
-	const skip = (page - 1) * pageSize;
+  const statusFilter = input?.statusFilter || "ALL";
+  const page = Math.max(1, input?.page || 1);
+  const pageSize = Math.min(100, Math.max(5, input?.pageSize || 10));
+  const skip = (page - 1) * pageSize;
 
-	const whereOutboxFilter: Prisma.EmailOutboxWhereInput =
-		statusFilter === 'SENT'
-			? { status: 'SENT' }
-			: statusFilter === 'FAILED'
-			? { status: 'FAILED' }
-			: statusFilter === 'PENDING'
-			? { status: 'PENDING' }
-			: { status: { in: ['FAILED', 'PENDING'] } };
+  const whereOutboxFilter: Prisma.EmailOutboxWhereInput =
+    statusFilter === "SENT"
+      ? { status: "SENT" }
+      : statusFilter === "FAILED"
+        ? { status: "FAILED" }
+        : statusFilter === "PENDING"
+          ? { status: "PENDING" }
+          : { status: { in: ["FAILED", "PENDING"] } };
 
-	const [sentCount, pendingCount, failedCount, totalOutboxCount, outboxItems, sentOutbox, automationRuns, auditStats, auditItems] =
-		await Promise.all([
-			db.emailOutbox.count({ where: { status: 'SENT' } }),
-			db.emailOutbox.count({ where: { status: 'PENDING' } }),
-			db.emailOutbox.count({ where: { status: 'FAILED' } }),
-			db.emailOutbox.count({ where: whereOutboxFilter }),
-			db.emailOutbox.findMany({
-				where: whereOutboxFilter,
-				include: {
-					recipient: { select: { name: true, email: true } },
-					sourceEvent: { select: { eventType: true, aggregateType: true } },
-				},
-				orderBy: { updatedAt: 'desc' },
-				skip,
-				take: pageSize,
-			}),
-			db.emailOutbox.findMany({
-				where: { status: 'SENT' },
-				include: {
-					recipient: { select: { name: true, email: true } },
-					sourceEvent: { select: { eventType: true, aggregateType: true } },
-				},
-				orderBy: { updatedAt: 'desc' },
-				take: 50,
-			}),
-			db.automationRun.findMany({
-				orderBy: { startedAt: 'desc' },
-				take: 15,
-			}),
-			db.notificationDeliveryAudit.groupBy({
-				by: ['channel', 'status'],
-				_count: { _all: true },
-			}),
-			db.notificationDeliveryAudit.findMany({
-				where: { status: { in: ['FAILED', 'PROCESSING'] } },
-				include: { recipient: { select: { name: true, email: true } }, sourceEvent: { select: { eventType: true } } },
-				orderBy: { createdAt: 'desc' },
-				take: 50,
-			}),
-		]);
+  const [
+    sentCount,
+    pendingCount,
+    failedCount,
+    totalOutboxCount,
+    outboxItems,
+    sentOutbox,
+    automationRuns,
+    auditStats,
+    auditItems,
+    oldestPending,
+    latestAutomationRun,
+  ] = await Promise.all([
+    db.emailOutbox.count({ where: { status: "SENT" } }),
+    db.emailOutbox.count({ where: { status: "PENDING" } }),
+    db.emailOutbox.count({ where: { status: "FAILED" } }),
+    db.emailOutbox.count({ where: whereOutboxFilter }),
+    db.emailOutbox.findMany({
+      where: whereOutboxFilter,
+      include: {
+        recipient: { select: { name: true, email: true } },
+        sourceEvent: { select: { eventType: true, aggregateType: true } },
+      },
+      orderBy: { updatedAt: "desc" },
+      skip,
+      take: pageSize,
+    }),
+    db.emailOutbox.findMany({
+      where: { status: "SENT" },
+      include: {
+        recipient: { select: { name: true, email: true } },
+        sourceEvent: { select: { eventType: true, aggregateType: true } },
+      },
+      orderBy: { updatedAt: "desc" },
+      take: 50,
+    }),
+    db.automationRun.findMany({
+      orderBy: { startedAt: "desc" },
+      take: 15,
+    }),
+    db.notificationDeliveryAudit.groupBy({
+      by: ["channel", "status"],
+      _count: { _all: true },
+    }),
+    db.notificationDeliveryAudit.findMany({
+      where: { status: { in: ["FAILED", "PROCESSING"] } },
+      include: {
+        recipient: { select: { name: true, email: true } },
+        sourceEvent: { select: { eventType: true } },
+      },
+      orderBy: { createdAt: "desc" },
+      take: 50,
+    }),
+    db.emailOutbox.findFirst({
+      where: { status: "PENDING" },
+      orderBy: { createdAt: "asc" },
+      select: { createdAt: true },
+    }),
+    db.automationRun.findFirst({
+      orderBy: { startedAt: "desc" },
+      select: { startedAt: true, status: true, finishedAt: true },
+    }),
+  ]);
 
-	return {
-		stats: { sentCount, pendingCount, failedCount },
-		pagination: {
-			page,
-			pageSize,
-			totalCount: totalOutboxCount,
-			totalPages: Math.ceil(totalOutboxCount / pageSize) || 1,
-		},
-		outboxItems,
-		failedOutbox: outboxItems,
-		sentOutbox,
-		automationRuns,
-		auditStats,
-		auditItems,
-	};
+  return {
+    stats: {
+      sentCount,
+      pendingCount,
+      failedCount,
+      oldestPendingAt: oldestPending?.createdAt ?? null,
+      latestAutomationRunAt: latestAutomationRun?.startedAt ?? null,
+      latestAutomationRunStatus: latestAutomationRun?.status ?? null,
+    },
+    pagination: {
+      page,
+      pageSize,
+      totalCount: totalOutboxCount,
+      totalPages: Math.ceil(totalOutboxCount / pageSize) || 1,
+    },
+    outboxItems,
+    failedOutbox: outboxItems,
+    sentOutbox,
+    automationRuns,
+    auditStats,
+    auditItems,
+  };
 }
 
 export async function retryOutboxJob(outboxId: string) {
-	const { userId } = await auth();
-	if (!userId) throw new Error('Unauthenticated.');
-	const user = await db.user.findUnique({
-		where: { id: userId },
-		select: { role: true },
-	});
-	if (user?.role !== 'ADMIN') {
-		throw new Error('Admin privileges required.');
-	}
+  const { userId } = await auth();
+  if (!userId) throw new Error("Unauthenticated.");
+  const user = await db.user.findUnique({
+    where: { id: userId },
+    select: { role: true },
+  });
+  if (user?.role !== "ADMIN") {
+    throw new Error("Admin privileges required.");
+  }
+  enforceRateLimit({
+    key: `notification-retry:${userId}`,
+    limit: 30,
+    windowMs: 10 * 60 * 1000,
+  });
 
-	const item = await db.emailOutbox.findUnique({ where: { id: outboxId } });
-	if (!item) throw new Error('Outbox job not found.');
+  const item = await db.emailOutbox.findUnique({ where: { id: outboxId } });
+  if (!item) throw new Error("Outbox job not found.");
 
-	const updatedCount = await db.emailOutbox.updateMany({
-		where: {
-			id: outboxId,
-			OR: [
-				{ status: 'FAILED' },
-				{ status: 'PROCESSING', lastAttemptAt: { lt: new Date(Date.now() - 10 * 60 * 1000) } },
-			],
-		},
-		data: {
-			status: 'PENDING',
-			nextAttemptAt: new Date(),
-			lastError: null,
-		},
-	});
-	if (updatedCount.count !== 1) throw new Error('Only failed or stale processing jobs can be retried.');
-	const updated = await db.emailOutbox.findUniqueOrThrow({ where: { id: outboxId } });
+  const updatedCount = await db.emailOutbox.updateMany({
+    where: {
+      id: outboxId,
+      OR: [
+        { status: "FAILED" },
+        {
+          status: "PROCESSING",
+          lastAttemptAt: { lt: new Date(Date.now() - 10 * 60 * 1000) },
+        },
+      ],
+    },
+    data: {
+      status: "PENDING",
+      nextAttemptAt: new Date(),
+      lastError: null,
+    },
+  });
+  if (updatedCount.count !== 1)
+    throw new Error("Only failed or stale processing jobs can be retried.");
+  const updated = await db.emailOutbox.findUniqueOrThrow({
+    where: { id: outboxId },
+  });
 
-	try {
-		const { scheduleEmailOutboxDispatch } = await import('@/lib/email/schedule');
-		scheduleEmailOutboxDispatch([updated.sourceEventId]);
-	} catch (err) {
-		console.error('Outbox dispatch retry error:', err);
-	}
+  try {
+    const { scheduleEmailOutboxDispatch } =
+      await import("@/lib/email/schedule");
+    scheduleEmailOutboxDispatch([updated.sourceEventId]);
+  } catch (err) {
+    console.error("Outbox dispatch retry error:", err);
+  }
 
-	return updated;
+  return updated;
 }
 
 export async function retryMultipleOutboxJobs(outboxIds: string[]) {
-	const { userId } = await auth();
-	if (!userId) throw new Error('Unauthenticated.');
-	const user = await db.user.findUnique({
-		where: { id: userId },
-		select: { role: true },
-	});
-	if (user?.role !== 'ADMIN') {
-		throw new Error('Admin privileges required.');
-	}
+  const { userId } = await auth();
+  if (!userId) throw new Error("Unauthenticated.");
+  const user = await db.user.findUnique({
+    where: { id: userId },
+    select: { role: true },
+  });
+  if (user?.role !== "ADMIN") {
+    throw new Error("Admin privileges required.");
+  }
+  enforceRateLimit({
+    key: `notification-retry-batch:${userId}`,
+    limit: 10,
+    windowMs: 10 * 60 * 1000,
+  });
 
-	if (!outboxIds.length) return { updatedCount: 0 };
+  if (!outboxIds.length) return { updatedCount: 0 };
 
-	const items = await db.emailOutbox.findMany({
-		where: { id: { in: outboxIds } },
-		select: { id: true, sourceEventId: true },
-	});
+  const items = await db.emailOutbox.findMany({
+    where: { id: { in: outboxIds } },
+    select: { id: true, sourceEventId: true },
+  });
 
-	const updated = await db.emailOutbox.updateMany({
-		where: {
-			id: { in: outboxIds },
-			OR: [
-				{ status: 'FAILED' },
-				{ status: 'PROCESSING', lastAttemptAt: { lt: new Date(Date.now() - 10 * 60 * 1000) } },
-			],
-		},
-		data: {
-			status: 'PENDING',
-			nextAttemptAt: new Date(),
-			lastError: null,
-		},
-	});
+  const updated = await db.emailOutbox.updateMany({
+    where: {
+      id: { in: outboxIds },
+      OR: [
+        { status: "FAILED" },
+        {
+          status: "PROCESSING",
+          lastAttemptAt: { lt: new Date(Date.now() - 10 * 60 * 1000) },
+        },
+      ],
+    },
+    data: {
+      status: "PENDING",
+      nextAttemptAt: new Date(),
+      lastError: null,
+    },
+  });
 
-	try {
-		const { scheduleEmailOutboxDispatch } = await import('@/lib/email/schedule');
-		scheduleEmailOutboxDispatch(items.map((i) => i.sourceEventId));
-	} catch (err) {
-		console.error('Outbox batch dispatch retry error:', err);
-	}
+  try {
+    const { scheduleEmailOutboxDispatch } =
+      await import("@/lib/email/schedule");
+    scheduleEmailOutboxDispatch(items.map((i) => i.sourceEventId));
+  } catch (err) {
+    console.error("Outbox batch dispatch retry error:", err);
+  }
 
-	return { updatedCount: updated.count };
+  return { updatedCount: updated.count };
 }
-
-

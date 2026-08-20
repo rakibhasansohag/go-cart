@@ -53,6 +53,13 @@ The latest local verification established:
   persisted `PartiallyRefunded` order state.
 - Production Next.js build passed.
 - ESLint reported 0 errors and 166 existing warnings.
+- Public browser smoke asserts the Content Security Policy and baseline browser
+  headers (`nosniff`, frame protection, referrer policy, and permissions policy)
+  against the isolated production-mode application server.
+- CI scans committed history and pull-request changes with Gitleaks. Dependabot
+  opens weekly dependency and GitHub Actions update pull requests; review
+  security updates promptly, run the relevant unit/integration/browser layer,
+  and document any deferred security update in the pull request.
 - The isolated Docker database seeded 1,000 deterministic demo orders.
 - The deterministic return browser journey passed through seller approval,
   customer shipment, seller receipt, admin refund, and inventory reconciliation.
@@ -113,6 +120,38 @@ Clerk and Prisma are connected by the Clerk user ID stored in the Prisma `User` 
 ## The commands you will use most often
 
 Run these from the repository root in PowerShell.
+
+## Phase 15 operational runbook baseline
+
+The repository can automate checks, but it cannot safely perform a production
+database restore, change provider credentials, or deploy/rollback without the
+deployment owner's access. Use this runbook for those controlled operations.
+
+1. **Before a deployment:** confirm CI, Docker integration checks, public smoke,
+   production build, and the Graphify update pass. Review Gitleaks and the
+   current Dependabot pull requests.
+2. **After a deployment:** run public smoke against the staging URL; then run
+   protected Clerk browser journeys only against the isolated staging database.
+   Inspect payment webhook, email-outbox, search, cron, and settlement health.
+3. **Rollback:** stop promotion, redeploy the last known-good application build,
+   keep the database migration state unchanged unless its own tested rollback
+   exists, and confirm public/protected smoke before reopening traffic.
+4. **Backup and restore drill:** use the database host's snapshot/export feature
+   to restore a copy into a dedicated non-production database. Run Prisma
+   migrations/read-only verification there, validate order/payment/settlement
+   counts, then record the recovery time and delete the drill database. Never
+   perform this drill against the production database.
+5. **Provider outage:** preserve provider event IDs and idempotency keys; pause
+   manual retries until provider status is known, then use the existing admin
+   delivery/settlement recovery views and reconciliation jobs. Do not replay
+   external payment calls from a production console without a documented
+   incident owner.
+
+6. **Uptime monitoring:** configure an external monitor to request
+   `GET /api/health` at the deployed staging and production URLs. A `200`
+   response means the application and PostgreSQL are reachable; `503` means
+   the deployment should be investigated. The endpoint intentionally exposes
+   no infrastructure or provider details.
 
 ### 1. Prepare the isolated database
 
@@ -605,7 +644,6 @@ Copy this section into a feature PR description, issue, or future planning note:
 - [ ] plan.md
 - [ ] .env.e2e.example, if needed
 - [ ] .github/workflows/ci.yml, if needed
-
 ````
 
 ## Current roadmap after this phase
@@ -632,4 +670,7 @@ are similarly verified.
 - Do not enable email or fulfillment automation in the isolated E2E profile unless the test explicitly controls and cleans it up.
 - Treat a passing route status as insufficient proof for a browser workflow; assert the visible state and persisted result.
 - Treat integration invariants as complementary to, not a replacement for, browser mutation coverage.
+
+```
+
 ```

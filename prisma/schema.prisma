@@ -13,12 +13,18 @@ enum Role {
   SELLER
 }
 
+enum AccountStatus {
+  ACTIVE
+  SUSPENDED
+}
+
 model User {
   id      String @id @default(uuid())
   name    String
   email   String @unique
   picture String @db.Text
   role    Role   @default(USER)
+  accountStatus AccountStatus @default(ACTIVE)
 
   stores                     Store[]                     @relation("UserStores")
   following                  Store[]                     @relation("UserFollowingStore")
