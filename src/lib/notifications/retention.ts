@@ -11,15 +11,26 @@ export async function cleanupNotificationDeliveryData(input?: { retentionDays?: 
 	const retentionDays = input?.retentionDays ?? positiveEnv('NOTIFICATION_RETENTION_DAYS', 90, 3650);
 	const batchSize = input?.batchSize ?? positiveEnv('NOTIFICATION_RETENTION_BATCH_SIZE', 500, 5_000);
 	const before = new Date(Date.now() - retentionDays * 24 * 60 * 60 * 1000);
-	const [auditIds, notificationIds, outboxIds] = await Promise.all([
+	const [auditIds, notificationIds, outboxIds, expiredRateLimitKeys] = await Promise.all([
 		db.notificationDeliveryAudit.findMany({ where: { createdAt: { lt: before } }, select: { id: true }, take: batchSize }),
 		db.notification.findMany({ where: { createdAt: { lt: before }, readAt: { not: null } }, select: { id: true }, take: batchSize }),
 		db.emailOutbox.findMany({ where: { createdAt: { lt: before }, status: { in: ['SENT', 'CANCELLED'] } }, select: { id: true }, take: batchSize }),
+		// The shared fixed-window limiter is deliberately durable across server
+		// instances. Remove expired buckets in bounded batches so it stays so.
+		db.rateLimitBucket.findMany({ where: { resetAt: { lt: new Date() } }, select: { key: true }, take: batchSize }),
 	]);
-	const [audits, notifications, outbox] = await Promise.all([
+	const [audits, notifications, outbox, rateLimitBuckets] = await Promise.all([
 		db.notificationDeliveryAudit.deleteMany({ where: { id: { in: auditIds.map((row) => row.id) } } }),
 		db.notification.deleteMany({ where: { id: { in: notificationIds.map((row) => row.id) } } }),
 		db.emailOutbox.deleteMany({ where: { id: { in: outboxIds.map((row) => row.id) } } }),
+		db.rateLimitBucket.deleteMany({ where: { key: { in: expiredRateLimitKeys.map((row) => row.key) } } }),
 	]);
-	return { retentionDays, before, audits: audits.count, notifications: notifications.count, outbox: outbox.count };
+	return {
+		retentionDays,
+		before,
+		audits: audits.count,
+		notifications: notifications.count,
+		outbox: outbox.count,
+		rateLimitBuckets: rateLimitBuckets.count,
+	};
 }

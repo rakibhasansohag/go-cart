@@ -1088,7 +1088,7 @@ Goal: make the application safe and operable under real customer traffic.
     any orders, customers, or revenue are read. The three Gemini-backed
     seller generation routes now require a same-origin authenticated seller,
     enforce bounded payloads, return generic provider-failure responses, and
-    apply bounded per-process rate limits with `429` and `Retry-After`.
+    apply bounded shared PostgreSQL rate limits with `429` and `Retry-After`.
     The anonymous country-cookie mutation has the same origin protection. The
     same bounded control now covers public search, payment creation/capture
     and verification, daily check-ins, and admin email-retry actions; admin
@@ -1101,7 +1101,16 @@ Goal: make the application safe and operable under real customer traffic.
     accounts from documents and authenticated API requests, while an
     admin-only, same-origin endpoint changes another account's status. The
     admin seller profile visibly reports the status and provides a confirmed
-    suspend/reactivate control (self-suspension is rejected).
+    suspend/reactivate control (self-suspension is rejected). Profile orders,
+    payments, reviews, and loyalty APIs now perform explicit authenticated,
+    active-account checks at the route boundary and return a 401/403 instead
+    of relying on downstream errors. All five cron mutations share a
+    timing-safe, fail-closed bearer-secret guard. Focused authorization/cron
+    coverage passes 13/13 without loading local env files, including direct
+    tests for loyalty, orders, payments, and reviews routes. The shared limiter
+    uses an atomic PostgreSQL upsert, so every server instance consumes the
+    same quota; Docker concurrency evidence confirms 5 allowed and 7 limited
+    requests out of 12 simultaneous attempts, followed by a window reset.
   - [ ] Test every server action and route for customer, seller-owner, other-seller,
         admin, unauthenticated, and suspended-account access
   - [ ] Fix existing analytics ownership leakage before exposing seller analytics
@@ -1115,6 +1124,9 @@ Goal: make the application safe and operable under real customer traffic.
     Stripe, PayPal, Cloudinary, image-generation, geolocation, and websocket
     integrations without granting an unrestricted `https:` source. A
     production-mode isolated Chromium smoke test passes the header assertions.
+    Production builds no longer suppress TypeScript errors, and the header
+    baseline also isolates application resources and browsing contexts while
+    preserving payment/identity-provider popup flows.
     CI now scans committed history with Gitleaks and Dependabot opens weekly
     package and GitHub Actions update PRs; the quality guide documents the
     review and deployment/rollback/restore baseline.
@@ -1133,7 +1145,9 @@ Goal: make the application safe and operable under real customer traffic.
     only `ok` or `unavailable`, ready for an external monitor. The admin
     delivery-health view now exposes the oldest queued email and latest
     automation-run timestamp/status, making outbox lag and cron freshness
-    explicit operational signals.
+    explicit operational signals. The operational runbook now defines owner
+    action thresholds: two failed health checks, any reconciliation failure,
+    15-minute outbox age, and 30-minute automation freshness.
   - [ ] Add structured logs with request/event correlation IDs and secret/PII redaction
   - [ ] Add free-tier or self-hostable error tracking, uptime checks, and alerts for
         payments, webhooks, email outbox, cron jobs, search, and settlement
@@ -1143,6 +1157,25 @@ Goal: make the application safe and operable under real customer traffic.
   - [ ] Add staging, deployment, rollback, incident, and provider-outage runbooks
 
 - [ ] **Phase 15.4 — Launch gate**
+  - **Implementation evidence (2026-08-20, in progress)**: `bun run
+    test:load:local` now runs a bounded, non-mutating 20-request-per-route
+    concurrency smoke against the production-mode isolated server for health,
+    browse, and PostgreSQL search. It fails for every non-2xx response and
+    reports route p95/max latency. The first isolated run completed 60/60
+    responses in 920 ms (health p95 855 ms, browse p95 914 ms, search p95
+    340 ms). This is deliberately only a local baseline; provider-backed
+    checkout, signed webhooks, notifications, authenticated dashboards, and
+    real staging capacity remain launch gates. Isolated Chromium public smoke
+    coverage now has passing records for all 11 journeys, including headers,
+    browse/search, keyboard autocomplete, empty-cart Enter navigation,
+    unauthenticated checkout, and the marketplace funds demo. The eight-route
+    single-server run exhausted the local development server; the final three
+    passed after a fresh isolated restart, so a complete one-process
+    production-mode browser run remains required before launch. The opt-in
+    Stripe sandbox payout probe also passed against `gocart_e2e` and a test
+    connected account: a real source-charge transfer, signed webhook-route
+    reconciliation, ledger release, provider rejection, and safe retry all
+    completed before deterministic fixtures were restored.
   - [ ] Run load tests for browse/search, checkout, webhooks, notifications, and dashboards
   - [ ] Complete accessibility, privacy/retention, legal-policy, and operational reviews
   - [ ] **Test**: Staging passes the Phase 12 suites, restore drill, rollback drill,

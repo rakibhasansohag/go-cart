@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenAI } from "@google/genai";
 import crypto from "crypto";
 
-import { consumeRateLimit } from "@/lib/security/rate-limit";
+import { consumeSharedRateLimit } from "@/lib/security/rate-limit";
 import {
   RequestGuardError,
   requireAuthenticatedRole,
@@ -119,7 +119,7 @@ export async function POST(req: NextRequest) {
   try {
     requireSameOriginMutation(req);
     const user = await requireAuthenticatedRole(["SELLER"]);
-    const rateLimit = consumeRateLimit({
+    const rateLimit = await consumeSharedRateLimit({
       key: `generate-image:${user.id}`,
       limit: 12,
       windowMs: 10 * 60 * 1000,

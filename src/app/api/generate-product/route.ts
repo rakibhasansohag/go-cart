@@ -1,7 +1,7 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextRequest, NextResponse } from "next/server";
 
-import { consumeRateLimit } from "@/lib/security/rate-limit";
+import { consumeSharedRateLimit } from "@/lib/security/rate-limit";
 import {
   RequestGuardError,
   requireAuthenticatedRole,
@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
   try {
     requireSameOriginMutation(req);
     const user = await requireAuthenticatedRole(["SELLER"]);
-    const rateLimit = consumeRateLimit({
+    const rateLimit = await consumeSharedRateLimit({
       key: `generate-product:${user.id}`,
       limit: 10,
       windowMs: 10 * 60 * 1000,

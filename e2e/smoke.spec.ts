@@ -19,6 +19,10 @@ test("public pages enforce the browser security header baseline", async ({
 
   expect(headers?.["x-content-type-options"]).toBe("nosniff");
   expect(headers?.["x-frame-options"]).toBe("DENY");
+  expect(headers?.["cross-origin-opener-policy"]).toBe(
+    "same-origin-allow-popups",
+  );
+  expect(headers?.["cross-origin-resource-policy"]).toBe("same-site");
   expect(headers?.["referrer-policy"]).toBe("strict-origin-when-cross-origin");
   expect(headers?.["permissions-policy"]).toContain("camera=()");
   expect(headers?.["x-request-id"]).toBeTruthy();
@@ -174,6 +178,9 @@ test("autocomplete exposes failure and empty states", async ({ page }) => {
 test("empty cart provides a keyboard-accessible shopping continuation", async ({
   page,
 }) => {
+  // A fresh isolated Webpack server can need more than the default 30 seconds
+  // to compile both /cart and the client-side /browse transition.
+  test.setTimeout(90_000);
   await page.goto("/cart");
 
   await expect(
@@ -184,7 +191,7 @@ test("empty cart provides a keyboard-accessible shopping continuation", async ({
   await explore.focus();
   await expect(explore).toBeFocused();
   await explore.press("Enter");
-  await expect(page).toHaveURL(/\/browse$/);
+  await expect(page).toHaveURL(/\/browse$/, { timeout: 60_000 });
 });
 
 test("checkout redirects unauthenticated visitors to sign-in", async ({

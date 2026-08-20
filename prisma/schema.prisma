@@ -69,6 +69,19 @@ model PlatformSetting {
   updatedBy User? @relation("PlatformSettingUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
 }
 
+/// Shared fixed-window counters for expensive or sensitive request paths. The
+/// primary key is a deliberately opaque, route-scoped actor identifier rather
+/// than a provider token or raw credential.
+model RateLimitBucket {
+  key       String   @id
+  count     Int
+  resetAt   DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([resetAt])
+}
+
 model DailyCheckIn {
   id          String   @id @default(uuid())
   userId      String

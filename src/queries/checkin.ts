@@ -7,7 +7,7 @@ import {
   CHECKIN_REWARDS,
   getFormattedDateStrings,
 } from "@/lib/checkin-constants";
-import { enforceRateLimit } from "@/lib/security/rate-limit";
+import { enforceSharedRateLimit } from "@/lib/security/rate-limit";
 
 export async function getDailyCheckInStatus() {
   const { userId } = await auth();
@@ -62,7 +62,7 @@ export async function claimDailyCheckIn() {
   if (!userId) {
     throw new Error("Please sign in to claim your daily check in reward.");
   }
-  enforceRateLimit({
+  await enforceSharedRateLimit({
     key: `daily-checkin:${userId}`,
     limit: 5,
     windowMs: 10 * 60 * 1000,

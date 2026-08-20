@@ -8,7 +8,7 @@ import {
   Prisma,
 } from "@prisma/client";
 import { z } from "zod";
-import { enforceRateLimit } from "@/lib/security/rate-limit";
+import { enforceSharedRateLimit } from "@/lib/security/rate-limit";
 
 const preferenceInput = z.object({
   category: z.nativeEnum(NotificationCategory),
@@ -281,7 +281,7 @@ export async function retryOutboxJob(outboxId: string) {
   if (user?.role !== "ADMIN") {
     throw new Error("Admin privileges required.");
   }
-  enforceRateLimit({
+  await enforceSharedRateLimit({
     key: `notification-retry:${userId}`,
     limit: 30,
     windowMs: 10 * 60 * 1000,
@@ -334,7 +334,7 @@ export async function retryMultipleOutboxJobs(outboxIds: string[]) {
   if (user?.role !== "ADMIN") {
     throw new Error("Admin privileges required.");
   }
-  enforceRateLimit({
+  await enforceSharedRateLimit({
     key: `notification-retry-batch:${userId}`,
     limit: 10,
     windowMs: 10 * 60 * 1000,

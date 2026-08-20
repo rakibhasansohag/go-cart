@@ -12,6 +12,7 @@ vi.mock("@/lib/db", () => ({
 
 import {
   RequestGuardError,
+  requireAuthenticatedUser,
   requireAuthenticatedRole,
   requireSameOriginMutation,
 } from "./request-guards";
@@ -51,15 +52,20 @@ describe("request guards", () => {
 
   it("requires an authenticated database seller", async () => {
     authMock.mockResolvedValue({ userId: "seller-1" });
-    findUniqueMock.mockResolvedValue({ id: "seller-1", role: "SELLER" });
+    findUniqueMock.mockResolvedValue({
+      id: "seller-1",
+      role: "SELLER",
+      accountStatus: "ACTIVE",
+    });
 
     await expect(requireAuthenticatedRole(["SELLER"])).resolves.toEqual({
       id: "seller-1",
       role: "SELLER",
+      accountStatus: "ACTIVE",
     });
     expect(findUniqueMock).toHaveBeenCalledWith({
       where: { id: "seller-1" },
-      select: { id: true, role: true },
+      select: { id: true, role: true, accountStatus: true },
     });
   });
 
@@ -70,9 +76,27 @@ describe("request guards", () => {
     });
 
     authMock.mockResolvedValue({ userId: "customer-1" });
-    findUniqueMock.mockResolvedValue({ id: "customer-1", role: "USER" });
+    findUniqueMock.mockResolvedValue({
+      id: "customer-1",
+      role: "USER",
+      accountStatus: "ACTIVE",
+    });
     await expect(requireAuthenticatedRole(["SELLER"])).rejects.toMatchObject({
       status: 403,
+    });
+  });
+
+  it("rejects suspended accounts before a route reads private data", async () => {
+    authMock.mockResolvedValue({ userId: "seller-1" });
+    findUniqueMock.mockResolvedValue({
+      id: "seller-1",
+      role: "SELLER",
+      accountStatus: "SUSPENDED",
+    });
+
+    await expect(requireAuthenticatedUser()).rejects.toMatchObject({
+      status: 403,
+      message: "This account is suspended.",
     });
   });
 });

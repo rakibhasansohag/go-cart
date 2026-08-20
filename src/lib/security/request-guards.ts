@@ -28,9 +28,7 @@ export function requireSameOriginMutation(request: Request): void {
   }
 }
 
-export async function requireAuthenticatedRole(
-  allowedRoles: readonly ApplicationRole[],
-) {
+export async function requireAuthenticatedUser() {
   const { userId } = await auth();
 
   if (!userId) {
@@ -39,10 +37,26 @@ export async function requireAuthenticatedRole(
 
   const user = await db.user.findUnique({
     where: { id: userId },
-    select: { id: true, role: true },
+    select: { id: true, role: true, accountStatus: true },
   });
 
-  if (!user || !allowedRoles.includes(user.role as ApplicationRole)) {
+  if (!user) {
+    throw new RequestGuardError(401, "Authentication is required.");
+  }
+
+  if (user.accountStatus === "SUSPENDED") {
+    throw new RequestGuardError(403, "This account is suspended.");
+  }
+
+  return user;
+}
+
+export async function requireAuthenticatedRole(
+  allowedRoles: readonly ApplicationRole[],
+) {
+  const user = await requireAuthenticatedUser();
+
+  if (!allowedRoles.includes(user.role as ApplicationRole)) {
     throw new RequestGuardError(
       403,
       "You are not allowed to perform this action.",

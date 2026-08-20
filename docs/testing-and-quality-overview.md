@@ -153,6 +153,19 @@ deployment owner's access. Use this runbook for those controlled operations.
    the deployment should be investigated. The endpoint intentionally exposes
    no infrastructure or provider details.
 
+7. **Operational signals and alert ownership:** assign the on-call deployment
+   owner before launch. Alert after two consecutive failed one-minute health
+   checks, any failed payment/webhook/settlement reconciliation, an email
+   outbox item older than 15 minutes, or an automation run older than 30
+   minutes. The admin Delivery Health view exposes the outbox and automation
+   signals; payment, webhook, search, and settlement logs must be correlated
+   with the request/event ID before retrying a provider operation.
+
+8. **Shared rate-limit verification:** run `bun run test:rate-limit:local`.
+   It uses only Docker PostgreSQL and proves a single shared quota under
+   concurrent requests; do not invoke its underlying script directly because
+   the launcher supplies the isolated database guard.
+
 ### 1. Prepare the isolated database
 
 Start Docker Desktop first, then:
@@ -190,6 +203,17 @@ bun run test:e2e:local --project=chromium --workers=1
 ```
 
 This covers home, browse, keyboard search, deterministic empty search, empty-cart continuation, and unauthenticated checkout redirect.
+
+### 4.1 Run the isolated public load smoke
+
+With the production-mode E2E server running on port 3100, run:
+
+```powershell
+$env:PLAYWRIGHT_BASE_URL='http://localhost:3100'
+bun run test:load:local
+```
+
+This is a bounded, non-mutating concurrency check for health, browse, and search. It reports p95/max latency and fails for unexpected HTTP statuses; it is not a substitute for a staging capacity test.
 
 ### 5. Run protected customer/seller/admin journeys
 

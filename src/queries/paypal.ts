@@ -7,7 +7,7 @@ import {
 } from "@/lib/payments/security";
 import { paypalRequest } from "@/lib/payments/paypal-client";
 import { reconcilePaymentEvent } from "@/lib/payments/reconcile";
-import { enforceRateLimit } from "@/lib/security/rate-limit";
+import { enforceSharedRateLimit } from "@/lib/security/rate-limit";
 import type { PaymentStatus } from "@prisma/client";
 
 type PayPalAmount = {
@@ -80,7 +80,7 @@ function paymentStatusFromCapture(status: string): PaymentStatus {
 
 export async function createPayPalPayment(orderId: string) {
   const order = await requireOwnedOrder(orderId, { requirePayable: true });
-  enforceRateLimit({
+  await enforceSharedRateLimit({
     key: `paypal-payment-create:${order.userId}`,
     limit: 20,
     windowMs: 10 * 60 * 1000,
@@ -142,7 +142,7 @@ export async function createPayPalPayment(orderId: string) {
 
 export async function capturePayPalPayment(orderId: string, paymentId: string) {
   const order = await requireOwnedOrder(orderId, { requirePayable: true });
-  enforceRateLimit({
+  await enforceSharedRateLimit({
     key: `paypal-payment-capture:${order.userId}`,
     limit: 20,
     windowMs: 10 * 60 * 1000,

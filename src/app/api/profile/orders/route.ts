@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getUserOrders } from '@/queries/profile';
+import { RequestGuardError, requireAuthenticatedUser } from '@/lib/security/request-guards';
 
 import { OrderTableDateFilter, OrderTableFilter } from '@/lib/types';
 
 export async function GET(req: NextRequest) {
 	try {
+		await requireAuthenticatedUser();
 		const { searchParams } = new URL(req.url);
 		const filter = (searchParams.get('filter') || '') as OrderTableFilter;
 		const period = (searchParams.get('period') || '') as OrderTableDateFilter;
@@ -15,6 +17,8 @@ export async function GET(req: NextRequest) {
 		const data = await getUserOrders(filter, period, search, page, pageSize);
 		return NextResponse.json(data);
 	} catch (error) {
-		return NextResponse.json({ error: error instanceof Error ? error.message : String(error) }, { status: 500 });
+		if (error instanceof RequestGuardError)
+			return NextResponse.json({ error: error.message }, { status: error.status });
+		return NextResponse.json({ error: 'Unable to load orders.' }, { status: 500 });
 	}
 }

@@ -87,6 +87,11 @@ if (action === "up") {
   run("docker", [...compose, "up", "-d", "postgres"]);
   run("bun", ["x", "prisma", "migrate", "deploy"], env);
   run("bun", ["prisma/integration-check.ts"], env);
+} else if (action === "rate-limit") {
+  const env = validatedE2EEnv();
+  run("docker", [...compose, "up", "-d", "postgres"]);
+  run("bun", ["x", "prisma", "migrate", "deploy"], env);
+  run("bun", ["scripts/rate-limit-integration-check.ts"], env);
 } else if (action === "stripe-refund") {
   const env = validatedE2EEnv();
   const stripeRefundEnv = {
@@ -282,7 +287,11 @@ if (action === "up") {
 } else if (action === "build:e2e") {
   const env = validatedE2EEnv();
   run("bun", ["prisma", "generate"], env);
-  run("bun", ["x", "next", "build"], env);
+  // Next 16 builds with Turbopack by default. Keep the isolated browser
+  // artifact on the supported Webpack fallback so it remains reliable on
+  // constrained Windows development machines without changing the normal
+  // production build command.
+  run("bun", ["x", "next", "build", "--webpack"], env);
 } else if (action === "test") {
   const env = validatedE2EEnv();
   // Playwright keeps browser binaries outside node_modules. Installing the
@@ -293,6 +302,6 @@ if (action === "up") {
   run("bunx", ["playwright", "test", ...process.argv.slice(3)], env);
 } else {
   throw new Error(
-    `Unknown action: ${action}. Use up, prepare, sync-users, integration, stripe-refund, stripe-payout, stripe-browser-refund, stripe-browser-payout, paypal-auth, server, server:prod, build:e2e, test, reset, or down.`,
+    `Unknown action: ${action}. Use up, prepare, sync-users, integration, rate-limit, stripe-refund, stripe-payout, stripe-browser-refund, stripe-browser-payout, paypal-auth, server, server:prod, build:e2e, test, reset, or down.`,
   );
 }

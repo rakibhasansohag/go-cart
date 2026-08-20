@@ -1,17 +1,31 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { NextRequest } from 'next/server';
 
-const { searchProductsMock } = vi.hoisted(() => ({ searchProductsMock: vi.fn() }));
+const { searchProductsMock, consumeSharedRateLimitMock } = vi.hoisted(() => ({
+	searchProductsMock: vi.fn(),
+	consumeSharedRateLimitMock: vi.fn(),
+}));
 
 vi.mock('@/lib/search', async () => {
 	const actual = await vi.importActual<typeof import('@/lib/search')>('@/lib/search');
 	return { ...actual, searchProducts: searchProductsMock };
 });
 
+vi.mock('@/lib/security/rate-limit', () => ({
+	consumeSharedRateLimit: consumeSharedRateLimitMock,
+}));
+
 import { GET } from './route';
 
 describe('search API route', () => {
-	beforeEach(() => vi.clearAllMocks());
+	beforeEach(() => {
+		vi.clearAllMocks();
+		consumeSharedRateLimitMock.mockResolvedValue({
+			allowed: true,
+			remaining: 89,
+			retryAfterSeconds: 0,
+		});
+	});
 
 	it('accepts q and returns typed suggestions', async () => {
 		searchProductsMock.mockResolvedValue([

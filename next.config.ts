@@ -29,9 +29,6 @@ const nextConfig = {
   // in Node's module system so the Server Action compiler does not rewrite those
   // lookups into the synthetic `(action-browser)` filesystem namespace.
   serverExternalPackages: ["mjml"],
-  typescript: {
-    ignoreBuildErrors: true,
-  },
   experimental: {
     optimizePackageImports: [
       "lucide-react",
@@ -58,6 +55,13 @@ const nextConfig = {
           { key: "Content-Security-Policy", value: contentSecurityPolicy },
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "X-Frame-Options", value: "DENY" },
+          // Keep payment and identity-provider popups functional while
+          // preventing unrelated windows from sharing this browsing context.
+          {
+            key: "Cross-Origin-Opener-Policy",
+            value: "same-origin-allow-popups",
+          },
+          { key: "Cross-Origin-Resource-Policy", value: "same-site" },
           {
             key: "Referrer-Policy",
             value: "strict-origin-when-cross-origin",

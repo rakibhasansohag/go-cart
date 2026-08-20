@@ -1,4 +1,6 @@
-type RateLimitInput = {
+import { db } from "@/lib/db";
+
+export type RateLimitInput = {
   key: string;
   limit: number;
   windowMs: number;
@@ -21,6 +23,13 @@ export class RateLimitError extends Error {
   }
 }
 
+export class RateLimitStoreError extends Error {
+  constructor() {
+    super("Rate limiting is temporarily unavailable. Please try again shortly.");
+    this.name = "RateLimitStoreError";
+  }
+}
+
 function trimBuckets(now: number) {
   for (const [key, bucket] of buckets) {
     if (bucket.resetAt <= now) buckets.delete(key);
@@ -33,11 +42,7 @@ function trimBuckets(now: number) {
   }
 }
 
-/**
- * A bounded, process-local limiter for expensive route handlers. It provides
- * immediate protection in every deployment, while a shared store can replace
- * it later when traffic spans several server instances.
- */
+/** A bounded process-local limiter used only by deterministic unit tests. */
 export function consumeRateLimit({
   key,
   limit,
@@ -76,6 +81,85 @@ export function consumeRateLimit({
 
 export function enforceRateLimit(input: RateLimitInput) {
   const result = consumeRateLimit(input);
+  if (!result.allowed) throw new RateLimitError(result.retryAfterSeconds);
+  return result;
+}
+
+type SharedRateLimitClient = Pick<typeof db, "$queryRaw">;
+
+type SharedRateLimitRow = {
+  count: number;
+  resetAt: Date;
+};
+
+/**
+ * Atomically consumes a fixed-window quota in PostgreSQL. `INSERT .. ON
+ * CONFLICT .. DO UPDATE .. RETURNING` serializes contenders for the same
+ * bucket, so horizontally scaled application instances share one limit.
+ */
+export async function consumeSharedRateLimit(
+  {
+    key,
+    limit,
+    windowMs,
+    now = Date.now(),
+  }: RateLimitInput,
+  client: SharedRateLimitClient = db,
+): Promise<RateLimitResult> {
+  if (!key || !Number.isInteger(limit) || limit < 1 || windowMs < 1) {
+    throw new Error("Invalid rate-limit configuration.");
+  }
+
+  const currentAt = new Date(now);
+  const resetAt = new Date(now + windowMs);
+
+  let rows: SharedRateLimitRow[];
+  try {
+    rows = await client.$queryRaw<SharedRateLimitRow[]>`
+      INSERT INTO "RateLimitBucket" ("key", "count", "resetAt", "createdAt", "updatedAt")
+      VALUES (${key}, 1, ${resetAt}, ${currentAt}, ${currentAt})
+      ON CONFLICT ("key") DO UPDATE
+      SET
+        "count" = CASE
+          WHEN "RateLimitBucket"."resetAt" <= ${currentAt} THEN 1
+          ELSE "RateLimitBucket"."count" + 1
+        END,
+        "resetAt" = CASE
+          WHEN "RateLimitBucket"."resetAt" <= ${currentAt} THEN ${resetAt}
+          ELSE "RateLimitBucket"."resetAt"
+        END,
+        "updatedAt" = ${currentAt}
+      RETURNING "count", "resetAt"
+    `;
+  } catch {
+    // These sensitive/expensive paths depend on PostgreSQL anyway. Failing
+    // closed avoids silently disabling abuse controls during an outage.
+    throw new RateLimitStoreError();
+  }
+
+  const bucket = rows[0];
+  if (!bucket) throw new RateLimitStoreError();
+
+  if (bucket.count <= limit) {
+    return {
+      allowed: true,
+      remaining: Math.max(0, limit - bucket.count),
+      retryAfterSeconds: 0,
+    };
+  }
+
+  return {
+    allowed: false,
+    remaining: 0,
+    retryAfterSeconds: Math.max(
+      1,
+      Math.ceil((bucket.resetAt.getTime() - now) / 1_000),
+    ),
+  };
+}
+
+export async function enforceSharedRateLimit(input: RateLimitInput) {
+  const result = await consumeSharedRateLimit(input);
   if (!result.allowed) throw new RateLimitError(result.retryAfterSeconds);
   return result;
 }

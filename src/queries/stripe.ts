@@ -6,7 +6,7 @@ import {
 } from "@/lib/payments/security";
 import { reconcilePaymentEvent } from "@/lib/payments/reconcile";
 import { getStripeClient } from "@/lib/payments/stripe-client";
-import { enforceRateLimit } from "@/lib/security/rate-limit";
+import { enforceSharedRateLimit } from "@/lib/security/rate-limit";
 import type { PaymentStatus } from "@prisma/client";
 import type Stripe from "stripe";
 
@@ -38,7 +38,7 @@ function assertIntentMatchesOrder(
 
 export async function createStripePaymentIntent(orderId: string) {
   const order = await requireOwnedOrder(orderId, { requirePayable: true });
-  enforceRateLimit({
+  await enforceSharedRateLimit({
     key: `stripe-payment-intent:${order.userId}`,
     limit: 20,
     windowMs: 10 * 60 * 1000,
@@ -94,7 +94,7 @@ export async function createStripePaymentIntent(orderId: string) {
 
 export async function verifyStripePayment(orderId: string) {
   const order = await requireOwnedOrder(orderId);
-  enforceRateLimit({
+  await enforceSharedRateLimit({
     key: `stripe-payment-verify:${order.userId}`,
     limit: 30,
     windowMs: 10 * 60 * 1000,

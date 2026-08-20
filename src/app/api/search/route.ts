@@ -2,7 +2,7 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 import { SEARCH_MAX_QUERY_LENGTH, searchProducts } from "@/lib/search";
-import { consumeRateLimit } from "@/lib/security/rate-limit";
+import { consumeSharedRateLimit } from "@/lib/security/rate-limit";
 import { NextRequest, NextResponse } from "next/server";
 
 function searchClientKey(request: NextRequest) {
@@ -34,7 +34,7 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const rateLimit = consumeRateLimit({
+    const rateLimit = await consumeSharedRateLimit({
       key: `search:${searchClientKey(req)}`,
       limit: 90,
       windowMs: 60 * 1000,

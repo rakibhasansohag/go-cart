@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getUserPayments } from '@/queries/profile';
+import { RequestGuardError, requireAuthenticatedUser } from '@/lib/security/request-guards';
 
 import { PaymentTableDateFilter, PaymentTableFilter } from '@/lib/types';
 
 export async function GET(req: NextRequest) {
 	try {
+		await requireAuthenticatedUser();
 		const { searchParams } = new URL(req.url);
 		const filter = (searchParams.get('filter') || '') as PaymentTableFilter;
 		const period = (searchParams.get('period') || '') as PaymentTableDateFilter;
@@ -15,6 +17,8 @@ export async function GET(req: NextRequest) {
 		const data = await getUserPayments(filter, period, search, page, pageSize);
 		return NextResponse.json(data);
 	} catch (error) {
-		return NextResponse.json({ error: error instanceof Error ? error.message : String(error) }, { status: 500 });
+		if (error instanceof RequestGuardError)
+			return NextResponse.json({ error: error.message }, { status: error.status });
+		return NextResponse.json({ error: 'Unable to load payments.' }, { status: 500 });
 	}
 }
