@@ -1085,7 +1085,11 @@ Goal: make the application safe and operable under real customer traffic.
     to `Store.userId`; non-seller and cross-seller requests receive only the
     zero-data fallback. Admin analytics now use the same database-backed
     role check. Focused unit coverage proves the ownership predicate before
-    any orders, customers, or revenue are read.
+    any orders, customers, or revenue are read. The three Gemini-backed
+    seller generation routes now require a same-origin authenticated seller,
+    enforce bounded payloads, return generic provider-failure responses, and
+    apply bounded per-process rate limits with `429` and `Retry-After`.
+    The anonymous country-cookie mutation has the same origin protection.
   - [ ] Test every server action and route for customer, seller-owner, other-seller,
         admin, unauthenticated, and suspended-account access
   - [ ] Fix existing analytics ownership leakage before exposing seller analytics

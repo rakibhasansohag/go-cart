@@ -1,33 +1,70 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
-import { NextRequest, NextResponse } from 'next/server';
+import { GoogleGenerativeAI } from "@google/generative-ai";
+import { NextRequest, NextResponse } from "next/server";
+
+import { consumeRateLimit } from "@/lib/security/rate-limit";
+import {
+  RequestGuardError,
+  requireAuthenticatedRole,
+  requireSameOriginMutation,
+} from "@/lib/security/request-guards";
 
 // Initialize Gemini
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
 export async function POST(req: NextRequest) {
-	try {
-		const body = await req.json();
-		const { description, categoryName, subCategoryName } = body;
+  try {
+    requireSameOriginMutation(req);
+    const user = await requireAuthenticatedRole(["SELLER"]);
+    const rateLimit = consumeRateLimit({
+      key: `generate-product:${user.id}`,
+      limit: 10,
+      windowMs: 10 * 60 * 1000,
+    });
 
-		// Validate input
-		if (!description) {
-			return NextResponse.json(
-				{ error: 'Product description is required' },
-				{ status: 400 },
-			);
-		}
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        {
+          error: "Product generation limit reached. Please try again shortly.",
+        },
+        {
+          status: 429,
+          headers: { "Retry-After": String(rateLimit.retryAfterSeconds) },
+        },
+      );
+    }
 
-		if (!categoryName) {
-			return NextResponse.json(
-				{ error: 'Category is required' },
-				{ status: 400 },
-			);
-		}
+    const body = await req.json();
+    const { description, categoryName, subCategoryName } = body;
 
-		const subCategoryLabel = subCategoryName || 'General';
+    // Validate input
+    if (!description) {
+      return NextResponse.json(
+        { error: "Product description is required" },
+        { status: 400 },
+      );
+    }
 
-		// Create detailed prompt
-		const prompt = `
+    if (!categoryName) {
+      return NextResponse.json(
+        { error: "Category is required" },
+        { status: 400 },
+      );
+    }
+    if (
+      String(description).length > 5_000 ||
+      String(categoryName).length > 300 ||
+      String(subCategoryName ?? "").length > 300
+    ) {
+      return NextResponse.json(
+        { error: "Product fields exceed the allowed generation size." },
+        { status: 400 },
+      );
+    }
+
+    const subCategoryLabel = subCategoryName || "General";
+
+    // Create detailed prompt
+    const prompt = `
 You are an expert e-commerce product content creator. Generate COMPLETE product details based on this information:
 
 **Product Description:**
@@ -130,70 +167,75 @@ You are an expert e-commerce product content creator. Generate COMPLETE product 
 
 Generate NOW:`;
 
-		// Model fallback list to avoid 429 quota exhaustion
-		const MODELS_TO_TRY = [
-			'gemini-2.5-flash',
-			'gemini-1.5-flash',
-			'gemini-2.0-flash-lite',
-			'gemini-2.0-flash',
-		];
+    // Model fallback list to avoid 429 quota exhaustion
+    const MODELS_TO_TRY = [
+      "gemini-2.5-flash",
+      "gemini-1.5-flash",
+      "gemini-2.0-flash-lite",
+      "gemini-2.0-flash",
+    ];
 
-		let text = '';
-		let lastError: Error | null = null;
+    let text = "";
+    let lastError: Error | null = null;
 
-		for (const modelName of MODELS_TO_TRY) {
-			try {
-				const model = genAI.getGenerativeModel({ model: modelName });
-				const result = await model.generateContent(prompt);
-				const response = await result.response;
-				text = response.text();
-				if (text) break;
-			} catch (err) {
-				const msg = err instanceof Error ? err.message : String(err);
-				console.warn(
-					`Gemini model ${modelName} failed or quota limit hit:`,
-					msg,
-				);
-				lastError = err instanceof Error ? err : new Error(msg);
-			}
-		}
+    for (const modelName of MODELS_TO_TRY) {
+      try {
+        const model = genAI.getGenerativeModel({ model: modelName });
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        text = response.text();
+        if (text) break;
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        console.warn(
+          `Gemini model ${modelName} failed or quota limit hit:`,
+          msg,
+        );
+        lastError = err instanceof Error ? err : new Error(msg);
+      }
+    }
 
-		if (!text) {
-			throw lastError || new Error('All Gemini AI model attempts failed');
-		}
+    if (!text) {
+      throw lastError || new Error("All Gemini AI model attempts failed");
+    }
 
-		// Aggressive cleaning of markdown
-		text = text
-			.replace(/```json\n?/g, '')
-			.replace(/```\n?/g, '')
-			.replace(/^```/g, '')
-			.replace(/```$/g, '')
-			.trim();
+    // Aggressive cleaning of markdown
+    text = text
+      .replace(/```json\n?/g, "")
+      .replace(/```\n?/g, "")
+      .replace(/^```/g, "")
+      .replace(/```$/g, "")
+      .trim();
 
-		// Parse JSON
-		let productData;
-		try {
-			productData = JSON.parse(text);
-		} catch (parseError) {
-			console.error('JSON Parse Error:', parseError);
-			console.error('Raw text:', text);
-			throw new Error('Failed to parse AI response as JSON');
-		}
+    // Parse JSON
+    let productData;
+    try {
+      productData = JSON.parse(text);
+    } catch (parseError) {
+      console.error("JSON Parse Error:", parseError);
+      console.error("Raw text:", text);
+      throw new Error("Failed to parse AI response as JSON");
+    }
 
-		// Return generated data
-		return NextResponse.json({
-			success: true,
-			data: productData,
-		});
-	} catch (error) {
-		console.error('Error generating product:', error);
-		const message = error instanceof Error ? error.message : String(error);
-		return NextResponse.json(
-			{
-				error: 'Failed to generate product details',
-				details: message,
-			},
-			{ status: 500 },
-		);
-	}
+    // Return generated data
+    return NextResponse.json({
+      success: true,
+      data: productData,
+    });
+  } catch (error) {
+    if (error instanceof RequestGuardError) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: error.status },
+      );
+    }
+
+    console.error("Error generating product:", error);
+    return NextResponse.json(
+      {
+        error: "Failed to generate product details",
+      },
+      { status: 500 },
+    );
+  }
 }
