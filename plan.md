@@ -1079,6 +1079,13 @@ customer to each seller before adding more optional growth features.
 Goal: make the application safe and operable under real customer traffic.
 
 - [ ] **Phase 15.1 — Authorization and abuse-resistance audit**
+
+  - **Implementation evidence (2026-08-20, in progress)**: seller analytics now
+    resolve the authenticated database user and constrain every store lookup
+    to `Store.userId`; non-seller and cross-seller requests receive only the
+    zero-data fallback. Admin analytics now use the same database-backed
+    role check. Focused unit coverage proves the ownership predicate before
+    any orders, customers, or revenue are read.
   - [ ] Test every server action and route for customer, seller-owner, other-seller,
         admin, unauthenticated, and suspended-account access
   - [ ] Fix existing analytics ownership leakage before exposing seller analytics

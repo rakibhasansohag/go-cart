@@ -1,635 +1,696 @@
-'use server';
+"use server";
 
-import { db } from '@/lib/db';
-import { normalizeCommerceReference } from '@/lib/orders/references';
-import { primaryShipmentFromAssignments } from '@/lib/shipments/compat';
-import { currentUser } from '@clerk/nextjs/server';
+import { db } from "@/lib/db";
+import { normalizeCommerceReference } from "@/lib/orders/references";
+import { primaryShipmentFromAssignments } from "@/lib/shipments/compat";
+import { auth } from "@clerk/nextjs/server";
 
 export type MonthlyRevenueData = {
-	month: string;
-	revenue: number;
-	orders: number;
+  month: string;
+  revenue: number;
+  orders: number;
 };
 
 export type CategoryRevenueData = {
-	name: string;
-	value: number;
+  name: string;
+  value: number;
 };
 
 export type OrderStatusDistributionData = {
-	status: string;
-	count: number;
+  status: string;
+  count: number;
 };
 
 export type RecentOrderSummary = {
-	id: string;
-	customerName: string;
-	customerEmail: string;
-	customerImage?: string;
-	storeName: string;
-	total: number;
-	status: string;
-	createdAt: Date;
+  id: string;
+  customerName: string;
+  customerEmail: string;
+  customerImage?: string;
+  storeName: string;
+  total: number;
+  status: string;
+  createdAt: Date;
 };
 
 export type AdminAnalyticsData = {
-	totalRevenue: number;
-	totalOrders: number;
-	totalStores: number;
-	activeStores: number;
-	totalUsers: number;
-	monthlyRevenue: MonthlyRevenueData[];
-	categoryBreakdown: CategoryRevenueData[];
-	recentOrders: RecentOrderSummary[];
+  totalRevenue: number;
+  totalOrders: number;
+  totalStores: number;
+  activeStores: number;
+  totalUsers: number;
+  monthlyRevenue: MonthlyRevenueData[];
+  categoryBreakdown: CategoryRevenueData[];
+  recentOrders: RecentOrderSummary[];
 };
 
 export type TopSellingProductSummary = {
-	id: string;
-	name: string;
-	slug: string;
-	sales: number;
-	price: number;
-	image: string;
+  id: string;
+  name: string;
+  slug: string;
+  sales: number;
+  price: number;
+  image: string;
 };
 
 export type SellerAnalyticsData = {
-	storeId: string;
-	storeName: string;
-	totalRevenue: number;
-	totalOrders: number;
-	averageOrderValue: number;
-	activeProducts: number;
-	totalCustomers: number;
-	monthlyRevenue: MonthlyRevenueData[];
-	statusDistribution: OrderStatusDistributionData[];
-	recentOrders: RecentOrderSummary[];
-	topProducts: TopSellingProductSummary[];
+  storeId: string;
+  storeName: string;
+  totalRevenue: number;
+  totalOrders: number;
+  averageOrderValue: number;
+  activeProducts: number;
+  totalCustomers: number;
+  monthlyRevenue: MonthlyRevenueData[];
+  statusDistribution: OrderStatusDistributionData[];
+  recentOrders: RecentOrderSummary[];
+  topProducts: TopSellingProductSummary[];
 };
 
 const INVALID_CUSTOMER_NAMES = new Set([
-	'',
-	'null',
-	'null null',
-	'undefined',
-	'undefined undefined',
+  "",
+  "null",
+  "null null",
+  "undefined",
+  "undefined undefined",
 ]);
 
 function getCustomerDisplayName({
-	name,
-	email,
-	firstName,
-	lastName,
+  name,
+  email,
+  firstName,
+  lastName,
 }: {
-	name?: string | null;
-	email?: string | null;
-	firstName?: string | null;
-	lastName?: string | null;
+  name?: string | null;
+  email?: string | null;
+  firstName?: string | null;
+  lastName?: string | null;
 }) {
-	const savedName = name?.trim() ?? '';
-	if (!INVALID_CUSTOMER_NAMES.has(savedName.toLowerCase())) return savedName;
+  const savedName = name?.trim() ?? "";
+  if (!INVALID_CUSTOMER_NAMES.has(savedName.toLowerCase())) return savedName;
 
-	const shippingName = [firstName, lastName]
-		.filter((part): part is string => Boolean(part?.trim()))
-		.join(' ')
-		.trim();
+  const shippingName = [firstName, lastName]
+    .filter((part): part is string => Boolean(part?.trim()))
+    .join(" ")
+    .trim();
 
-	return shippingName || email?.split('@')[0]?.trim() || 'Customer';
+  return shippingName || email?.split("@")[0]?.trim() || "Customer";
+}
+
+async function getCurrentDatabaseUser() {
+  const { userId } = await auth();
+  if (!userId) return null;
+  return db.user.findUnique({
+    where: { id: userId },
+    select: { id: true, role: true },
+  });
+}
+
+async function requireAdminDatabaseUser() {
+  const user = await getCurrentDatabaseUser();
+  if (user?.role !== "ADMIN") {
+    throw new Error("Unauthorized Access: Admin privileges required.");
+  }
+  return user;
 }
 
 /**
  * Retrieves platform-wide analytics for Admin Dashboard
  */
 export const getAdminAnalyticsData = async (): Promise<AdminAnalyticsData> => {
-	const user = await currentUser();
-	if (!user || user.privateMetadata.role !== 'ADMIN') {
-		throw new Error('Unauthorized Access: Admin privileges required.');
-	}
+  await requireAdminDatabaseUser();
 
-	const [
-		totalStores,
-		activeStores,
-		totalUsers,
-		orderGroups,
-		recentOrderGroups,
-		categories,
-	] = await Promise.all([
-		db.store.count(),
-		db.store.count({ where: { status: 'PENDING' } }), // or active stores
-		db.user.count(),
-		db.orderGroup.findMany({
-			select: {
-				total: true,
-				status: true,
-				createdAt: true,
-			},
-		}),
-		db.orderGroup.findMany({
-			take: 6,
-			orderBy: { createdAt: 'desc' },
-			include: {
-				store: { select: { name: true } },
-				order: {
-					include: {
-						user: {
-							select: {
-								name: true,
-								email: true,
-								picture: true,
-							},
-						},
-						shippingAddress: {
-							select: { firstName: true, lastName: true },
-						},
-					},
-				},
-			},
-		}),
-		db.category.findMany({
-			take: 5,
-			include: {
-				products: {
-					select: {
-						id: true,
-					},
-				},
-			},
-		}),
-	]);
+  const [
+    totalStores,
+    activeStores,
+    totalUsers,
+    orderGroups,
+    recentOrderGroups,
+    categories,
+  ] = await Promise.all([
+    db.store.count(),
+    db.store.count({ where: { status: "PENDING" } }), // or active stores
+    db.user.count(),
+    db.orderGroup.findMany({
+      select: {
+        total: true,
+        status: true,
+        createdAt: true,
+      },
+    }),
+    db.orderGroup.findMany({
+      take: 6,
+      orderBy: { createdAt: "desc" },
+      include: {
+        store: { select: { name: true } },
+        order: {
+          include: {
+            user: {
+              select: {
+                name: true,
+                email: true,
+                picture: true,
+              },
+            },
+            shippingAddress: {
+              select: { firstName: true, lastName: true },
+            },
+          },
+        },
+      },
+    }),
+    db.category.findMany({
+      take: 5,
+      include: {
+        products: {
+          select: {
+            id: true,
+          },
+        },
+      },
+    }),
+  ]);
 
-	const totalRevenue = orderGroups.reduce((sum, g) => sum + (g.total || 0), 0);
-	const totalOrders = orderGroups.length;
+  const totalRevenue = orderGroups.reduce((sum, g) => sum + (g.total || 0), 0);
+  const totalOrders = orderGroups.length;
 
-	// Build 6-month revenue trend
-	const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-	const now = new Date();
-	const monthlyRevenueMap = new Map<string, { revenue: number; orders: number }>();
+  // Build 6-month revenue trend
+  const months = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+  ];
+  const now = new Date();
+  const monthlyRevenueMap = new Map<
+    string,
+    { revenue: number; orders: number }
+  >();
 
-	for (let i = 5; i >= 0; i--) {
-		const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-		const key = `${months[d.getMonth()]} ${d.getFullYear()}`;
-		monthlyRevenueMap.set(key, { revenue: 0, orders: 0 });
-	}
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const key = `${months[d.getMonth()]} ${d.getFullYear()}`;
+    monthlyRevenueMap.set(key, { revenue: 0, orders: 0 });
+  }
 
-	orderGroups.forEach((g) => {
-		const d = new Date(g.createdAt);
-		const key = `${months[d.getMonth()]} ${d.getFullYear()}`;
-		if (monthlyRevenueMap.has(key)) {
-			const current = monthlyRevenueMap.get(key)!;
-			monthlyRevenueMap.set(key, {
-				revenue: current.revenue + (g.total || 0),
-				orders: current.orders + 1,
-			});
-		}
-	});
+  orderGroups.forEach((g) => {
+    const d = new Date(g.createdAt);
+    const key = `${months[d.getMonth()]} ${d.getFullYear()}`;
+    if (monthlyRevenueMap.has(key)) {
+      const current = monthlyRevenueMap.get(key)!;
+      monthlyRevenueMap.set(key, {
+        revenue: current.revenue + (g.total || 0),
+        orders: current.orders + 1,
+      });
+    }
+  });
 
-	const monthlyRevenue: MonthlyRevenueData[] = Array.from(
-		monthlyRevenueMap.entries(),
-	).map(([month, data]) => ({
-		month,
-		revenue: Math.round(data.revenue * 100) / 100,
-		orders: data.orders,
-	}));
+  const monthlyRevenue: MonthlyRevenueData[] = Array.from(
+    monthlyRevenueMap.entries(),
+  ).map(([month, data]) => ({
+    month,
+    revenue: Math.round(data.revenue * 100) / 100,
+    orders: data.orders,
+  }));
 
-	const categoryBreakdown: CategoryRevenueData[] = categories.map((c) => ({
-		name: c.name,
-		value: c.products.length,
-	}));
+  const categoryBreakdown: CategoryRevenueData[] = categories.map((c) => ({
+    name: c.name,
+    value: c.products.length,
+  }));
 
-	const recentOrders: RecentOrderSummary[] = recentOrderGroups.map((g) => ({
-		id: g.id,
-		customerName: getCustomerDisplayName({
-			name: g.order?.user?.name,
-			email: g.order?.user?.email,
-			firstName: g.order?.shippingAddress?.firstName,
-			lastName: g.order?.shippingAddress?.lastName,
-		}),
-		customerEmail: g.order?.user?.email || '',
-		customerImage: g.order?.user?.picture || undefined,
-		storeName: g.store?.name || 'Store',
-		total: g.total || 0,
-		status: g.status,
-		createdAt: g.createdAt,
-	}));
+  const recentOrders: RecentOrderSummary[] = recentOrderGroups.map((g) => ({
+    id: g.id,
+    customerName: getCustomerDisplayName({
+      name: g.order?.user?.name,
+      email: g.order?.user?.email,
+      firstName: g.order?.shippingAddress?.firstName,
+      lastName: g.order?.shippingAddress?.lastName,
+    }),
+    customerEmail: g.order?.user?.email || "",
+    customerImage: g.order?.user?.picture || undefined,
+    storeName: g.store?.name || "Store",
+    total: g.total || 0,
+    status: g.status,
+    createdAt: g.createdAt,
+  }));
 
-	return {
-		totalRevenue: Math.round(totalRevenue * 100) / 100,
-		totalOrders,
-		totalStores,
-		activeStores,
-		totalUsers,
-		monthlyRevenue,
-		categoryBreakdown,
-		recentOrders,
-	};
+  return {
+    totalRevenue: Math.round(totalRevenue * 100) / 100,
+    totalOrders,
+    totalStores,
+    activeStores,
+    totalUsers,
+    monthlyRevenue,
+    categoryBreakdown,
+    recentOrders,
+  };
 };
 
 const getFallbackSellerAnalytics = (storeUrl: string): SellerAnalyticsData => ({
-	storeId: '',
-	storeName: storeUrl ? storeUrl.replace(/-/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase()) : 'Store',
-	totalRevenue: 0,
-	totalOrders: 0,
-	averageOrderValue: 0,
-	activeProducts: 0,
-	totalCustomers: 0,
-	monthlyRevenue: [],
-	statusDistribution: [],
-	recentOrders: [],
-	topProducts: [],
+  storeId: "",
+  storeName: storeUrl
+    ? storeUrl.replace(/-/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())
+    : "Store",
+  totalRevenue: 0,
+  totalOrders: 0,
+  averageOrderValue: 0,
+  activeProducts: 0,
+  totalCustomers: 0,
+  monthlyRevenue: [],
+  statusDistribution: [],
+  recentOrders: [],
+  topProducts: [],
 });
 
 /**
  * Retrieves store-specific analytics for Seller Dashboard
  */
 export const getSellerStoreAnalyticsData = async (
-	storeUrl: string,
-	timeframe: string = 'all',
+  storeUrl: string,
+  timeframe: string = "all",
 ): Promise<SellerAnalyticsData> => {
-	try {
-		const user = await currentUser();
-		if (!user) {
-			return getFallbackSellerAnalytics(storeUrl);
-		}
+  try {
+    const user = await getCurrentDatabaseUser();
+    if (user?.role !== "SELLER") {
+      return getFallbackSellerAnalytics(storeUrl);
+    }
 
-		const store = await db.store.findUnique({
-			where: { url: storeUrl },
-		});
+    const store = await db.store.findFirst({
+      where: { url: storeUrl, userId: user.id },
+    });
 
-		if (!store) {
-			return getFallbackSellerAnalytics(storeUrl);
-		}
+    if (!store) {
+      return getFallbackSellerAnalytics(storeUrl);
+    }
 
-		const now = new Date();
-		let dateFilter: Date | undefined = undefined;
-		if (timeframe === '7d') {
-			dateFilter = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-		} else if (timeframe === '30d') {
-			dateFilter = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-		} else if (timeframe === 'this_month') {
-			dateFilter = new Date(now.getFullYear(), now.getMonth(), 1);
-		}
+    const now = new Date();
+    let dateFilter: Date | undefined = undefined;
+    if (timeframe === "7d") {
+      dateFilter = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    } else if (timeframe === "30d") {
+      dateFilter = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    } else if (timeframe === "this_month") {
+      dateFilter = new Date(now.getFullYear(), now.getMonth(), 1);
+    }
 
-		const orderWhere = {
-			storeId: store.id,
-			...(dateFilter ? { createdAt: { gte: dateFilter } } : {}),
-		};
+    const orderWhere = {
+      storeId: store.id,
+      ...(dateFilter ? { createdAt: { gte: dateFilter } } : {}),
+    };
 
-		const [activeProductsCount, orderGroups, recentOrderGroups, rawTopProducts] =
-			await Promise.all([
-				db.product.count({
-					where: { storeId: store.id },
-				}),
-				db.orderGroup.findMany({
-					where: orderWhere,
-					include: {
-						order: {
-							select: { userId: true },
-						},
-						items: true,
-					},
-				}),
-				db.orderGroup.findMany({
-					where: orderWhere,
-					take: 6,
-					orderBy: { createdAt: 'desc' },
-					include: {
-						store: { select: { name: true } },
-						order: {
-							include: {
-								user: {
-									select: {
-										name: true,
-										email: true,
-										picture: true,
-									},
-								},
-								shippingAddress: {
-									select: { firstName: true, lastName: true },
-								},
-							},
-						},
-					},
-				}),
-				db.product.findMany({
-					where: { storeId: store.id },
-					take: 5,
-					orderBy: { sales: 'desc' },
-					select: {
-						id: true,
-						name: true,
-						slug: true,
-						sales: true,
-						variants: {
-							take: 1,
-							select: {
-								images: { take: 1, select: { url: true } },
-								sizes: { take: 1, select: { price: true } },
-							},
-						},
-					},
-				}),
-			]);
+    const [
+      activeProductsCount,
+      orderGroups,
+      recentOrderGroups,
+      rawTopProducts,
+    ] = await Promise.all([
+      db.product.count({
+        where: { storeId: store.id },
+      }),
+      db.orderGroup.findMany({
+        where: orderWhere,
+        include: {
+          order: {
+            select: { userId: true },
+          },
+          items: true,
+        },
+      }),
+      db.orderGroup.findMany({
+        where: orderWhere,
+        take: 6,
+        orderBy: { createdAt: "desc" },
+        include: {
+          store: { select: { name: true } },
+          order: {
+            include: {
+              user: {
+                select: {
+                  name: true,
+                  email: true,
+                  picture: true,
+                },
+              },
+              shippingAddress: {
+                select: { firstName: true, lastName: true },
+              },
+            },
+          },
+        },
+      }),
+      db.product.findMany({
+        where: { storeId: store.id },
+        take: 5,
+        orderBy: { sales: "desc" },
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          sales: true,
+          variants: {
+            take: 1,
+            select: {
+              images: { take: 1, select: { url: true } },
+              sizes: { take: 1, select: { price: true } },
+            },
+          },
+        },
+      }),
+    ]);
 
-	const totalRevenue = orderGroups.reduce((sum, g) => sum + (g.total || 0), 0);
-	const totalOrders = orderGroups.length;
-	const uniqueCustomers = new Set(
-		orderGroups.map((g) => g.order?.userId).filter(Boolean),
-	).size;
+    const totalRevenue = orderGroups.reduce(
+      (sum, g) => sum + (g.total || 0),
+      0,
+    );
+    const totalOrders = orderGroups.length;
+    const uniqueCustomers = new Set(
+      orderGroups.map((g) => g.order?.userId).filter(Boolean),
+    ).size;
 
-	// Monthly revenue trend
-	const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-	const monthlyRevenueMap = new Map<string, { revenue: number; orders: number }>();
+    // Monthly revenue trend
+    const months = [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
+    ];
+    const monthlyRevenueMap = new Map<
+      string,
+      { revenue: number; orders: number }
+    >();
 
-	for (let i = 5; i >= 0; i--) {
-		const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-		const key = `${months[d.getMonth()]} ${d.getFullYear()}`;
-		monthlyRevenueMap.set(key, { revenue: 0, orders: 0 });
-	}
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const key = `${months[d.getMonth()]} ${d.getFullYear()}`;
+      monthlyRevenueMap.set(key, { revenue: 0, orders: 0 });
+    }
 
-	orderGroups.forEach((g) => {
-		const d = new Date(g.createdAt);
-		const key = `${months[d.getMonth()]} ${d.getFullYear()}`;
-		if (monthlyRevenueMap.has(key)) {
-			const current = monthlyRevenueMap.get(key)!;
-			monthlyRevenueMap.set(key, {
-				revenue: current.revenue + (g.total || 0),
-				orders: current.orders + 1,
-			});
-		}
-	});
+    orderGroups.forEach((g) => {
+      const d = new Date(g.createdAt);
+      const key = `${months[d.getMonth()]} ${d.getFullYear()}`;
+      if (monthlyRevenueMap.has(key)) {
+        const current = monthlyRevenueMap.get(key)!;
+        monthlyRevenueMap.set(key, {
+          revenue: current.revenue + (g.total || 0),
+          orders: current.orders + 1,
+        });
+      }
+    });
 
-	const monthlyRevenue: MonthlyRevenueData[] = Array.from(
-		monthlyRevenueMap.entries(),
-	).map(([month, data]) => ({
-		month,
-		revenue: Math.round(data.revenue * 100) / 100,
-		orders: data.orders,
-	}));
+    const monthlyRevenue: MonthlyRevenueData[] = Array.from(
+      monthlyRevenueMap.entries(),
+    ).map(([month, data]) => ({
+      month,
+      revenue: Math.round(data.revenue * 100) / 100,
+      orders: data.orders,
+    }));
 
-	// Order status distribution
-	const statusCounts: Record<string, number> = {};
-	orderGroups.forEach((g) => {
-		statusCounts[g.status] = (statusCounts[g.status] || 0) + 1;
-	});
+    // Order status distribution
+    const statusCounts: Record<string, number> = {};
+    orderGroups.forEach((g) => {
+      statusCounts[g.status] = (statusCounts[g.status] || 0) + 1;
+    });
 
-	const statusDistribution: OrderStatusDistributionData[] = Object.entries(
-		statusCounts,
-	).map(([status, count]) => ({
-		status,
-		count,
-	}));
+    const statusDistribution: OrderStatusDistributionData[] = Object.entries(
+      statusCounts,
+    ).map(([status, count]) => ({
+      status,
+      count,
+    }));
 
-	const recentOrders: RecentOrderSummary[] = recentOrderGroups.map((g) => ({
-		id: g.id,
-		customerName: getCustomerDisplayName({
-			name: g.order?.user?.name,
-			email: g.order?.user?.email,
-			firstName: g.order?.shippingAddress?.firstName,
-			lastName: g.order?.shippingAddress?.lastName,
-		}),
-		customerEmail: g.order?.user?.email || '',
-		customerImage: g.order?.user?.picture || undefined,
-		storeName: g.store?.name || store.name,
-		total: g.total || 0,
-		status: g.status,
-		createdAt: g.createdAt,
-	}));
+    const recentOrders: RecentOrderSummary[] = recentOrderGroups.map((g) => ({
+      id: g.id,
+      customerName: getCustomerDisplayName({
+        name: g.order?.user?.name,
+        email: g.order?.user?.email,
+        firstName: g.order?.shippingAddress?.firstName,
+        lastName: g.order?.shippingAddress?.lastName,
+      }),
+      customerEmail: g.order?.user?.email || "",
+      customerImage: g.order?.user?.picture || undefined,
+      storeName: g.store?.name || store.name,
+      total: g.total || 0,
+      status: g.status,
+      createdAt: g.createdAt,
+    }));
 
-	const averageOrderValue = totalOrders > 0 ? Math.round((totalRevenue / totalOrders) * 100) / 100 : 0;
+    const averageOrderValue =
+      totalOrders > 0
+        ? Math.round((totalRevenue / totalOrders) * 100) / 100
+        : 0;
 
-	// Calculate real product sales from order items
-	const salesByProductMap = new Map<
-		string,
-		{ name: string; slug: string; sales: number; price: number; image: string }
-	>();
+    // Calculate real product sales from order items
+    const salesByProductMap = new Map<
+      string,
+      {
+        name: string;
+        slug: string;
+        sales: number;
+        price: number;
+        image: string;
+      }
+    >();
 
-	orderGroups.forEach((g) => {
-		g.items?.forEach((item) => {
-			const existing = salesByProductMap.get(item.productId);
-			if (existing) {
-				existing.sales += item.quantity || 1;
-			} else {
-				salesByProductMap.set(item.productId, {
-					name: item.name,
-					slug: item.productSlug,
-					sales: item.quantity || 1,
-					price: item.price,
-					image: item.image,
-				});
-			}
-		});
-	});
+    orderGroups.forEach((g) => {
+      g.items?.forEach((item) => {
+        const existing = salesByProductMap.get(item.productId);
+        if (existing) {
+          existing.sales += item.quantity || 1;
+        } else {
+          salesByProductMap.set(item.productId, {
+            name: item.name,
+            slug: item.productSlug,
+            sales: item.quantity || 1,
+            price: item.price,
+            image: item.image,
+          });
+        }
+      });
+    });
 
-	let topProducts: TopSellingProductSummary[] = Array.from(
-		salesByProductMap.entries(),
-	)
-		.map(([id, p]) => ({
-			id,
-			name: p.name,
-			slug: p.slug,
-			sales: p.sales,
-			price: p.price,
-			image: p.image,
-		}))
-		.sort((a, b) => b.sales - a.sales)
-		.slice(0, 5);
+    let topProducts: TopSellingProductSummary[] = Array.from(
+      salesByProductMap.entries(),
+    )
+      .map(([id, p]) => ({
+        id,
+        name: p.name,
+        slug: p.slug,
+        sales: p.sales,
+        price: p.price,
+        image: p.image,
+      }))
+      .sort((a, b) => b.sales - a.sales)
+      .slice(0, 5);
 
-	// Fallback to raw catalog products if no items ordered yet
-	if (topProducts.length === 0 && rawTopProducts.length > 0) {
-		topProducts = rawTopProducts.map((p) => {
-			const firstVariant = p.variants[0];
-			const firstImage = firstVariant?.images[0]?.url || '';
-			const firstPrice = firstVariant?.sizes[0]?.price || 0;
-			return {
-				id: p.id,
-				name: p.name,
-				slug: p.slug,
-				sales: p.sales || 0,
-				price: firstPrice,
-				image: firstImage,
-			};
-		});
-	}
+    // Fallback to raw catalog products if no items ordered yet
+    if (topProducts.length === 0 && rawTopProducts.length > 0) {
+      topProducts = rawTopProducts.map((p) => {
+        const firstVariant = p.variants[0];
+        const firstImage = firstVariant?.images[0]?.url || "";
+        const firstPrice = firstVariant?.sizes[0]?.price || 0;
+        return {
+          id: p.id,
+          name: p.name,
+          slug: p.slug,
+          sales: p.sales || 0,
+          price: firstPrice,
+          image: firstImage,
+        };
+      });
+    }
 
-	return {
-		storeId: store.id,
-		storeName: store.name,
-		totalRevenue: Math.round(totalRevenue * 100) / 100,
-		totalOrders,
-		averageOrderValue,
-		activeProducts: activeProductsCount,
-		totalCustomers: uniqueCustomers,
-		monthlyRevenue,
-		statusDistribution,
-		recentOrders,
-		topProducts,
-	};
-	} catch (error) {
-		console.error('Error in getSellerStoreAnalyticsData:', error);
-		return getFallbackSellerAnalytics(storeUrl);
-	}
+    return {
+      storeId: store.id,
+      storeName: store.name,
+      totalRevenue: Math.round(totalRevenue * 100) / 100,
+      totalOrders,
+      averageOrderValue,
+      activeProducts: activeProductsCount,
+      totalCustomers: uniqueCustomers,
+      monthlyRevenue,
+      statusDistribution,
+      recentOrders,
+      topProducts,
+    };
+  } catch (error) {
+    console.error("Error in getSellerStoreAnalyticsData:", error);
+    return getFallbackSellerAnalytics(storeUrl);
+  }
 };
 
 /**
  * Retrieves all global orders across stores for platform Admin
  */
 export const getAllAdminOrders = async ({
-	page = 1,
-	limit = 10,
-	search = '',
+  page = 1,
+  limit = 10,
+  search = "",
 }: {
-	page?: number;
-	limit?: number;
-	search?: string;
+  page?: number;
+  limit?: number;
+  search?: string;
 } = {}) => {
-	const user = await currentUser();
-	if (!user || user.privateMetadata.role !== 'ADMIN') {
-		throw new Error('Unauthorized Access: Admin privileges required.');
-	}
+  await requireAdminDatabaseUser();
 
-	const skip = Math.max(0, (page - 1) * limit);
-	const textSearch = search.trim();
-	const referenceSearch = normalizeCommerceReference(textSearch);
+  const skip = Math.max(0, (page - 1) * limit);
+  const textSearch = search.trim();
+  const referenceSearch = normalizeCommerceReference(textSearch);
 
-	const where = textSearch
-		? {
-				OR: [
-					{
-						id: {
-							contains: referenceSearch,
-							mode: 'insensitive' as const,
-						},
-					},
-					{
-						order: {
-							id: {
-								contains: referenceSearch,
-								mode: 'insensitive' as const,
-							},
-						},
-					},
-					{
-						store: {
-							name: {
-								contains: textSearch,
-								mode: 'insensitive' as const,
-							},
-						},
-					},
-					{
-						store: {
-							user: {
-								OR: [
-									{
-										name: {
-											contains: textSearch,
-											mode: 'insensitive' as const,
-										},
-									},
-									{
-										email: {
-											contains: textSearch,
-											mode: 'insensitive' as const,
-										},
-									},
-								],
-							},
-						},
-					},
-					{
-						order: {
-							user: {
-								OR: [
-									{
-										name: {
-											contains: textSearch,
-											mode: 'insensitive' as const,
-										},
-									},
-									{
-										email: {
-											contains: textSearch,
-											mode: 'insensitive' as const,
-										},
-									},
-								],
-							},
-						},
-					},
-					{
-						items: {
-							some: {
-								OR: [
-									{
-										name: {
-											contains: textSearch,
-											mode: 'insensitive' as const,
-										},
-									},
-									{
-										sku: {
-											contains: textSearch,
-											mode: 'insensitive' as const,
-										},
-									},
-								],
-							},
-						},
-					},
-				],
-		  }
-		: {};
+  const where = textSearch
+    ? {
+        OR: [
+          {
+            id: {
+              contains: referenceSearch,
+              mode: "insensitive" as const,
+            },
+          },
+          {
+            order: {
+              id: {
+                contains: referenceSearch,
+                mode: "insensitive" as const,
+              },
+            },
+          },
+          {
+            store: {
+              name: {
+                contains: textSearch,
+                mode: "insensitive" as const,
+              },
+            },
+          },
+          {
+            store: {
+              user: {
+                OR: [
+                  {
+                    name: {
+                      contains: textSearch,
+                      mode: "insensitive" as const,
+                    },
+                  },
+                  {
+                    email: {
+                      contains: textSearch,
+                      mode: "insensitive" as const,
+                    },
+                  },
+                ],
+              },
+            },
+          },
+          {
+            order: {
+              user: {
+                OR: [
+                  {
+                    name: {
+                      contains: textSearch,
+                      mode: "insensitive" as const,
+                    },
+                  },
+                  {
+                    email: {
+                      contains: textSearch,
+                      mode: "insensitive" as const,
+                    },
+                  },
+                ],
+              },
+            },
+          },
+          {
+            items: {
+              some: {
+                OR: [
+                  {
+                    name: {
+                      contains: textSearch,
+                      mode: "insensitive" as const,
+                    },
+                  },
+                  {
+                    sku: {
+                      contains: textSearch,
+                      mode: "insensitive" as const,
+                    },
+                  },
+                ],
+              },
+            },
+          },
+        ],
+      }
+    : {};
 
-	const [orders, totalCount] = await Promise.all([
-		db.orderGroup.findMany({
-			where,
-			orderBy: { createdAt: 'desc' },
-			skip,
-			take: limit,
-			include: {
-				store: {
-					include: {
-						user: {
-							select: {
-								id: true,
-								name: true,
-								email: true,
-							},
-						},
-					},
-				},
-			coupon: true,
-			items: true,
-			shipmentAssignments: {
-				include: { shipment: true },
-				orderBy: { createdAt: 'asc' },
-			},
-			cancellationRequests: {
-				orderBy: { createdAt: 'desc' },
-				take: 1,
-			},
-			fulfillmentEvents: {
-				orderBy: { createdAt: 'asc' },
-			},
-			order: {
-					include: {
-						user: true,
-						shippingAddress: {
-							include: {
-								country: true,
-							},
-						},
-					},
-				},
-			},
-		}),
-		db.orderGroup.count({ where }),
-	]);
+  const [orders, totalCount] = await Promise.all([
+    db.orderGroup.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+      skip,
+      take: limit,
+      include: {
+        store: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+              },
+            },
+          },
+        },
+        coupon: true,
+        items: true,
+        shipmentAssignments: {
+          include: { shipment: true },
+          orderBy: { createdAt: "asc" },
+        },
+        cancellationRequests: {
+          orderBy: { createdAt: "desc" },
+          take: 1,
+        },
+        fulfillmentEvents: {
+          orderBy: { createdAt: "asc" },
+        },
+        order: {
+          include: {
+            user: true,
+            shippingAddress: {
+              include: {
+                country: true,
+              },
+            },
+          },
+        },
+      },
+    }),
+    db.orderGroup.count({ where }),
+  ]);
 
-	return {
-		orders: orders.map(primaryShipmentFromAssignments),
-		totalCount,
-		totalPages: Math.ceil(totalCount / limit) || 1,
-		page,
-		limit,
-	};
+  return {
+    orders: orders.map(primaryShipmentFromAssignments),
+    totalCount,
+    totalPages: Math.ceil(totalCount / limit) || 1,
+    page,
+    limit,
+  };
 };
