@@ -278,9 +278,11 @@ if (action === "up") {
 } else if (action === "server") {
   const env = validatedE2EEnv();
   // Preparation already generated Prisma and applied migrations. Starting
-  // Next directly avoids a second Prisma generate, which can lock the Windows
-  // query-engine DLL when the normal dev server is open.
-  run("bun", ["x", "next", "dev", "--webpack"], {
+  // Next through Node avoids mixing Bun's Web Streams implementation with
+  // Next's Node production/runtime stream helpers. It also avoids a second
+  // Prisma generate, which can lock the Windows query-engine DLL when the
+  // normal dev server is open.
+  run("node", ["node_modules/next/dist/bin/next", "dev", "--webpack"], {
     ...env,
     PORT: env.E2E_PORT ?? "3100",
   });
@@ -288,7 +290,9 @@ if (action === "up") {
   const env = validatedE2EEnv();
   // Production-mode E2E avoids repeated cold development compilation on
   // Windows while still using the isolated database and Clerk test users.
-  run("bun", ["x", "next", "start"], {
+  // Use Node rather than Bun so the Next server and its Web Streams runtime
+  // are from the same implementation during concurrent load smoke tests.
+  run("node", ["node_modules/next/dist/bin/next", "start"], {
     ...env,
     PORT: env.E2E_PORT ?? "3100",
   });

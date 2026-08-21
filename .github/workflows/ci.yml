@@ -165,6 +165,9 @@ jobs:
       - name: Run Database Integration Checks
         run: bun prisma/integration-check.ts
 
+      - name: Verify shared PostgreSQL rate limiting under concurrency
+        run: bun scripts/rate-limit-integration-check.ts
+
   e2e-protected-authorization:
     name: Protected E2E Authorization (Staging Only)
     if: ${{ vars.E2E_BASE_URL != '' && vars.E2E_ENVIRONMENT == 'staging' && vars.E2E_PROTECTED == 'true' }}

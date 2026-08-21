@@ -1110,7 +1110,9 @@ Goal: make the application safe and operable under real customer traffic.
     tests for loyalty, orders, payments, and reviews routes. The shared limiter
     uses an atomic PostgreSQL upsert, so every server instance consumes the
     same quota; Docker concurrency evidence confirms 5 allowed and 7 limited
-    requests out of 12 simultaneous attempts, followed by a window reset.
+    requests out of 12 simultaneous attempts, followed by a window reset. The
+    isolated database CI job now executes that same concurrency probe on every
+    push, so the shared limiter cannot silently regress outside local testing.
   - [ ] Test every server action and route for customer, seller-owner, other-seller,
         admin, unauthenticated, and suspended-account access
   - [ ] Fix existing analytics ownership leakage before exposing seller analytics

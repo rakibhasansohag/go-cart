@@ -1,211 +1,250 @@
-'use client';
+"use client";
 
-import { queryKeys } from '@/lib/query-keys';
-import { getUserLoyaltyAccount, UserLoyaltyDataType } from '@/queries/loyalty';
-import { getDailyCheckInStatus } from '@/queries/checkin';
-import { useQuery, useSuspenseQuery } from '@tanstack/react-query';
-import { Coins, ArrowUpRight, ArrowDownLeft, Clock, History } from 'lucide-react';
-import Link from 'next/link';
-import { useState } from 'react';
-import { coinsToDiscount } from '@/lib/loyalty/coins';
-import CheckInCalendar from '@/components/store/checkin/checkin-calendar';
+import { queryKeys } from "@/lib/query-keys";
+import { getUserLoyaltyAccount, UserLoyaltyDataType } from "@/queries/loyalty";
+import { getDailyCheckInStatus } from "@/queries/checkin";
+import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
+import {
+  Coins,
+  ArrowUpRight,
+  ArrowDownLeft,
+  Clock,
+  History,
+} from "lucide-react";
+import Link from "next/link";
+import { useState } from "react";
+import { coinsToDiscount } from "@/lib/loyalty/coins";
+import CheckInCalendar from "@/components/store/checkin/checkin-calendar";
 
 interface Props {
-	initialPage?: number;
+  initialPage?: number;
 }
 
 export default function RewardsContent({ initialPage = 1 }: Props) {
-	const [page, setPage] = useState<number>(initialPage);
+  const [page, setPage] = useState<number>(initialPage);
 
-	const { data } = useSuspenseQuery<UserLoyaltyDataType>({
-		queryKey: queryKeys.profile.loyalty(page),
-		queryFn: () => getUserLoyaltyAccount(page, 10),
-	});
+  const { data } = useSuspenseQuery<UserLoyaltyDataType>({
+    queryKey: queryKeys.profile.loyalty(page),
+    queryFn: () => getUserLoyaltyAccount(page, 10),
+  });
 
-	const { data: checkInStatus, isLoading: isCheckInLoading, refetch: refetchCheckIn } = useQuery({
-		queryKey: ['daily-checkin-status'],
-		queryFn: () => getDailyCheckInStatus(),
-		staleTime: 1000 * 60 * 60 * 4, // Cache check-in status for 4 hours
-		gcTime: 1000 * 60 * 60 * 24, // Retain in memory for 24 hours
-	});
+  const {
+    data: checkInStatus,
+    isLoading: isCheckInLoading,
+    refetch: refetchCheckIn,
+  } = useQuery({
+    queryKey: ["daily-checkin-status"],
+    queryFn: () => getDailyCheckInStatus(),
+    staleTime: 1000 * 60 * 60 * 4, // Cache check-in status for 4 hours
+    gcTime: 1000 * 60 * 60 * 24, // Retain in memory for 24 hours
+  });
 
-	const { balance, lifetimeEarned, transactions, totalPages, currentPage } = data;
-	const redeemableValue = coinsToDiscount(balance);
+  const { balance, lifetimeEarned, transactions, totalPages, currentPage } =
+    data;
+  const redeemableValue = coinsToDiscount(balance);
 
-	return (
-		<div className='space-y-6'>
-			{/* Balance Card */}
-			<div className='relative overflow-hidden rounded-2xl bg-gradient-to-br from-amber-500 via-amber-600 to-amber-700 p-6 text-white shadow-lg'>
-				<div className='absolute -right-6 -bottom-6 opacity-10'>
-					<Coins className='w-48 h-48' />
-				</div>
-				<div className='relative z-10 space-y-4'>
-					<div className='flex items-center justify-between'>
-						<div className='flex items-center gap-x-2'>
-							<Coins className='w-6 h-6 text-amber-200' />
-							<span className='font-semibold text-amber-100 text-sm tracking-wide uppercase'>
-								GoCoins Balance
-							</span>
-						</div>
-						<span className='text-xs font-bold bg-amber-900/40 border border-amber-300/30 px-3 py-1 rounded-full text-amber-100 backdrop-blur-sm uppercase tracking-wider'>
-							Active Member Perks
-						</span>
-					</div>
+  return (
+    <div className="space-y-6">
+      {/* Balance Card */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-amber-500 via-amber-600 to-amber-700 p-6 text-white shadow-lg">
+        <div className="absolute -right-6 -bottom-6 opacity-10">
+          <Coins className="w-48 h-48" />
+        </div>
+        <div className="relative z-10 space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-x-2">
+              <Coins className="w-6 h-6 text-amber-200" />
+              <span className="font-semibold text-amber-100 text-sm tracking-wide uppercase">
+                GoCoins Balance
+              </span>
+            </div>
+            <span className="text-xs font-bold bg-amber-900/40 border border-amber-300/30 px-3 py-1 rounded-full text-amber-100 backdrop-blur-sm uppercase tracking-wider">
+              Active Member Perks
+            </span>
+          </div>
 
-					<div className='flex items-baseline gap-x-3'>
-						<span className='text-4xl sm:text-5xl font-black tracking-tight'>
-							{balance.toLocaleString()}
-						</span>
-						<span className='text-lg font-medium text-amber-200'>GoCoins</span>
-						<span className='text-xs font-bold bg-white/20 border border-white/20 px-2.5 py-1 rounded-full text-white backdrop-blur-sm ml-auto sm:ml-2'>
-							Worth ${redeemableValue.toFixed(2)} Off
-						</span>
-					</div>
+          <div className="flex items-baseline gap-x-3">
+            <span className="text-4xl sm:text-5xl font-black tracking-tight">
+              {balance.toLocaleString()}
+            </span>
+            <span className="text-lg font-medium text-amber-200">GoCoins</span>
+            <span className="text-xs font-bold bg-white/20 border border-white/20 px-2.5 py-1 rounded-full text-white backdrop-blur-sm ml-auto sm:ml-2">
+              Worth ${redeemableValue.toFixed(2)} Off
+            </span>
+          </div>
 
-					<div className='pt-2 border-t border-amber-400/20 flex flex-wrap items-center justify-between text-sm text-amber-100/90 gap-2'>
-						<div>
-							<span>Checkout Discount: </span>
-							<strong className='text-white font-bold'>${redeemableValue.toFixed(2)} Savings</strong>
-						</div>
-						<div>
-							<span>Lifetime Earned: </span>
-							<strong className='text-white font-bold'>{lifetimeEarned.toLocaleString()} GoCoins</strong>
-						</div>
-					</div>
-				</div>
-			</div>
+          <div className="pt-2 border-t border-amber-400/20 flex flex-wrap items-center justify-between text-sm text-amber-100/90 gap-2">
+            <div>
+              <span>Checkout Discount: </span>
+              <strong className="text-white font-bold">
+                ${redeemableValue.toFixed(2)} Savings
+              </strong>
+            </div>
+            <div>
+              <span>Lifetime Earned: </span>
+              <strong className="text-white font-bold">
+                {lifetimeEarned.toLocaleString()} GoCoins
+              </strong>
+            </div>
+          </div>
+        </div>
+      </div>
 
-			{/* How it works info banner */}
-			<div className='rounded-xl bg-background p-4 border border-border/10 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-main-secondary'>
-				<div className='space-y-1'>
-					<p className='font-semibold text-main-primary text-sm'>How GoCoins Work</p>
-					<p>Earn 2 coins for every $1 paid on completed orders. 100 coins = $1 discount at checkout (up to 30% of subtotal).</p>
-				</div>
-				<Link href='/browse' className='shrink-0 px-4 py-2 rounded-lg bg-secondary font-medium text-main-primary hover:bg-border/20 transition-colors'>
-					Shop & Earn
-				</Link>
-			</div>
+      {/* How it works info banner */}
+      <div className="rounded-xl bg-background p-4 border border-border/10 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-main-secondary">
+        <div className="space-y-1">
+          <p className="font-semibold text-main-primary text-sm">
+            How GoCoins Work
+          </p>
+          <p>
+            Earn 2 coins for every $1 paid on completed orders. 100 coins = $1
+            discount at checkout (up to 30% of subtotal).
+          </p>
+        </div>
+        <Link
+          href="/browse"
+          className="shrink-0 px-4 py-2 rounded-lg bg-secondary font-medium text-main-primary hover:bg-border/20 transition-colors"
+        >
+          Shop & Earn
+        </Link>
+      </div>
 
-			{/* Embedded Daily Check-In Calendar Widget with Skeleton Fallback */}
-			{isCheckInLoading ? (
-				<div className='w-full rounded-3xl bg-background border border-border/15 p-6 shadow-sm space-y-5 animate-pulse min-h-[300px]'>
-					<div className='flex items-center justify-between border-b border-border/10 pb-4'>
-						<div className='h-6 w-48 bg-muted rounded-md' />
-						<div className='h-7 w-32 bg-muted rounded-full' />
-					</div>
-					<div className='grid grid-cols-4 sm:grid-cols-7 gap-2.5'>
-						{Array.from({ length: 14 }).map((_, i) => (
-							<div key={i} className='h-20 bg-muted/40 rounded-2xl' />
-						))}
-					</div>
-				</div>
-			) : checkInStatus && checkInStatus.isAuthenticated ? (
-				<CheckInCalendar
-					hasClaimedToday={checkInStatus.hasClaimedToday}
-					claimedDaysCount={checkInStatus.claimedDaysCount}
-					daysInMonth={checkInStatus.daysInMonth}
-					todayDateStr={checkInStatus.todayDateStr}
-					checkIns={checkInStatus.checkIns}
-					onClaimSuccess={() => {
-						refetchCheckIn();
-					}}
-				/>
-			) : null}
+      {/* Embedded Daily Check-In Calendar Widget with Skeleton Fallback */}
+      {isCheckInLoading ? (
+        <div className="w-full rounded-3xl bg-background border border-border/15 p-6 shadow-sm space-y-5 animate-pulse min-h-[300px]">
+          <div className="flex items-center justify-between border-b border-border/10 pb-4">
+            <div className="h-6 w-48 bg-muted rounded-md" />
+            <div className="h-7 w-32 bg-muted rounded-full" />
+          </div>
+          <div className="grid grid-cols-4 sm:grid-cols-7 gap-2.5">
+            {Array.from({ length: 14 }).map((_, i) => (
+              <div key={i} className="h-20 bg-muted/40 rounded-2xl" />
+            ))}
+          </div>
+        </div>
+      ) : checkInStatus?.isEligible ? (
+        <CheckInCalendar
+          hasClaimedToday={checkInStatus.hasClaimedToday}
+          claimedDaysCount={checkInStatus.claimedDaysCount}
+          daysInMonth={checkInStatus.daysInMonth}
+          todayDateStr={checkInStatus.todayDateStr}
+          checkIns={checkInStatus.checkIns}
+          onClaimSuccess={() => {
+            refetchCheckIn();
+          }}
+        />
+      ) : checkInStatus?.isAuthenticated ? (
+        <div
+          className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-main-secondary"
+          role="status"
+        >
+          Daily rewards become available after your GoCart account setup is
+          complete. Refresh in a moment and try again.
+        </div>
+      ) : null}
 
-			{/* Transaction History */}
-			<div className='rounded-xl bg-background p-6 border border-border/10 shadow-sm space-y-4'>
-				<div className='flex items-center justify-between'>
-					<h2 className='text-lg font-bold text-main-primary flex items-center gap-x-2'>
-						<History className='w-5 h-5 text-main-secondary' />
-						<span>Coin History</span>
-					</h2>
-				</div>
+      {/* Transaction History */}
+      <div className="rounded-xl bg-background p-6 border border-border/10 shadow-sm space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-bold text-main-primary flex items-center gap-x-2">
+            <History className="w-5 h-5 text-main-secondary" />
+            <span>Coin History</span>
+          </h2>
+        </div>
 
-				{transactions.length === 0 ? (
-					<div className='py-12 text-center text-main-secondary space-y-2'>
-						<Clock className='w-8 h-8 mx-auto text-main-secondary/40' />
-						<p className='font-medium'>No GoCoins transactions yet</p>
-						<p className='text-xs'>Earn coins automatically whenever you complete a purchase!</p>
-					</div>
-				) : (
-					<div className='divide-y divide-border/10'>
-						{transactions.map((tx) => {
-							const isEarn = tx.type === 'EARN';
-							return (
-								<div key={tx.id} className='py-3.5 flex items-center justify-between text-sm gap-4'>
-									<div className='flex items-center gap-x-3 min-w-0'>
-										<div
-											className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${isEarn
-												? 'bg-emerald-500/10 text-emerald-500'
-												: 'bg-amber-500/10 text-amber-500'
-												}`}
-										>
-											{isEarn ? (
-												<ArrowDownLeft className='w-5 h-5' />
-											) : (
-												<ArrowUpRight className='w-5 h-5' />
-											)}
-										</div>
-										<div className='min-w-0'>
-											<p className='font-medium text-main-primary truncate'>
-												{tx.note || (isEarn ? 'Earned GoCoins' : 'Redeemed GoCoins')}
-											</p>
-											<p className='text-xs text-main-secondary'>
-												{new Date(tx.createdAt).toLocaleDateString(undefined, {
-													year: 'numeric',
-													month: 'short',
-													day: 'numeric',
-													hour: '2-digit',
-													minute: '2-digit',
-												})}
-											</p>
-										</div>
-									</div>
+        {transactions.length === 0 ? (
+          <div className="py-12 text-center text-main-secondary space-y-2">
+            <Clock className="w-8 h-8 mx-auto text-main-secondary/40" />
+            <p className="font-medium">No GoCoins transactions yet</p>
+            <p className="text-xs">
+              Earn coins automatically whenever you complete a purchase!
+            </p>
+          </div>
+        ) : (
+          <div className="divide-y divide-border/10">
+            {transactions.map((tx) => {
+              const isEarn = tx.type === "EARN";
+              return (
+                <div
+                  key={tx.id}
+                  className="py-3.5 flex items-center justify-between text-sm gap-4"
+                >
+                  <div className="flex items-center gap-x-3 min-w-0">
+                    <div
+                      className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${
+                        isEarn
+                          ? "bg-emerald-500/10 text-emerald-500"
+                          : "bg-amber-500/10 text-amber-500"
+                      }`}
+                    >
+                      {isEarn ? (
+                        <ArrowDownLeft className="w-5 h-5" />
+                      ) : (
+                        <ArrowUpRight className="w-5 h-5" />
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-medium text-main-primary truncate">
+                        {tx.note ||
+                          (isEarn ? "Earned GoCoins" : "Redeemed GoCoins")}
+                      </p>
+                      <p className="text-xs text-main-secondary">
+                        {new Date(tx.createdAt).toLocaleDateString(undefined, {
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </p>
+                    </div>
+                  </div>
 
-									<div className='text-right shrink-0'>
-										<span
-											className={`font-bold text-base ${isEarn ? 'text-emerald-500' : 'text-amber-500'
-												}`}
-										>
-											{isEarn ? `+${tx.points}` : tx.points}
-										</span>
-										<span className='text-xs text-main-secondary block'>
-											{isEarn ? 'coins earned' : 'coins used'}
-										</span>
-									</div>
-								</div>
-							);
-						})}
-					</div>
-				)}
+                  <div className="text-right shrink-0">
+                    <span
+                      className={`font-bold text-base ${
+                        isEarn ? "text-emerald-500" : "text-amber-500"
+                      }`}
+                    >
+                      {isEarn ? `+${tx.points}` : tx.points}
+                    </span>
+                    <span className="text-xs text-main-secondary block">
+                      {isEarn ? "coins earned" : "coins used"}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
 
-				{/* Pagination */}
-				{totalPages > 1 && (
-					<div className='flex items-center justify-between pt-4 border-t border-border/10 text-xs text-main-secondary'>
-						<span>
-							Page {currentPage} of {totalPages}
-						</span>
-						<div className='flex items-center gap-x-2'>
-							<button
-								type='button'
-								disabled={page <= 1}
-								onClick={() => setPage((p) => Math.max(1, p - 1))}
-								className='px-3 py-1.5 rounded-lg border border-border/20 bg-secondary text-main-primary hover:bg-border/20 disabled:opacity-40 disabled:cursor-not-allowed'
-							>
-								Previous
-							</button>
-							<button
-								type='button'
-								disabled={page >= totalPages}
-								onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-								className='px-3 py-1.5 rounded-lg border border-border/20 bg-secondary text-main-primary hover:bg-border/20 disabled:opacity-40 disabled:cursor-not-allowed'
-							>
-								Next
-							</button>
-						</div>
-					</div>
-				)}
-			</div>
-		</div>
-	);
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between pt-4 border-t border-border/10 text-xs text-main-secondary">
+            <span>
+              Page {currentPage} of {totalPages}
+            </span>
+            <div className="flex items-center gap-x-2">
+              <button
+                type="button"
+                disabled={page <= 1}
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                className="px-3 py-1.5 rounded-lg border border-border/20 bg-secondary text-main-primary hover:bg-border/20 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                Previous
+              </button>
+              <button
+                type="button"
+                disabled={page >= totalPages}
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                className="px-3 py-1.5 rounded-lg border border-border/20 bg-secondary text-main-primary hover:bg-border/20 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }

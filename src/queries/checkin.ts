@@ -8,22 +8,61 @@ import {
   getFormattedDateStrings,
 } from "@/lib/checkin-constants";
 import { enforceSharedRateLimit } from "@/lib/security/rate-limit";
+import { requireAuthenticatedUser } from "@/lib/security/request-guards";
+
+type DailyCheckInStatus = {
+  isAuthenticated: boolean;
+  isEligible: boolean;
+  hasClaimedToday: boolean;
+  claimedDaysCount: number;
+  daysInMonth: number;
+  currentMonthStr: string;
+  todayDateStr: string;
+  checkIns: Array<{
+    id: string;
+    date: string;
+    dayIndex: number;
+    coinsEarned: number;
+    rewardType: string;
+    couponId: string | null;
+  }>;
+  nextReward: (typeof CHECKIN_REWARDS)[number];
+};
+
+function unavailableCheckInStatus(
+  isAuthenticated: boolean,
+  dateStr: string,
+  yearMonthStr: string,
+  daysInMonth: number,
+): DailyCheckInStatus {
+  return {
+    isAuthenticated,
+    isEligible: false,
+    hasClaimedToday: false,
+    claimedDaysCount: 0,
+    daysInMonth,
+    currentMonthStr: yearMonthStr,
+    todayDateStr: dateStr,
+    checkIns: [],
+    nextReward: CHECKIN_REWARDS[1],
+  };
+}
 
 export async function getDailyCheckInStatus() {
   const { userId } = await auth();
   const { dateStr, yearMonthStr, daysInMonth } = getFormattedDateStrings();
 
   if (!userId) {
-    return {
-      isAuthenticated: false,
-      hasClaimedToday: false,
-      claimedDaysCount: 0,
-      daysInMonth,
-      currentMonthStr: yearMonthStr,
-      todayDateStr: dateStr,
-      checkIns: [],
-      nextReward: CHECKIN_REWARDS[1],
-    };
+    return unavailableCheckInStatus(false, dateStr, yearMonthStr, daysInMonth);
+  }
+
+  const user = await db.user.findUnique({
+    where: { id: userId },
+    select: { accountStatus: true },
+  });
+
+  if (!user || user.accountStatus === "SUSPENDED") {
+    return unavailableCheckInStatus(true, dateStr, yearMonthStr, daysInMonth);
   }
 
   const checkIns = await db.dailyCheckIn.findMany({
@@ -40,6 +79,7 @@ export async function getDailyCheckInStatus() {
 
   return {
     isAuthenticated: true,
+    isEligible: true,
     hasClaimedToday: Boolean(todayCheckIn),
     claimedDaysCount,
     daysInMonth,
@@ -58,10 +98,8 @@ export async function getDailyCheckInStatus() {
 }
 
 export async function claimDailyCheckIn() {
-  const { userId } = await auth();
-  if (!userId) {
-    throw new Error("Please sign in to claim your daily check in reward.");
-  }
+  const user = await requireAuthenticatedUser();
+  const userId = user.id;
   await enforceSharedRateLimit({
     key: `daily-checkin:${userId}`,
     limit: 5,
