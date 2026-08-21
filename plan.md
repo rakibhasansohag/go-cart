@@ -1078,9 +1078,9 @@ customer to each seller before adding more optional growth features.
 
 Goal: make the application safe and operable under real customer traffic.
 
-- [ ] **Phase 15.1 — Authorization and abuse-resistance audit**
+- [x] **Phase 15.1 — Authorization and abuse-resistance audit**
 
-  - **Implementation evidence (2026-08-20, in progress)**: seller analytics now
+  - **Implementation evidence (completed 2026-08-22)**: seller analytics now
     resolve the authenticated database user and constrain every store lookup
     to `Store.userId`; non-seller and cross-seller requests receive only the
     zero-data fallback. Admin analytics now use the same database-backed
@@ -1113,12 +1113,12 @@ Goal: make the application safe and operable under real customer traffic.
     requests out of 12 simultaneous attempts, followed by a window reset. The
     isolated database CI job now executes that same concurrency probe on every
     push, so the shared limiter cannot silently regress outside local testing.
-  - [ ] Test every server action and route for customer, seller-owner, other-seller,
+  - [x] Test every server action and route for customer, seller-owner, other-seller,
         admin, unauthenticated, and suspended-account access
-  - [ ] Fix existing analytics ownership leakage before exposing seller analytics
-  - [ ] Add rate limits and abuse controls for auth-sensitive writes, checkout,
+  - [x] Fix existing analytics ownership leakage before exposing seller analytics
+  - [x] Add rate limits and abuse controls for auth-sensitive writes, checkout,
         search, Q&A, image generation, notification retries, and check-ins
-  - [ ] Add CSRF/origin protections where cookie-authenticated mutations need them
+  - [x] Add CSRF/origin protections where cookie-authenticated mutations need them
 
 - [ ] **Phase 15.2 — Secrets and browser security**
   - **Implementation evidence (2026-08-20, in progress)**: a tested static
