@@ -6,7 +6,7 @@ const contentSecurityPolicy = [
     isDevelopment ? "'unsafe-eval' " : ""
   }https://js.stripe.com https://www.paypal.com https://www.sandbox.paypal.com https://js.puter.com https://*.clerk.accounts.dev https://*.clerk.com https://challenges.cloudflare.com https://*.protect.clerk.com https://upload-widget.cloudinary.com`,
   "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: blob: https://res.cloudinary.com https://img.clerk.com https://i.pravatar.cc https://picsum.photos https://image.pollinations.ai https://pollinations.ai https://images.unsplash.com https://source.unsplash.com https://purecatamphetamine.github.io",
+  "img-src 'self' data: blob: https://res.cloudinary.com https://img.clerk.com https://i.pravatar.cc https://picsum.photos https://fastly.picsum.photos https://image.pollinations.ai https://pollinations.ai https://images.unsplash.com https://source.unsplash.com https://purecatamphetamine.github.io",
   "font-src 'self' data:",
   "connect-src 'self' https://api.stripe.com https://js.stripe.com https://www.paypal.com https://www.sandbox.paypal.com https://*.clerk.accounts.dev https://*.clerk.com https://*.protect.clerk.com https://api.cloudinary.com https://ipinfo.io https://image.pollinations.ai wss://go-cart-websocket-server.onrender.com",
   "frame-src 'self' https://js.stripe.com https://hooks.stripe.com https://www.paypal.com https://www.sandbox.paypal.com https://*.clerk.accounts.dev https://*.clerk.com https://*.protect.clerk.com https://challenges.cloudflare.com https://upload-widget.cloudinary.com",
@@ -98,6 +98,12 @@ const nextConfig = {
       {
         protocol: "https",
         hostname: "picsum.photos",
+        port: "",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "fastly.picsum.photos",
         port: "",
         pathname: "/**",
       },

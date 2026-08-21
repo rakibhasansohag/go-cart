@@ -1178,19 +1178,25 @@ Goal: make the application safe and operable under real customer traffic.
     connected account: a real source-charge transfer, signed webhook-route
     reconciliation, ledger release, provider rejection, and safe retry all
     completed before deterministic fixtures were restored.
-  - **Validation evidence (2026-08-21, still in progress)**: with the normal
-    GoCart development server and Prisma Studio closed, TypeScript passed;
-    ESLint completed with 0 errors and 164 existing warnings; 45 unit files
-    and 189 tests passed; the Docker `gocart_e2e` 1,024-order integration
+  - **Validation evidence (2026-08-21, still in progress)**: the isolated
+    Webpack production artifact is now built and served by Node.js end-to-end
+    (rather than mixing Bun's build runtime with Node's server runtime), which
+    removed the prior route-chunk `404` failure. The production-mode isolated
+    load probe passed 60/60 requests (20 each for health, browse, and search),
+    and Chromium passed all 11/11 public journeys in one run. TypeScript
+    passed; ESLint completed with 0 errors and 164 existing warnings; 45 unit
+    files and 191 tests passed; the Docker `gocart_e2e` 1,024-order integration
     suite passed; and the 12-way shared-rate-limit probe again produced
-    exactly 5 allowed and 7 limited requests with a deterministic reset. The
-    public Chromium suite discovers all 11 smoke journeys, and its readiness
-    check now uses the minimal `/api/health` probe rather than the expensive
-    home route. The current command executor terminates both public-browser
-    attempts and the default/Webpack production builds at 124 seconds before
-    any final report or `BUILD_ID`; these are unverified, not passes. Run the
-    same browser/build commands from a normal local terminal or CI runner
-    without that ceiling before declaring the launch gate complete.
+    exactly 5 allowed and 7 limited requests with a deterministic reset.
+    Concurrent paid-payment replays now recover their committed GoCoins and
+    notification fan-out records without duplicate-key error logs. Protected
+    browser evidence remains blocked before the first app assertion because
+    Clerk's remote testing-token setup hangs in this environment; it is not
+    treated as a passed or skipped authorization test. The normal production
+    build emitted a fresh `.next` artifact but this command executor ended it
+    at 124 seconds before an exit status, so that build remains unverified.
+    Staging/CI must provide both the Clerk-capable protected run and a complete
+    production-build result before declaring the launch gate complete.
   - [ ] Run load tests for browse/search, checkout, webhooks, notifications, and dashboards
   - [ ] Complete accessibility, privacy/retention, legal-policy, and operational reviews
   - [ ] **Test**: Staging passes the Phase 12 suites, restore drill, rollback drill,

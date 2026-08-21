@@ -303,7 +303,10 @@ if (action === "up") {
   // artifact on the supported Webpack fallback so it remains reliable on
   // constrained Windows development machines without changing the normal
   // production build command.
-  run("bun", ["x", "next", "build", "--webpack"], env);
+  // Build with the same Node runtime used by `server:prod`; mixing Bun's
+  // bundler runtime with Node's `next start` can leave route chunks unreadable
+  // at `/_next/static/...` during browser tests.
+  run("node", ["node_modules/next/dist/bin/next", "build", "--webpack"], env);
 } else if (action === "test") {
   const env = validatedE2EEnv();
   // Playwright keeps browser binaries outside node_modules. Installing the
