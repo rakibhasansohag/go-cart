@@ -45,12 +45,20 @@ function run(
   env?: Record<string, string>,
   exitOnFailure = true,
 ) {
+  // Keep isolated-test startup observable without logging environment values,
+  // which can include provider credentials. This is especially useful on
+  // Windows, where a child process can spend time starting before it emits
+  // its own output.
+  console.log(`[e2e] running: ${command} ${args.join(" ")}`);
   const result = spawnSync(command, args, {
     stdio: "inherit",
     env: env ? { ...process.env, ...env } : process.env,
     shell: process.platform === "win32",
   });
   if (result.error) throw result.error;
+  console.log(
+    `[e2e] finished: ${command} (exit ${result.status ?? "unknown"})`,
+  );
   if (result.status !== 0) {
     if (exitOnFailure) process.exit(result.status ?? 1);
     return result.status ?? 1;
