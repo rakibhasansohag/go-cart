@@ -1197,6 +1197,18 @@ Goal: make the application safe and operable under real customer traffic.
     at 124 seconds before an exit status, so that build remains unverified.
     Staging/CI must provide both the Clerk-capable protected run and a complete
     production-build result before declaring the launch gate complete.
+  - **Validation evidence (2026-08-22)**: the user-provided protected run
+    reached Clerk setup successfully and executed 33 tests: 12 passed, 6
+    failed, 3 skipped, and 12 did not run. The normal Turbopack production
+    build completed successfully with compilation, TypeScript, page-data
+    collection, and static-generation output. The six protected failures
+    exposed repository issues now addressed in source/tests: role-boundary
+    redirects are enforced in the proxy, interrupted `.next-e2e` declarations
+    no longer poison typecheck, the delivery journey searches for its seeded
+    package before asserting status controls, and the settlement settings test
+    targets the matching live status region. A production-server E2E mode is
+    documented for rerunning protected journeys with Node/Next. The protected
+    suite must be rerun after these fixes before this launch gate can pass.
   - [ ] Run load tests for browse/search, checkout, webhooks, notifications, and dashboards
   - [ ] Complete accessibility, privacy/retention, legal-policy, and operational reviews
   - [ ] **Test**: Staging passes the Phase 12 suites, restore drill, rollback drill,

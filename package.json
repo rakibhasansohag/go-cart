@@ -36,7 +36,7 @@
 		"test:e2e:protected": "playwright test --project=protected-chromium",
 		"test:payment": "vitest run src/lib/payments",
 		"test:watch": "vitest",
-		"typecheck": "tsc --noEmit",
+		"typecheck": "tsc --noEmit --incremental false",
 		"stripe:listen": "stripe listen --events payment_intent.succeeded,payment_intent.payment_failed,payment_intent.canceled,charge.refunded,transfer.created,transfer.updated,transfer.reversed,account.updated,payout.paid,payout.failed,payout.canceled --forward-to http://localhost:3000/api/webhooks/stripe",
 		"postinstall": "bun prisma generate"
 	},

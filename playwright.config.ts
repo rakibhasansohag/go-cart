@@ -3,6 +3,7 @@ import { defineConfig, devices } from "@playwright/test";
 const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? "http://localhost:3100";
 const healthURL = new URL("/api/health", baseURL).toString();
 const usesExternalServer = Boolean(process.env.PLAYWRIGHT_BASE_URL);
+const useProductionServer = process.env.E2E_PRODUCTION_SERVER === "true";
 
 export default defineConfig({
   testDir: "./e2e",
@@ -23,7 +24,9 @@ export default defineConfig({
   webServer: usesExternalServer
     ? undefined
     : {
-        command: "bun --no-env-file scripts/e2e-local.ts server",
+        command: useProductionServer
+          ? "bun --no-env-file scripts/e2e-local.ts server:prod"
+          : "bun --no-env-file scripts/e2e-local.ts server",
         // The root page can perform substantial server-side work. Use the
         // intentionally minimal health endpoint for server readiness, then
         // let each test exercise its real route through `baseURL`.

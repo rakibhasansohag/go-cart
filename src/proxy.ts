@@ -40,7 +40,7 @@ export default clerkMiddleware(async (auth, req) => {
     try {
       const account = await db.user.findUnique({
         where: { id: userId },
-        select: { accountStatus: true },
+        select: { accountStatus: true, role: true },
       });
 
       if (account?.accountStatus === "SUSPENDED" && !accountSuspendedRoute(req)) {
@@ -53,6 +53,14 @@ export default clerkMiddleware(async (auth, req) => {
         return withRequestId(
           NextResponse.redirect(new URL("/account-suspended", req.url)),
         );
+      }
+
+      if (pathname.startsWith("/dashboard/admin") && account?.role !== "ADMIN") {
+        return withRequestId(NextResponse.redirect(new URL("/", req.url)));
+      }
+
+      if (pathname.startsWith("/dashboard/seller") && account?.role !== "SELLER") {
+        return withRequestId(NextResponse.redirect(new URL("/", req.url)));
       }
     } catch {
       logEvent("error", "request.account_status_unavailable", { requestId, path: pathname });

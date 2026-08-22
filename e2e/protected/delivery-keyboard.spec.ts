@@ -13,6 +13,8 @@ test.describe('deterministic delivery journey', () => {
     test.setTimeout(180_000);
   await signInAs(page, 'seller');
   await page.goto('/dashboard/seller/stores/gocart-demo-store/orders', { waitUntil: 'domcontentloaded', timeout: 120_000 });
+  const sellerSearch = page.getByPlaceholder(/Search order, package, customer, product or SKU/i);
+  await sellerSearch.fill(demoPackageReference(0));
   const sellerRow = page.getByRole('row').filter({ hasText: demoPackageReference(0) });
 
   for (const [current, next] of [

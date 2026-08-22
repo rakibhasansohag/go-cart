@@ -44,4 +44,9 @@ $env:E2E_ORDER_ID='<seeded-order-id>'
 bun run test:e2e:local --project protected-chromium
 ```
 
+After building the isolated production artifact with `bun run build`, set
+`$env:E2E_PRODUCTION_SERVER='true'` to run protected journeys against the
+Node/Next production server. This avoids development-server cold-compilation
+and stream-runtime noise on Windows.
+
 Never point these commands at production or a database whose URL differs from `E2E_DATABASE_URL`; the runtime guard fails closed for those cases.
