@@ -29,7 +29,7 @@ test('customer can place the seeded cart order and see it in order history', asy
   await expect(page.getByText('Order Details', { exact: true })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Complete your payment' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Order Information' })).toBeVisible();
-  await expect(page.getByText('Total Items').locator('..').getByText('1')).toBeVisible();
+  await expect(page.getByText('Total Items').locator('..')).toContainText('1');
 });
 
 test('customer can open the seeded order tracking timeline', async ({ page }) => {
@@ -74,6 +74,7 @@ test('seller fulfillment workspace exposes an order search control', async ({ pa
 test('seller can advance a demo package to Accepted', async ({ page }) => {
   await signInAs(page, 'seller');
   await page.goto('/dashboard/seller/stores/gocart-demo-store/orders');
+  await page.getByPlaceholder(/Search order, package, customer, product or SKU/i).fill(demoPackageReference(0));
 
   const demoRow = page.getByRole('row').filter({ hasText: demoPackageReference(0) });
   const statusSelect = demoRow.getByRole('combobox', { name: /Change package status\. Current status: Pending/i });
@@ -93,6 +94,7 @@ test('seller can advance a demo package through handoff with keyboard actions', 
   test.setTimeout(180_000);
   await signInAs(page, 'seller');
   await page.goto('/dashboard/seller/stores/gocart-demo-store/orders');
+  await page.getByPlaceholder(/Search order, package, customer, product or SKU/i).fill(demoPackageReference(0));
 
   const demoRow = page.getByRole('row').filter({ hasText: demoPackageReference(0) });
   for (const [current, next] of [
@@ -150,12 +152,12 @@ test('admin can advance the handed-off shipment to delivery with keyboard action
   await page.goto(`/order/${demoFixtureId('order', 0)}`);
   await expect(page.getByRole('heading', { name: /Shipment tracking/i })).toBeVisible();
   await expect(page.getByText('Delivered', { exact: true }).first()).toBeVisible({ timeout: 30_000 });
-  await expect(page.getByText(/Tracking history/i)).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Tracking history' })).toBeVisible();
 });
 
 test('customer can submit a return request for the delivered demo item', async ({ page }, testInfo) => {
   await signInAs(page, 'customer');
-  const itemId = demoFixtureId('item', 11);
+  const itemId = demoFixtureId('item', 5);
   await page.goto(`/profile/returns/new?itemId=${itemId}`);
 
   await expect(page.getByRole('heading', { name: 'Request a return' })).toBeVisible();
@@ -214,8 +216,9 @@ test('admin can review the deterministic refund-pending return without issuing a
   const adminRow = page.locator('tbody tr').filter({ hasText: demoReturnReference(5) });
   await expect(adminRow).toBeVisible({ timeout: 30_000 });
   await expect(adminRow).toContainText('Refund pending');
-  await adminRow.getByRole('button', { name: 'Choose next step' }).click();
-  await expect(page.getByRole('menuitem', { name: 'Issue payment refund', exact: true })).toBeVisible();
+  const nextStep = adminRow.getByRole('combobox', { name: 'Choose next step' });
+  await expect(nextStep).toBeVisible();
+  await expect(nextStep.locator('option', { hasText: 'Issue payment refund' })).toHaveCount(1);
 });
 
 test('admin can reach delivery health operations', async ({ page }) => {

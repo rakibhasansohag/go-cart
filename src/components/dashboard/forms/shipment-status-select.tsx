@@ -181,12 +181,15 @@ export default function ShipmentStatusSelect({
 	return (
 		<>
 			<Select
-				aria-label={`Change shipment status. Current status: ${SHIPMENT_STATUS_LABELS[currentStatus]}`}
 				value={selectedStatus}
 				disabled={mutation.isPending}
 				onValueChange={(value) => chooseStatus(value as ShipmentStatus)}
 			>
-				<SelectTrigger size='sm' className='w-[160px] text-xs'>
+				<SelectTrigger
+					aria-label={`Change shipment status. Current status: ${SHIPMENT_STATUS_LABELS[currentStatus]}`}
+					size='sm'
+					className='w-[160px] text-xs'
+				>
 					<SelectValue placeholder={SHIPMENT_STATUS_LABELS[currentStatus]} />
 				</SelectTrigger>
 				<SelectContent>

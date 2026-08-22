@@ -44,9 +44,11 @@ $env:E2E_ORDER_ID='<seeded-order-id>'
 bun run test:e2e:local --project protected-chromium
 ```
 
-After building the isolated production artifact with `bun run build`, set
-`$env:E2E_PRODUCTION_SERVER='true'` to run protected journeys against the
-Node/Next production server. This avoids development-server cold-compilation
-and stream-runtime noise on Windows.
+Set `$env:E2E_PRODUCTION_SERVER='true'` to run protected journeys against the
+Node/Next production server. The local E2E launcher automatically builds the
+isolated `.next-e2e` artifact when it is missing, so it does not accidentally
+start `next start` against a nonexistent or unrelated build directory. This
+avoids development-server cold-compilation and stream-runtime noise on
+Windows.
 
 Never point these commands at production or a database whose URL differs from `E2E_DATABASE_URL`; the runtime guard fails closed for those cases.

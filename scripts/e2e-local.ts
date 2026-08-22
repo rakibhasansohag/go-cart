@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 
 const compose = ["compose", "-f", "docker-compose.e2e.yml"];
@@ -299,16 +299,22 @@ if (action === "up") {
 } else if (action === "build:e2e") {
   const env = validatedE2EEnv();
   run("bun", ["prisma", "generate"], env);
-  // Next 16 builds with Turbopack by default. Keep the isolated browser
-  // artifact on the supported Webpack fallback so it remains reliable on
-  // constrained Windows development machines without changing the normal
-  // production build command.
-  // Build with the same Node runtime used by `server:prod`; mixing Bun's
-  // bundler runtime with Node's `next start` can leave route chunks unreadable
-  // at `/_next/static/...` during browser tests.
-  run("node", ["node_modules/next/dist/bin/next", "build", "--webpack"], env);
+  // Use the same production build path as the normal application build. The
+  // Next 16 default Turbopack build completes reliably on Windows; the
+  // Webpack fallback can leave BUILD_ID present while route output is still
+  // incomplete, which makes `next start` serve blank pages to Playwright.
+  run("node", ["node_modules/next/dist/bin/next", "build"], env);
 } else if (action === "test") {
   const env = validatedE2EEnv();
+  if (
+    process.env.E2E_PRODUCTION_SERVER?.toLowerCase() === "true" &&
+    !existsSync(".next-e2e/BUILD_ID")
+  ) {
+    console.log(
+      "[e2e] isolated production artifact missing; building .next-e2e before starting Next",
+    );
+    run("bun", ["--no-env-file", "scripts/e2e-local.ts", "build:e2e"], env);
+  }
   // Playwright keeps browser binaries outside node_modules. Installing the
   // selected browser here makes a fresh developer machine self-starting.
   if (env.E2E_SKIP_BROWSER_INSTALL?.toLowerCase() !== "true") {

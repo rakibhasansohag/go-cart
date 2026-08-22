@@ -415,7 +415,15 @@ async function main() {
       totalPrice: subtotal,
       orderGroupId: groupIds[index],
       status: fixture.item,
-      deliveredAt: fixture.item === ProductStatus.Delivered ? createdAt : null,
+      // Keep the deterministic return fixture inside the store's configured
+      // return window regardless of the current calendar date. Other demo
+      // orders retain their deterministic historical delivery timestamps.
+      deliveredAt:
+        fixture.item === ProductStatus.Delivered
+          ? index === 5
+            ? new Date()
+            : createdAt
+          : null,
       createdAt,
       updatedAt: createdAt,
     });

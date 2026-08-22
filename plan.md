@@ -1207,8 +1207,10 @@ Goal: make the application safe and operable under real customer traffic.
     no longer poison typecheck, the delivery journey searches for its seeded
     package before asserting status controls, and the settlement settings test
     targets the matching live status region. A production-server E2E mode is
-    documented for rerunning protected journeys with Node/Next. The protected
-    suite must be rerun after these fixes before this launch gate can pass.
+    documented for rerunning protected journeys with Node/Next, and the
+    launcher now builds the isolated `.next-e2e` artifact automatically when
+    it is missing. The protected suite must be rerun after these fixes before
+    this launch gate can pass.
   - [ ] Run load tests for browse/search, checkout, webhooks, notifications, and dashboards
   - [ ] Complete accessibility, privacy/retention, legal-policy, and operational reviews
   - [ ] **Test**: Staging passes the Phase 12 suites, restore drill, rollback drill,

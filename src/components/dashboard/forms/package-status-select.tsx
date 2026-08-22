@@ -118,12 +118,15 @@ export default function PackageStatusSelect({
 	return (
 		<>
 			<Select
-				aria-label={`Change package status. Current status: ${PACKAGE_STATUS_LABELS[currentStatus]}`}
 				value={selectedStatus}
 				disabled={mutation.isPending}
 				onValueChange={(value) => selectStatus(value as PackageStatus)}
 			>
-				<SelectTrigger size='sm' className='w-[136px] text-xs'>
+				<SelectTrigger
+					aria-label={`Change package status. Current status: ${PACKAGE_STATUS_LABELS[currentStatus]}`}
+					size='sm'
+					className='w-[136px] text-xs'
+				>
 					<SelectValue placeholder={PACKAGE_STATUS_LABELS[currentStatus]} />
 				</SelectTrigger>
 				<SelectContent>

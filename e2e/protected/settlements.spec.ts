@@ -155,15 +155,17 @@ test("admin can change the commission from marketplace settings", async ({
   await input.fill("3");
   await holdDays.fill("0");
   await page.getByRole("button", { name: "Save marketplace settings" }).click();
-  await expect(page.getByRole("status").filter({ hasText: /New settlements will use 3% commission/ })).toContainText(
-    "New settlements will use 3% commission and can become eligible immediately",
+  await expect(page.getByRole("status")).toContainText(
+    "Saved. New settlements will use 3% commission and can become eligible immediately after delivery evidence",
+    { timeout: 30_000 },
   );
 
   await input.fill("2");
   await holdDays.fill("7");
   await page.getByRole("button", { name: "Save marketplace settings" }).click();
-  await expect(page.getByRole("status").filter({ hasText: /New settlements will use 2% commission/ })).toContainText(
-    "New settlements will use 2% commission and wait 7 days",
+  await expect(page.getByRole("status")).toContainText(
+    "Saved. New settlements will use 2% commission and wait 7 days after delivery evidence",
+    { timeout: 30_000 },
   );
 });
 
