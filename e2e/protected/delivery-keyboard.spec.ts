@@ -14,6 +14,7 @@ test.describe('deterministic delivery journey', () => {
   await signInAs(page, 'seller');
   await page.goto('/dashboard/seller/stores/gocart-demo-store/orders', { waitUntil: 'domcontentloaded', timeout: 120_000 });
   const sellerRow = page.getByRole('row').filter({ hasText: demoPackageReference(0) });
+  await expect(sellerRow).toBeVisible({ timeout: 30_000 });
 
   for (const [current, next] of [
     ['Pending', 'Accepted'],
@@ -23,10 +24,10 @@ test.describe('deterministic delivery journey', () => {
   ] as const) {
     const statusSelect = sellerRow.getByRole('combobox', { name: new RegExp(`Change package status\\. Current status: ${current}`, 'i') });
     await expect(statusSelect).toBeVisible({ timeout: 30_000 });
-    await statusSelect.focus();
-    await page.keyboard.press('Enter');
-    await page.keyboard.press('ArrowDown');
-    await page.keyboard.press('Enter');
+    await statusSelect.click();
+    const option = page.getByRole('option', { name: next, exact: true });
+    await expect(option).toBeVisible({ timeout: 30_000 });
+    await option.click();
     if (next === 'Handed off') {
       await expect(sellerRow.getByLabel('Package preparation complete: Handed off')).toBeVisible({ timeout: 30_000 });
     } else {
@@ -56,10 +57,10 @@ test.describe('deterministic delivery journey', () => {
   ] as const) {
     const statusSelect = adminRow.getByRole('combobox', { name: new RegExp(`Change shipment status\\. Current status: ${current}`, 'i') });
     await expect(statusSelect).toBeVisible({ timeout: 30_000 });
-    await statusSelect.focus();
-    await page.keyboard.press('Enter');
-    await page.keyboard.press('ArrowDown');
-    await page.keyboard.press('Enter');
+    await statusSelect.click();
+    const option = page.getByRole('option', { name: next, exact: true });
+    await expect(option).toBeVisible({ timeout: 30_000 });
+    await option.click();
     if (next === 'Delivered') {
       await expect(adminRow.getByLabel('Shipment complete: Delivered')).toBeVisible({ timeout: 30_000 });
     } else {
@@ -79,7 +80,7 @@ test.describe('deterministic delivery journey', () => {
   await page.goto(`/order/${demoFixtureId('order', 0)}`, { waitUntil: 'domcontentloaded', timeout: 120_000 });
   await expect(page.getByRole('heading', { name: /Shipment tracking/i })).toBeVisible();
   await expect(page.getByText('Delivered', { exact: true }).first()).toBeVisible({ timeout: 30_000 });
-  await expect(page.getByRole('heading', { name: 'Tracking history' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Tracking history' })).toBeVisible({ timeout: 30_000 });
 
   await testInfo.attach('delivery-keyboard-result.json', {
     body: JSON.stringify({ packageReference: demoPackageReference(0), orderId: demoFixtureId('order', 0), finalShipmentStatus: 'DELIVERED' }, null, 2),

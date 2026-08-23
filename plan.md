@@ -1211,6 +1211,21 @@ Goal: make the application safe and operable under real customer traffic.
     launcher now builds the isolated `.next-e2e` artifact automatically when
     it is missing. The protected suite must be rerun after these fixes before
     this launch gate can pass.
+  - **Validation evidence (2026-08-23)**: fresh isolated Docker PostgreSQL
+    runs produced passing protected browser evidence for authorization (6/6),
+    commerce (14/14), the dedicated seller/admin/customer delivery journey
+    (4/4), and settlements (9/9). The public production-mode Chromium smoke
+    passed 11/11. The normal production build completed with TypeScript and
+    static generation; the non-mutating local load smoke passed 60/60
+    responses across health, browse, and PostgreSQL search. TypeScript,
+    formatting, lint (0 errors, 164 existing warnings), 45 unit files/191
+    tests, the Docker 1,033-order integration workflow, and the shared
+    PostgreSQL rate-limit probe (5 allowed/7 limited) also passed. The
+    isolated browser and database runs do not touch production or Neon data.
+    External staging capacity, backups/restore, rollback, provider-outage,
+    legal/privacy/accessibility sign-off, and authenticated provider-load
+    coverage remain launch-owner gates, so Phase 15 is not marked complete
+    from local evidence alone.
   - [ ] Run load tests for browse/search, checkout, webhooks, notifications, and dashboards
   - [ ] Complete accessibility, privacy/retention, legal-policy, and operational reviews
   - [ ] **Test**: Staging passes the Phase 12 suites, restore drill, rollback drill,

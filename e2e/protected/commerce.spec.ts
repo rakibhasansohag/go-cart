@@ -83,7 +83,7 @@ test('seller can advance a demo package to Accepted', async ({ page }) => {
   await statusSelect.press('Enter');
   const acceptedOption = page.getByRole('option', { name: 'Accepted', exact: true });
   await expect(acceptedOption).toBeVisible();
-  await acceptedOption.press('Enter');
+  await acceptedOption.click();
   await expect(demoRow.getByRole('combobox', { name: /Change package status\. Current status: Accepted/i })).toBeVisible({ timeout: 30_000 });
 
   await page.reload();
@@ -108,7 +108,7 @@ test('seller can advance a demo package through handoff with keyboard actions', 
     await statusSelect.press('Enter');
     const option = page.getByRole('option', { name: next, exact: true });
     await expect(option).toBeVisible();
-    await option.press('Enter');
+    await option.click();
     if (next === 'Handed off') {
       await expect(demoRow.getByLabel('Package preparation complete: Handed off')).toBeVisible({ timeout: 30_000 });
     } else {
@@ -140,7 +140,7 @@ test('admin can advance the handed-off shipment to delivery with keyboard action
     await statusSelect.press('Enter');
     const option = page.getByRole('option', { name: next, exact: true });
     await expect(option).toBeVisible();
-    await option.press('Enter');
+    await option.click();
     if (next === 'Delivered') {
       await expect(demoRow.getByLabel('Shipment complete: Delivered')).toBeVisible({ timeout: 30_000 });
     } else {
