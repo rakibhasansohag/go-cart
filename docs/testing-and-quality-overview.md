@@ -141,6 +141,10 @@ deployment owner's access. Use this runbook for those controlled operations.
    migrations/read-only verification there, validate order/payment/settlement
    counts, then record the recovery time and delete the drill database. Never
    perform this drill against the production database.
+   The isolated Docker equivalent is `bun run test:restore:local`; it dumps
+   `gocart_e2e`, restores it into a temporary `gocart_restore_drill` database,
+   verifies a deterministic row count, and removes both the temporary database
+   and dump file.
 5. **Provider outage:** preserve provider event IDs and idempotency keys; pause
    manual retries until provider status is known, then use the existing admin
    delivery/settlement recovery views and reconciliation jobs. Do not replay

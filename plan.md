@@ -1134,7 +1134,7 @@ Goal: make the application safe and operable under real customer traffic.
     review and deployment/rollback/restore baseline.
   - [ ] Use least-privilege provider credentials, separate environments, rotation
         procedures, and automated secret scanning
-  - [ ] Add a tested Content Security Policy and security headers compatible with
+  - [x] Add a tested Content Security Policy and security headers compatible with
         Clerk, Stripe/PayPal, Cloudinary, and application assets
   - [ ] Add dependency vulnerability review and a documented patch cadence
 
@@ -1150,13 +1150,17 @@ Goal: make the application safe and operable under real customer traffic.
     explicit operational signals. The operational runbook now defines owner
     action thresholds: two failed health checks, any reconciliation failure,
     15-minute outbox age, and 30-minute automation freshness.
-  - [ ] Add structured logs with request/event correlation IDs and secret/PII redaction
+    The repeatable isolated restore drill (`bun run test:restore:local`) also
+    passed on 2026-08-23: the Docker E2E database was dumped, restored into a
+    temporary database, verified by row count, and cleaned up without touching
+    production or Neon data.
+  - [x] Add structured logs with request/event correlation IDs and secret/PII redaction
   - [ ] Add free-tier or self-hostable error tracking, uptime checks, and alerts for
         payments, webhooks, email outbox, cron jobs, search, and settlement
   - [ ] Define service-level indicators for checkout success, webhook lag, outbox
         lag, search latency, and settlement reconciliation
   - [ ] Automate database backups and complete a documented restore drill
-  - [ ] Add staging, deployment, rollback, incident, and provider-outage runbooks
+  - [x] Add staging, deployment, rollback, incident, and provider-outage runbooks
 
 - [ ] **Phase 15.4 — Launch gate**
   - **Implementation evidence (2026-08-20, in progress)**: `bun run
