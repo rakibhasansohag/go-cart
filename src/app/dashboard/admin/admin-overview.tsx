@@ -34,28 +34,25 @@ export default function AdminOverview() {
 				<StatCard
 					title='Total Platform Revenue'
 					value={`$${data.totalRevenue.toLocaleString()}`}
-					change={12.4}
 					icon={DollarSign}
 					iconBgColor='bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
 				/>
 				<StatCard
 					title='Total Orders'
 					value={data.totalOrders.toLocaleString()}
-					change={8.2}
 					icon={ShoppingBag}
 					iconBgColor='bg-blue-500/10 text-blue-600 dark:text-blue-400'
 				/>
 				<StatCard
 					title='Total Stores'
 					value={data.totalStores.toLocaleString()}
-					description={`${data.activeStores} pending approval`}
+					description={`${data.activeStores} active stores`}
 					icon={Store}
 					iconBgColor='bg-purple-500/10 text-purple-600 dark:text-purple-400'
 				/>
 				<StatCard
 					title='Total Users'
 					value={data.totalUsers.toLocaleString()}
-					change={5.1}
 					icon={Users}
 					iconBgColor='bg-amber-500/10 text-amber-600 dark:text-amber-400'
 				/>

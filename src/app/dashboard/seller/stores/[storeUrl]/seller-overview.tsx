@@ -26,11 +26,13 @@ const TIMEFRAMES = [
 export default function SellerOverview({ storeUrl }: SellerOverviewProps) {
 	const [timeframe, setTimeframe] = useState<string>('all');
 
-	const { data, isLoading } = useQuery({
+	const { data, isLoading, isError } = useQuery({
 		queryKey: queryKeys.dashboard.sellerAnalytics(storeUrl, timeframe),
 		queryFn: () => getSellerStoreAnalyticsData(storeUrl, timeframe),
+		staleTime: 30_000,
 	});
 
+	if (isError) return <p role='alert' className='rounded-lg border border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive'>Analytics are temporarily unavailable. Try again shortly.</p>;
 	if (isLoading || !data) return <OverviewSkeleton />;
 
 	return (
@@ -71,35 +73,35 @@ export default function SellerOverview({ storeUrl }: SellerOverviewProps) {
 				<StatCard
 					title='Gross Revenue'
 					value={`$${data.totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-					change={15.3}
+					description={`$${data.netSellerRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} seller payable`}
 					icon={DollarSign}
 					iconBgColor='bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
 				/>
 				<StatCard
 					title='Avg Order Value'
 					value={`$${(data.averageOrderValue || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-					change={4.2}
+					description={`${data.totalOrders.toLocaleString()} paid orders`}
 					icon={TrendingUp}
 					iconBgColor='bg-indigo-500/10 text-indigo-600 dark:text-indigo-400'
 				/>
 				<StatCard
 					title='Total Orders'
 					value={data.totalOrders.toLocaleString()}
-					change={9.1}
+					description={`${data.refundRate.toFixed(1)}% refund rate`}
 					icon={ShoppingBag}
 					iconBgColor='bg-blue-500/10 text-blue-600 dark:text-blue-400'
 				/>
 				<StatCard
-					title='Active Products'
+					title='Catalog Products'
 					value={data.activeProducts.toLocaleString()}
-					description='Items in inventory'
+					description={`${data.returnRate.toFixed(1)}% return rate`}
 					icon={Package}
 					iconBgColor='bg-purple-500/10 text-purple-600 dark:text-purple-400'
 				/>
 				<StatCard
 					title='Unique Customers'
 					value={data.totalCustomers.toLocaleString()}
-					change={6.4}
+					description={`${data.repeatCustomerRate.toFixed(1)}% repeat customers`}
 					icon={Users}
 					iconBgColor='bg-amber-500/10 text-amber-600 dark:text-amber-400'
 				/>

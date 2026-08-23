@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { normalizeCommerceReference } from "@/lib/orders/references";
 import { primaryShipmentFromAssignments } from "@/lib/shipments/compat";
 import { auth } from "@clerk/nextjs/server";
+import { PaymentStatus, Prisma } from "@prisma/client";
 
 export type MonthlyRevenueData = {
   month: string;
@@ -60,11 +61,27 @@ export type SellerAnalyticsData = {
   averageOrderValue: number;
   activeProducts: number;
   totalCustomers: number;
+  commissionRevenue: number;
+  netSellerRevenue: number;
+  refundRate: number;
+  returnRate: number;
+  repeatCustomerRate: number;
+  reviewCount: number;
+  averageRating: number;
   monthlyRevenue: MonthlyRevenueData[];
   statusDistribution: OrderStatusDistributionData[];
   recentOrders: RecentOrderSummary[];
   topProducts: TopSellingProductSummary[];
 };
+
+const REVENUE_PAYMENT_STATUSES = [
+  PaymentStatus.Paid,
+  PaymentStatus.PartiallyRefunded,
+] as const;
+const REFUND_PAYMENT_STATUSES = [
+  PaymentStatus.PartiallyRefunded,
+  PaymentStatus.Refunded,
+] as const;
 
 const INVALID_CUSTOMER_NAMES = new Set([
   "",
@@ -119,31 +136,50 @@ async function requireAdminDatabaseUser() {
 export const getAdminAnalyticsData = async (): Promise<AdminAnalyticsData> => {
   await requireAdminDatabaseUser();
 
+  const paidOrderGroupWhere: Prisma.OrderGroupWhereInput = {
+    order: { paymentStatus: { in: [...REVENUE_PAYMENT_STATUSES] } },
+  };
+  const now = new Date();
+  const chartStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 5, 1));
+
   const [
     totalStores,
     activeStores,
     totalUsers,
-    orderGroups,
+    totalOrders,
+    paidSales,
+    monthlyRows,
     recentOrderGroups,
     categories,
   ] = await Promise.all([
     db.store.count(),
-    db.store.count({ where: { status: "PENDING" } }), // or active stores
+    db.store.count({ where: { status: "ACTIVE" } }),
     db.user.count(),
+    db.orderGroup.count({ where: paidOrderGroupWhere }),
+    db.orderGroup.aggregate({ where: paidOrderGroupWhere, _sum: { total: true } }),
+    db.$queryRaw<MonthlyRevenueRow[]>(Prisma.sql`
+      SELECT date_trunc('month', og."createdAt" AT TIME ZONE 'UTC') AS month,
+             COALESCE(SUM(og."total"), 0)::float8 AS revenue,
+             COUNT(*)::int AS orders
+      FROM "OrderGroup" og
+      JOIN "Order" o ON o.id = og."orderId"
+      WHERE o."paymentStatus" IN ('Paid', 'PartiallyRefunded')
+        AND og."createdAt" >= ${chartStart}
+      GROUP BY 1
+      ORDER BY 1 ASC
+    `),
     db.orderGroup.findMany({
+      where: paidOrderGroupWhere,
+      take: 6,
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
       select: {
+        id: true,
         total: true,
         status: true,
         createdAt: true,
-      },
-    }),
-    db.orderGroup.findMany({
-      take: 6,
-      orderBy: { createdAt: "desc" },
-      include: {
         store: { select: { name: true } },
         order: {
-          include: {
+          select: {
             user: {
               select: {
                 name: true,
@@ -160,69 +196,19 @@ export const getAdminAnalyticsData = async (): Promise<AdminAnalyticsData> => {
     }),
     db.category.findMany({
       take: 5,
-      include: {
-        products: {
-          select: {
-            id: true,
-          },
-        },
+      select: {
+        name: true,
+        _count: { select: { products: true } },
       },
     }),
   ]);
 
-  const totalRevenue = orderGroups.reduce((sum, g) => sum + (g.total || 0), 0);
-  const totalOrders = orderGroups.length;
-
-  // Build 6-month revenue trend
-  const months = [
-    "Jan",
-    "Feb",
-    "Mar",
-    "Apr",
-    "May",
-    "Jun",
-    "Jul",
-    "Aug",
-    "Sep",
-    "Oct",
-    "Nov",
-    "Dec",
-  ];
-  const now = new Date();
-  const monthlyRevenueMap = new Map<
-    string,
-    { revenue: number; orders: number }
-  >();
-
-  for (let i = 5; i >= 0; i--) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    const key = `${months[d.getMonth()]} ${d.getFullYear()}`;
-    monthlyRevenueMap.set(key, { revenue: 0, orders: 0 });
-  }
-
-  orderGroups.forEach((g) => {
-    const d = new Date(g.createdAt);
-    const key = `${months[d.getMonth()]} ${d.getFullYear()}`;
-    if (monthlyRevenueMap.has(key)) {
-      const current = monthlyRevenueMap.get(key)!;
-      monthlyRevenueMap.set(key, {
-        revenue: current.revenue + (g.total || 0),
-        orders: current.orders + 1,
-      });
-    }
-  });
-
-  const monthlyRevenue: MonthlyRevenueData[] = Array.from(
-    monthlyRevenueMap.entries(),
-  ).map(([month, data]) => ({
-    month,
-    revenue: Math.round(data.revenue * 100) / 100,
-    orders: data.orders,
-  }));
+  const totalRevenue = Math.round((paidSales._sum.total ?? 0) * 100) / 100;
+  const monthlyRevenue = buildMonthlyRevenue(monthlyRows, now);
 
   const categoryBreakdown: CategoryRevenueData[] = categories.map((c) => ({
     name: c.name,
-    value: c.products.length,
+    value: c._count.products,
   }));
 
   const recentOrders: RecentOrderSummary[] = recentOrderGroups.map((g) => ({
@@ -263,11 +249,62 @@ const getFallbackSellerAnalytics = (storeUrl: string): SellerAnalyticsData => ({
   averageOrderValue: 0,
   activeProducts: 0,
   totalCustomers: 0,
+  commissionRevenue: 0,
+  netSellerRevenue: 0,
+  refundRate: 0,
+  returnRate: 0,
+  repeatCustomerRate: 0,
+  reviewCount: 0,
+  averageRating: 0,
   monthlyRevenue: [],
   statusDistribution: [],
   recentOrders: [],
   topProducts: [],
 });
+
+type MonthlyRevenueRow = {
+  month: Date;
+  revenue: number | null;
+  orders: bigint | number;
+};
+
+function timeframeStart(timeframe: string, now: Date) {
+  if (timeframe === "7d") return new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+  if (timeframe === "30d") return new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+  if (timeframe === "this_month") {
+    return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+  }
+  return undefined;
+}
+
+function buildMonthlyRevenue(rows: MonthlyRevenueRow[], now: Date): MonthlyRevenueData[] {
+  const monthLabels = [
+    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+  ];
+  const values = new Map<string, { revenue: number; orders: number }>();
+  for (let offset = 5; offset >= 0; offset -= 1) {
+    const month = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - offset, 1));
+    values.set(`${month.getUTCFullYear()}-${month.getUTCMonth()}`, { revenue: 0, orders: 0 });
+  }
+  for (const row of rows) {
+    const month = new Date(row.month);
+    const key = `${month.getUTCFullYear()}-${month.getUTCMonth()}`;
+    if (!values.has(key)) continue;
+    values.set(key, {
+      revenue: Number(row.revenue ?? 0),
+      orders: Number(row.orders),
+    });
+  }
+  return [...values.entries()].map(([key, value]) => {
+    const [year, month] = key.split("-").map(Number);
+    return {
+      month: `${monthLabels[month]} ${year}`,
+      revenue: Math.round(value.revenue * 100) / 100,
+      orders: value.orders,
+    };
+  });
+}
 
 /**
  * Retrieves store-specific analytics for Seller Dashboard
@@ -276,261 +313,199 @@ export const getSellerStoreAnalyticsData = async (
   storeUrl: string,
   timeframe: string = "all",
 ): Promise<SellerAnalyticsData> => {
-  try {
-    const user = await getCurrentDatabaseUser();
-    if (user?.role !== "SELLER") {
-      return getFallbackSellerAnalytics(storeUrl);
-    }
+  const user = await getCurrentDatabaseUser();
+  if (user?.role !== "SELLER") return getFallbackSellerAnalytics(storeUrl);
 
-    const store = await db.store.findFirst({
-      where: { url: storeUrl, userId: user.id },
-    });
+  const store = await db.store.findFirst({
+    where: { url: storeUrl, userId: user.id },
+    select: { id: true, name: true },
+  });
+  if (!store) return getFallbackSellerAnalytics(storeUrl);
 
-    if (!store) {
-      return getFallbackSellerAnalytics(storeUrl);
-    }
+  const now = new Date();
+  const periodStart = timeframeStart(timeframe, now);
+  const dateFilter = periodStart ? { createdAt: { gte: periodStart } } : {};
+  const paidOrderGroupWhere: Prisma.OrderGroupWhereInput = {
+    storeId: store.id,
+    order: { paymentStatus: { in: [...REVENUE_PAYMENT_STATUSES] }, ...dateFilter },
+  };
+  const allPaidOrRefundedWhere: Prisma.OrderGroupWhereInput = {
+    storeId: store.id,
+    order: {
+      paymentStatus: {
+        in: [
+          PaymentStatus.Paid,
+          PaymentStatus.PartiallyRefunded,
+          PaymentStatus.Refunded,
+        ],
+      },
+      ...dateFilter,
+    },
+  };
+  const chartStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 5, 1));
+  const chartDateClause = periodStart
+    ? Prisma.sql`AND og."createdAt" >= ${periodStart}`
+    : Prisma.empty;
 
-    const now = new Date();
-    let dateFilter: Date | undefined = undefined;
-    if (timeframe === "7d") {
-      dateFilter = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-    } else if (timeframe === "30d") {
-      dateFilter = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-    } else if (timeframe === "this_month") {
-      dateFilter = new Date(now.getFullYear(), now.getMonth(), 1);
-    }
-
-    const orderWhere = {
-      storeId: store.id,
-      ...(dateFilter ? { createdAt: { gte: dateFilter } } : {}),
-    };
-
-    const [
-      activeProductsCount,
-      orderGroups,
-      recentOrderGroups,
-      rawTopProducts,
-    ] = await Promise.all([
-      db.product.count({
-        where: { storeId: store.id },
-      }),
-      db.orderGroup.findMany({
-        where: orderWhere,
-        include: {
-          order: {
-            select: { userId: true },
+  const [
+    catalogProducts,
+    paidOrderCount,
+    paidSales,
+    uniqueCustomerRows,
+    repeatCustomerRows,
+    monthlyRows,
+    statusRows,
+    recentOrderGroups,
+    topProducts,
+    settlementTotals,
+    refundedOrderCount,
+    returnedOrderCount,
+    reviewStats,
+  ] = await Promise.all([
+    db.product.count({ where: { storeId: store.id } }),
+    db.orderGroup.count({ where: paidOrderGroupWhere }),
+    db.orderGroup.aggregate({ where: paidOrderGroupWhere, _sum: { total: true } }),
+    db.$queryRaw<{ count: bigint | number }[]>(Prisma.sql`
+      SELECT COUNT(DISTINCT o."userId")::int AS count
+      FROM "OrderGroup" og
+      JOIN "Order" o ON o.id = og."orderId"
+      WHERE og."storeId" = ${store.id}
+        AND o."paymentStatus" IN ('Paid', 'PartiallyRefunded')
+        ${chartDateClause}
+    `),
+    db.$queryRaw<{ rate: number | null }[]>(Prisma.sql`
+      WITH customer_orders AS (
+        SELECT o."userId", COUNT(*)::int AS order_count
+        FROM "OrderGroup" og
+        JOIN "Order" o ON o.id = og."orderId"
+        WHERE og."storeId" = ${store.id}
+          AND o."paymentStatus" IN ('Paid', 'PartiallyRefunded')
+          ${chartDateClause}
+        GROUP BY o."userId"
+      )
+      SELECT COALESCE(
+        COUNT(*) FILTER (WHERE order_count > 1)::float / NULLIF(COUNT(*), 0),
+        0
+      )::float8 AS rate
+      FROM customer_orders
+    `),
+    db.$queryRaw<MonthlyRevenueRow[]>(Prisma.sql`
+      SELECT date_trunc('month', og."createdAt" AT TIME ZONE 'UTC') AS month,
+             COALESCE(SUM(og."total"), 0)::float8 AS revenue,
+             COUNT(*)::int AS orders
+      FROM "OrderGroup" og
+      JOIN "Order" o ON o.id = og."orderId"
+      WHERE og."storeId" = ${store.id}
+        AND o."paymentStatus" IN ('Paid', 'PartiallyRefunded')
+        AND og."createdAt" >= ${chartStart}
+        ${chartDateClause}
+      GROUP BY 1
+      ORDER BY 1 ASC
+    `),
+    db.orderGroup.groupBy({
+      by: ["status"],
+      where: paidOrderGroupWhere,
+      _count: { _all: true },
+    }),
+    db.orderGroup.findMany({
+      where: paidOrderGroupWhere,
+      take: 6,
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      select: {
+        id: true,
+        total: true,
+        status: true,
+        createdAt: true,
+        order: {
+          select: {
+            user: { select: { name: true, email: true, picture: true } },
+            shippingAddress: { select: { firstName: true, lastName: true } },
           },
-          items: true,
         },
-      }),
-      db.orderGroup.findMany({
-        where: orderWhere,
-        take: 6,
-        orderBy: { createdAt: "desc" },
-        include: {
-          store: { select: { name: true } },
-          order: {
-            include: {
-              user: {
-                select: {
-                  name: true,
-                  email: true,
-                  picture: true,
-                },
-              },
-              shippingAddress: {
-                select: { firstName: true, lastName: true },
-              },
-            },
-          },
+      },
+    }),
+    db.orderItem.groupBy({
+      by: ["productId", "name", "productSlug", "image", "price"],
+      where: { orderGroup: paidOrderGroupWhere },
+      _sum: { quantity: true, totalPrice: true },
+      orderBy: { _sum: { totalPrice: "desc" } },
+      take: 5,
+    }),
+    db.sellerSettlement.aggregate({
+      where: { orderGroup: paidOrderGroupWhere },
+      _sum: { commissionCents: true, sellerPayableCents: true },
+    }),
+    db.orderGroup.count({
+      where: {
+        ...allPaidOrRefundedWhere,
+        order: {
+          paymentStatus: { in: [...REFUND_PAYMENT_STATUSES] },
+          ...dateFilter,
         },
-      }),
-      db.product.findMany({
-        where: { storeId: store.id },
-        take: 5,
-        orderBy: { sales: "desc" },
-        select: {
-          id: true,
-          name: true,
-          slug: true,
-          sales: true,
-          variants: {
-            take: 1,
-            select: {
-              images: { take: 1, select: { url: true } },
-              sizes: { take: 1, select: { price: true } },
-            },
-          },
-        },
-      }),
-    ]);
+      },
+    }),
+    db.orderGroup.count({
+      where: {
+        ...allPaidOrRefundedWhere,
+        returnRequests: { some: { status: { in: ["REFUNDED", "EXCHANGED"] } } },
+      },
+    }),
+    db.review.aggregate({
+      where: { product: { storeId: store.id }, ...dateFilter },
+      _count: { _all: true },
+      _avg: { rating: true },
+    }),
+  ]);
 
-    const totalRevenue = orderGroups.reduce(
-      (sum, g) => sum + (g.total || 0),
-      0,
-    );
-    const totalOrders = orderGroups.length;
-    const uniqueCustomers = new Set(
-      orderGroups.map((g) => g.order?.userId).filter(Boolean),
-    ).size;
+  const totalRevenue = Math.round((paidSales._sum.total ?? 0) * 100) / 100;
+  const totalOrders = paidOrderCount;
+  const uniqueCustomers = Number(uniqueCustomerRows[0]?.count ?? 0);
+  const denominator = Math.max(1, await db.orderGroup.count({ where: allPaidOrRefundedWhere }));
+  const averageOrderValue = totalOrders > 0 ? Math.round((totalRevenue / totalOrders) * 100) / 100 : 0;
 
-    // Monthly revenue trend
-    const months = [
-      "Jan",
-      "Feb",
-      "Mar",
-      "Apr",
-      "May",
-      "Jun",
-      "Jul",
-      "Aug",
-      "Sep",
-      "Oct",
-      "Nov",
-      "Dec",
-    ];
-    const monthlyRevenueMap = new Map<
-      string,
-      { revenue: number; orders: number }
-    >();
-
-    for (let i = 5; i >= 0; i--) {
-      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const key = `${months[d.getMonth()]} ${d.getFullYear()}`;
-      monthlyRevenueMap.set(key, { revenue: 0, orders: 0 });
-    }
-
-    orderGroups.forEach((g) => {
-      const d = new Date(g.createdAt);
-      const key = `${months[d.getMonth()]} ${d.getFullYear()}`;
-      if (monthlyRevenueMap.has(key)) {
-        const current = monthlyRevenueMap.get(key)!;
-        monthlyRevenueMap.set(key, {
-          revenue: current.revenue + (g.total || 0),
-          orders: current.orders + 1,
-        });
-      }
-    });
-
-    const monthlyRevenue: MonthlyRevenueData[] = Array.from(
-      monthlyRevenueMap.entries(),
-    ).map(([month, data]) => ({
-      month,
-      revenue: Math.round(data.revenue * 100) / 100,
-      orders: data.orders,
-    }));
-
-    // Order status distribution
-    const statusCounts: Record<string, number> = {};
-    orderGroups.forEach((g) => {
-      statusCounts[g.status] = (statusCounts[g.status] || 0) + 1;
-    });
-
-    const statusDistribution: OrderStatusDistributionData[] = Object.entries(
-      statusCounts,
-    ).map(([status, count]) => ({
-      status,
-      count,
-    }));
-
-    const recentOrders: RecentOrderSummary[] = recentOrderGroups.map((g) => ({
-      id: g.id,
+  return {
+    storeId: store.id,
+    storeName: store.name,
+    totalRevenue,
+    totalOrders,
+    averageOrderValue,
+    activeProducts: catalogProducts,
+    totalCustomers: uniqueCustomers,
+    commissionRevenue: Math.round((settlementTotals._sum.commissionCents ?? 0)) / 100,
+    netSellerRevenue: Math.round((settlementTotals._sum.sellerPayableCents ?? 0)) / 100,
+    refundRate: Math.round((refundedOrderCount / denominator) * 10_000) / 100,
+    returnRate: Math.round((returnedOrderCount / denominator) * 10_000) / 100,
+    repeatCustomerRate: Math.round(Number(repeatCustomerRows[0]?.rate ?? 0) * 10_000) / 100,
+    monthlyRevenue: buildMonthlyRevenue(monthlyRows, now),
+    statusDistribution: statusRows
+      .map((row) => ({ status: row.status, count: row._count._all }))
+      .sort((left, right) => left.status.localeCompare(right.status)),
+    recentOrders: recentOrderGroups.map((group) => ({
+      id: group.id,
       customerName: getCustomerDisplayName({
-        name: g.order?.user?.name,
-        email: g.order?.user?.email,
-        firstName: g.order?.shippingAddress?.firstName,
-        lastName: g.order?.shippingAddress?.lastName,
+        name: group.order.user?.name,
+        email: group.order.user?.email,
+        firstName: group.order.shippingAddress?.firstName,
+        lastName: group.order.shippingAddress?.lastName,
       }),
-      customerEmail: g.order?.user?.email || "",
-      customerImage: g.order?.user?.picture || undefined,
-      storeName: g.store?.name || store.name,
-      total: g.total || 0,
-      status: g.status,
-      createdAt: g.createdAt,
-    }));
-
-    const averageOrderValue =
-      totalOrders > 0
-        ? Math.round((totalRevenue / totalOrders) * 100) / 100
-        : 0;
-
-    // Calculate real product sales from order items
-    const salesByProductMap = new Map<
-      string,
-      {
-        name: string;
-        slug: string;
-        sales: number;
-        price: number;
-        image: string;
-      }
-    >();
-
-    orderGroups.forEach((g) => {
-      g.items?.forEach((item) => {
-        const existing = salesByProductMap.get(item.productId);
-        if (existing) {
-          existing.sales += item.quantity || 1;
-        } else {
-          salesByProductMap.set(item.productId, {
-            name: item.name,
-            slug: item.productSlug,
-            sales: item.quantity || 1,
-            price: item.price,
-            image: item.image,
-          });
-        }
-      });
-    });
-
-    let topProducts: TopSellingProductSummary[] = Array.from(
-      salesByProductMap.entries(),
-    )
-      .map(([id, p]) => ({
-        id,
-        name: p.name,
-        slug: p.slug,
-        sales: p.sales,
-        price: p.price,
-        image: p.image,
-      }))
-      .sort((a, b) => b.sales - a.sales)
-      .slice(0, 5);
-
-    // Fallback to raw catalog products if no items ordered yet
-    if (topProducts.length === 0 && rawTopProducts.length > 0) {
-      topProducts = rawTopProducts.map((p) => {
-        const firstVariant = p.variants[0];
-        const firstImage = firstVariant?.images[0]?.url || "";
-        const firstPrice = firstVariant?.sizes[0]?.price || 0;
-        return {
-          id: p.id,
-          name: p.name,
-          slug: p.slug,
-          sales: p.sales || 0,
-          price: firstPrice,
-          image: firstImage,
-        };
-      });
-    }
-
-    return {
-      storeId: store.id,
+      customerEmail: group.order.user?.email ?? "",
+      customerImage: group.order.user?.picture ?? undefined,
       storeName: store.name,
-      totalRevenue: Math.round(totalRevenue * 100) / 100,
-      totalOrders,
-      averageOrderValue,
-      activeProducts: activeProductsCount,
-      totalCustomers: uniqueCustomers,
-      monthlyRevenue,
-      statusDistribution,
-      recentOrders,
-      topProducts,
-    };
-  } catch (error) {
-    console.error("Error in getSellerStoreAnalyticsData:", error);
-    return getFallbackSellerAnalytics(storeUrl);
-  }
+      total: group.total,
+      status: group.status,
+      createdAt: group.createdAt,
+    })),
+    topProducts: topProducts.map((product) => ({
+      id: product.productId,
+      name: product.name,
+      slug: product.productSlug,
+      sales: product._sum.quantity ?? 0,
+      price: product.price,
+      image: product.image,
+    })),
+    reviewCount: reviewStats._count._all,
+    averageRating: reviewStats._avg.rating ?? 0,
+  };
 };
 
 /**

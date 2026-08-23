@@ -496,6 +496,19 @@ totals, and top-product revenue. Browser verification remains subject to the
 existing protected Chromium bootstrap timeout; do not use production or Neon
 to compensate for that gap.
 
+### 7h. Validate Phase 16 analytics semantics
+
+Seller and admin analytics use USD order totals and UTC timestamps. Recognized
+sales include `Paid` and `PartiallyRefunded` payments; `Refunded` and
+`PartiallyRefunded` payments feed refund-rate denominators, while return rate
+counts order groups with a `REFUNDED` or `EXCHANGED` return request. Repeat
+customers are distinct customers with more than one recognized order in the
+selected range. Seller settlement commission and payable values come from the
+immutable minor-unit ledger rather than recalculating historical rates. Recent
+analytics rows are bounded and deterministically ordered by `createdAt` and `id`.
+The protected analytics checks are opt-in and must use the isolated Docker/E2E
+database; no production or Neon data is valid evidence.
+
 ### 8. Run static checks and the production build
 
 ```powershell

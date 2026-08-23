@@ -1243,13 +1243,36 @@ Goal: turn the existing dashboard prototypes into authorized, payment-grounded,
 actionable analytics without a third-party analytics dependency.
 
 - [ ] **Phase 16.1 — Analytics correctness and access foundation**
-  - [ ] Require seller role plus store ownership in every seller analytics query;
+  - [x] Require seller role plus store ownership in every seller analytics query;
         never return customer PII for another seller's store
-  - [ ] Define GMV, recognized revenue, net seller revenue, order count, active
+  - [x] Define GMV, recognized revenue, net seller revenue, order count, active
         store, refund rate, return rate, repeat customer, and date/timezone semantics
-  - [ ] Include only the correct payment/order states and remove hard-coded growth percentages
-  - [ ] Use database aggregation and stable pagination instead of loading all order groups
-  - [ ] Add query-level authorization, aggregation, empty-state, and large-fixture tests
+  - [x] Include only the correct payment/order states and remove hard-coded growth percentages
+  - [x] Use database aggregation and bounded deterministic recent rows instead of loading all order groups
+  - [ ] Add query-level authorization, aggregation, empty-state, and fixture tests
+
+  - **Implementation evidence (2026-08-23)**: seller analytics now resolves the
+    authenticated database seller before constraining the store lookup by
+    `userId`; missing/non-seller ownership returns a zero-safe empty state without
+    reading another store's orders or customer data. Paid and partially refunded
+    orders are the recognized-sales denominator; refunded orders feed refund rate;
+    refunded/exchanged return requests feed return rate; repeat-customer rate is
+    calculated from distinct order customers in the selected range. Money is USD,
+    persisted order timestamps are interpreted in UTC, settlement commission/payable
+    cents are converted to display dollars, and recent rows are bounded to six with
+    `createdAt` plus `id` tie-breaking. Seller and admin totals, monthly revenue,
+    status counts, product counts, and category counts use database aggregates rather
+    than loading the full order history. Dashboard copy no longer invents growth
+    percentages, and seller analytics is server-prefetched and hydrated with the
+    same TanStack Query key.
+  - **Validation evidence (2026-08-23, partial)**: `src/queries/analytics.test.ts`
+    covers seller authorization, empty ownership fallback, aggregate-derived
+    metrics, paid-state filtering, deterministic bounded recent rows, admin
+    aggregation, and no broad include. Typecheck, full Vitest (45 files / 193
+    tests), formatting, and lint pass. `e2e/protected/analytics.spec.ts` is ready
+    for the isolated protected browser suite, but the local launcher timed out
+    without a Playwright result; the isolated production build also exceeded five
+    minutes. Keep this test item open until those two gates pass.
 
 - [ ] **Phase 16.2 — Seller analytics**
   - [ ] Revenue over time with daily/weekly/monthly controls and comparable prior periods
