@@ -1,10 +1,16 @@
 'use client';
 
-import { MonthlyRevenueData } from '@/queries/analytics';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 
+type OverviewChartData = {
+	label?: string;
+	month?: string;
+	revenue: number;
+	orders: number;
+};
+
 interface OverviewChartProps {
-	data: MonthlyRevenueData[];
+	data: OverviewChartData[];
 	title?: string;
 	description?: string;
 }
@@ -63,7 +69,7 @@ export default function OverviewChart({
 											${item.revenue.toLocaleString()}
 										</p>
 										<p className='text-[10px] text-muted-foreground'>
-											{item.orders} {item.orders === 1 ? 'order' : 'orders'} ({item.month})
+											{item.orders} {item.orders === 1 ? 'order' : 'orders'} ({item.label ?? item.month})
 										</p>
 									</div>
 
@@ -83,7 +89,7 @@ export default function OverviewChart({
 
 									{/* Month Label */}
 									<span className='text-xs text-muted-foreground font-medium truncate max-w-full group-hover:text-foreground transition-colors'>
-										{item.month.split(' ')[0]}
+										{(item.label ?? item.month ?? '').split(' ')[0]}
 									</span>
 								</div>
 							);
@@ -93,7 +99,7 @@ export default function OverviewChart({
 
 				{!hasRevenue && (
 					<p className='text-xs text-muted-foreground text-center mt-3 italic'>
-						No sales activity recorded in the last 6 months.
+						No sales activity recorded for the selected range.
 					</p>
 				)}
 			</CardContent>

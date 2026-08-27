@@ -16,8 +16,8 @@ export default async function SellerStoresPage({
 	const { storeUrl } = await params;
 	const queryClient = getQueryClient();
 	await queryClient.prefetchQuery({
-		queryKey: queryKeys.dashboard.sellerAnalytics(storeUrl, 'all'),
-		queryFn: () => getSellerStoreAnalyticsData(storeUrl, 'all'),
+		queryKey: queryKeys.dashboard.sellerAnalytics(storeUrl, 'all', 'month'),
+		queryFn: () => getSellerStoreAnalyticsData(storeUrl, 'all', 'month'),
 	});
 
 	return (

@@ -14,6 +14,16 @@ test('seller analytics renders database-backed metric semantics without hard-cod
   await expect(page.getByText('Gross Revenue', { exact: true })).toBeVisible();
   await expect(page.getByText(/seller payable/i)).toBeVisible();
   await expect(page.getByText(/repeat customers/i)).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Revenue trend' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Inventory risk' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Day', exact: true })).toHaveAttribute('aria-pressed', 'false');
+  await expect(page.getByRole('button', { name: 'Month', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await page.getByRole('button', { name: 'Day', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Day', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await page.getByRole('button', { name: 'Week', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Week', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await page.getByRole('button', { name: 'Month', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Month', exact: true })).toHaveAttribute('aria-pressed', 'true');
   await expect(page.getByText('+15.3%', { exact: true })).toHaveCount(0);
   await expect(page.getByText('+4.2%', { exact: true })).toHaveCount(0);
   await expect(page.getByText('+9.1%', { exact: true })).toHaveCount(0);

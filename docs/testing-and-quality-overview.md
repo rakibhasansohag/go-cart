@@ -509,6 +509,27 @@ analytics rows are bounded and deterministically ordered by `createdAt` and `id`
 The protected analytics checks are opt-in and must use the isolated Docker/E2E
 database; no production or Neon data is valid evidence.
 
+### 7i. Validate Phase 16.2 seller analytics
+
+The seller analytics range controls are server-prefetched for `all` plus monthly
+granularity, then hydrated with a query key containing both the selected timeframe
+and day/week/month granularity. Trend buckets use UTC timestamps. A finite range
+compares revenue and paid orders with the immediately preceding range of equal
+duration; the all-time view does not invent a comparison percentage.
+
+Product and variant rankings are limited and deterministically ordered by seller
+net revenue, then stable identifiers. Gross revenue and units come from paid or
+partially refunded order items. Seller net is the line-level gross amount after a
+proportional allocation of the persisted settlement commission, so the UI labels
+it as net rather than pretending it is an operating-profit calculation. Stock risk
+is constrained by store ownership, uses `<5` units for low stock and `0` for out of
+stock, and returns at most five rows ordered by quantity and identifier.
+
+The protected browser test must verify the seller heading, revenue trend, inventory
+risk summary, accessible granularity controls, honest empty/comparison states, and
+absence of hard-coded growth claims. Run it only with the isolated Docker/E2E
+database; production or Neon data is not valid evidence.
+
 ### 8. Run static checks and the production build
 
 ```powershell

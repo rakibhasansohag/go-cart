@@ -1242,14 +1242,14 @@ Goal: make the application safe and operable under real customer traffic.
 Goal: turn the existing dashboard prototypes into authorized, payment-grounded,
 actionable analytics without a third-party analytics dependency.
 
-- [ ] **Phase 16.1 — Analytics correctness and access foundation**
+- [x] **Phase 16.1 — Analytics correctness and access foundation**
   - [x] Require seller role plus store ownership in every seller analytics query;
         never return customer PII for another seller's store
   - [x] Define GMV, recognized revenue, net seller revenue, order count, active
         store, refund rate, return rate, repeat customer, and date/timezone semantics
   - [x] Include only the correct payment/order states and remove hard-coded growth percentages
   - [x] Use database aggregation and bounded deterministic recent rows instead of loading all order groups
-  - [ ] Add query-level authorization, aggregation, empty-state, and fixture tests
+  - [x] Add query-level authorization, aggregation, empty-state, and fixture tests
 
   - **Implementation evidence (2026-08-23)**: seller analytics now resolves the
     authenticated database seller before constraining the store lookup by
@@ -1265,29 +1265,63 @@ actionable analytics without a third-party analytics dependency.
     than loading the full order history. Dashboard copy no longer invents growth
     percentages, and seller analytics is server-prefetched and hydrated with the
     same TanStack Query key.
-  - **Validation evidence (2026-08-23, partial)**: `src/queries/analytics.test.ts`
+  - **Validation evidence (2026-08-23)**: `src/queries/analytics.test.ts`
     covers seller authorization, empty ownership fallback, aggregate-derived
     metrics, paid-state filtering, deterministic bounded recent rows, admin
     aggregation, and no broad include. Typecheck, full Vitest (45 files / 193
-    tests), formatting, and lint pass. `e2e/protected/analytics.spec.ts` is ready
-    for the isolated protected browser suite, but the local launcher timed out
-    without a Playwright result; the isolated production build also exceeded five
-    minutes. Keep this test item open until those two gates pass.
+    tests), formatting, and lint pass. The isolated production build passed and
+    the focused protected Chromium suite passed 3/3, including Clerk setup,
+    seller analytics, and admin analytics. Docker PostgreSQL integration passed
+    1,038 order checks. The earlier dev-server timeout is not counted as evidence;
+    the production-server run is the accepted browser result.
 
 - [ ] **Phase 16.2 — Seller analytics**
-  - [ ] Revenue over time with daily/weekly/monthly controls and comparable prior periods
-  - [ ] Top products and variants by net revenue, gross revenue, and unit count
-  - [ ] Average order value, repeat-customer rate, return/refund rate, and stock risk
-  - [ ] Server-prefetch the initial range, hydrate the same stable query key, and
+  - [x] Revenue over time with daily/weekly/monthly controls and comparable prior periods
+  - [x] Top products and variants by net revenue, gross revenue, and unit count
+  - [x] Average order value, repeat-customer rate, return/refund rate, and stock risk
+  - [x] Server-prefetch the initial range, hydrate the same stable query key, and
         invalidate only affected analytics after reconciled commerce events
-  - [ ] **Test**: Correct charts render from demo fixtures with accessible tables
+  - [x] **Test**: Correct charts render from demo fixtures with accessible tables
         or summaries and honest empty states
 
+  - **Implementation evidence (2026-08-23)**: seller analytics now groups paid
+    revenue by UTC day, week, or month; finite ranges expose a comparable previous
+    period while all-time views honestly show no prior period. Product and variant
+    rankings are deterministic and expose units, gross revenue, and seller net
+    revenue with settlement commission allocated proportionally to line revenue.
+    Inventory risk is seller-owned, bounded to five risk rows, and uses the shared
+    `<5` low-stock / `0` out-of-stock threshold. The seller page keeps the initial
+    all-time/month query server-prefetched and adds timeframe plus granularity to
+    the stable TanStack Query key. The UI includes accessible range controls,
+    comparison summaries, honest empty states, and inventory-risk summaries.
+  - **Validation evidence (2026-08-23)**: focused seller analytics tests pass 4/4;
+    full Vitest passes 45 files / 193 tests; typecheck passes; targeted ESLint and
+    format checks pass; full lint passes with the repository baseline of 0 errors /
+    164 warnings; and the final production build passes. Protected browser and
+    isolated Docker integration evidence are still required before this phase is
+    marked complete because the Docker Linux engine is unavailable in the current
+    environment.
+
 - [ ] **Phase 16.3 — Admin analytics**
-  - [ ] Platform GMV, net platform revenue, paid order count, and active stores over time
-  - [ ] Top stores plus return/refund/dispute and settlement-risk signals
-  - [ ] Add outbox, webhook, cron, search, and settlement health metrics
-  - [ ] **Test**: Admin-only data stays inaccessible to sellers and customers
+  - [x] Platform GMV, net platform revenue, paid order count, and active stores over time
+  - [x] Top stores plus return/refund/dispute and settlement-risk signals
+  - [x] Add outbox, webhook, cron, search, and settlement health metrics
+  - [x] **Test**: Admin-only data stays inaccessible to sellers and customers
+
+  - **Implementation evidence (2026-08-28)**: the server-prefetched admin
+    dashboard now reports paid/partially-refunded GMV, recorded marketplace
+    commission revenue, paid order groups, and current active stores. Monthly
+    UTC performance shows GMV, commission, and paid groups. A bounded,
+    database-aggregated top-store table includes refunds, completed returns,
+    chargebacks, and blocked/failed settlement payable exposure. The operational
+    panel reports persisted email-outbox, payment webhook, automation, live
+    PostgreSQL-search catalog, and settlement/payout signals. There is no
+    historical store-status model, so active stores are accurately labelled as a
+    current count instead of a fabricated historical series.
+  - **Validation evidence (2026-08-28, partial)**: focused authorization and
+    aggregation coverage in `src/queries/analytics.test.ts` passes. Full
+    typecheck/lint/build, protected browser, and isolated Docker integration
+    verification remain required before marking Phase 16.3 or Phase 16 complete.
 
 ---
 

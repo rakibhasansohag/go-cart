@@ -1,6 +1,6 @@
 'use client';
 
-import { TopSellingProductSummary } from '@/queries/analytics';
+import { TopSellingProductSummary, TopSellingVariantSummary } from '@/queries/analytics';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -8,12 +8,14 @@ import { ExternalLink, Trophy } from 'lucide-react';
 
 interface TopProductsProps {
 	products: TopSellingProductSummary[];
+	variants?: TopSellingVariantSummary[];
 	title?: string;
 	description?: string;
 }
 
 export default function TopProducts({
 	products,
+	variants = [],
 	title = 'Top Selling Products',
 	description = 'Best-performing product items by total sales units',
 }: TopProductsProps) {
@@ -26,7 +28,7 @@ export default function TopProducts({
 							<Trophy className='w-4 h-4 text-amber-500' />
 							{title}
 						</CardTitle>
-						<CardDescription>{description}</CardDescription>
+						<CardDescription>{description}. Net is gross revenue less allocated platform commission.</CardDescription>
 					</div>
 				</div>
 			</CardHeader>
@@ -62,19 +64,32 @@ export default function TopProducts({
 										<span className='truncate'>{item.name}</span>
 										<ExternalLink className='w-3 h-3 shrink-0 opacity-50' />
 									</Link>
-									<span className='text-[11px] text-muted-foreground'>
-										${item.price.toFixed(2)}
-									</span>
+										<span className='text-[11px] text-muted-foreground'>
+											{item.unitsSold} units · ${item.netRevenue.toFixed(2)} seller net
+										</span>
 								</div>
 							</div>
 
 							<div className='text-right shrink-0 ml-3'>
 								<span className='font-bold text-xs text-foreground block'>
-									{item.sales} sold
-								</span>
+										{item.sales} sold · ${item.grossRevenue.toFixed(2)} gross
+									</span>
 							</div>
 						</div>
 					))
+				)}
+				{variants.length > 0 && (
+					<div className='border-t border-border/60 pt-3'>
+						<p className='mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground'>Top variants</p>
+						<div className='space-y-2'>
+							{variants.slice(0, 5).map((variant, rank) => (
+								<div key={variant.id} className='flex items-center justify-between gap-3 rounded-lg border border-border/40 px-2.5 py-2 text-xs hover:bg-muted/40 transition-colors'>
+									<span className='min-w-0 truncate'><span className='mr-2 text-muted-foreground'>{rank + 1}.</span>{variant.productName} · {variant.sku}</span>
+														<span className='shrink-0 text-right text-muted-foreground'>{variant.unitsSold} units · ${variant.netRevenue.toFixed(2)} seller net</span>
+								</div>
+							))}
+						</div>
+					</div>
 				)}
 			</CardContent>
 		</Card>

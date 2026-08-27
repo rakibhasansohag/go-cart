@@ -96,8 +96,8 @@ export const queryKeys = {
 		storeSettings: (storeUrl: string) =>
 			['dashboard', 'settings', storeUrl] as const,
 		adminAnalytics: () => ['dashboard', 'adminAnalytics'] as const,
-		sellerAnalytics: (storeUrl: string, timeframe?: string) =>
-			['dashboard', 'sellerAnalytics', storeUrl, timeframe || 'all'] as const,
+		sellerAnalytics: (storeUrl: string, timeframe = 'all', granularity = 'month') =>
+			['dashboard', 'sellerAnalytics', storeUrl, { timeframe, granularity }] as const,
 		adminOrders: (page?: number, limit?: number, search?: string) =>
 			['dashboard', 'adminOrders', { page, limit, search }] as const,
 		adminReturns: (filters: object) =>

@@ -6,7 +6,7 @@ const { authMock, dbMock } = vi.hoisted(() => ({
     user: { findUnique: vi.fn(), count: vi.fn() },
     store: { findFirst: vi.fn(), count: vi.fn() },
     category: { findMany: vi.fn() },
-    product: { count: vi.fn() },
+    product: { count: vi.fn(), findFirst: vi.fn() },
     orderGroup: {
       count: vi.fn(),
       aggregate: vi.fn(),
@@ -14,7 +14,13 @@ const { authMock, dbMock } = vi.hoisted(() => ({
       findMany: vi.fn(),
     },
     orderItem: { aggregate: vi.fn(), groupBy: vi.fn() },
-    sellerSettlement: { aggregate: vi.fn() },
+    size: { aggregate: vi.fn(), count: vi.fn(), findMany: vi.fn() },
+    sellerSettlement: { aggregate: vi.fn(), groupBy: vi.fn() },
+    returnRequest: { count: vi.fn() },
+    payoutBatch: { count: vi.fn() },
+    emailOutbox: { groupBy: vi.fn(), findFirst: vi.fn() },
+    paymentEvent: { count: vi.fn() },
+    automationRun: { count: vi.fn(), findFirst: vi.fn() },
     review: { aggregate: vi.fn() },
     $queryRaw: vi.fn(),
   },
@@ -28,6 +34,17 @@ import { getAdminAnalyticsData, getSellerStoreAnalyticsData } from "./analytics"
 describe("seller analytics authorization", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    dbMock.$queryRaw.mockResolvedValue([]);
+    dbMock.sellerSettlement.aggregate.mockResolvedValue({ _sum: { commissionCents: 0, sellerPayableCents: 0 } });
+    dbMock.sellerSettlement.groupBy.mockResolvedValue([]);
+    dbMock.returnRequest.count.mockResolvedValue(0);
+    dbMock.payoutBatch.count.mockResolvedValue(0);
+    dbMock.emailOutbox.groupBy.mockResolvedValue([]);
+    dbMock.emailOutbox.findFirst.mockResolvedValue(null);
+    dbMock.paymentEvent.count.mockResolvedValue(0);
+    dbMock.automationRun.count.mockResolvedValue(0);
+    dbMock.automationRun.findFirst.mockResolvedValue(null);
+    dbMock.product.findFirst.mockResolvedValue(null);
     authMock.mockResolvedValue({ userId: "seller_owner" });
     dbMock.user.findUnique.mockResolvedValue({
       id: "seller_owner",
@@ -58,6 +75,14 @@ describe("seller analytics authorization", () => {
 
     expect(dbMock.store.findFirst).not.toHaveBeenCalled();
     expect(result.totalRevenue).toBe(0);
+  });
+
+  it.each(["SELLER", "USER"])("rejects platform analytics before querying data for a %s", async (role) => {
+    dbMock.user.findUnique.mockResolvedValue({ id: "non_admin", role });
+
+    await expect(getAdminAnalyticsData()).rejects.toThrow("Admin privileges required");
+    expect(dbMock.orderGroup.count).not.toHaveBeenCalled();
+    expect(dbMock.emailOutbox.groupBy).not.toHaveBeenCalled();
   });
 
   it("uses database aggregates for paid seller metrics and bounded recent rows", async () => {
@@ -97,6 +122,22 @@ describe("seller analytics authorization", () => {
         _sum: { quantity: 4, totalPrice: 170 },
       },
     ]);
+    dbMock.size.aggregate.mockResolvedValue({ _sum: { quantity: 27 } });
+    dbMock.size.count
+      .mockResolvedValueOnce(1)
+      .mockResolvedValueOnce(0);
+    dbMock.size.findMany.mockResolvedValue([
+      {
+        id: "size-1",
+        size: "M",
+        quantity: 2,
+        productVariant: {
+          variantName: "Natural",
+          sku: "CHAIR-M",
+          product: { name: "Chair" },
+        },
+      },
+    ]);
     dbMock.sellerSettlement.aggregate.mockResolvedValue({
       _sum: { commissionCents: 250, sellerPayableCents: 4000 },
     });
@@ -109,6 +150,33 @@ describe("seller analytics authorization", () => {
       .mockResolvedValueOnce([{ rate: 0.5 }])
       .mockResolvedValueOnce([
         { month: new Date("2026-08-01T00:00:00.000Z"), revenue: 42.5, orders: 2 },
+      ])
+      .mockResolvedValueOnce([
+        { period: new Date("2026-08-01T00:00:00.000Z"), revenue: 42.5, orders: 2 },
+      ])
+      .mockResolvedValueOnce([
+        {
+          productId: "product-1",
+          name: "Chair",
+          productSlug: "chair",
+          image: "chair.jpg",
+          price: 42.5,
+          unitsSold: 4,
+          grossRevenue: 170,
+          netRevenue: 165.75,
+        },
+      ])
+      .mockResolvedValueOnce([
+        {
+          variantId: "variant-1",
+          productId: "product-1",
+          productName: "Chair",
+          variantSlug: "chair-natural",
+          sku: "CHAIR-M",
+          unitsSold: 4,
+          grossRevenue: 170,
+          netRevenue: 165.75,
+        },
       ]);
 
     const result = await getSellerStoreAnalyticsData("owned-store", "all");
@@ -126,7 +194,15 @@ describe("seller analytics authorization", () => {
       reviewCount: 2,
       averageRating: 4.5,
     });
-    expect(result.topProducts[0]).toMatchObject({ id: "product-1", sales: 4 });
+    expect(result.topProducts[0]).toMatchObject({
+      id: "product-1",
+      sales: 4,
+      grossRevenue: 170,
+      netRevenue: 165.75,
+    });
+    expect(result.topVariants[0]).toMatchObject({ id: "variant-1", unitsSold: 4 });
+    expect(result.revenueTrend[0]).toMatchObject({ label: "Aug 2026", revenue: 42.5, orders: 2 });
+    expect(result.stockRisk).toMatchObject({ totalUnits: 27, lowStockCount: 1, outOfStockCount: 0 });
     expect(dbMock.orderGroup.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
         take: 6,
@@ -154,8 +230,26 @@ describe("seller analytics authorization", () => {
     dbMock.orderGroup.count.mockResolvedValue(12);
     dbMock.orderGroup.aggregate.mockResolvedValue({ _sum: { total: 1250 } });
     dbMock.$queryRaw.mockResolvedValueOnce([
-      { month: new Date("2026-08-01T00:00:00.000Z"), revenue: 1250, orders: 12 },
+      { month: new Date("2026-08-01T00:00:00.000Z"), gmv: 1250, platformRevenue: 250, paidOrders: 12 },
+    ]).mockResolvedValueOnce([
+      { storeId: "store-1", name: "Owned Store", url: "owned-store", gmv: 1250, platformRevenue: 250, paidOrders: 12, refundedOrders: 2, completedReturns: 1, chargebacks: 1, settlementRiskCents: 3000, settlementRiskCount: 1 },
     ]);
+    dbMock.sellerSettlement.aggregate.mockResolvedValue({ _sum: { commissionCents: 25000 } });
+    dbMock.sellerSettlement.groupBy.mockResolvedValue([
+      { status: "BLOCKED", _count: { _all: 1 }, _sum: { remainingPayableCents: 3000 } },
+    ]);
+    dbMock.returnRequest.count.mockResolvedValue(2);
+    dbMock.payoutBatch.count.mockResolvedValue(1);
+    dbMock.emailOutbox.groupBy.mockResolvedValue([
+      { status: "PENDING", _count: { _all: 3 } },
+      { status: "FAILED", _count: { _all: 1 } },
+    ]);
+    dbMock.emailOutbox.findFirst.mockResolvedValue({ createdAt: new Date("2026-08-20T00:00:00.000Z") });
+    dbMock.paymentEvent.count.mockResolvedValue(9);
+    dbMock.automationRun.findFirst.mockResolvedValue({ startedAt: new Date("2026-08-20T00:00:00.000Z"), status: "SUCCEEDED" });
+    dbMock.automationRun.count.mockResolvedValue(1);
+    dbMock.product.count.mockResolvedValue(14);
+    dbMock.product.findFirst.mockResolvedValue({ updatedAt: new Date("2026-08-20T00:00:00.000Z") });
     dbMock.orderGroup.findMany.mockResolvedValue([
       {
         id: "recent-group",
@@ -181,8 +275,12 @@ describe("seller analytics authorization", () => {
       totalStores: 4,
       activeStores: 3,
       totalUsers: 8,
+      platformRevenue: 250,
+      riskSignals: { completedReturns: 2, blockedSettlements: 1, settlementRiskCents: 3000 },
+      operationalHealth: { pendingEmails: 3, failedEmails: 1, paymentWebhookEventsLast24Hours: 9, searchableProducts: 14 },
       categoryBreakdown: [{ name: "Home", value: 7 }],
     });
+    expect(result.topStores).toEqual([expect.objectContaining({ name: "Owned Store", gmv: 1250, settlementRiskCents: 3000 })]);
     expect(dbMock.orderGroup.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
         take: 6,
