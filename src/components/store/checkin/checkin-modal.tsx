@@ -34,6 +34,19 @@ export default function CheckInModal() {
     }
   }, [statusData]);
 
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        handleClose();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, statusData]);
+
   const handleClose = () => {
     try {
       if (statusData?.todayDateStr) {
@@ -47,6 +60,30 @@ export default function CheckInModal() {
     } finally {
       setIsOpen(false);
     }
+  };
+
+  const handleClaimSuccess = () => {
+    try {
+      if (statusData?.todayDateStr) {
+        localStorage.setItem(
+          `gocart_checkin_dismissed_${statusData.todayDateStr}`,
+          "true",
+        );
+      }
+    } catch {
+      // Non-critical local storage cache
+    }
+
+    queryClient.invalidateQueries({
+      queryKey: ["daily-checkin-status"],
+    });
+
+    // Automatically close the modal after feedback is displayed
+    const timer = setTimeout(() => {
+      setIsOpen(false);
+    }, 1500);
+
+    return () => clearTimeout(timer);
   };
 
   if (!isSignedIn || !statusData) return null;
@@ -66,26 +103,26 @@ export default function CheckInModal() {
             onClick={(event) => event.stopPropagation()}
             className="relative flex h-[min(94vh,52rem)] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-white/10 shadow-2xl sm:h-[min(90vh,52rem)] sm:rounded-3xl"
           >
-            {/* Close Button */}
-            <button
-              type="button"
-              onClick={(event) => {
-                event.preventDefault();
-                event.stopPropagation();
-                handleClose();
-              }}
-              aria-label="Close modal"
-              className="absolute top-3 right-3 z-10 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-black/30 text-white backdrop-blur-md transition-colors hover:bg-black/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 sm:top-4 sm:right-4 sm:h-9 sm:w-9"
-            >
-              <X className="w-4 h-4 sm:w-5 sm:h-5" />
-            </button>
-
             {/* Top Banner */}
             <div className="bg-gradient-to-r from-red-600 via-orange-500 to-amber-500 p-4 sm:p-6 text-white text-center relative overflow-hidden">
+              {/* Close Button placed on top with z-30 */}
+              <button
+                type="button"
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  handleClose();
+                }}
+                aria-label="Close modal"
+                className="absolute top-3 right-3 z-30 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-md transition-all hover:bg-black/70 hover:scale-105 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white sm:top-4 sm:right-4 sm:h-9 sm:w-9"
+              >
+                <X className="w-4 h-4 sm:w-5 sm:h-5" />
+              </button>
+
               <div className="absolute -right-10 -bottom-10 opacity-20 pointer-events-none">
                 <Trophy className="w-36 h-36 sm:w-48 sm:h-48 text-white" />
               </div>
-              <div className="relative z-10 flex flex-col items-center justify-center gap-y-1 sm:gap-y-1.5">
+              <div className="relative z-10 flex flex-col items-center justify-center gap-y-1 sm:gap-y-1.5 px-8 sm:px-0">
                 <div className="inline-flex items-center gap-x-1.5 bg-white/20 backdrop-blur-md px-3 py-0.5 sm:px-4 sm:py-1 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-wider">
                   <Sparkles className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> Daily
                   Visitor Reward
@@ -112,11 +149,8 @@ export default function CheckInModal() {
                   daysInMonth={statusData.daysInMonth}
                   todayDateStr={statusData.todayDateStr}
                   checkIns={statusData.checkIns}
-                  onClaimSuccess={() => {
-                    queryClient.invalidateQueries({
-                      queryKey: ["daily-checkin-status"],
-                    });
-                  }}
+                  onClaimSuccess={handleClaimSuccess}
+                  onClose={handleClose}
                 />
               </div>
             </ScrollArea>

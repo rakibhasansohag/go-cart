@@ -170,6 +170,22 @@ deployment owner's access. Use this runbook for those controlled operations.
    concurrent requests; do not invoke its underlying script directly because
    the launcher supplies the isolated database guard.
 
+9. **Service Level Indicators (SLIs) and Operational Thresholds:**
+   - **Checkout Flow Success Rate:** Target ≥ 99.5% completion for valid payment attempts without unhandled server exceptions.
+   - **Webhook Processing Lag:** Target p95 < 2.0s and max < 10.0s for Stripe and PayPal webhook ingestion and order reconciliation.
+   - **Email Outbox Queue Age:** Maximum queued message age < 15 minutes before triggering an on-call operational alert.
+   - **Demo Automation Freshness:** Background transition cron runs within 30 minutes of scheduled window.
+   - **PostgreSQL Full-Text Search Latency:** Target p95 < 500ms for `/api/search` and autocomplete queries under concurrent traffic.
+   - **Settlement & Ledger Reconciliation Invariant:** $0 discrepancy between order group payments, deductions, and seller payable records.
+
+10. **Production Launch Gate Sign-off Checklist:**
+    - [ ] **Functional & Integration Invariants**: All 45+ unit files, payment tests, and PostgreSQL integration workflows pass (`bun run test && bun run test:integration:local`).
+    - [ ] **Security & Least Privilege**: Restricted Stripe RAK configured, Clerk testing tokens removed from production environment, Content Security Policy headers verified in production builds.
+    - [ ] **Error Boundaries & Logging**: Root `error.tsx` and `global-error.tsx` active with structured error event dispatch.
+    - [ ] **Load & Latency Smoke**: `bun run test:load:local` completes 100% successful requests with p95 < 1000ms.
+    - [ ] **Disaster Recovery**: Automated database backup verified with a successful restore drill (`bun run test:restore:local`).
+    - [ ] **Compliance & Operations**: Account suspension controls active, customer PII redaction confirmed in proxy logs, on-call alert owners designated.
+
 ### 1. Prepare the isolated database
 
 Start Docker Desktop first, then:

@@ -8,7 +8,7 @@ if (!Number.isInteger(requestsPerRoute) || requestsPerRoute < 1 || requestsPerRo
   throw new Error("PHASE15_LOAD_REQUESTS must be an integer from 1 to 100.");
 }
 
-const routes = ["/api/health", "/browse", "/api/search?q=chair"];
+const routes = ["/api/health", "/browse", "/api/search?q=chair", "/demo/marketplace"];
 const startedAt = performance.now();
 const responses = await Promise.all(
   routes.flatMap((route) =>
@@ -26,6 +26,7 @@ const summary = routes.map((route) => {
   return {
     route,
     requests: durations.length,
+    p50Ms: Math.round(durations[Math.max(0, Math.ceil(durations.length * 0.5) - 1)]),
     p95Ms: Math.round(durations[Math.max(0, Math.ceil(durations.length * 0.95) - 1)]),
     maxMs: Math.round(durations.at(-1) ?? 0),
   };

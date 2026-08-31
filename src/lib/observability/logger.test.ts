@@ -17,14 +17,18 @@ describe("structured logger", () => {
     });
   });
 
-  it("emits JSON for a safe correlation event", () => {
-    const spy = vi.spyOn(console, "info").mockImplementation(() => undefined);
-    logEvent("info", "request.completed", {
-      requestId: "request-1",
-      status: 200,
+  it("emits JSON for an error event with sanitized context", () => {
+    const spy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    logEvent("error", "app_render_error", {
+      name: "TypeError",
+      message: "Cannot read properties of undefined",
+      digest: "digest-123",
     });
     expect(spy).toHaveBeenCalledWith(
-      expect.stringContaining('"requestId":"request-1"'),
+      expect.stringContaining('"event":"app_render_error"'),
+    );
+    expect(spy).toHaveBeenCalledWith(
+      expect.stringContaining('"digest":"digest-123"'),
     );
     spy.mockRestore();
   });

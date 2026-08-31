@@ -25,6 +25,7 @@ interface Props {
 	todayDateStr: string;
 	checkIns: CheckInRecord[];
 	onClaimSuccess?: (data: { coinsEarned: number; rewardTitle: string; couponCode?: string | null }) => void;
+	onClose?: () => void;
 }
 
 export default function CheckInCalendar({
@@ -34,11 +35,18 @@ export default function CheckInCalendar({
 	todayDateStr,
 	checkIns,
 	onClaimSuccess,
+	onClose,
 }: Props) {
 	const [loading, setLoading] = useState(false);
 	const [claimedState, setClaimedState] = useState(hasClaimedToday);
 	const [countState, setCountState] = useState(claimedDaysCount);
 	const [claimedRecords, setClaimedRecords] = useState<CheckInRecord[]>(checkIns);
+
+	React.useEffect(() => {
+		setClaimedState(hasClaimedToday);
+		setCountState(claimedDaysCount);
+		setClaimedRecords(checkIns);
+	}, [hasClaimedToday, claimedDaysCount, checkIns]);
 
 	// Today's claimable day index is current claimed count + 1 (if not claimed today)
 	const todayDayIndex = claimedState ? countState : Math.min(daysInMonth, countState + 1);
@@ -249,11 +257,12 @@ export default function CheckInCalendar({
 				</div>
 
 				<Button
-					onClick={handleClaim}
-					disabled={loading || claimedState}
+					onClick={claimedState && onClose ? onClose : handleClaim}
+					disabled={loading || (claimedState && !onClose)}
 					variant='orange-gradient'
 					className={cn('h-10 px-6 sm:px-8 rounded-full font-black text-xs sm:text-sm shadow-md transition-all shrink-0 w-full sm:w-auto', {
-						'opacity-70 cursor-not-allowed bg-emerald-600 hover:bg-emerald-600': claimedState,
+						'bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white cursor-pointer': claimedState && Boolean(onClose),
+						'opacity-70 cursor-not-allowed bg-emerald-600 hover:bg-emerald-600 text-white': claimedState && !onClose,
 					})}
 				>
 					{loading ? (
@@ -264,7 +273,7 @@ export default function CheckInCalendar({
 					) : claimedState ? (
 						<div className='flex items-center gap-x-1.5 text-white'>
 							<Check className='w-4 h-4 stroke-[3]' />
-							<span>Today&apos;s Reward Claimed</span>
+							<span>{onClose ? "Today's Reward Claimed (Close)" : "Today's Reward Claimed"}</span>
 						</div>
 					) : (
 						<div className='flex items-center gap-x-1.5 text-white'>
