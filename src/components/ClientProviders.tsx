@@ -31,7 +31,7 @@ export default function ClientProviders({ children }: Props) {
 				enableSystem
 			>
 				<ModalProvider>
-					<main>{children}</main>
+					{children}
 				</ModalProvider>
 				<Toaster position='top-right' expand richColors />
 				<UploadPreloader

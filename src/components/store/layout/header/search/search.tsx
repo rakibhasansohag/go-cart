@@ -111,6 +111,20 @@ export default function Search() {
 	};
 
 	const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+		if (e.key === 'Enter') {
+			e.preventDefault();
+			if (selectedIndex >= 0 && suggestions[selectedIndex]) {
+				push(suggestions[selectedIndex].link);
+				setIsOpen(false);
+			} else if (searchQuery.trim()) {
+				const currentParams = new URLSearchParams(searchParams ? searchParams.toString() : '');
+				currentParams.set('search', searchQuery.trim());
+				push(`/browse?${currentParams.toString()}`);
+				setIsOpen(false);
+			}
+			return;
+		}
+
 		if (!isOpen) return;
 
 		if (e.key === 'ArrowDown') {

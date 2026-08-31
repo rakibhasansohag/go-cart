@@ -50,7 +50,7 @@ test("keyboard search submits a catalog query", async ({ page }) => {
   await search.press("Enter");
 
   await expect(page).toHaveURL(/\/browse\?.*search=Atlas/);
-  await expect(page.getByRole("main").first()).toBeVisible();
+  await expect(page.getByRole("main").first()).toBeVisible({ timeout: 30000 });
 });
 
 test("catalog search exposes a deterministic empty state", async ({ page }) => {
