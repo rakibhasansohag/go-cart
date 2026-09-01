@@ -83,6 +83,24 @@ export const DOMAIN_EVENT_PAYLOAD_SCHEMAS = {
 		settlementCount: z.number().int().nonnegative(),
 		currency: z.string().min(1),
 	}),
+	'product.question_asked': commonPayload.extend({
+		questionId: z.string().min(1),
+		productId: z.string().min(1),
+		productName: z.string().min(1),
+		productSlug: z.string().min(1),
+		question: z.string().min(1),
+		authorName: z.string().min(1),
+	}),
+	'product.question_answered': commonPayload.extend({
+		questionId: z.string().min(1),
+		answerId: z.string().min(1),
+		productId: z.string().min(1),
+		productName: z.string().min(1),
+		productSlug: z.string().min(1),
+		answer: z.string().min(1),
+		authorName: z.string().min(1),
+		isOfficialSeller: z.boolean().default(false),
+	}),
 } as const;
 
 export type DomainEventPayload = z.infer<

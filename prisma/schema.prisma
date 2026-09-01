@@ -53,6 +53,10 @@ model User {
   dailyCheckIns              DailyCheckIn[]              @relation("UserDailyCheckIns")
   paymentAccount             SellerPaymentAccount?
   settlements                SellerSettlement[]          @relation("SettlementSeller")
+  productQuestions           ProductQuestion[]           @relation("UserProductQuestions")
+  productAnswers             ProductAnswer[]             @relation("UserProductAnswers")
+  productQuestionVotes       ProductQuestionVote[]       @relation("UserProductQuestionVotes")
+  productAnswerVotes         ProductAnswerVote[]         @relation("UserProductAnswerVotes")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -297,9 +301,10 @@ model Product {
   store   Store  @relation("StoreToProduct", fields: [storeId], references: [id])
 
   variants  ProductVariant[] @relation("ProductToProductVariant")
-  specs     Spec[]           @relation("ProductSpec")
-  questions Question[]       @relation("ProductQuestion")
-  reviews   Review[]         @relation("ReviewToProduct")
+  specs            Spec[]            @relation("ProductSpec")
+  questions        Question[]        @relation("ProductQuestion")
+  productQuestions ProductQuestion[] @relation("ProductToProductQuestion")
+  reviews          Review[]          @relation("ReviewToProduct")
   wishlist  Wishlist[]       @relation("WishlistToProduct")
 
   categoryId String
@@ -434,6 +439,88 @@ model Question {
   updatedAt DateTime @default(now()) @updatedAt
 
   @@index([productId])
+}
+
+enum QAModerationStatus {
+  PUBLISHED
+  PENDING_REVIEW
+  FLAGGED
+  REJECTED
+  HIDDEN
+}
+
+model ProductQuestion {
+  id        String             @id @default(uuid())
+  question  String             @db.Text
+  status    QAModerationStatus @default(PUBLISHED)
+  isPinned  Boolean            @default(false)
+
+  productId String
+  product   Product            @relation("ProductToProductQuestion", fields: [productId], references: [id], onDelete: Cascade)
+
+  userId    String
+  user      User               @relation("UserProductQuestions", fields: [userId], references: [id], onDelete: Cascade)
+
+  answers   ProductAnswer[]    @relation("QuestionToAnswer")
+  votes     ProductQuestionVote[] @relation("QuestionToVote")
+
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+
+  @@index([productId, status, createdAt])
+  @@index([userId])
+}
+
+model ProductAnswer {
+  id               String             @id @default(uuid())
+  answer           String             @db.Text
+  isOfficialSeller Boolean            @default(false)
+  isVerifiedBuyer  Boolean            @default(false)
+  status           QAModerationStatus @default(PUBLISHED)
+
+  questionId       String
+  question         ProductQuestion    @relation("QuestionToAnswer", fields: [questionId], references: [id], onDelete: Cascade)
+
+  userId           String
+  user             User               @relation("UserProductAnswers", fields: [userId], references: [id], onDelete: Cascade)
+
+  votes            ProductAnswerVote[] @relation("AnswerToVote")
+
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+
+  @@index([questionId, status, createdAt])
+  @@index([userId])
+}
+
+model ProductQuestionVote {
+  id         String          @id @default(uuid())
+
+  questionId String
+  question   ProductQuestion @relation("QuestionToVote", fields: [questionId], references: [id], onDelete: Cascade)
+
+  userId     String
+  user       User            @relation("UserProductQuestionVotes", fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt  DateTime        @default(now())
+
+  @@unique([questionId, userId])
+  @@index([userId])
+}
+
+model ProductAnswerVote {
+  id        String        @id @default(uuid())
+
+  answerId  String
+  answer    ProductAnswer @relation("AnswerToVote", fields: [answerId], references: [id], onDelete: Cascade)
+
+  userId    String
+  user      User          @relation("UserProductAnswerVotes", fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime      @default(now())
+
+  @@unique([answerId, userId])
+  @@index([userId])
 }
 
 model Country {

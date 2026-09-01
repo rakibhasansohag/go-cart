@@ -12,6 +12,7 @@ import { Separator } from '@/components/ui/separator';
 import { Country } from '@/lib/types';
 import { retrieveProductDetailsOptimized, getRelatedProducts, getProductFilteredReviews } from '@/queries/product-optimized';
 import { getProducts } from '@/queries/product';
+import { getProductQA } from '@/queries/qa';
 import { cookies } from 'next/headers';
 import { notFound, redirect } from 'next/navigation';
 import { Suspense } from 'react';
@@ -54,7 +55,12 @@ export default async function ProductPage({
 	if (!data) return notFound();
 
 	// Prefetch downstream queries in parallel on the server
-	await Promise.all([
+	const [initialQA] = await Promise.all([
+		getProductQA(data.id, { page: 1, limit: 20 }),
+		queryClient.prefetchQuery({
+			queryKey: ['product-qa', data.id, 1, 20, ''],
+			queryFn: () => getProductQA(data.id, { page: 1, limit: 20 }),
+		}),
 		queryClient.prefetchQuery({
 			queryKey: queryKeys.products.related(data.id),
 			queryFn: () => getRelatedProducts(data.id, data.categoryId, data.subCategoryId),
@@ -146,7 +152,12 @@ export default async function ProductPage({
 					{(specs.product || specs.variant) && <ProductSpecs specs={specs} />}
 
 					<Separator className='mt-6' />
-					{data.questions && <ProductQuestions questions={data.questions} />}
+					<ProductQuestions
+						productId={data.id}
+						initialQA={initialQA.questions}
+						totalQuestions={initialQA.totalQuestions}
+						questions={data.questions}
+					/>
 					<Separator className='mt-6' />
 					<div className='h-6' />
 					<StoreCard store={storeData} />
@@ -159,6 +170,37 @@ export default async function ProductPage({
 						</Suspense>
 					</ProductPageContainer>
 				</HydrationBoundary>
+				{initialQA.questions.length > 0 || (data.questions && data.questions.length > 0) ? (
+					<script
+						type='application/ld+json'
+						dangerouslySetInnerHTML={{
+							__html: JSON.stringify({
+								'@context': 'https://schema.org',
+								'@type': 'FAQPage',
+								mainEntity: [
+									...initialQA.questions
+										.filter((q) => q.answers.length > 0)
+										.map((q) => ({
+											'@type': 'Question',
+											name: q.question,
+											acceptedAnswer: {
+												'@type': 'Answer',
+												text: q.answers[0].answer,
+											},
+										})),
+									...(data.questions || []).map((faq) => ({
+										'@type': 'Question',
+										name: faq.question,
+										acceptedAnswer: {
+											'@type': 'Answer',
+											text: faq.answer,
+										},
+									})),
+								],
+							}),
+						}}
+					/>
+				) : null}
 			</div>
 		</div>
 	);

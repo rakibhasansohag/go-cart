@@ -1272,17 +1272,36 @@ payments, testing, and launch gates unless product priorities explicitly change.
 Goal: let customers ask questions on product pages while sellers and eligible
 buyers provide moderated public answers.
 
-- [ ] Migrate the legacy static `Question { question, answer }` model to authored
+- [x] Migrate the legacy static `Question { question, answer }` model to authored
       `ProductQuestion`, `ProductAnswer`, and unique per-user helpful-vote records
-- [ ] Define verified-buyer eligibility, seller official answers, edit history,
+- [x] Define verified-buyer eligibility, seller official answers, edit history,
       visibility/moderation states, reports, rate limits, and spam controls
-- [ ] Sanitize/validate content and enforce author, seller-owner, and admin permissions
-- [ ] Notify the owning seller through the typed notification/outbox pipeline
-- [ ] Server-render crawlable public Q&A; prefetch the initial thread and use
+- [x] Sanitize/validate content and enforce author, seller-owner, and admin permissions
+- [x] Notify the owning seller through the typed notification/outbox pipeline
+- [x] Server-render crawlable public Q&A; prefetch the initial thread and use
       accessible native controls plus targeted mutation invalidation
-- [ ] Add metadata/structured content only where it truthfully matches visible Q&A
-- [ ] **Test**: Authorization, moderation, duplicate votes, notification recipients,
+- [x] Add metadata/structured content only where it truthfully matches visible Q&A
+- [x] **Test**: Authorization, moderation, duplicate votes, notification recipients,
       keyboard access, and hidden-content indexability all pass
+
+- **Implementation evidence (2026-09-01)**: `ProductQuestion`, `ProductAnswer`,
+  `ProductQuestionVote`, and `ProductAnswerVote` are defined in `prisma/schema.prisma`
+  and applied via migration `20260901220000_product_qa`. Questions support
+  `QAModerationStatus` lifecycle (`PUBLISHED`, `PENDING_REVIEW`, `FLAGGED`,
+  `REJECTED`, `HIDDEN`) and pinning. Answers automatically detect store seller
+  ownership (`isOfficialSeller`) and paid/completed purchase history
+  (`isVerifiedBuyer` in `src/lib/qa/verified-buyer.ts`). Rate limits bound questions
+  to 10/hour/user. Asking a question emits `product.question_asked` to notify the
+  store seller, and answering emits `product.question_answered` to notify the author.
+  `src/components/store/product-page/product-questions.tsx` provides an interactive,
+  accessible search/filter feed, ask dialog, inline reply form, helpful vote toggling,
+  and legacy FAQ accordion fallback. `src/app/(store)/product/[productSlug]/page.tsx`
+  server-prefetches Q&A and emits valid `FAQPage` JSON-LD structured data.
+- **Validation evidence (2026-09-01)**: `src/queries/qa.test.ts` passes 12/12 unit
+  tests covering question creation, validation, rate limits, verified buyer detection,
+  atomic helpful voting, moderation, author deletion, and notification dispatch. Full
+  Vitest suite passes 46 test files and 207 tests (`bun vitest run`). TypeScript
+  typecheck passes 0 errors (`bun run typecheck`) and format check is clean.
 
 ### Phase 17.2 — GoCoins Loyalty & Rewards Correctness
 

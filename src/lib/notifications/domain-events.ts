@@ -139,6 +139,8 @@ export const DOMAIN_EVENT_TYPES = {
   RETURN_INVENTORY_RECONCILED: "return.inventory_reconciled",
   CHECKOUT_ABANDONED: "checkout.abandoned",
   PAYOUT_BATCH_READY_FOR_REVIEW: "payout.batch_ready_for_review",
+  PRODUCT_QUESTION_ASKED: "product.question_asked",
+  PRODUCT_QUESTION_ANSWERED: "product.question_answered",
 } as const;
 
 export type DomainEventType =
@@ -153,7 +155,9 @@ export type PublishDomainEventInput = {
     | "SHIPMENT"
     | "RETURN_REQUEST"
     | "CART"
-    | "PAYOUT_BATCH";
+    | "PAYOUT_BATCH"
+    | "PRODUCT"
+    | "PRODUCT_QUESTION";
   aggregateId: string;
   actorUserId?: string | null;
   orderId?: string;
@@ -270,6 +274,33 @@ async function resolveRecipients(
       select: { id: true },
     });
     for (const admin of admins) recipientIds.add(admin.id);
+  }
+
+  if (
+    input.eventType === DOMAIN_EVENT_TYPES.PRODUCT_QUESTION_ASKED &&
+    input.storeId
+  ) {
+    const store = await tx.store.findUnique({
+      where: { id: input.storeId },
+      select: { userId: true, email: true },
+    });
+    if (store && store.userId !== input.actorUserId) {
+      recipientIds.add(store.userId);
+      recipientEmailOverrides.set(store.userId, store.email);
+    }
+  }
+
+  if (input.eventType === DOMAIN_EVENT_TYPES.PRODUCT_QUESTION_ANSWERED) {
+    const questionId = payloadText(input.payload, "questionId");
+    if (questionId) {
+      const question = await tx.productQuestion.findUnique({
+        where: { id: questionId },
+        select: { userId: true },
+      });
+      if (question && question.userId !== input.actorUserId) {
+        recipientIds.add(question.userId);
+      }
+    }
   }
 
   if (recipientIds.size === 0) return [];
@@ -412,6 +443,20 @@ function notificationFor(input: PublishDomainEventInput, recipient: Recipient) {
         title: "Weekly payout batch needs review",
         message: `${payloadText(input.payload, "settlementCount") || "Eligible"} seller settlement(s) are ready for approval. Review the batch before any Stripe transfer is processed.`,
         actionUrl: `/dashboard/admin/settlements?batchId=${encodeURIComponent(payloadText(input.payload, "payoutBatchId"))}`,
+      };
+    case DOMAIN_EVENT_TYPES.PRODUCT_QUESTION_ASKED:
+      return {
+        category: NotificationCategory.SYSTEM,
+        title: "New question on your product",
+        message: `${payloadText(input.payload, "authorName") || "A customer"} asked a question about ${payloadText(input.payload, "productName") || "your product"}.`,
+        actionUrl: `/product/${payloadText(input.payload, "productSlug")}#questions`,
+      };
+    case DOMAIN_EVENT_TYPES.PRODUCT_QUESTION_ANSWERED:
+      return {
+        category: NotificationCategory.SYSTEM,
+        title: "Your question received an answer",
+        message: `${payloadText(input.payload, "authorName") || "Someone"} answered your question about ${payloadText(input.payload, "productName") || "the product"}.`,
+        actionUrl: `/product/${payloadText(input.payload, "productSlug")}#questions`,
       };
   }
 }
