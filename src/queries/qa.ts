@@ -10,7 +10,7 @@ import {
 } from '@/lib/notifications/domain-events';
 import { z } from 'zod';
 
-export const CreateQuestionSchema = z.object({
+const CreateQuestionSchema = z.object({
 	productId: z.string().min(1, 'Product ID is required'),
 	question: z
 		.string()
@@ -19,7 +19,7 @@ export const CreateQuestionSchema = z.object({
 		.max(500, 'Question cannot exceed 500 characters'),
 });
 
-export const CreateAnswerSchema = z.object({
+const CreateAnswerSchema = z.object({
 	questionId: z.string().min(1, 'Question ID is required'),
 	answer: z
 		.string()
@@ -27,6 +27,9 @@ export const CreateAnswerSchema = z.object({
 		.min(2, 'Answer must be at least 2 characters')
 		.max(1000, 'Answer cannot exceed 1000 characters'),
 });
+
+export type CreateQuestionInput = z.infer<typeof CreateQuestionSchema>;
+export type CreateAnswerInput = z.infer<typeof CreateAnswerSchema>;
 
 export type ProductQAAnswer = {
 	id: string;
@@ -222,7 +225,7 @@ export async function getProductQA(
  * Ask a new product question.
  */
 export async function createProductQuestion(
-	rawInput: z.infer<typeof CreateQuestionSchema>,
+	rawInput: CreateQuestionInput,
 ): Promise<{ success: boolean; question?: ProductQAItem; error?: string }> {
 	const user = await currentUser();
 	if (!user) {
@@ -335,7 +338,7 @@ export async function createProductQuestion(
  * Answer an existing product question.
  */
 export async function createProductAnswer(
-	rawInput: z.infer<typeof CreateAnswerSchema>,
+	rawInput: CreateAnswerInput,
 ): Promise<{ success: boolean; answer?: ProductQAAnswer; error?: string }> {
 	const user = await currentUser();
 	if (!user) {

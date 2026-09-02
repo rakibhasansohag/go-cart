@@ -109,7 +109,8 @@ export async function claimDailyCheckIn() {
   const { dateStr, yearMonthStr, daysInMonth } = getFormattedDateStrings();
 
   try {
-    return await db.$transaction(async (tx) => {
+    return await db.$transaction(
+      async (tx) => {
       const checkInsCount = await tx.dailyCheckIn.count({
         where: { userId, yearMonth: yearMonthStr },
       });
@@ -225,9 +226,10 @@ export async function claimDailyCheckIn() {
         couponCode: generatedCouponCode,
         couponDiscount: rewardSpec.couponDiscount,
         rewardTitle: rewardSpec.title,
-        newBalance: account.balance,
       };
-    });
+    },
+    { maxWait: 10000, timeout: 15000 }
+  );
   } catch (err) {
     if (
       err instanceof Prisma.PrismaClientKnownRequestError &&
