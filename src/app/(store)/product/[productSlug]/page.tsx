@@ -13,6 +13,8 @@ import { Country } from '@/lib/types';
 import { retrieveProductDetailsOptimized, getRelatedProducts, getProductFilteredReviews } from '@/queries/product-optimized';
 import { getProducts } from '@/queries/product';
 import { getProductQA } from '@/queries/qa';
+import { currentUser } from '@clerk/nextjs/server';
+import { db } from '@/lib/db';
 import { cookies } from 'next/headers';
 import { notFound, redirect } from 'next/navigation';
 import { Suspense } from 'react';
@@ -53,6 +55,16 @@ export default async function ProductPage({
 		queryFn: () => retrieveProductDetailsOptimized(productSlug),
 	});
 	if (!data) return notFound();
+
+	// Check if current user is admin
+	const user = await currentUser();
+	const dbUser = user
+		? await db.user.findUnique({
+				where: { id: user.id },
+				select: { role: true },
+		  })
+		: null;
+	const isCurrentUserAdmin = dbUser?.role === 'ADMIN';
 
 	// Prefetch downstream queries in parallel on the server
 	const [initialQA] = await Promise.all([
@@ -154,6 +166,8 @@ export default async function ProductPage({
 					<Separator className='mt-6' />
 					<ProductQuestions
 						productId={data.id}
+						storeOwnerId={data.store.userId}
+						isCurrentUserAdmin={isCurrentUserAdmin}
 						initialQA={initialQA.questions}
 						totalQuestions={initialQA.totalQuestions}
 						questions={data.questions}

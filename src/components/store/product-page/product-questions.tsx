@@ -39,6 +39,7 @@ import {
 	toggleAnswerVote,
 	getProductQA,
 } from '@/queries/qa';
+import { useUser, useClerk, SignInButton } from '@clerk/nextjs';
 import { toast } from 'sonner';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
@@ -49,6 +50,8 @@ interface LegacyQuestion {
 
 interface Props {
 	productId?: string;
+	storeOwnerId?: string;
+	isCurrentUserAdmin?: boolean;
 	questions?: LegacyQuestion[];
 	initialQA?: ProductQAItem[];
 	totalQuestions?: number;
@@ -56,11 +59,18 @@ interface Props {
 
 const ProductQuestions: FC<Props> = ({
 	productId,
+	storeOwnerId,
+	isCurrentUserAdmin = false,
 	questions: legacyFaqProp = [],
 	initialQA = [],
 	totalQuestions: initialTotal = 0,
 }) => {
+	const { isSignedIn, user } = useUser();
+	const { openSignIn } = useClerk();
 	const queryClient = useQueryClient();
+	const isSeller = Boolean(user && storeOwnerId && user.id === storeOwnerId);
+	const canAnswer = Boolean(isSeller || isCurrentUserAdmin);
+
 	const [searchQuery, setSearchQuery] = useState('');
 	const [isAskDialogOpen, setIsAskDialogOpen] = useState(false);
 	const [newQuestionText, setNewQuestionText] = useState('');
@@ -150,11 +160,20 @@ const ProductQuestions: FC<Props> = ({
 
 	// Toggle Question Helpful Vote
 	const handleQuestionVote = async (questionId: string) => {
+		if (!isSignedIn) {
+			toast.info('Please sign in to vote this question as helpful.', {
+				action: {
+					label: 'Sign In',
+					onClick: () => openSignIn?.(),
+				},
+			});
+			return;
+		}
 		startTransition(async () => {
 			try {
 				const res = await toggleQuestionVote(questionId);
 				if (!res.success) {
-					toast.error(res.error || 'Sign in to vote.');
+					toast.error(res.error || 'Failed to update vote.');
 					return;
 				}
 				queryClient.invalidateQueries({ queryKey: ['product-qa', productId] });
@@ -166,11 +185,20 @@ const ProductQuestions: FC<Props> = ({
 
 	// Toggle Answer Helpful Vote
 	const handleAnswerVote = async (answerId: string) => {
+		if (!isSignedIn) {
+			toast.info('Please sign in to vote this answer as helpful.', {
+				action: {
+					label: 'Sign In',
+					onClick: () => openSignIn?.(),
+				},
+			});
+			return;
+		}
 		startTransition(async () => {
 			try {
 				const res = await toggleAnswerVote(answerId);
 				if (!res.success) {
-					toast.error(res.error || 'Sign in to vote.');
+					toast.error(res.error || 'Failed to update vote.');
 					return;
 				}
 				queryClient.invalidateQueries({ queryKey: ['product-qa', productId] });
@@ -204,59 +232,67 @@ const ProductQuestions: FC<Props> = ({
 					</p>
 				</div>
 
-				{productId && (
-					<Dialog open={isAskDialogOpen} onOpenChange={setIsAskDialogOpen}>
-						<DialogTrigger asChild>
-							<Button className='gap-2 shadow-sm'>
+				{productId &&
+					(!isSignedIn ? (
+						<SignInButton mode='modal'>
+							<Button variant='outline' className='gap-2 shadow-sm text-xs'>
 								<Plus className='h-4 w-4' />
-								Ask a Question
+								Sign in to Ask a Question
 							</Button>
-						</DialogTrigger>
-						<DialogContent className='sm:max-w-md'>
-							<DialogHeader>
-								<DialogTitle>Ask about this product</DialogTitle>
-								<DialogDescription>
-									Your question will be visible to the store seller and the community.
-								</DialogDescription>
-							</DialogHeader>
-							<div className='space-y-3 py-2'>
-								<Textarea
-									placeholder='What would you like to know about dimensions, materials, or compatibility?'
-									value={newQuestionText}
-									onChange={(e) => setNewQuestionText(e.target.value)}
-									rows={4}
-									maxLength={500}
-									className='resize-none text-sm'
-								/>
-								<div className='flex justify-between items-center text-xs text-muted-foreground'>
-									<span>Min 5 characters</span>
-									<span>{newQuestionText.length}/500</span>
+						</SignInButton>
+					) : (
+						<Dialog open={isAskDialogOpen} onOpenChange={setIsAskDialogOpen}>
+							<DialogTrigger asChild>
+								<Button className='gap-2 shadow-sm'>
+									<Plus className='h-4 w-4' />
+									Ask a Question
+								</Button>
+							</DialogTrigger>
+							<DialogContent className='sm:max-w-md'>
+								<DialogHeader>
+									<DialogTitle>Ask about this product</DialogTitle>
+									<DialogDescription>
+										Your question will be visible to the store seller and the community.
+									</DialogDescription>
+								</DialogHeader>
+								<div className='space-y-3 py-2'>
+									<Textarea
+										placeholder='What would you like to know about dimensions, materials, or compatibility?'
+										value={newQuestionText}
+										onChange={(e) => setNewQuestionText(e.target.value)}
+										rows={4}
+										maxLength={500}
+										className='resize-none text-sm'
+									/>
+									<div className='flex justify-between items-center text-xs text-muted-foreground'>
+										<span>Min 5 characters</span>
+										<span>{newQuestionText.length}/500</span>
+									</div>
 								</div>
-							</div>
-							<DialogFooter className='gap-2 sm:gap-0'>
-								<Button
-									variant='outline'
-									onClick={() => setIsAskDialogOpen(false)}
-									disabled={askMutation.isPending}
-								>
-									Cancel
-								</Button>
-								<Button
-									onClick={() => askMutation.mutate(newQuestionText)}
-									disabled={
-										askMutation.isPending || newQuestionText.trim().length < 5
-									}
-									className='gap-2'
-								>
-									{askMutation.isPending && (
-										<Loader2 className='h-4 w-4 animate-spin' />
-									)}
-									Submit Question
-								</Button>
-							</DialogFooter>
-						</DialogContent>
-					</Dialog>
-				)}
+								<DialogFooter className='gap-2 sm:gap-0'>
+									<Button
+										variant='outline'
+										onClick={() => setIsAskDialogOpen(false)}
+										disabled={askMutation.isPending}
+									>
+										Cancel
+									</Button>
+									<Button
+										onClick={() => askMutation.mutate(newQuestionText)}
+										disabled={
+											askMutation.isPending || newQuestionText.trim().length < 5
+										}
+										className='gap-2'
+									>
+										{askMutation.isPending && (
+											<Loader2 className='h-4 w-4 animate-spin' />
+										)}
+										Submit Question
+									</Button>
+								</DialogFooter>
+							</DialogContent>
+						</Dialog>
+					))}
 			</div>
 
 			{/* Search & Filter Bar */}
@@ -453,7 +489,7 @@ const ProductQuestions: FC<Props> = ({
 										</div>
 									</div>
 								</div>
-							) : (
+							) : canAnswer ? (
 								<Button
 									variant='ghost'
 									size='sm'
@@ -465,6 +501,17 @@ const ProductQuestions: FC<Props> = ({
 								>
 									<MessageSquare className='h-3.5 w-3.5' />
 									Answer this question
+								</Button>
+							) : (
+								<Button
+									variant='ghost'
+									size='sm'
+									disabled={true}
+									title='Only the store seller or an admin can answer questions'
+									className='h-7 gap-1.5 text-xs text-muted-foreground/60 cursor-not-allowed pl-0'
+								>
+									<MessageSquare className='h-3.5 w-3.5' />
+									Only the seller can answer
 								</Button>
 							)}
 						</div>

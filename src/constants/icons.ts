@@ -20,6 +20,7 @@ import {
 	Settings2,
 	UserRound,
 	WalletCards,
+	MessageCircleQuestion,
 } from 'lucide-react';
 
 export const icons = [
@@ -117,5 +118,10 @@ export const icons = [
 		label: 'Offer',
 		value: 'offer',
 		path: OfferIcon,
+	},
+	{
+		label: 'Q&A',
+		value: 'questions',
+		path: MessageCircleQuestion,
 	},
 ];

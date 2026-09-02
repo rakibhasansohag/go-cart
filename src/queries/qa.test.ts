@@ -25,6 +25,7 @@ const {
 	findUniqueUserMock,
 	publishDomainEventMock,
 	isVerifiedBuyerMock,
+	findUniqueStoreMock,
 } = vi.hoisted(() => ({
 	currentUserMock: vi.fn(),
 	findUniqueProductQuestionMock: vi.fn(),
@@ -49,6 +50,7 @@ const {
 	findUniqueUserMock: vi.fn(),
 	publishDomainEventMock: vi.fn(),
 	isVerifiedBuyerMock: vi.fn(),
+	findUniqueStoreMock: vi.fn(),
 }));
 
 vi.mock('@clerk/nextjs/server', () => ({
@@ -57,6 +59,9 @@ vi.mock('@clerk/nextjs/server', () => ({
 
 vi.mock('@/lib/db', () => ({
 	db: {
+		store: {
+			findUnique: findUniqueStoreMock,
+		},
 		productQuestion: {
 			findUnique: findUniqueProductQuestionMock,
 			findMany: findManyProductQuestionMock,
@@ -107,6 +112,7 @@ vi.mock('@/lib/qa/verified-buyer', () => ({
 
 import {
 	getProductQA,
+	getStoreProductQA,
 	createProductQuestion,
 	createProductAnswer,
 	toggleQuestionVote,
@@ -242,7 +248,31 @@ describe('Product Q&A System', () => {
 	});
 
 	describe('createProductAnswer', () => {
-		it('detects official seller and verified buyer status', async () => {
+		it('rejects unauthorized non-seller and non-admin users', async () => {
+			currentUserMock.mockResolvedValue({ id: 'customer-user-id' });
+			findUniqueProductQuestionMock.mockResolvedValue({
+				id: 'q-1',
+				productId: 'prod-1',
+				product: {
+					id: 'prod-1',
+					name: 'Desk Chair',
+					slug: 'desk-chair',
+					store: { userId: 'different-seller-id' },
+				},
+			});
+			findUniqueUserMock.mockResolvedValue({ role: Role.USER });
+
+			const result = await createProductAnswer({
+				questionId: 'q-1',
+				answer: 'I think it is good.',
+			});
+
+			expect(result.success).toBe(false);
+			expect(result.error).toContain('Only the store seller or an admin');
+			expect(createProductAnswerMock).not.toHaveBeenCalled();
+		});
+
+		it('allows store seller to answer with official badge', async () => {
 			currentUserMock.mockResolvedValue({
 				id: 'seller-user-id',
 				firstName: 'Seller',
@@ -257,7 +287,7 @@ describe('Product Q&A System', () => {
 					store: { userId: 'seller-user-id' },
 				},
 			});
-			isVerifiedBuyerMock.mockResolvedValue(false);
+			findUniqueUserMock.mockResolvedValue({ role: Role.SELLER });
 			createProductAnswerMock.mockResolvedValue({
 				id: 'a-new',
 				answer: 'Yes, the lumbar depth and height adjust 5cm.',
@@ -280,6 +310,97 @@ describe('Product Q&A System', () => {
 					eventType: 'product.question_answered',
 				}),
 			);
+		});
+
+		it('allows platform admin to answer', async () => {
+			currentUserMock.mockResolvedValue({
+				id: 'admin-user-id',
+				firstName: 'Admin',
+			});
+			findUniqueProductQuestionMock.mockResolvedValue({
+				id: 'q-1',
+				productId: 'prod-1',
+				product: {
+					id: 'prod-1',
+					name: 'Ergonomic Desk Chair',
+					slug: 'ergonomic-desk-chair',
+					store: { userId: 'seller-user-id' },
+				},
+			});
+			findUniqueUserMock.mockResolvedValue({ role: Role.ADMIN });
+			createProductAnswerMock.mockResolvedValue({
+				id: 'a-admin',
+				answer: 'Official admin clarification.',
+				isOfficialSeller: true,
+				isVerifiedBuyer: false,
+				createdAt: new Date(),
+				user: { id: 'admin-user-id', name: 'Admin', picture: '' },
+			});
+
+			const result = await createProductAnswer({
+				questionId: 'q-1',
+				answer: 'Official admin clarification.',
+			});
+
+			expect(result.success).toBe(true);
+		});
+	});
+
+	describe('getStoreProductQA', () => {
+		it('returns empty result if user is not store owner or admin', async () => {
+			currentUserMock.mockResolvedValue({ id: 'intruder-user' });
+			findUniqueStoreMock.mockResolvedValue({
+				id: 'store-1',
+				userId: 'owner-user',
+			});
+			findUniqueUserMock.mockResolvedValue({ role: Role.USER });
+
+			const result = await getStoreProductQA('my-store');
+			expect(result.questions).toEqual([]);
+			expect(result.totalQuestions).toBe(0);
+		});
+
+		it('returns questions and categorization for store owner', async () => {
+			currentUserMock.mockResolvedValue({ id: 'owner-user' });
+			findUniqueStoreMock.mockResolvedValue({
+				id: 'store-1',
+				userId: 'owner-user',
+			});
+			findUniqueUserMock.mockResolvedValue({ role: Role.SELLER });
+			countProductQuestionMock
+				.mockResolvedValueOnce(1) // total
+				.mockResolvedValueOnce(1) // all
+				.mockResolvedValueOnce(0) // needs answer
+				.mockResolvedValueOnce(1); // answered
+			findManyProductQuestionMock.mockResolvedValue([
+				{
+					id: 'q-1',
+					question: 'What is the material?',
+					status: QAModerationStatus.PUBLISHED,
+					isPinned: true,
+					createdAt: new Date(),
+					user: { id: 'c-1', name: 'Buyer', email: 'buyer@test.com', picture: '' },
+					product: { id: 'p-1', name: 'Chair', slug: 'chair', variants: [] },
+					votes: [{ userId: 'u-1' }],
+					answers: [
+						{
+							id: 'a-1',
+							answer: 'Mesh back with aluminum frame.',
+							isOfficialSeller: true,
+							createdAt: new Date(),
+							user: { id: 'owner-user', name: 'Owner' },
+						},
+					],
+				},
+			]);
+
+			const result = await getStoreProductQA('my-store');
+			expect(result.totalQuestions).toBe(1);
+			expect(result.questions[0].customer.email).toBe('buyer@test.com');
+			expect(result.questions[0].hasSellerAnswer).toBe(true);
+			expect(result.questions[0].helpfulCount).toBe(1);
+			expect(result.counts.all).toBe(1);
+			expect(result.counts.answered).toBe(1);
 		});
 	});
 

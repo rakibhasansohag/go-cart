@@ -21,6 +21,7 @@ import {
 	getStoreShippingRates,
 	getStoreByUrl,
 } from '@/queries/store';
+import { getStoreProductQA } from '@/queries/qa';
 
 interface SidebarNavSellerProps {
 	menuLinks: DashboardSidebarMenuInterface[];
@@ -83,6 +84,11 @@ export default function SidebarNavSeller({
 					]);
 					return { details, rates };
 				},
+			});
+		} else if (linkItem === 'questions') {
+			queryClient.prefetchQuery({
+				queryKey: ['seller-qa', activeStore, 1, 10, '', 'all'],
+				queryFn: () => getStoreProductQA(activeStore),
 			});
 		} else if (linkItem === 'settings') {
 			queryClient.prefetchQuery({

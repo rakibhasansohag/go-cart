@@ -70,6 +70,51 @@ export type ProductQAResponse = {
 	legacyFaq: { question: string; answer: string }[];
 };
 
+export type StoreProductQAItem = {
+	id: string;
+	question: string;
+	status: QAModerationStatus;
+	isPinned: boolean;
+	helpfulCount: number;
+	createdAt: string;
+	customer: {
+		id: string;
+		name: string;
+		email: string;
+		picture: string;
+	};
+	product: {
+		id: string;
+		name: string;
+		slug: string;
+		image: string;
+	};
+	answersCount: number;
+	hasSellerAnswer: boolean;
+	answers: {
+		id: string;
+		answer: string;
+		isOfficialSeller: boolean;
+		createdAt: string;
+		user: {
+			id: string;
+			name: string;
+		};
+	}[];
+};
+
+export type StoreProductQAResponse = {
+	questions: StoreProductQAItem[];
+	totalQuestions: number;
+	page: number;
+	totalPages: number;
+	counts: {
+		all: number;
+		needsAnswer: number;
+		answered: number;
+	};
+};
+
 /**
  * Fetch paginated questions and answers for a product.
  */
@@ -379,15 +424,26 @@ export async function createProductAnswer(
 	}
 
 	const isSeller = targetQuestion.product.store.userId === user.id;
-	const isBuyer = await isVerifiedBuyer(user.id, targetQuestion.productId);
+	const dbUser = await db.user.findUnique({
+		where: { id: user.id },
+		select: { role: true },
+	});
+	const isAdmin = dbUser?.role === Role.ADMIN;
+
+	if (!isSeller && !isAdmin) {
+		return {
+			success: false,
+			error: 'Only the store seller or an admin can answer this question.',
+		};
+	}
 
 	const newAnswer = await db.productAnswer.create({
 		data: {
 			questionId,
 			userId: user.id,
 			answer,
-			isOfficialSeller: isSeller,
-			isVerifiedBuyer: isBuyer,
+			isOfficialSeller: true,
+			isVerifiedBuyer: false,
 			status: QAModerationStatus.PUBLISHED,
 		},
 		include: {
@@ -416,12 +472,8 @@ export async function createProductAnswer(
 				productName: targetQuestion.product.name,
 				productSlug: targetQuestion.product.slug,
 				answer: newAnswer.answer,
-				authorName: isSeller
-					? 'Store Seller'
-					: user.firstName
-						? `${user.firstName} ${user.lastName ?? ''}`.trim()
-						: 'A shopper',
-				isOfficialSeller: isSeller,
+				authorName: isSeller ? 'Official Seller' : 'Store Admin',
+				isOfficialSeller: true,
 			},
 		});
 	} catch (err) {
@@ -743,4 +795,252 @@ export async function deleteProductAnswer(
 	});
 
 	return { success: true };
+}
+
+/**
+ * Fetch questions and answers for a specific store's products in the seller dashboard.
+ */
+export async function getStoreProductQA(
+	storeUrl: string,
+	options: {
+		page?: number;
+		limit?: number;
+		search?: string;
+		filter?: 'all' | 'needs_answer' | 'answered';
+	} = {},
+): Promise<StoreProductQAResponse> {
+	if (!storeUrl) {
+		return {
+			questions: [],
+			totalQuestions: 0,
+			page: 1,
+			totalPages: 0,
+			counts: { all: 0, needsAnswer: 0, answered: 0 },
+		};
+	}
+
+	const user = await currentUser();
+	if (!user) {
+		return {
+			questions: [],
+			totalQuestions: 0,
+			page: 1,
+			totalPages: 0,
+			counts: { all: 0, needsAnswer: 0, answered: 0 },
+		};
+	}
+
+	const store = await db.store.findUnique({
+		where: { url: storeUrl },
+		select: { id: true, userId: true },
+	});
+
+	if (!store) {
+		return {
+			questions: [],
+			totalQuestions: 0,
+			page: 1,
+			totalPages: 0,
+			counts: { all: 0, needsAnswer: 0, answered: 0 },
+		};
+	}
+
+	const dbUser = await db.user.findUnique({
+		where: { id: user.id },
+		select: { role: true },
+	});
+
+	const isOwner = store.userId === user.id;
+	const isAdmin = dbUser?.role === Role.ADMIN;
+	if (!isOwner && !isAdmin) {
+		return {
+			questions: [],
+			totalQuestions: 0,
+			page: 1,
+			totalPages: 0,
+			counts: { all: 0, needsAnswer: 0, answered: 0 },
+		};
+	}
+
+	const page = Math.max(1, options.page ?? 1);
+	const limit = Math.max(1, Math.min(50, options.limit ?? 10));
+	const skip = (page - 1) * limit;
+
+	const baseStoreWhere = {
+		product: {
+			storeId: store.id,
+		},
+	};
+
+	const searchFilter = options.search?.trim()
+		? {
+				OR: [
+					{
+						question: {
+							contains: options.search.trim(),
+							mode: 'insensitive' as const,
+						},
+					},
+					{
+						product: {
+							name: {
+								contains: options.search.trim(),
+								mode: 'insensitive' as const,
+							},
+						},
+					},
+					{
+						user: {
+							name: {
+								contains: options.search.trim(),
+								mode: 'insensitive' as const,
+							},
+						},
+					},
+				],
+		  }
+		: {};
+
+	const statusFilter =
+		options.filter === 'needs_answer'
+			? {
+					answers: {
+						none: {
+							isOfficialSeller: true,
+						},
+					},
+			  }
+			: options.filter === 'answered'
+			? {
+					answers: {
+						some: {
+							isOfficialSeller: true,
+						},
+					},
+			  }
+			: {};
+
+	const whereClause = {
+		...baseStoreWhere,
+		...searchFilter,
+		...statusFilter,
+	};
+
+	const [totalQuestions, rawQuestions, allCount, needsAnswerCount, answeredCount] =
+		await Promise.all([
+			db.productQuestion.count({ where: whereClause }),
+			db.productQuestion.findMany({
+				where: whereClause,
+				orderBy: [{ isPinned: 'desc' }, { createdAt: 'desc' }],
+				skip,
+				take: limit,
+				include: {
+					user: {
+						select: {
+							id: true,
+							name: true,
+							email: true,
+							picture: true,
+						},
+					},
+					product: {
+						select: {
+							id: true,
+							name: true,
+							slug: true,
+							variants: {
+								take: 1,
+								include: {
+									images: {
+										take: 1,
+										select: { url: true },
+									},
+								},
+							},
+						},
+					},
+					votes: {
+						select: {
+							userId: true,
+						},
+					},
+					answers: {
+						orderBy: [{ createdAt: 'asc' }],
+						include: {
+							user: {
+								select: {
+									id: true,
+									name: true,
+									picture: true,
+								},
+							},
+						},
+					},
+				},
+			}),
+			db.productQuestion.count({ where: baseStoreWhere }),
+			db.productQuestion.count({
+				where: {
+					...baseStoreWhere,
+					answers: { none: { isOfficialSeller: true } },
+				},
+			}),
+			db.productQuestion.count({
+				where: {
+					...baseStoreWhere,
+					answers: { some: { isOfficialSeller: true } },
+				},
+			}),
+		]);
+
+	const questions: StoreProductQAItem[] = rawQuestions.map((q) => {
+		const hasSellerAnswer = q.answers.some((a) => a.isOfficialSeller);
+		const productImage =
+			q.product.variants[0]?.images[0]?.url || '/placeholder.png';
+
+		return {
+			id: q.id,
+			question: q.question,
+			status: q.status,
+			isPinned: q.isPinned,
+			helpfulCount: q.votes.length,
+			createdAt: q.createdAt.toISOString(),
+			customer: {
+				id: q.user.id,
+				name: q.user.name || 'Shopper',
+				email: q.user.email || '',
+				picture: q.user.picture || '',
+			},
+			product: {
+				id: q.product.id,
+				name: q.product.name,
+				slug: q.product.slug,
+				image: productImage,
+			},
+			answersCount: q.answers.length,
+			hasSellerAnswer,
+			answers: q.answers.map((a) => ({
+				id: a.id,
+				answer: a.answer,
+				isOfficialSeller: a.isOfficialSeller,
+				createdAt: a.createdAt.toISOString(),
+				user: {
+					id: a.user.id,
+					name: a.user.name || 'Seller',
+				},
+			})),
+		};
+	});
+
+	return {
+		questions,
+		totalQuestions,
+		page,
+		totalPages: Math.ceil(totalQuestions / limit) || 1,
+		counts: {
+			all: allCount,
+			needsAnswer: needsAnswerCount,
+			answered: answeredCount,
+		},
+	};
 }
