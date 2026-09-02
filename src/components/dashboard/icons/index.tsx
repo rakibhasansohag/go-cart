@@ -11,6 +11,7 @@ import InventoryIcon from './inventory';
 import CouponIcon from './coupon';
 import ShippingIcon from './shipping';
 import OfferIcon from './offer';
+import QAIcon from './qa';
 export {
 	DashboardIcon,
 	StoreIcon,
@@ -25,4 +26,5 @@ export {
 	CouponIcon,
 	ShippingIcon,
 	OfferIcon,
+	QAIcon,
 };

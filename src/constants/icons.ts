@@ -11,6 +11,7 @@ import {
 	CouponIcon,
 	ShippingIcon,
 	OfferIcon,
+	QAIcon,
 } from '@/components/dashboard/icons';
 import {
 	FolderTree,
@@ -20,7 +21,6 @@ import {
 	Settings2,
 	UserRound,
 	WalletCards,
-	MessageCircleQuestion,
 } from 'lucide-react';
 
 export const icons = [
@@ -122,6 +122,6 @@ export const icons = [
 	{
 		label: 'Q&A',
 		value: 'questions',
-		path: MessageCircleQuestion,
+		path: QAIcon,
 	},
 ];

@@ -269,7 +269,7 @@ const ProductQuestions: FC<Props> = ({
 										<span>{newQuestionText.length}/500</span>
 									</div>
 								</div>
-								<DialogFooter className='gap-2 sm:gap-0'>
+								<DialogFooter className='flex flex-row justify-end items-center gap-3 pt-2'>
 									<Button
 										variant='outline'
 										onClick={() => setIsAskDialogOpen(false)}

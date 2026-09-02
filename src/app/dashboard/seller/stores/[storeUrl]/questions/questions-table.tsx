@@ -482,7 +482,7 @@ export default function SellerQuestionsTable({ storeUrl, initialData }: Props) {
 						</div>
 					)}
 
-					<DialogFooter className='gap-2 sm:gap-0'>
+					<DialogFooter className='flex flex-row justify-end items-center gap-3 pt-3'>
 						<Button
 							variant='outline'
 							onClick={() => setIsAnswerDialogOpen(false)}
