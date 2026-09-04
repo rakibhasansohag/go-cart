@@ -115,6 +115,11 @@ export const SellerDashboardSidebarOptions: DashboardSidebarMenuInterface[] = [
 		link: 'questions',
 	},
 	{
+		label: 'Messages',
+		icon: 'messages',
+		link: 'messages',
+	},
+	{
 		label: 'Settings',
 		icon: 'settings',
 		link: 'settings',

@@ -141,6 +141,8 @@ export const DOMAIN_EVENT_TYPES = {
   PAYOUT_BATCH_READY_FOR_REVIEW: "payout.batch_ready_for_review",
   PRODUCT_QUESTION_ASKED: "product.question_asked",
   PRODUCT_QUESTION_ANSWERED: "product.question_answered",
+  INQUIRY_BUYER_SENT: "inquiry.buyer_sent",
+  INQUIRY_SELLER_REPLIED: "inquiry.seller_replied",
 } as const;
 
 export type DomainEventType =
@@ -157,7 +159,8 @@ export type PublishDomainEventInput = {
     | "CART"
     | "PAYOUT_BATCH"
     | "PRODUCT"
-    | "PRODUCT_QUESTION";
+    | "PRODUCT_QUESTION"
+    | "CONVERSATION";
   aggregateId: string;
   actorUserId?: string | null;
   orderId?: string;
@@ -300,6 +303,26 @@ async function resolveRecipients(
       if (question && question.userId !== input.actorUserId) {
         recipientIds.add(question.userId);
       }
+    }
+  }
+
+  if (input.eventType === DOMAIN_EVENT_TYPES.INQUIRY_BUYER_SENT) {
+    const storeId = input.storeId ?? payloadText(input.payload, "storeId");
+    if (storeId) {
+      const store = await tx.store.findUnique({
+        where: { id: storeId },
+        select: { userId: true },
+      });
+      if (store && store.userId !== input.actorUserId) {
+        recipientIds.add(store.userId);
+      }
+    }
+  }
+
+  if (input.eventType === DOMAIN_EVENT_TYPES.INQUIRY_SELLER_REPLIED) {
+    const buyerId = payloadText(input.payload, "buyerId");
+    if (buyerId && buyerId !== input.actorUserId) {
+      recipientIds.add(buyerId);
     }
   }
 
@@ -457,6 +480,24 @@ function notificationFor(input: PublishDomainEventInput, recipient: Recipient) {
         title: "Your question received an answer",
         message: `${payloadText(input.payload, "authorName") || "Someone"} answered your question about ${payloadText(input.payload, "productName") || "the product"}.`,
         actionUrl: `/product/${payloadText(input.payload, "productSlug")}#questions`,
+      };
+    case DOMAIN_EVENT_TYPES.INQUIRY_BUYER_SENT:
+      return {
+        category: NotificationCategory.SYSTEM,
+        title: `New message from ${payloadText(input.payload, "buyerName") || "a customer"}`,
+        message: payloadText(input.payload, "subject")
+          ? `${payloadText(input.payload, "subject")}: "${payloadText(input.payload, "bodySnippet")}"`
+          : `"${payloadText(input.payload, "bodySnippet")}"`,
+        actionUrl: storeUrl
+          ? `/dashboard/seller/stores/${storeUrl}/messages`
+          : null,
+      };
+    case DOMAIN_EVENT_TYPES.INQUIRY_SELLER_REPLIED:
+      return {
+        category: NotificationCategory.SYSTEM,
+        title: `Reply from ${payloadText(input.payload, "storeName") || "the store"}`,
+        message: `"${payloadText(input.payload, "bodySnippet")}"`,
+        actionUrl: "/profile/messages",
       };
   }
 }

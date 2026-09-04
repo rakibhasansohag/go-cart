@@ -12,6 +12,7 @@ import {
 	ShippingIcon,
 	OfferIcon,
 	QAIcon,
+	MessagesIcon,
 } from '@/components/dashboard/icons';
 import {
 	FolderTree,
@@ -123,5 +124,10 @@ export const icons = [
 		label: 'Q&A',
 		value: 'questions',
 		path: QAIcon,
+	},
+	{
+		label: 'Messages',
+		value: 'messages',
+		path: MessagesIcon,
 	},
 ];

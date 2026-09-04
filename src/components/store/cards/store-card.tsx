@@ -10,6 +10,7 @@ import { useRouter } from 'next/navigation';
 import { FC, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import ContactSellerDialog from '@/components/store/messages/contact-seller-dialog';
 
 interface Props {
 	store: {
@@ -116,10 +117,17 @@ const StoreCard: FC<Props> = ({ store, checkForFollowing }) => {
 						)}
 						<span>{following ? 'Following' : 'Follow'}</span>
 					</div>
-					<div className='flex items-center border border-black rounded-full cursor-pointer text-base font-bold h-9 mx-2 px-4 bg-black text-white'>
-						<MessageSquareMore className='w-4 me-2' />
-						<span>Message</span>
-					</div>
+					<ContactSellerDialog
+						storeId={id}
+						storeName={name}
+						storeUrl={url}
+						trigger={
+							<div className='flex items-center border border-black rounded-full cursor-pointer text-base font-bold h-9 mx-2 px-4 bg-black text-white hover:bg-black/80 transition-colors'>
+								<MessageSquareMore className='w-4 me-2' />
+								<span>Message</span>
+							</div>
+						}
+					/>
 				</div>
 			</div>
 		</div>

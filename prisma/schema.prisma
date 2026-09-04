@@ -19,11 +19,11 @@ enum AccountStatus {
 }
 
 model User {
-  id      String @id @default(uuid())
-  name    String
-  email   String @unique
-  picture String @db.Text
-  role    Role   @default(USER)
+  id            String        @id @default(uuid())
+  name          String
+  email         String        @unique
+  picture       String        @db.Text
+  role          Role          @default(USER)
   accountStatus AccountStatus @default(ACTIVE)
 
   stores                     Store[]                     @relation("UserStores")
@@ -57,6 +57,8 @@ model User {
   productAnswers             ProductAnswer[]             @relation("UserProductAnswers")
   productQuestionVotes       ProductQuestionVote[]       @relation("UserProductQuestionVotes")
   productAnswerVotes         ProductAnswerVote[]         @relation("UserProductAnswerVotes")
+  buyerConversations         Conversation[]              @relation("UserBuyerConversations")
+  sentMessages               Message[]                   @relation("UserSentMessages")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -215,6 +217,7 @@ model Store {
   orderGroups    OrderGroup[]    @relation("OrderGroupToStore")
   coupons        Coupon[]        @relation("CouponToStore")
   returnRequests ReturnRequest[] @relation("ReturnRequestToStore")
+  conversations  Conversation[]  @relation("StoreToConversation")
 
   @@index([userId])
 }
@@ -300,12 +303,13 @@ model Product {
   storeId String
   store   Store  @relation("StoreToProduct", fields: [storeId], references: [id])
 
-  variants  ProductVariant[] @relation("ProductToProductVariant")
+  variants         ProductVariant[]  @relation("ProductToProductVariant")
   specs            Spec[]            @relation("ProductSpec")
   questions        Question[]        @relation("ProductQuestion")
   productQuestions ProductQuestion[] @relation("ProductToProductQuestion")
   reviews          Review[]          @relation("ReviewToProduct")
-  wishlist  Wishlist[]       @relation("WishlistToProduct")
+  wishlist         Wishlist[]        @relation("WishlistToProduct")
+  conversations    Conversation[]    @relation("ProductToConversation")
 
   categoryId String
   category   Category @relation("CategoryToProduct", fields: [categoryId], references: [id])
@@ -450,22 +454,22 @@ enum QAModerationStatus {
 }
 
 model ProductQuestion {
-  id        String             @id @default(uuid())
-  question  String             @db.Text
-  status    QAModerationStatus @default(PUBLISHED)
-  isPinned  Boolean            @default(false)
+  id       String             @id @default(uuid())
+  question String             @db.Text
+  status   QAModerationStatus @default(PUBLISHED)
+  isPinned Boolean            @default(false)
 
   productId String
-  product   Product            @relation("ProductToProductQuestion", fields: [productId], references: [id], onDelete: Cascade)
+  product   Product @relation("ProductToProductQuestion", fields: [productId], references: [id], onDelete: Cascade)
 
-  userId    String
-  user      User               @relation("UserProductQuestions", fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+  user   User   @relation("UserProductQuestions", fields: [userId], references: [id], onDelete: Cascade)
 
-  answers   ProductAnswer[]    @relation("QuestionToAnswer")
-  votes     ProductQuestionVote[] @relation("QuestionToVote")
+  answers ProductAnswer[]       @relation("QuestionToAnswer")
+  votes   ProductQuestionVote[] @relation("QuestionToVote")
 
-  createdAt DateTime           @default(now())
-  updatedAt DateTime           @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([productId, status, createdAt])
   @@index([userId])
@@ -478,46 +482,46 @@ model ProductAnswer {
   isVerifiedBuyer  Boolean            @default(false)
   status           QAModerationStatus @default(PUBLISHED)
 
-  questionId       String
-  question         ProductQuestion    @relation("QuestionToAnswer", fields: [questionId], references: [id], onDelete: Cascade)
+  questionId String
+  question   ProductQuestion @relation("QuestionToAnswer", fields: [questionId], references: [id], onDelete: Cascade)
 
-  userId           String
-  user             User               @relation("UserProductAnswers", fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+  user   User   @relation("UserProductAnswers", fields: [userId], references: [id], onDelete: Cascade)
 
-  votes            ProductAnswerVote[] @relation("AnswerToVote")
+  votes ProductAnswerVote[] @relation("AnswerToVote")
 
-  createdAt        DateTime           @default(now())
-  updatedAt        DateTime           @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([questionId, status, createdAt])
   @@index([userId])
 }
 
 model ProductQuestionVote {
-  id         String          @id @default(uuid())
+  id String @id @default(uuid())
 
   questionId String
   question   ProductQuestion @relation("QuestionToVote", fields: [questionId], references: [id], onDelete: Cascade)
 
-  userId     String
-  user       User            @relation("UserProductQuestionVotes", fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+  user   User   @relation("UserProductQuestionVotes", fields: [userId], references: [id], onDelete: Cascade)
 
-  createdAt  DateTime        @default(now())
+  createdAt DateTime @default(now())
 
   @@unique([questionId, userId])
   @@index([userId])
 }
 
 model ProductAnswerVote {
-  id        String        @id @default(uuid())
+  id String @id @default(uuid())
 
-  answerId  String
-  answer    ProductAnswer @relation("AnswerToVote", fields: [answerId], references: [id], onDelete: Cascade)
+  answerId String
+  answer   ProductAnswer @relation("AnswerToVote", fields: [answerId], references: [id], onDelete: Cascade)
 
-  userId    String
-  user      User          @relation("UserProductAnswerVotes", fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+  user   User   @relation("UserProductAnswerVotes", fields: [userId], references: [id], onDelete: Cascade)
 
-  createdAt DateTime      @default(now())
+  createdAt DateTime @default(now())
 
   @@unique([answerId, userId])
   @@index([userId])
@@ -865,6 +869,7 @@ model Order {
   cancellationRequests CancellationRequest[]   @relation("CancellationRequestToOrder")
   loyaltyTransactions  LoyaltyTransaction[]    @relation("OrderLoyaltyTransactions")
   loyaltyRedemption    LoyaltyRedemption?      @relation("OrderLoyaltyRedemption")
+  conversations        Conversation[]          @relation("OrderToConversation")
 
   shippingAddressId String
   shippingAddress   ShippingAddress @relation("ShippingAddressToOrder", fields: [shippingAddressId], references: [id])
@@ -912,6 +917,7 @@ model OrderGroup {
   fulfillmentEvents    FulfillmentTransition[]     @relation("FulfillmentTransitionToOrderGroup")
   cancellationRequests CancellationRequest[]       @relation("CancellationRequestToOrderGroup")
   settlement           SellerSettlement?
+  conversations        Conversation[]              @relation("OrderGroupToConversation")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1756,4 +1762,62 @@ model LoyaltyRedemption {
   order   Order          @relation("OrderLoyaltyRedemption", fields: [orderId], references: [id])
 
   @@index([accountId])
+}
+
+enum ConversationStatus {
+  OPEN
+  RESOLVED
+  ARCHIVED
+}
+
+enum MessageSenderRole {
+  BUYER
+  SELLER
+  ADMIN
+}
+
+model Conversation {
+  id             String             @id @default(uuid())
+  storeId        String
+  store          Store              @relation("StoreToConversation", fields: [storeId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User               @relation("UserBuyerConversations", fields: [userId], references: [id], onDelete: Cascade)
+  subject        String?
+  productId      String?
+  product        Product?           @relation("ProductToConversation", fields: [productId], references: [id], onDelete: SetNull)
+  orderId        String?
+  order          Order?             @relation("OrderToConversation", fields: [orderId], references: [id], onDelete: SetNull)
+  orderGroupId   String?
+  orderGroup     OrderGroup?        @relation("OrderGroupToConversation", fields: [orderGroupId], references: [id], onDelete: SetNull)
+  status         ConversationStatus @default(OPEN)
+  unreadBySeller Int                @default(0)
+  unreadByBuyer  Int                @default(0)
+  lastMessageAt  DateTime           @default(now())
+
+  messages Message[] @relation("ConversationToMessage")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([storeId, updatedAt])
+  @@index([userId, updatedAt])
+  @@index([productId])
+  @@index([orderId])
+  @@index([orderGroupId])
+}
+
+model Message {
+  id             String            @id @default(uuid())
+  conversationId String
+  conversation   Conversation      @relation("ConversationToMessage", fields: [conversationId], references: [id], onDelete: Cascade)
+  senderId       String
+  sender         User              @relation("UserSentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  senderRole     MessageSenderRole
+  body           String            @db.Text
+  isRead         Boolean           @default(false)
+
+  createdAt DateTime @default(now())
+
+  @@index([conversationId, createdAt])
+  @@index([senderId])
 }

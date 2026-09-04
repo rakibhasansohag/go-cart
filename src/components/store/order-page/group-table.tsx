@@ -9,10 +9,10 @@ import React from 'react';
 import ProductRow from './product-row';
 import { useMediaQuery } from 'react-responsive';
 import ProductRowGrid from './product-row-grid';
-import { formatPackageId } from '@/lib/utils';
-import { Copy, Check, Store, Truck, Calendar, Tag, XCircle, AlertTriangle } from 'lucide-react';
+import { Copy, Check, Store, Truck, Calendar, Tag, XCircle, AlertTriangle, MessageSquare } from 'lucide-react';
 import { toast } from 'sonner';
 import Link from 'next/link';
+import ContactSellerDialog from '@/components/store/messages/contact-seller-dialog';
 import { CancellationReasonCode, CancellationRequestStatus } from '@prisma/client';
 import { canRequestCancellation } from '@/lib/orders/fulfillment-state-machine';
 import { requestPackageCancellation } from '@/queries/fulfillment';
@@ -28,6 +28,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import { formatPackageId } from '@/lib/utils';
 
 export default function OrderGroupTable({
 	group,
@@ -148,6 +149,24 @@ export default function OrderGroupTable({
 								{group.store.name}
 							</span>
 						</Link>
+
+						<ContactSellerDialog
+							storeId={group.storeId}
+							storeName={group.store.name}
+							storeUrl={group.store.url}
+							orderGroupId={group.id}
+							orderReference={formattedGroupId}
+							trigger={
+								<button
+									type='button'
+									className='flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary bg-muted/40 hover:bg-muted px-2.5 py-1 rounded-lg border border-border/30 transition-colors cursor-pointer'
+									title={`Contact ${group.store.name} regarding this package`}
+								>
+									<MessageSquare className='w-3 h-3' />
+									<span>Contact Seller</span>
+								</button>
+							}
+						/>
 
 						<div className='flex items-center gap-1.5 text-xs text-muted-foreground bg-muted/30 px-2.5 py-1 rounded-lg border border-border/20'>
 							<Truck className='w-3 h-3 text-primary' />

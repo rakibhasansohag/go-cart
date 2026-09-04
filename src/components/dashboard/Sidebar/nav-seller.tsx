@@ -22,6 +22,7 @@ import {
 	getStoreByUrl,
 } from '@/queries/store';
 import { getStoreProductQA } from '@/queries/qa';
+import { getSellerConversations } from '@/queries/messages';
 
 interface SidebarNavSellerProps {
 	menuLinks: DashboardSidebarMenuInterface[];
@@ -89,6 +90,11 @@ export default function SidebarNavSeller({
 			queryClient.prefetchQuery({
 				queryKey: ['seller-qa', activeStore, 1, 10, '', 'all'],
 				queryFn: () => getStoreProductQA(activeStore),
+			});
+		} else if (linkItem === 'messages') {
+			queryClient.prefetchQuery({
+				queryKey: ['seller-conversations', activeStore, 'all', ''],
+				queryFn: () => getSellerConversations(activeStore),
 			});
 		} else if (linkItem === 'settings') {
 			queryClient.prefetchQuery({

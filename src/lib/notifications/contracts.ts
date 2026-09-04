@@ -101,6 +101,22 @@ export const DOMAIN_EVENT_PAYLOAD_SCHEMAS = {
 		authorName: z.string().min(1),
 		isOfficialSeller: z.boolean().default(false),
 	}),
+	'inquiry.buyer_sent': commonPayload.extend({
+		conversationId: z.string().min(1),
+		messageId: z.string().min(1),
+		storeId: z.string().min(1),
+		buyerName: z.string().min(1),
+		subject: z.string().optional(),
+		bodySnippet: z.string().min(1),
+	}),
+	'inquiry.seller_replied': commonPayload.extend({
+		conversationId: z.string().min(1),
+		messageId: z.string().min(1),
+		storeId: z.string().min(1),
+		storeName: z.string().min(1),
+		buyerId: z.string().min(1),
+		bodySnippet: z.string().min(1),
+	}),
 } as const;
 
 export type DomainEventPayload = z.infer<

@@ -15,6 +15,7 @@ import {
 } from '@/queries/profile';
 import { getCustomerReturns } from '@/queries/returns';
 import { getUserLoyaltyAccount } from '@/queries/loyalty';
+import { getBuyerConversations } from '@/queries/messages';
 
 export default function ProfileSidebar() {
 	const pathname = usePathname();
@@ -52,6 +53,11 @@ export default function ProfileSidebar() {
 					pageSize: 10,
 				}),
 				queryFn: () => getCustomerReturns('ALL', 1, 10),
+			});
+		} else if (link === '/profile/messages') {
+			queryClient.prefetchQuery({
+				queryKey: ['buyer-conversations', 'all', ''],
+				queryFn: () => getBuyerConversations(),
 			});
 		} else if (link.startsWith('/profile/wishlist/')) {
 			queryClient.prefetchQuery({
@@ -175,6 +181,10 @@ const menu = [
 	{
 		title: 'Orders',
 		link: '/profile/orders',
+	},
+	{
+		title: 'Messages',
+		link: '/profile/messages',
 	},
 	{
 		title: 'Payment',
