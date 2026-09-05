@@ -355,11 +355,12 @@ model ProductVariant {
 }
 
 model Size {
-  id       String @id @default(uuid())
-  size     String
-  quantity Int
-  price    Float
-  discount Float  @default(0)
+  id                String @id @default(uuid())
+  size              String
+  quantity          Int
+  price             Float
+  discount          Float  @default(0)
+  lowStockThreshold Int    @default(5)
 
   wishlist Wishlist[] @relation("WishlistToSize")
 

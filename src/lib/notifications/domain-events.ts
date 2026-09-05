@@ -143,6 +143,8 @@ export const DOMAIN_EVENT_TYPES = {
   PRODUCT_QUESTION_ANSWERED: "product.question_answered",
   INQUIRY_BUYER_SENT: "inquiry.buyer_sent",
   INQUIRY_SELLER_REPLIED: "inquiry.seller_replied",
+  INVENTORY_LOW_STOCK: "inventory.low_stock",
+  INVENTORY_RESTOCKED: "inventory.restocked",
 } as const;
 
 export type DomainEventType =
@@ -160,7 +162,8 @@ export type PublishDomainEventInput = {
     | "PAYOUT_BATCH"
     | "PRODUCT"
     | "PRODUCT_QUESTION"
-    | "CONVERSATION";
+    | "CONVERSATION"
+    | "INVENTORY_SKU";
   aggregateId: string;
   actorUserId?: string | null;
   orderId?: string;
@@ -234,7 +237,9 @@ async function resolveRecipients(
       input.eventType === DOMAIN_EVENT_TYPES.RETURN_DEADLINE_DUE ||
       input.eventType === DOMAIN_EVENT_TYPES.RETURN_DISPUTE_ESCALATED ||
       input.eventType === DOMAIN_EVENT_TYPES.RETURN_INVENTORY_RECONCILED ||
-      input.eventType === DOMAIN_EVENT_TYPES.EXCHANGE_APPROVED)
+      input.eventType === DOMAIN_EVENT_TYPES.EXCHANGE_APPROVED ||
+      input.eventType === DOMAIN_EVENT_TYPES.INVENTORY_LOW_STOCK ||
+      input.eventType === DOMAIN_EVENT_TYPES.INVENTORY_RESTOCKED)
   ) {
     const store = await tx.store.findUnique({
       where: { id: input.storeId },
@@ -501,6 +506,39 @@ function notificationFor(input: PublishDomainEventInput, recipient: Recipient) {
         title: `Reply from ${payloadText(input.payload, "storeName") || "the store"}`,
         message: `"${payloadText(input.payload, "bodySnippet")}"`,
         actionUrl: `/profile/messages${convId ? `?conversationId=${convId}` : ""}`,
+      };
+    }
+    case DOMAIN_EVENT_TYPES.INVENTORY_LOW_STOCK: {
+      const productName = payloadText(input.payload, "productName") || "Product";
+      const variantName = payloadText(input.payload, "variantName");
+      const size = payloadText(input.payload, "size");
+      const currentQty = payloadText(input.payload, "currentQuantity");
+      const threshold = payloadText(input.payload, "threshold");
+      const itemDesc =
+        variantName && size ? `${variantName} (${size})` : size || variantName || "item";
+      return {
+        category: NotificationCategory.SYSTEM,
+        title: `Low stock alert: ${productName}`,
+        message: `Only ${currentQty} unit(s) left for ${itemDesc}. Threshold is ${threshold}. Restock soon to avoid stockouts.`,
+        actionUrl: storeUrl
+          ? `/dashboard/seller/stores/${storeUrl}/inventory?filter=low_stock`
+          : null,
+      };
+    }
+    case DOMAIN_EVENT_TYPES.INVENTORY_RESTOCKED: {
+      const productName = payloadText(input.payload, "productName") || "Product";
+      const variantName = payloadText(input.payload, "variantName");
+      const size = payloadText(input.payload, "size");
+      const currentQty = payloadText(input.payload, "currentQuantity");
+      const itemDesc =
+        variantName && size ? `${variantName} (${size})` : size || variantName || "item";
+      return {
+        category: NotificationCategory.SYSTEM,
+        title: `Restocked: ${productName}`,
+        message: `${productName} (${itemDesc}) was restocked to ${currentQty} units.`,
+        actionUrl: storeUrl
+          ? `/dashboard/seller/stores/${storeUrl}/inventory`
+          : null,
       };
     }
   }

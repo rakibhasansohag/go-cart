@@ -15,10 +15,15 @@ import { columns } from './columns';
 interface InventoryViewProps {
 	storeUrl: string;
 	initialData: InventoryOverview;
+	initialFilter?: 'all' | 'in_stock' | 'low_stock' | 'out_of_stock';
 }
 
-export default function InventoryView({ storeUrl, initialData }: InventoryViewProps) {
-	const [statusFilter, setStatusFilter] = useState<'all' | 'in_stock' | 'low_stock' | 'out_of_stock'>('all');
+export default function InventoryView({ storeUrl, initialData, initialFilter }: InventoryViewProps) {
+	const [statusFilter, setStatusFilter] = useState<'all' | 'in_stock' | 'low_stock' | 'out_of_stock'>(
+		initialFilter === 'low_stock' || initialFilter === 'in_stock' || initialFilter === 'out_of_stock'
+			? initialFilter
+			: 'all',
+	);
 	const [searchQuery, setSearchQuery] = useState('');
 
 	const { data = initialData } = useQuery({
@@ -33,10 +38,11 @@ export default function InventoryView({ storeUrl, initialData }: InventoryViewPr
 		return items.filter((item) => {
 			// Status Filter
 			let matchesStatus = true;
+			const threshold = item.lowStockThreshold ?? 5;
 			if (statusFilter === 'in_stock') {
-				matchesStatus = item.quantity >= 5;
+				matchesStatus = item.quantity > threshold;
 			} else if (statusFilter === 'low_stock') {
-				matchesStatus = item.quantity > 0 && item.quantity < 5;
+				matchesStatus = item.quantity > 0 && item.quantity <= threshold;
 			} else if (statusFilter === 'out_of_stock') {
 				matchesStatus = item.quantity === 0;
 			}
@@ -57,7 +63,7 @@ export default function InventoryView({ storeUrl, initialData }: InventoryViewPr
 	}, [items, statusFilter, searchQuery]);
 
 	const inStockCount = useMemo(() => {
-		return items.filter((item) => item.quantity >= 5).length;
+		return items.filter((item) => item.quantity > (item.lowStockThreshold ?? 5)).length;
 	}, [items]);
 
 	return (
@@ -119,7 +125,7 @@ export default function InventoryView({ storeUrl, initialData }: InventoryViewPr
 						<div className='text-2xl font-bold text-amber-600 dark:text-amber-400'>
 							{summary.lowStockCount}
 						</div>
-						<p className='text-xs text-muted-foreground mt-1'>Fewer than 5 units remaining</p>
+						<p className='text-xs text-muted-foreground mt-1'>At or below alert threshold</p>
 					</CardContent>
 				</Card>
 

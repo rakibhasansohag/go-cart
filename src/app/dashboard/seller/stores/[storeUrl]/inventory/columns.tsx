@@ -6,13 +6,13 @@ import Link from 'next/link';
 import { ColumnDef } from '@tanstack/react-table';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { Check, Edit, ExternalLink, Minus, Plus, RefreshCw } from 'lucide-react';
+import { Check, Edit, ExternalLink, Minus, Plus, RefreshCw, SlidersHorizontal } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { queryKeys } from '@/lib/query-keys';
-import { InventoryItem, updateSizeQuantity } from '@/queries/inventory';
+import { InventoryItem, updateSizeQuantity, updateSizeThreshold } from '@/queries/inventory';
 
 // Component for Inline Quantity Editing
 function QuickStockUpdater({ item }: { item: InventoryItem }) {
@@ -128,6 +128,81 @@ function QuickStockUpdater({ item }: { item: InventoryItem }) {
 	);
 }
 
+// Component for Inline Threshold Editing
+function QuickThresholdUpdater({ item }: { item: InventoryItem }) {
+	const currentThreshold = item.lowStockThreshold ?? 5;
+	const [threshold, setThreshold] = useState(currentThreshold);
+	const [isEditing, setIsEditing] = useState(false);
+	const queryClient = useQueryClient();
+
+	const mutation = useMutation({
+		mutationFn: (newThreshold: number) => updateSizeThreshold(item.id, newThreshold),
+		onSuccess: (updated) => {
+			toast.success(`Alert threshold updated to ${updated.lowStockThreshold} for ${item.productName} (${item.size})`);
+			setThreshold(updated.lowStockThreshold);
+			setIsEditing(false);
+			queryClient.invalidateQueries({
+				queryKey: queryKeys.dashboard.inventory(item.storeUrl),
+			});
+		},
+		onError: (error: Error) => {
+			toast.error(error.message || 'Failed to update alert threshold');
+		},
+	});
+
+	const handleSave = () => {
+		if (threshold === currentThreshold) {
+			setIsEditing(false);
+			return;
+		}
+		mutation.mutate(threshold);
+	};
+
+	return (
+		<div className='flex items-center gap-1.5'>
+			{isEditing ? (
+				<div className='flex items-center gap-1'>
+					<Input
+						type='number'
+						min='0'
+						max='10000'
+						value={threshold}
+						onChange={(e) => setThreshold(Math.max(0, parseInt(e.target.value) || 0))}
+						onKeyDown={(e) => {
+							if (e.key === 'Enter') handleSave();
+							if (e.key === 'Escape') {
+								setThreshold(currentThreshold);
+								setIsEditing(false);
+							}
+						}}
+						className='w-14 h-7 text-xs text-center p-0 border border-input focus-visible:ring-1 focus-visible:ring-primary'
+						autoFocus
+					/>
+					<Button
+						size='icon'
+						variant='ghost'
+						className='h-7 w-7 text-primary hover:bg-primary/10'
+						onClick={handleSave}
+						disabled={mutation.isPending}
+					>
+						<Check className='h-3.5 w-3.5' />
+					</Button>
+				</div>
+			) : (
+				<button
+					type='button'
+					onClick={() => setIsEditing(true)}
+					className='inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-mono font-medium hover:bg-muted text-muted-foreground hover:text-foreground border border-transparent hover:border-border/80 transition-colors'
+					title='Click to change low stock notification threshold'
+				>
+					<span>≤ {threshold}</span>
+					<SlidersHorizontal className='h-3 w-3 opacity-60' />
+				</button>
+			)}
+		</div>
+	);
+}
+
 export const columns: ColumnDef<InventoryItem>[] = [
 	{
 		accessorKey: 'productName',
@@ -201,6 +276,7 @@ export const columns: ColumnDef<InventoryItem>[] = [
 		header: 'Status',
 		cell: ({ row }) => {
 			const qty = row.original.quantity;
+			const threshold = row.original.lowStockThreshold ?? 5;
 			if (qty === 0) {
 				return (
 					<Badge className='bg-destructive/15 text-destructive border-destructive/30 hover:bg-destructive/20 text-[11px] font-medium'>
@@ -208,7 +284,7 @@ export const columns: ColumnDef<InventoryItem>[] = [
 					</Badge>
 				);
 			}
-			if (qty < 5) {
+			if (qty <= threshold) {
 				return (
 					<Badge className='bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30 hover:bg-amber-500/20 text-[11px] font-medium'>
 						Low Stock ({qty})
@@ -221,6 +297,11 @@ export const columns: ColumnDef<InventoryItem>[] = [
 				</Badge>
 			);
 		},
+	},
+	{
+		accessorKey: 'lowStockThreshold',
+		header: 'Alert Threshold',
+		cell: ({ row }) => <QuickThresholdUpdater item={row.original} />,
 	},
 	{
 		accessorKey: 'quantity',

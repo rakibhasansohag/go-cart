@@ -6,10 +6,18 @@ import DataTableSkeleton from '@/components/dashboard/shared/table-skeleton';
 
 interface Props {
 	params: Promise<{ storeUrl: string }>;
+	searchParams?: Promise<{ filter?: string }>;
 }
 
-export default async function InventoryPage({ params }: Props) {
+export default async function InventoryPage({ params, searchParams }: Props) {
 	const { storeUrl } = await params;
+	const resolvedSearchParams = searchParams ? await searchParams : undefined;
+	const initialFilter =
+		resolvedSearchParams?.filter === 'low_stock' ||
+		resolvedSearchParams?.filter === 'in_stock' ||
+		resolvedSearchParams?.filter === 'out_of_stock'
+			? resolvedSearchParams.filter
+			: undefined;
 
 	if (!storeUrl) {
 		redirect('/dashboard/seller');
@@ -33,7 +41,11 @@ export default async function InventoryPage({ params }: Props) {
 
 	return (
 		<Suspense fallback={<DataTableSkeleton />}>
-			<InventoryView storeUrl={storeUrl} initialData={inventoryData} />
+			<InventoryView
+				storeUrl={storeUrl}
+				initialData={inventoryData}
+				initialFilter={initialFilter}
+			/>
 		</Suspense>
 	);
 }

@@ -1,6 +1,7 @@
 import { db } from '@/lib/db';
 import { deriveGroupStatus, deriveOrderStatus } from '@/lib/orders/status-sync';
 import { settledQuantityForOrderItem, terminalStatusForSettledLine } from '@/lib/returns/reconciliation';
+import { adjustSizeInventory } from '@/lib/inventory/service';
 
 export type ReturnItemDisposition = 'RESTOCKABLE' | 'DAMAGED' | 'DISPOSED' | 'REJECTED';
 
@@ -74,7 +75,18 @@ export async function reconcileReturnInventoryForAdmin(
 			});
 		}
 		for (const delta of deltas) {
-			await tx.size.update({ where: { id: delta.sizeId }, data: { quantity: { increment: delta.quantity } } });
+			const existingSize = await tx.size.findUnique({
+				where: { id: delta.sizeId },
+				select: { quantity: true },
+			});
+			if (existingSize) {
+				await adjustSizeInventory(tx, {
+					sizeId: delta.sizeId,
+					newQuantity: existingSize.quantity + delta.quantity,
+					actorUserId: adminUserId,
+					reason: 'Return item restock',
+				});
+			}
 		}
 		if (request.status === 'REFUNDED' || request.status === 'EXCHANGED') {
 			const settledLines = await tx.returnItem.findMany({

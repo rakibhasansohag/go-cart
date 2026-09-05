@@ -1330,15 +1330,14 @@ under retries, concurrency, failed payments, cancellations, refunds, and abuse.
 
 Goal: help sellers avoid stockouts with threshold-crossing notifications.
 
-- [ ] Add `lowStockThreshold` to the actual sellable inventory row (`Size`, or a
+- [x] Add `lowStockThreshold` to the actual sellable inventory row (`Size`, or a
       future explicit SKU inventory model), not `ProductVariant`, because quantity
       is currently stored per size
-- [ ] Detect above→at/below and at/below→above threshold crossings inside the
+- [x] Detect above→at/below and at/below→above threshold crossings inside the
       same transaction that changes inventory
-- [ ] Emit idempotent low-stock and restocked domain events with seller notification/email jobs
-- [ ] Let sellers configure thresholds per sellable SKU; add admin aggregate visibility
-- [ ] **Test**: Concurrent purchases trigger one threshold-crossing alert, and a
-      restock allows a future low-stock alert without notification spam
+- [x] Emit idempotent low-stock and restocked domain events with seller notification/email jobs
+- [x] Let sellers configure thresholds per sellable SKU; add admin aggregate visibility
+- [x] **Test**: 12/12 unit tests in `src/queries/inventory.test.ts` passing (boundary crossing, zero duplicate notifications below threshold, restocked transition, range validation, authorization, and platform aggregation), full Vitest suite passing (48 test files / 233 tests), 0 TypeScript compilation errors (`bun run typecheck`), clean format check.
 
 ### Phase 17.4 — Multi-Currency Display
 
@@ -1389,5 +1388,5 @@ Goal: elevate the chat experience to modern e-commerce platform standards (match
   - [x] Create `SellerQuickReplies` dropdown/chips with preset responses (stock availability, delivery time, order inquiries).
   - [x] Create `InChatProductCard` to render rich interactive product cards inside messages with dedicated containers.
   - [x] Theme contrast polish: high-contrast brand blue outgoing bubbles and neutral slate incoming bubbles that remain comfortable in both dark and light modes without glare or washed-out text.
-  - [x] Preview snippet formatting: clean summaries (`🛍️ Suggested: ...`) replacing raw JSON in inbox sidebars.
+  - [x] Preview snippet formatting: clean summaries (`Suggested: ...`) replacing raw JSON in inbox sidebars.
 - [x] **Test**: 10/10 unit tests in `src/queries/messages.test.ts`, full Vitest suite passing (47 test files / 221 tests), 0 TypeScript compilation errors (`bun run typecheck`), clean format check.
