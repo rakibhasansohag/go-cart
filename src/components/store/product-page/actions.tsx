@@ -17,6 +17,8 @@ import SocialShare from '../shared/social-share';
 import { useCartStore } from '@/cart-store/useCartStore';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
+import { MessageSquare } from 'lucide-react';
+import ContactSellerDialog from '@/components/store/messages/contact-seller-dialog';
 type HandleChangeType = <T extends keyof CartProductType>(
 	property: T,
 	value: CartProductType[T],
@@ -139,6 +141,22 @@ export default function ProductPageActions({
 				>
 					<span>Add to cart</span>
 				</Button>
+				<ContactSellerDialog
+					storeId={store.id}
+					storeName={store.name}
+					storeUrl={store.url}
+					productId={productToBeAddedToCart.productId}
+					productName={productToBeAddedToCart.name}
+					trigger={
+						<Button
+							variant='outline'
+							className='w-full text-xs font-semibold gap-2 border border-border/70 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors h-9'
+						>
+							<MessageSquare className='w-4 h-4 text-primary' />
+							<span>Chat with Store</span>
+						</Button>
+					}
+				/>
 				<SocialShare
 					url=''
 					quote=''

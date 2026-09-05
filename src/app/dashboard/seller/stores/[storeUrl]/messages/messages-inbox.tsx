@@ -17,7 +17,14 @@ import {
 	AlertCircle,
 	ExternalLink,
 	Mail,
+	Plus,
+	ShoppingBag,
+	Tag,
+	Sparkles,
 } from 'lucide-react';
+import { SellerProductPickerDialog } from '@/components/dashboard/messages/seller-product-picker-dialog';
+import { SellerQuickReplies } from '@/components/dashboard/messages/seller-quick-replies';
+import InChatProductCard from '@/components/store/messages/in-chat-product-card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -27,6 +34,7 @@ import {
 	ConversationListItem,
 	ConversationListResponse,
 	ConversationDetail,
+	StoreCatalogItem,
 	getSellerConversations,
 	getConversationDetails,
 	sendReplyMessage,
@@ -58,6 +66,7 @@ export default function SellerMessagesInbox({
 		queryConversationId ?? initialData.conversations[0]?.id ?? null
 	);
 	const [replyText, setReplyText] = useState('');
+	const [isProductPickerOpen, setIsProductPickerOpen] = useState(false);
 	const [isPending, startTransition] = useTransition();
 	const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -128,6 +137,21 @@ export default function SellerMessagesInbox({
 			toast.error(error.message || 'Could not send reply.');
 		},
 	});
+
+	const handleSelectProduct = (product: StoreCatalogItem) => {
+		const payload = `[PRODUCT_RECOMMENDATION]:${JSON.stringify({
+			id: product.id,
+			name: product.name,
+			slug: product.slug,
+			image: product.image,
+			price: product.price,
+		})}`;
+		sendReplyMutation.mutate(payload);
+	};
+
+	const handleSelectQuickReply = (text: string) => {
+		setReplyText(text);
+	};
 
 	const handleStatusToggle = async () => {
 		if (!activeConv) return;
@@ -374,85 +398,153 @@ export default function SellerMessagesInbox({
 								</div>
 							</div>
 
-							{/* Context Banner */}
+							{/* Inquired Product / Order Hero Card */}
 							{(activeConv.product || activeConv.order) && (
-								<div className='px-4 py-2 bg-muted/40 border-b flex items-center justify-between text-xs'>
+								<div className='p-3 bg-muted/30 border-b flex flex-wrap items-center justify-between gap-3 text-xs'>
 									{activeConv.product && (
-										<Link
-											href={`/product/${activeConv.product.slug}`}
-											target='_blank'
-											className='flex items-center gap-2 hover:underline text-foreground truncate'
-										>
-											{activeConv.product.image && (
-												<div className='relative w-6 h-6 rounded-sm bg-muted overflow-hidden shrink-0 border'>
+										<div className='flex items-center gap-3 min-w-0'>
+											<div className='relative w-12 h-12 rounded-lg bg-muted overflow-hidden shrink-0 border border-border/40 shadow-xs'>
+												{activeConv.product.image ? (
 													<Image
 														src={activeConv.product.image}
 														alt={activeConv.product.name}
 														fill
 														className='object-cover'
 													/>
+												) : (
+													<div className='w-full h-full flex items-center justify-center text-muted-foreground'>
+														<Package className='w-5 h-5' />
+													</div>
+												)}
+											</div>
+											<div className='min-w-0'>
+												<div className='flex items-center gap-1.5'>
+													<Badge
+														variant='outline'
+														className='text-[10px] py-0 h-4 px-1.5 font-medium border-primary/30 bg-primary/10 text-primary'
+													>
+														Inquired Product
+													</Badge>
+													{activeConv.product.price != null && (
+														<span className='font-bold text-xs text-foreground'>
+															${Number(activeConv.product.price).toFixed(2)}
+														</span>
+													)}
 												</div>
-											)}
-											<span className='truncate font-medium'>
-												Product: {activeConv.product.name}
-											</span>
-											<ExternalLink className='w-3 h-3 text-muted-foreground' />
-										</Link>
+												<p className='font-semibold text-xs text-foreground truncate mt-0.5 max-w-xs sm:max-w-sm'>
+													{activeConv.product.name}
+												</p>
+											</div>
+											<Button
+												asChild
+												size='sm'
+												variant='outline'
+												className='h-7 text-xs px-2.5 gap-1 shrink-0 ml-auto'
+											>
+												<Link
+													href={`/product/${activeConv.product.slug}`}
+													target='_blank'
+													rel='noopener noreferrer'
+												>
+													<span>View in Storefront</span>
+													<ExternalLink className='w-3 h-3' />
+												</Link>
+											</Button>
+										</div>
 									)}
+
 									{activeConv.order && (
-										<div className='flex items-center gap-2 text-muted-foreground text-[11px]'>
-											<Package className='w-3.5 h-3.5 text-primary' />
-											<span>
-												Order #{activeConv.order.id.slice(0, 8)} (${activeConv.order.total.toFixed(2)}) -{' '}
-												<strong className='text-foreground'>{activeConv.order.orderStatus}</strong>
-											</span>
+										<div className='flex items-center gap-3 min-w-0 ml-auto'>
+											<div className='flex items-center gap-2 text-muted-foreground text-xs'>
+												<Package className='w-4 h-4 text-primary shrink-0' />
+												<span>
+													Order <strong>#{activeConv.order.id.slice(0, 8)}</strong>
+												</span>
+												<span>(${activeConv.order.total.toFixed(2)})</span>
+												<Badge variant='outline' className='text-[10px] py-0 h-4 px-1.5 font-medium'>
+													{activeConv.order.orderStatus}
+												</Badge>
+											</div>
+											<Button
+												asChild
+												size='sm'
+												variant='ghost'
+												className='h-7 text-xs px-2 gap-1 text-primary hover:underline'
+											>
+												<Link
+													href={`/dashboard/seller/stores/${storeUrl}/orders`}
+													target='_blank'
+													rel='noopener noreferrer'
+												>
+													<span>Store Orders</span>
+													<ExternalLink className='w-3 h-3' />
+												</Link>
+											</Button>
 										</div>
 									)}
 								</div>
 							)}
 
 							{/* Message Timeline */}
-							<div className='flex-1 p-4 overflow-y-auto space-y-3'>
+							<div className='flex-1 p-4 overflow-y-auto space-y-3.5'>
 								{activeConv.messages.map((m) => {
 									const isSeller = m.senderRole === MessageSenderRole.SELLER;
 									return (
 										<div
 											key={m.id}
-											className={`flex flex-col ${isSeller ? 'items-end' : 'items-start'}`}
+											className={`flex gap-2.5 ${isSeller ? 'justify-end' : 'justify-start'}`}
 										>
-											<div className='flex items-center gap-1.5 text-[10px] text-muted-foreground mb-1 px-1'>
-												<span>{isSeller ? 'You (Store)' : m.sender.name || 'Customer'}</span>
-												{isSeller ? (
-													<Badge
-														variant='outline'
-														className='text-[9px] py-0 h-3.5 px-1 bg-primary/10 text-primary border-primary/20'
-													>
-														Official Seller
-													</Badge>
-												) : (
-													<Badge
-														variant='outline'
-														className='text-[9px] py-0 h-3.5 px-1 bg-muted text-muted-foreground'
-													>
-														Customer
-													</Badge>
-												)}
-												<span>•</span>
-												<span>
-													{new Date(m.createdAt).toLocaleTimeString([], {
-														hour: '2-digit',
-														minute: '2-digit',
-													})}
-												</span>
-											</div>
+											{!isSeller && (
+												<Avatar className='h-7 w-7 shrink-0 border border-border/40 mt-1 shadow-xs'>
+													<AvatarImage src={activeConv.user.picture} />
+													<AvatarFallback className='text-[10px] font-bold uppercase bg-muted text-foreground'>
+														{activeConv.user.name.slice(0, 2)}
+													</AvatarFallback>
+												</Avatar>
+											)}
+
 											<div
-												className={`rounded-2xl px-4 py-2.5 text-xs max-w-[80%] whitespace-pre-line shadow-xs leading-relaxed ${
-													isSeller
-														? 'bg-primary text-primary-foreground rounded-br-xs'
-														: 'bg-muted/80 text-foreground border border-border/40 rounded-bl-xs'
-												}`}
+												className={`flex flex-col ${
+													isSeller ? 'items-end' : 'items-start'
+												} max-w-[85%] sm:max-w-[70%]`}
 											>
-												{m.body}
+												<div className='flex items-center gap-1.5 text-[10px] text-muted-foreground mb-1 px-1'>
+													<span className='font-medium text-foreground/80'>
+														{isSeller ? 'You (Store)' : activeConv.user.name || 'Customer'}
+													</span>
+													{isSeller ? (
+														<Badge
+															variant='outline'
+															className='text-[9px] py-0 h-3.5 px-1 bg-primary/10 text-primary border-primary/20'
+														>
+															Official Seller
+														</Badge>
+													) : (
+														<Badge
+															variant='outline'
+															className='text-[9px] py-0 h-3.5 px-1 bg-muted text-muted-foreground'
+														>
+															Customer
+														</Badge>
+													)}
+													<span>•</span>
+													<span>
+														{new Date(m.createdAt).toLocaleTimeString([], {
+															hour: '2-digit',
+															minute: '2-digit',
+														})}
+													</span>
+												</div>
+
+												<div
+													className={`rounded-2xl px-4 py-2.5 text-xs shadow-xs leading-relaxed break-words ${
+														isSeller
+															? 'bg-primary text-primary-foreground rounded-tr-xs'
+															: 'bg-muted/60 dark:bg-card border border-border/20 text-foreground rounded-tl-xs'
+													}`}
+												>
+													<InChatProductCard rawText={m.body} isOutgoing={isSeller} />
+												</div>
 											</div>
 										</div>
 									);
@@ -460,8 +552,23 @@ export default function SellerMessagesInbox({
 								<div ref={messagesEndRef} />
 							</div>
 
-							{/* Bottom Reply Bar */}
+							{/* Bottom Reply Bar with Seller Tools */}
 							<div className='p-3 border-t bg-background/80'>
+								{/* In-Chat Action Bar */}
+								<div className='flex items-center gap-2 mb-2'>
+									<SellerQuickReplies onSelectReply={handleSelectQuickReply} />
+									<Button
+										type='button'
+										variant='ghost'
+										size='sm'
+										onClick={() => setIsProductPickerOpen(true)}
+										className='h-7 px-2 text-[11px] gap-1.5 text-muted-foreground hover:text-foreground font-medium'
+									>
+										<Plus className='w-3 h-3 text-primary' />
+										<span>Recommend Product</span>
+									</Button>
+								</div>
+
 								<div className='relative flex items-end gap-2'>
 									<Textarea
 										placeholder='Type your official response to the customer... (Press Enter to send)'
@@ -492,6 +599,13 @@ export default function SellerMessagesInbox({
 									<span>{replyText.length}/2000</span>
 								</div>
 							</div>
+
+							<SellerProductPickerDialog
+								isOpen={isProductPickerOpen}
+								onOpenChange={setIsProductPickerOpen}
+								storeUrl={storeUrl}
+								onSelectProduct={handleSelectProduct}
+							/>
 						</>
 					) : (
 						<div className='flex-1 flex flex-col items-center justify-center p-6 text-center text-muted-foreground'>

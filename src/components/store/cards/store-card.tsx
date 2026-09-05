@@ -22,9 +22,16 @@ interface Props {
 		isUserFollowingStore: boolean;
 	};
 	checkForFollowing?: boolean;
+	productId?: string;
+	productName?: string;
 }
 
-const StoreCard: FC<Props> = ({ store, checkForFollowing }) => {
+const StoreCard: FC<Props> = ({
+	store,
+	checkForFollowing,
+	productId,
+	productName,
+}) => {
 	const { id, logo, name, followersCount, url } = store;
 	const [following, setFollowing] = useState<boolean>(
 		store.isUserFollowingStore,
@@ -121,6 +128,8 @@ const StoreCard: FC<Props> = ({ store, checkForFollowing }) => {
 						storeId={id}
 						storeName={name}
 						storeUrl={url}
+						productId={productId}
+						productName={productName}
 						trigger={
 							<div className='flex items-center border border-black rounded-full cursor-pointer text-base font-bold h-9 mx-2 px-4 bg-black text-white hover:bg-black/80 transition-colors'>
 								<MessageSquareMore className='w-4 me-2' />

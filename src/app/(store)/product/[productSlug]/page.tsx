@@ -173,8 +173,11 @@ export default async function ProductPage({
 						questions={data.questions}
 					/>
 					<Separator className='mt-6' />
-					<div className='h-6' />
-					<StoreCard store={storeData} />
+					<StoreCard
+						store={storeData}
+						productId={data.id}
+						productName={data.name}
+					/>
 						<Suspense fallback={<ProductPageStoreProductsSkeletonLoader />}>
 							<StoreProducts
 								storeUrl={data.store.url}

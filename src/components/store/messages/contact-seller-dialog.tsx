@@ -1,6 +1,6 @@
 'use client';
 
-import React, { FC, useState } from 'react';
+import React, { FC, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser, useClerk } from '@clerk/nextjs';
 import {
@@ -64,6 +64,12 @@ export const ContactSellerDialog: FC<Props> = ({
 
 	const [subject, setSubject] = useState(defaultSubject);
 	const [message, setMessage] = useState('');
+
+	useEffect(() => {
+		if (open) {
+			setSubject(defaultSubject);
+		}
+	}, [open, defaultSubject]);
 
 	const mutation = useMutation({
 		mutationFn: async () => {

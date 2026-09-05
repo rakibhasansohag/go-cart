@@ -1355,3 +1355,35 @@ base currency until a separate multi-currency payment phase is approved.
       calculations exclusively in the authoritative charge currency
 - [ ] **Test**: Switching currency updates display only; stale/missing rates fail
       safely; checkout/provider amounts and ledger values never change
+
+### Phase 17.5 — Direct Buyer-Seller Inquiries & Messaging System
+
+Goal: provide a direct, contextual communication channel between shoppers and store owners across storefront pages and the seller dashboard.
+
+- [x] **Data Foundation & Schema**: Added `Conversation` and `Message` models with enums `ConversationStatus` (`OPEN`, `RESOLVED`, `ARCHIVED`) and `MessageSenderRole` (`BUYER`, `SELLER`, `ADMIN`). Applied migration `20260904230000_buyer_seller_messaging`.
+- [x] **Notification Pipeline**: Integrated `inquiry.buyer_sent` and `inquiry.seller_replied` domain events, delivery audits, and notification bell routing.
+- [x] **Server Query Layer**: Implemented `startConversation`, `sendReplyMessage`, `getBuyerConversations`, `getSellerConversations`, `getConversationDetails`, and `updateConversationStatus` with strict TypeScript types (0 `any`).
+- [x] **Customer Profile Inbox**: Created `/profile/messages` with conversation drawer, chat thread, and 3-second live polling via TanStack Query.
+- [x] **Seller Dashboard Inbox**: Created `/dashboard/seller/stores/[storeUrl]/messages` with search, status filters (`All`, `Unread`, `Open`, `Resolved`), thread controls, deep-linking, and live polling.
+- [x] **Dashboard Gradient Icons**: Created `QAIcon` and `MessagesIcon` matching the `#4275E4` to `#A1BCF4` linear gradient and registered them in dashboard navigation.
+- [x] **Q&A Modal Polish**: Resolved action button stacking in Q&A answer modal dialogs.
+- [x] **Test**: 10/10 unit tests in `src/queries/messages.test.ts`, 47 test files passing (221 tests), 0 TypeScript compilation errors.
+
+#### Phase 17.5.2 — E-Commerce Chat UI Polish, Context Linking & Seller Actions
+
+Goal: elevate the chat experience to modern e-commerce platform standards (matching Daraz, Shopee, and AliExpress) with automatic product/order binding, tailored speech bubbles, and in-chat seller conversion tools.
+
+- [x] **Automatic Product & Order Context Linking**:
+  - [x] Pass `productId` and `productName` from product pages (`/product/[productSlug]`) to `StoreCard` and `ContactSellerDialog`.
+  - [x] Add a dedicated "Chat with Store" action in the product purchase section (`ProductPageActions`).
+  - [x] Automatically set subject to "Question about [Product Name]" and store `productId` in the conversation.
+- [x] **Modern Messenger UI Redesign**:
+  - [x] Replace full-width box styling with compact speech bubbles capped at `max-w-[70%]` on desktop.
+  - [x] Implement tailored corner radii (`rounded-2xl rounded-tr-xs` for outgoing, `rounded-2xl rounded-tl-xs` for incoming) with soft dark-mode tints and no harsh borders.
+  - [x] Position sender avatars alongside incoming messages.
+  - [x] Add an interactive **Inquired Product / Order Hero Card** at the top of the chat with thumbnail, price, and "View Product" / "Buy Now" CTA.
+- [x] **Seller In-Chat Actions & Tools**:
+  - [x] Create `SellerProductPickerDialog` (`+` menu) to search store inventory and send rich product recommendation cards directly into the conversation.
+  - [x] Create `SellerQuickReplies` dropdown/chips with preset responses (stock availability, delivery time, order inquiries).
+  - [x] Create `InChatProductCard` to render rich interactive product cards inside messages.
+- [x] **Test**: 10/10 unit tests in `src/queries/messages.test.ts`, full Vitest suite passing (47 test files / 221 tests), 0 TypeScript compilation errors (`bun run typecheck`), clean format check.

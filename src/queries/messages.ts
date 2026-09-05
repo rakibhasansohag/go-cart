@@ -79,6 +79,7 @@ export interface ConversationDetail {
 		name: string;
 		slug: string;
 		image: string;
+		price?: number | null;
 	} | null;
 	orderId: string | null;
 	order: {
@@ -469,6 +470,7 @@ export async function getConversationDetails(
 						take: 1,
 						include: {
 							images: { take: 1, orderBy: { order: 'asc' } },
+							sizes: { take: 1, orderBy: { price: 'asc' }, select: { price: true } },
 						},
 					},
 				},
@@ -549,6 +551,7 @@ export async function getConversationDetails(
 					name: conv.product.name,
 					slug: conv.product.slug,
 					image: firstVariantImg,
+					price: conv.product.variants[0]?.sizes[0]?.price ?? null,
 				}
 				: null,
 			orderId: conv.orderId,
@@ -858,4 +861,72 @@ export async function updateConversationStatus(
 	});
 
 	return { success: true };
+}
+
+export interface StoreCatalogItem {
+	id: string;
+	name: string;
+	slug: string;
+	image: string;
+	price: number;
+}
+
+/**
+ * Retrieve active store products for the seller in-chat recommendation picker.
+ */
+export async function getStoreCatalogForChat(
+	storeUrl: string
+): Promise<{ success: boolean; products: StoreCatalogItem[]; error?: string }> {
+	const user = await currentUser();
+	if (!user) {
+		return { success: false, products: [], error: 'Sign in required.' };
+	}
+
+	const store = await db.store.findUnique({
+		where: { url: storeUrl },
+		select: { id: true, userId: true },
+	});
+
+	if (!store) {
+		return { success: false, products: [], error: 'Store not found.' };
+	}
+
+	const dbUser = await db.user.findUnique({
+		where: { id: user.id },
+		select: { role: true },
+	});
+	const isOwner = store.userId === user.id;
+	const isAdmin = dbUser?.role === Role.ADMIN;
+
+	if (!isOwner && !isAdmin) {
+		return { success: false, products: [], error: 'Unauthorized to view store catalog.' };
+	}
+
+	const products = await db.product.findMany({
+		where: { storeId: store.id },
+		take: 30,
+		orderBy: { createdAt: 'desc' },
+		select: {
+			id: true,
+			name: true,
+			slug: true,
+			variants: {
+				take: 1,
+				include: {
+					images: { take: 1, orderBy: { order: 'asc' } },
+					sizes: { take: 1, orderBy: { price: 'asc' }, select: { price: true } },
+				},
+			},
+		},
+	});
+
+	const items: StoreCatalogItem[] = products.map((p) => ({
+		id: p.id,
+		name: p.name,
+		slug: p.slug,
+		image: p.variants[0]?.images[0]?.url || '',
+		price: p.variants[0]?.sizes[0]?.price || 0,
+	}));
+
+	return { success: true, products: items };
 }
