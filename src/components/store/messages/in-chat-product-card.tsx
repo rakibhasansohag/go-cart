@@ -258,7 +258,7 @@ export const InChatProductCard: FC<Props> = ({ rawText, isOutgoing, onSendReply 
 							className='h-8 text-xs gap-1.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-xs'
 						>
 							<Zap className='w-3 h-3 fill-white' />
-							<span>⚡ Direct Checkout</span>
+							<span>Direct Checkout</span>
 						</Button>
 
 						<Button
@@ -355,7 +355,7 @@ export const InChatProductCard: FC<Props> = ({ rawText, isOutgoing, onSendReply 
 						className='flex-1 h-8 text-xs gap-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-xs'
 					>
 						<Zap className='w-3 h-3 fill-white' />
-						<span>⚡ Buy Now</span>
+						<span>Buy Now</span>
 					</Button>
 
 					<Button
