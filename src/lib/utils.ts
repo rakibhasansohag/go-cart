@@ -300,3 +300,29 @@ export function getFriendlyErrorMessage(
 
 	return message;
 }
+
+/**
+ * Transforms raw message text or structured recommendation payloads into clean,
+ * friendly inbox preview snippets.
+ */
+export function formatMessageSnippet(snippet?: string | null): string {
+	if (!snippet) return 'No message';
+	if (snippet.startsWith('[PRODUCT_RECOMMENDATIONS]:')) {
+		try {
+			const json = JSON.parse(snippet.replace('[PRODUCT_RECOMMENDATIONS]:', '').trim());
+			const count = Array.isArray(json) ? json.length : 1;
+			return `🛍️ Suggested ${count} product${count > 1 ? 's' : ''}`;
+		} catch {
+			return '🛍️ Suggested products';
+		}
+	}
+	if (snippet.startsWith('[PRODUCT_RECOMMENDATION]:')) {
+		try {
+			const json = JSON.parse(snippet.replace('[PRODUCT_RECOMMENDATION]:', '').trim()) as { name?: string };
+			return `🛍️ Suggested: ${json.name || 'Product'}`;
+		} catch {
+			return '🛍️ Suggested product';
+		}
+	}
+	return snippet;
+}

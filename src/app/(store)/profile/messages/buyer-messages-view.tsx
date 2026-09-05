@@ -38,6 +38,7 @@ import {
 import { ConversationStatus, MessageSenderRole } from '@prisma/client';
 import { toast } from 'sonner';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { formatMessageSnippet } from '@/lib/utils';
 
 interface Props {
 	initialData: ConversationListResponse;
@@ -274,7 +275,7 @@ export default function BuyerMessagesView({
 											</p>
 											<div className='flex items-center justify-between gap-1 pt-0.5'>
 												<p className='text-[11px] text-muted-foreground truncate flex-1'>
-													{c.lastMessageSnippet || 'No messages yet'}
+													{formatMessageSnippet(c.lastMessageSnippet)}
 												</p>
 												{c.unreadCount > 0 && (
 													<span className='w-4 h-4 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center shrink-0'>
@@ -503,15 +504,23 @@ export default function BuyerMessagesView({
 													</span>
 												</div>
 
-												<div
-													className={`rounded-2xl px-4 py-2.5 text-xs shadow-xs leading-relaxed break-words ${
-														isBuyer
-															? 'bg-primary text-primary-foreground rounded-tr-xs'
-															: 'bg-muted/60 dark:bg-card border border-border/20 text-foreground rounded-tl-xs'
-													}`}
-												>
-													<InChatProductCard rawText={m.body} isOutgoing={isBuyer} />
-												</div>
+												{m.body.startsWith('[PRODUCT_RECOMMENDATION') ? (
+													<InChatProductCard
+														rawText={m.body}
+														isOutgoing={isBuyer}
+														onSendReply={(text) => sendReplyMutation.mutate(text)}
+													/>
+												) : (
+													<div
+														className={`rounded-2xl px-4 py-2.5 text-xs shadow-xs leading-relaxed break-words ${
+															isBuyer
+																? 'bg-blue-600 text-white rounded-tr-xs'
+																: 'bg-slate-100 dark:bg-slate-800/90 text-slate-900 dark:text-slate-100 border border-slate-200/80 dark:border-slate-700/60 rounded-tl-xs'
+														}`}
+													>
+														{m.body}
+													</div>
+												)}
 											</div>
 										</div>
 									);

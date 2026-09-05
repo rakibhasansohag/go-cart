@@ -43,6 +43,7 @@ import {
 import { ConversationStatus, MessageSenderRole } from '@prisma/client';
 import { toast } from 'sonner';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { formatMessageSnippet } from '@/lib/utils';
 
 interface Props {
 	storeUrl: string;
@@ -138,15 +139,46 @@ export default function SellerMessagesInbox({
 		},
 	});
 
-	const handleSelectProduct = (product: StoreCatalogItem) => {
-		const payload = `[PRODUCT_RECOMMENDATION]:${JSON.stringify({
-			id: product.id,
-			name: product.name,
-			slug: product.slug,
-			image: product.image,
-			price: product.price,
-		})}`;
-		sendReplyMutation.mutate(payload);
+	const handleSelectProducts = (products: StoreCatalogItem[]) => {
+		if (products.length === 0) return;
+		if (products.length === 1) {
+			const product = products[0]!;
+			const payload = `[PRODUCT_RECOMMENDATION]:${JSON.stringify({
+				id: product.id,
+				name: product.name,
+				slug: product.slug,
+				image: product.image,
+				price: product.price,
+				variantId: product.variantId,
+				variantSlug: product.variantSlug,
+				variantName: product.variantName,
+				sizeId: product.sizeId,
+				size: product.size,
+				stock: product.stock,
+				weight: product.weight,
+				storeId: product.storeId,
+			})}`;
+			sendReplyMutation.mutate(payload);
+		} else {
+			const payload = `[PRODUCT_RECOMMENDATIONS]:${JSON.stringify(
+				products.map((p) => ({
+					id: p.id,
+					name: p.name,
+					slug: p.slug,
+					image: p.image,
+					price: p.price,
+					variantId: p.variantId,
+					variantSlug: p.variantSlug,
+					variantName: p.variantName,
+					sizeId: p.sizeId,
+					size: p.size,
+					stock: p.stock,
+					weight: p.weight,
+					storeId: p.storeId,
+				}))
+			)}`;
+			sendReplyMutation.mutate(payload);
+		}
 	};
 
 	const handleSelectQuickReply = (text: string) => {
@@ -305,7 +337,7 @@ export default function SellerMessagesInbox({
 											</p>
 											<div className='flex items-center justify-between gap-1 pt-0.5'>
 												<p className='text-[11px] text-muted-foreground truncate flex-1'>
-													{c.lastMessageSnippet || 'No message'}
+													{formatMessageSnippet(c.lastMessageSnippet)}
 												</p>
 												{c.unreadCount > 0 && (
 													<span className='w-4 h-4 rounded-full bg-amber-500 text-white text-[10px] font-bold flex items-center justify-center shrink-0'>
@@ -536,15 +568,19 @@ export default function SellerMessagesInbox({
 													</span>
 												</div>
 
-												<div
-													className={`rounded-2xl px-4 py-2.5 text-xs shadow-xs leading-relaxed break-words ${
-														isSeller
-															? 'bg-primary text-primary-foreground rounded-tr-xs'
-															: 'bg-muted/60 dark:bg-card border border-border/20 text-foreground rounded-tl-xs'
-													}`}
-												>
+												{m.body.startsWith('[PRODUCT_RECOMMENDATION') ? (
 													<InChatProductCard rawText={m.body} isOutgoing={isSeller} />
-												</div>
+												) : (
+													<div
+														className={`rounded-2xl px-4 py-2.5 text-xs shadow-xs leading-relaxed break-words ${
+															isSeller
+																? 'bg-blue-600 text-white rounded-tr-xs'
+																: 'bg-slate-100 dark:bg-slate-800/90 text-slate-900 dark:text-slate-100 border border-slate-200/80 dark:border-slate-700/60 rounded-tl-xs'
+														}`}
+													>
+														{m.body}
+													</div>
+												)}
 											</div>
 										</div>
 									);
@@ -604,7 +640,7 @@ export default function SellerMessagesInbox({
 								isOpen={isProductPickerOpen}
 								onOpenChange={setIsProductPickerOpen}
 								storeUrl={storeUrl}
-								onSelectProduct={handleSelectProduct}
+								onSelectProducts={handleSelectProducts}
 							/>
 						</>
 					) : (

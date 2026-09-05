@@ -13,6 +13,7 @@ import {
 	publishDomainEvent,
 	DOMAIN_EVENT_TYPES,
 } from '@/lib/notifications/domain-events';
+import { formatMessageSnippet } from '@/lib/utils';
 
 // Internal Zod Schemas (not exported to satisfy Next.js "use server" action requirements)
 const StartConversationSchema = z.object({
@@ -22,7 +23,7 @@ const StartConversationSchema = z.object({
 		.string()
 		.trim()
 		.min(2, 'Message must be at least 2 characters.')
-		.max(2000, 'Message cannot exceed 2000 characters.'),
+		.max(20000, 'Message cannot exceed 20000 characters.'),
 	productId: z.string().optional(),
 	orderId: z.string().optional(),
 	orderGroupId: z.string().optional(),
@@ -34,7 +35,7 @@ const SendReplySchema = z.object({
 		.string()
 		.trim()
 		.min(1, 'Message cannot be empty.')
-		.max(2000, 'Message cannot exceed 2000 characters.'),
+		.max(20000, 'Message cannot exceed 20000 characters.'),
 });
 
 export type StartConversationInput = z.infer<typeof StartConversationSchema>;
@@ -668,7 +669,7 @@ export async function startConversation(input: StartConversationInput): Promise<
 						? `${user.firstName} ${user.lastName || ''}`.trim()
 						: 'Customer',
 					subject: subject || undefined,
-					bodySnippet: message.slice(0, 150),
+					bodySnippet: formatMessageSnippet(message).slice(0, 150),
 				},
 			});
 		} catch (eventErr) {
@@ -778,7 +779,7 @@ export async function sendReplyMessage(input: SendReplyMessageInput): Promise<{
 					storeId: conv.storeId,
 					buyerName: dbUser?.name || 'Customer',
 					subject: conv.subject || undefined,
-					bodySnippet: body.slice(0, 150),
+					bodySnippet: formatMessageSnippet(body).slice(0, 150),
 				},
 			});
 		} else {
@@ -796,7 +797,7 @@ export async function sendReplyMessage(input: SendReplyMessageInput): Promise<{
 					storeId: conv.storeId,
 					storeName: conv.store.name,
 					buyerId: conv.userId,
-					bodySnippet: body.slice(0, 150),
+					bodySnippet: formatMessageSnippet(body).slice(0, 150),
 				},
 			});
 		}
@@ -869,6 +870,14 @@ export interface StoreCatalogItem {
 	slug: string;
 	image: string;
 	price: number;
+	variantId?: string;
+	variantSlug?: string;
+	variantName?: string;
+	sizeId?: string;
+	size?: string;
+	stock?: number;
+	weight?: number;
+	storeId?: string;
 }
 
 /**
@@ -910,23 +919,48 @@ export async function getStoreCatalogForChat(
 			id: true,
 			name: true,
 			slug: true,
+			storeId: true,
 			variants: {
 				take: 1,
-				include: {
-					images: { take: 1, orderBy: { order: 'asc' } },
-					sizes: { take: 1, orderBy: { price: 'asc' }, select: { price: true } },
+				select: {
+					id: true,
+					variantName: true,
+					slug: true,
+					weight: true,
+					images: { take: 1, orderBy: { order: 'asc' }, select: { url: true } },
+					sizes: {
+						take: 1,
+						orderBy: { price: 'asc' },
+						select: { id: true, size: true, price: true, discount: true, quantity: true },
+					},
 				},
 			},
 		},
 	});
 
-	const items: StoreCatalogItem[] = products.map((p) => ({
-		id: p.id,
-		name: p.name,
-		slug: p.slug,
-		image: p.variants[0]?.images[0]?.url || '',
-		price: p.variants[0]?.sizes[0]?.price || 0,
-	}));
+	const items: StoreCatalogItem[] = products.map((p) => {
+		const firstVariant = p.variants[0];
+		const firstSize = firstVariant?.sizes[0];
+		const basePrice = firstSize?.price || 0;
+		const discount = firstSize?.discount || 0;
+		const finalPrice = discount > 0 ? Math.max(0, basePrice - discount) : basePrice;
+
+		return {
+			id: p.id,
+			name: p.name,
+			slug: p.slug,
+			image: firstVariant?.images[0]?.url || '',
+			price: finalPrice,
+			variantId: firstVariant?.id,
+			variantSlug: firstVariant?.slug,
+			variantName: firstVariant?.variantName,
+			sizeId: firstSize?.id,
+			size: firstSize?.size,
+			stock: firstSize?.quantity ?? 0,
+			weight: firstVariant?.weight ?? 0,
+			storeId: p.storeId,
+		};
+	});
 
 	return { success: true, products: items };
 }

@@ -1384,6 +1384,10 @@ Goal: elevate the chat experience to modern e-commerce platform standards (match
   - [x] Add an interactive **Inquired Product / Order Hero Card** at the top of the chat with thumbnail, price, and "View Product" / "Buy Now" CTA.
 - [x] **Seller In-Chat Actions & Tools**:
   - [x] Create `SellerProductPickerDialog` (`+` menu) to search store inventory and send rich product recommendation cards directly into the conversation.
+  - [x] Support multi-product recommendations: sellers can select multiple products to recommend as an interactive option set.
+  - [x] Interactive in-chat selection & 1-click direct checkout: buyers can select products from the suggestion set, see live pricing, 1-click direct checkout to `/cart`, or send a confirmation of their choice back to the seller.
   - [x] Create `SellerQuickReplies` dropdown/chips with preset responses (stock availability, delivery time, order inquiries).
-  - [x] Create `InChatProductCard` to render rich interactive product cards inside messages.
+  - [x] Create `InChatProductCard` to render rich interactive product cards inside messages with dedicated containers.
+  - [x] Theme contrast polish: high-contrast brand blue outgoing bubbles and neutral slate incoming bubbles that remain comfortable in both dark and light modes without glare or washed-out text.
+  - [x] Preview snippet formatting: clean summaries (`🛍️ Suggested: ...`) replacing raw JSON in inbox sidebars.
 - [x] **Test**: 10/10 unit tests in `src/queries/messages.test.ts`, full Vitest suite passing (47 test files / 221 tests), 0 TypeScript compilation errors (`bun run typecheck`), clean format check.
