@@ -481,7 +481,8 @@ function notificationFor(input: PublishDomainEventInput, recipient: Recipient) {
         message: `${payloadText(input.payload, "authorName") || "Someone"} answered your question about ${payloadText(input.payload, "productName") || "the product"}.`,
         actionUrl: `/product/${payloadText(input.payload, "productSlug")}#questions`,
       };
-    case DOMAIN_EVENT_TYPES.INQUIRY_BUYER_SENT:
+    case DOMAIN_EVENT_TYPES.INQUIRY_BUYER_SENT: {
+      const convId = payloadText(input.payload, "conversationId");
       return {
         category: NotificationCategory.SYSTEM,
         title: `New message from ${payloadText(input.payload, "buyerName") || "a customer"}`,
@@ -489,16 +490,19 @@ function notificationFor(input: PublishDomainEventInput, recipient: Recipient) {
           ? `${payloadText(input.payload, "subject")}: "${payloadText(input.payload, "bodySnippet")}"`
           : `"${payloadText(input.payload, "bodySnippet")}"`,
         actionUrl: storeUrl
-          ? `/dashboard/seller/stores/${storeUrl}/messages`
+          ? `/dashboard/seller/stores/${storeUrl}/messages${convId ? `?conversationId=${convId}` : ""}`
           : null,
       };
-    case DOMAIN_EVENT_TYPES.INQUIRY_SELLER_REPLIED:
+    }
+    case DOMAIN_EVENT_TYPES.INQUIRY_SELLER_REPLIED: {
+      const convId = payloadText(input.payload, "conversationId");
       return {
         category: NotificationCategory.SYSTEM,
         title: `Reply from ${payloadText(input.payload, "storeName") || "the store"}`,
         message: `"${payloadText(input.payload, "bodySnippet")}"`,
-        actionUrl: "/profile/messages",
+        actionUrl: `/profile/messages${convId ? `?conversationId=${convId}` : ""}`,
       };
+    }
   }
 }
 

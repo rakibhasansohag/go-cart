@@ -4,13 +4,17 @@ import SellerMessagesInbox from './messages-inbox';
 import DataTableSkeleton from '@/components/dashboard/shared/table-skeleton';
 
 type StoreParams = { storeUrl: string };
+type SearchParams = { conversationId?: string };
 
 export default async function SellerMessagesPage({
 	params,
+	searchParams,
 }: {
 	params: Promise<StoreParams>;
+	searchParams?: Promise<SearchParams>;
 }) {
 	const { storeUrl } = await params;
+	const awaitedSearchParams = searchParams ? await searchParams : {};
 	const initialData = await getSellerConversations(storeUrl, { filter: 'all' });
 
 	return (
@@ -23,7 +27,11 @@ export default async function SellerMessagesPage({
 			</header>
 
 			<Suspense fallback={<DataTableSkeleton />}>
-				<SellerMessagesInbox storeUrl={storeUrl} initialData={initialData} />
+				<SellerMessagesInbox
+					storeUrl={storeUrl}
+					initialData={initialData}
+					initialConversationId={awaitedSearchParams.conversationId}
+				/>
 			</Suspense>
 		</main>
 	);

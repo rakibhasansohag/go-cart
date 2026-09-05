@@ -84,12 +84,20 @@ export const ContactSellerDialog: FC<Props> = ({
 			toast.success('Your message has been sent to the seller!', {
 				action: {
 					label: 'View Messages',
-					onClick: () => router.push('/profile/messages'),
+					onClick: () =>
+						router.push(
+							data.conversationId
+								? `/profile/messages?conversationId=${data.conversationId}`
+								: '/profile/messages'
+						),
 				},
 			});
 			setMessage('');
 			setOpen(false);
 			queryClient.invalidateQueries({ queryKey: ['buyer-conversations'] });
+			if (data.conversationId) {
+				router.push(`/profile/messages?conversationId=${data.conversationId}`);
+			}
 		},
 		onError: (error: Error) => {
 			toast.error(error.message || 'Could not send message.');

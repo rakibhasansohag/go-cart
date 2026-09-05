@@ -618,47 +618,47 @@ export async function startConversation(input: StartConversationInput): Promise<
 		};
 	}
 
-	const conversation = await db.$transaction(async (tx) => {
-		const conv = await tx.conversation.create({
-			data: {
-				storeId,
-				userId: user.id,
-				subject: subject || null,
-				productId: productId || null,
-				orderId: orderId || null,
-				orderGroupId: orderGroupId || null,
-				unreadBySeller: 1,
-				unreadByBuyer: 0,
-				lastMessageAt: new Date(),
-				messages: {
-					create: {
-						senderId: user.id,
-						senderRole: MessageSenderRole.BUYER,
-						body: message,
-						isRead: false,
-					},
+	const conversation = await db.conversation.create({
+		data: {
+			storeId,
+			userId: user.id,
+			subject: subject || null,
+			productId: productId || null,
+			orderId: orderId || null,
+			orderGroupId: orderGroupId || null,
+			unreadBySeller: 1,
+			unreadByBuyer: 0,
+			lastMessageAt: new Date(),
+			messages: {
+				create: {
+					senderId: user.id,
+					senderRole: MessageSenderRole.BUYER,
+					body: message,
+					isRead: false,
 				},
 			},
-			include: {
-				messages: {
-					take: 1,
-					orderBy: { createdAt: 'desc' },
-				},
+		},
+		include: {
+			messages: {
+				take: 1,
+				orderBy: { createdAt: 'desc' },
 			},
-		});
+		},
+	});
 
-		const firstMsg = conv.messages[0];
-		if (firstMsg) {
-			await publishDomainEvent(tx, {
+	const firstMsg = conversation.messages[0];
+	if (firstMsg) {
+		try {
+			await publishDomainEvent(db, {
 				eventKey: `inquiry:sent:${firstMsg.id}`,
 				eventType: DOMAIN_EVENT_TYPES.INQUIRY_BUYER_SENT,
 				aggregateType: 'CONVERSATION',
-				aggregateId: conv.id,
+				aggregateId: conversation.id,
 				actorUserId: user.id,
 				storeId,
 				orderId: orderId || undefined,
 				payload: {
-					conversationId: conv.id,
+					conversationId: conversation.id,
 					messageId: firstMsg.id,
 					storeId,
 					buyerName: user.firstName
@@ -668,10 +668,10 @@ export async function startConversation(input: StartConversationInput): Promise<
 					bodySnippet: message.slice(0, 150),
 				},
 			});
+		} catch (eventErr) {
+			console.error('Failed to publish inquiry notification event:', eventErr);
 		}
-
-		return conv;
-	});
+	}
 
 	return { success: true, conversationId: conversation.id };
 }
@@ -730,38 +730,38 @@ export async function sendReplyMessage(input: SendReplyMessageInput): Promise<{
 			? MessageSenderRole.ADMIN
 			: MessageSenderRole.SELLER;
 
-	const newMsg = await db.$transaction(async (tx) => {
-		const createdMsg = await tx.message.create({
-			data: {
-				conversationId,
-				senderId: user.id,
-				senderRole,
-				body,
-				isRead: false,
+	const createdMsg = await db.message.create({
+		data: {
+			conversationId,
+			senderId: user.id,
+			senderRole,
+			body,
+			isRead: false,
+		},
+		include: {
+			sender: {
+				select: { id: true, name: true, picture: true },
 			},
-			include: {
-				sender: {
-					select: { id: true, name: true, picture: true },
-				},
-			},
-		});
+		},
+	});
 
-		const updateData: Prisma.ConversationUpdateInput = {
-			lastMessageAt: new Date(),
-			status: ConversationStatus.OPEN, // auto-reopen thread on reply
-			...(isBuyer
-				? { unreadBySeller: { increment: 1 } }
-				: { unreadByBuyer: { increment: 1 } }),
-		};
+	const updateData: Prisma.ConversationUpdateInput = {
+		lastMessageAt: new Date(),
+		status: ConversationStatus.OPEN, // auto-reopen thread on reply
+		...(isBuyer
+			? { unreadBySeller: { increment: 1 } }
+			: { unreadByBuyer: { increment: 1 } }),
+	};
 
-		await tx.conversation.update({
-			where: { id: conversationId },
-			data: updateData,
-		});
+	await db.conversation.update({
+		where: { id: conversationId },
+		data: updateData,
+	});
 
-		// Dispatch domain event notification
+	// Dispatch domain event notification outside transaction
+	try {
 		if (isBuyer) {
-			await publishDomainEvent(tx, {
+			await publishDomainEvent(db, {
 				eventKey: `inquiry:msg:${createdMsg.id}`,
 				eventType: DOMAIN_EVENT_TYPES.INQUIRY_BUYER_SENT,
 				aggregateType: 'CONVERSATION',
@@ -779,7 +779,7 @@ export async function sendReplyMessage(input: SendReplyMessageInput): Promise<{
 				},
 			});
 		} else {
-			await publishDomainEvent(tx, {
+			await publishDomainEvent(db, {
 				eventKey: `inquiry:msg:${createdMsg.id}`,
 				eventType: DOMAIN_EVENT_TYPES.INQUIRY_SELLER_REPLIED,
 				aggregateType: 'CONVERSATION',
@@ -797,21 +797,21 @@ export async function sendReplyMessage(input: SendReplyMessageInput): Promise<{
 				},
 			});
 		}
-
-		return createdMsg;
-	});
+	} catch (eventErr) {
+		console.error('Failed to publish reply notification event:', eventErr);
+	}
 
 	return {
 		success: true,
 		message: {
-			id: newMsg.id,
-			conversationId: newMsg.conversationId,
-			senderId: newMsg.senderId,
-			senderRole: newMsg.senderRole,
-			body: newMsg.body,
-			isRead: newMsg.isRead,
-			createdAt: newMsg.createdAt.toISOString(),
-			sender: newMsg.sender,
+			id: createdMsg.id,
+			conversationId: createdMsg.conversationId,
+			senderId: createdMsg.senderId,
+			senderRole: createdMsg.senderRole,
+			body: createdMsg.body,
+			isRead: createdMsg.isRead,
+			createdAt: createdMsg.createdAt.toISOString(),
+			sender: createdMsg.sender,
 		},
 	};
 }

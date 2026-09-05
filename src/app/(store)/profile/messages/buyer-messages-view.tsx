@@ -3,6 +3,7 @@
 import React, { FC, useState, useEffect, useRef, useTransition } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import {
 	Search,
 	MessageSquare,
@@ -44,17 +45,29 @@ export default function BuyerMessagesView({
 	initialData,
 	initialConversationId,
 }: Props) {
+	const searchParams = useSearchParams();
+	const queryConversationId =
+		searchParams.get('conversationId') || initialConversationId || null;
+
 	const queryClient = useQueryClient();
 	const [activeTab, setActiveTab] = useState<'all' | 'open' | 'resolved'>('all');
 	const [searchQuery, setSearchQuery] = useState('');
 	const [selectedId, setSelectedId] = useState<string | null>(
-		initialConversationId ?? initialData.conversations[0]?.id ?? null
+		queryConversationId ?? initialData.conversations[0]?.id ?? null
 	);
 	const [replyText, setReplyText] = useState('');
 	const [isPending, startTransition] = useTransition();
 	const messagesEndRef = useRef<HTMLDivElement>(null);
 
-	// Conversations list query
+	// Sync selectedId when notification link or URL search param changes
+	useEffect(() => {
+		const paramId = searchParams.get('conversationId');
+		if (paramId) {
+			setSelectedId(paramId);
+		}
+	}, [searchParams]);
+
+	// Conversations list query with 3-second live polling
 	const { data: listData } = useQuery({
 		queryKey: ['buyer-conversations', activeTab, searchQuery],
 		queryFn: () =>
@@ -63,6 +76,7 @@ export default function BuyerMessagesView({
 				search: searchQuery,
 			}),
 		initialData: activeTab === 'all' && !searchQuery ? initialData : undefined,
+		refetchInterval: 3000, // 3 seconds snappy live polling
 	});
 
 	const conversations = listData?.conversations ?? initialData.conversations;
