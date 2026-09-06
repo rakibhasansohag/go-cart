@@ -21,6 +21,7 @@ import {
 	Tag,
 } from 'lucide-react';
 import InChatProductCard from '@/components/store/messages/in-chat-product-card';
+import { ChatThreadSkeleton } from '@/components/store/messages/chat-thread-skeleton';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -94,7 +95,12 @@ export default function BuyerMessagesView({
 	}, [conversations, selectedId]);
 
 	// Active conversation details query with 3-second live polling
-	const { data: activeDetailData, isLoading: isLoadingDetails } = useQuery({
+	const {
+		data: activeDetailData,
+		isLoading: isLoadingDetails,
+		isError,
+		error,
+	} = useQuery({
 		queryKey: ['conversation-detail', selectedId],
 		queryFn: () => (selectedId ? getConversationDetails(selectedId) : null),
 		enabled: Boolean(selectedId),
@@ -102,6 +108,8 @@ export default function BuyerMessagesView({
 	});
 
 	const activeConv = activeDetailData?.conversation;
+	const isDetailLoading = Boolean(selectedId) && (isLoadingDetails || (!activeConv && !activeDetailData));
+	const hasDetailError = Boolean(selectedId) && (isError || activeDetailData?.success === false);
 
 	// Scroll to bottom when messages update
 	useEffect(() => {
@@ -277,12 +285,15 @@ export default function BuyerMessagesView({
 												<p className='text-[11px] text-muted-foreground truncate flex-1'>
 													{formatMessageSnippet(c.lastMessageSnippet)}
 												</p>
-												{c.unreadCount > 0 && (
+												{isSelected && isDetailLoading && (
+													<Loader2 className='w-3.5 h-3.5 animate-spin text-primary shrink-0' />
+												)}
+												{(!isSelected || !isDetailLoading) && c.unreadCount > 0 && (
 													<span className='w-4 h-4 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center shrink-0'>
 														{c.unreadCount}
 													</span>
 												)}
-												{c.status === ConversationStatus.RESOLVED && (
+												{(!isSelected || !isDetailLoading) && c.status === ConversationStatus.RESOLVED && (
 													<Badge
 														variant='outline'
 														className='text-[9px] py-0 h-3.5 px-1 bg-muted/60 text-muted-foreground'
@@ -301,7 +312,26 @@ export default function BuyerMessagesView({
 
 				{/* Right Pane: Active Thread Chat View */}
 				<div className='flex-1 flex flex-col bg-card/30 min-h-0'>
-					{activeConv ? (
+					{isDetailLoading ? (
+						<ChatThreadSkeleton subtitle='Loading conversation history...' />
+					) : hasDetailError ? (
+						<div className='flex-1 flex flex-col items-center justify-center p-6 text-center text-muted-foreground'>
+							<AlertCircle className='w-10 h-10 mb-2 text-destructive stroke-1' />
+							<p className='text-sm font-semibold text-foreground'>Failed to load conversation</p>
+							<p className='text-xs max-w-sm mt-1 text-muted-foreground'>
+								{activeDetailData?.error || (error instanceof Error ? error.message : 'There was an error loading the conversation messages.')}
+							</p>
+							<Button
+								variant='outline'
+								size='sm'
+								onClick={() => queryClient.invalidateQueries({ queryKey: ['conversation-detail', selectedId] })}
+								className='mt-4 h-8 text-xs gap-1.5'
+							>
+								<RotateCcw className='w-3.5 h-3.5' />
+								Try Again
+							</Button>
+						</div>
+					) : activeConv ? (
 						<>
 							{/* Thread Header */}
 							<div className='p-3.5 border-b bg-background/80 flex items-center justify-between gap-3'>
