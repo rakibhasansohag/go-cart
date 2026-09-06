@@ -1203,191 +1203,212 @@ export const placeOrder = async (
 		return acc;
 	}, {} as GroupedItems);
 
+	// Pre-fetch delivery details per store before entering transaction to minimize lock time
+	const deliveryDetailsByStore: Record<
+		string,
+		Awaited<ReturnType<typeof getDeliveryDetailsForStoreByCountry>>
+	> = {};
+	for (const storeId of Object.keys(groupedItems)) {
+		deliveryDetailsByStore[storeId] = await getDeliveryDetailsForStoreByCountry(
+			storeId,
+			ownedShippingAddress.countryId,
+		);
+	}
+
 	// Calculate product subtotal for GoCoins 30% cap validation
 	const productSubTotal = validatedCartItems.reduce(
 		(acc, item) => acc + item.price * item.quantity,
 		0,
 	);
 
-	let coinDiscount = 0;
-	if (coinsToRedeem > 0) {
-		const loyaltyAccount = await db.loyaltyAccount.findUnique({
-			where: { userId },
-		});
-		const userBalance = loyaltyAccount?.balance ?? 0;
-		const validation = validateRedemption(
-			userBalance,
-			coinsToRedeem,
-			productSubTotal,
-		);
-		if (!validation.valid) {
-			throw new Error(validation.error || 'Invalid GoCoins redemption.');
-		}
-		coinDiscount = coinsToDiscount(coinsToRedeem);
-	}
+	// Execute order creation, GoCoins deduction, and cart clearance in a single atomic transaction
+	const result = await db.$transaction(
+		async (tx) => {
+			let coinDiscount = 0;
+			if (coinsToRedeem > 0) {
+				const loyaltyAccount = await tx.loyaltyAccount.findUnique({
+					where: { userId },
+				});
+				const userBalance = loyaltyAccount?.balance ?? 0;
+				const validation = validateRedemption(
+					userBalance,
+					coinsToRedeem,
+					productSubTotal,
+				);
+				if (!validation.valid) {
+					throw new Error(validation.error || 'Invalid GoCoins redemption.');
+				}
+				coinDiscount = coinsToDiscount(coinsToRedeem);
+			}
 
-	// Create the order
-	const order = await db.order.create({
-		data: {
-			userId: userId,
-			shippingAddressId: shippingAddress.id,
-			orderStatus: 'Pending',
-			paymentStatus: 'Pending',
-			coinDiscount: coinDiscount,
-			subTotal: 0, // Will calculate below
-			shippingFees: 0, // Will calculate below
-			total: 0, // Will calculate below
-		},
-	});
+			// Validate personal coupon ownership if targeted to a specific user
+			if (cartCoupon?.targetUserId && cartCoupon.targetUserId !== userId) {
+				throw new Error('This coupon is personal and belongs to another account.');
+			}
 
-	// Iterate over each store's items and create OrderGroup and OrderItems
-	let orderTotalPrice = 0;
-	let orderShippingFee = 0;
+			// Create the order
+			const order = await tx.order.create({
+				data: {
+					userId: userId,
+					shippingAddressId: shippingAddress.id,
+					orderStatus: 'Pending',
+					paymentStatus: 'Pending',
+					coinDiscount: coinDiscount,
+					subTotal: 0, // Calculated below
+					shippingFees: 0, // Calculated below
+					total: 0, // Calculated below
+				},
+			});
 
-	for (const [storeId, items] of Object.entries(groupedItems)) {
-		// Calculate store-specific totals
-		const groupedTotalPrice = items.reduce(
-			(acc, item) => acc + item.totalPrice,
-			0,
-		);
+			// Iterate over each store's items and create OrderGroup and OrderItems
+			let orderTotalPrice = 0;
+			let orderShippingFee = 0;
 
-		const groupShippingFees = items.reduce(
-			(acc, item) => acc + item.shippingFee,
-			0,
-		);
+			for (const [storeId, items] of Object.entries(groupedItems)) {
+				const groupedTotalPrice = items.reduce(
+					(acc, item) => acc + item.totalPrice,
+					0,
+				);
 
-		const { shippingService, deliveryTimeMin, deliveryTimeMax } =
-			await getDeliveryDetailsForStoreByCountry(
-				storeId,
-				ownedShippingAddress.countryId,
-			);
+				const groupShippingFees = items.reduce(
+					(acc, item) => acc + item.shippingFee,
+					0,
+				);
 
-		// Check coupon store (Global Platform Coupon applies to all stores)
-		const check = Boolean(
-			cartCoupon && (!cartCoupon.storeId || storeId === cartCoupon.storeId),
-		);
+				const deliveryDetails = deliveryDetailsByStore[storeId] || {
+					shippingService: 'International Delivery',
+					deliveryTimeMin: 7,
+					deliveryTimeMax: 30,
+				};
 
-		// Calculate discount based on coupon
-		let discountedAmount = 0;
-		if (check && cartCoupon) {
-			discountedAmount = (groupedTotalPrice * cartCoupon.discount) / 100;
-		}
+				// Check coupon store (Global Platform Coupon applies to all stores)
+				const check = Boolean(
+					cartCoupon && (!cartCoupon.storeId || storeId === cartCoupon.storeId),
+				);
 
-		// Calculate the total after applying the discount
-		const totalAfterDiscount = groupedTotalPrice - discountedAmount;
-		// Create an OrderGroup for this store
-		const orderGroup = await db.orderGroup.create({
-			data: {
+				let discountedAmount = 0;
+				if (check && cartCoupon) {
+					discountedAmount = (groupedTotalPrice * cartCoupon.discount) / 100;
+				}
+
+				const totalAfterDiscount = groupedTotalPrice - discountedAmount;
+
+				const orderGroup = await tx.orderGroup.create({
+					data: {
+						orderId: order.id,
+						storeId: storeId,
+						status: 'Pending',
+						subTotal: groupedTotalPrice - groupShippingFees,
+						shippingFees: groupShippingFees,
+						total: totalAfterDiscount,
+						shippingService: deliveryDetails.shippingService || 'International Delivery',
+						shippingDeliveryMin: deliveryDetails.deliveryTimeMin || 7,
+						shippingDeliveryMax: deliveryDetails.deliveryTimeMax || 30,
+						couponId: check && cartCoupon ? cartCoupon?.id : null,
+					},
+				});
+
+				const shipment = await tx.shipment.create({
+					data: {
+						packageAssignments: {
+							create: { orderGroupId: orderGroup.id },
+						},
+					},
+				});
+
+				await tx.fulfillmentTransition.createMany({
+					data: [
+						{
+							entityType: FulfillmentEntityType.PACKAGE,
+							previousStatus: 'CREATED',
+							nextStatus: orderGroup.packageStatus,
+							actorRole: FulfillmentActorRole.SYSTEM,
+							source: FulfillmentSource.API,
+							idempotencyKey: `order:${order.id}:package:${orderGroup.id}:created`,
+							orderId: order.id,
+							orderGroupId: orderGroup.id,
+						},
+						{
+							entityType: FulfillmentEntityType.SHIPMENT,
+							previousStatus: 'CREATED',
+							nextStatus: shipment.status,
+							actorRole: FulfillmentActorRole.SYSTEM,
+							source: FulfillmentSource.API,
+							idempotencyKey: `order:${order.id}:shipment:${shipment.id}:created`,
+							orderId: order.id,
+							orderGroupId: orderGroup.id,
+							shipmentId: shipment.id,
+						},
+					],
+				});
+
+				for (const item of items) {
+					const orderItem = await tx.orderItem.create({
+						data: {
+							orderGroupId: orderGroup.id,
+							productId: item.productId,
+							variantId: item.variantId,
+							sizeId: item.sizeId,
+							productSlug: item.productSlug,
+							variantSlug: item.variantSlug,
+							sku: item.sku,
+							name: item.name,
+							image: item.image,
+							size: item.size,
+							quantity: item.quantity,
+							price: item.price,
+							shippingFee: item.shippingFee,
+							totalPrice: item.totalPrice,
+						},
+					});
+					await tx.shipmentItem.create({
+						data: {
+							shipmentId: shipment.id,
+							orderItemId: orderItem.id,
+							quantity: orderItem.quantity,
+						},
+					});
+				}
+
+				orderTotalPrice += totalAfterDiscount;
+				orderShippingFee += groupShippingFees;
+			}
+
+			// Redeem GoCoins atomically inside the transaction if requested
+			if (coinsToRedeem > 0) {
+				await redeemCoins(tx, {
+					userId,
+					orderId: order.id,
+					coins: coinsToRedeem,
+					idempotencyKey: `redeem:${order.id}`,
+				});
+			}
+
+			// Update the main order with the final totals
+			const finalTotal = Math.max(0, orderTotalPrice - coinDiscount);
+			await tx.order.update({
+				where: {
+					id: order.id,
+				},
+				data: {
+					subTotal: Math.max(0, orderTotalPrice - orderShippingFee),
+					shippingFees: orderShippingFee,
+					total: finalTotal,
+				},
+			});
+
+			// Complete checkout in the same server action so the client never has to
+			// make a second authenticated request before navigating to payment.
+			await tx.cart.deleteMany({ where: { id: cartId, userId } });
+
+			return {
 				orderId: order.id,
-				storeId: storeId,
-				status: 'Pending',
-				subTotal: groupedTotalPrice - groupShippingFees,
-				shippingFees: groupShippingFees,
-				total: totalAfterDiscount,
-				shippingService: shippingService || 'International Delivery',
-				shippingDeliveryMin: deliveryTimeMin || 7,
-				shippingDeliveryMax: deliveryTimeMax || 30,
-				couponId: check && cartCoupon ? cartCoupon?.id : null,
-			},
-		});
-		const shipment = await db.shipment.create({
-			data: {
-				packageAssignments: {
-					create: { orderGroupId: orderGroup.id },
-				},
-			},
-		});
-
-		await db.fulfillmentTransition.createMany({
-			data: [
-				{
-					entityType: FulfillmentEntityType.PACKAGE,
-					previousStatus: 'CREATED',
-					nextStatus: orderGroup.packageStatus,
-					actorRole: FulfillmentActorRole.SYSTEM,
-					source: FulfillmentSource.API,
-					idempotencyKey: `order:${order.id}:package:${orderGroup.id}:created`,
-					orderId: order.id,
-					orderGroupId: orderGroup.id,
-				},
-				{
-					entityType: FulfillmentEntityType.SHIPMENT,
-					previousStatus: 'CREATED',
-					nextStatus: shipment.status,
-					actorRole: FulfillmentActorRole.SYSTEM,
-					source: FulfillmentSource.API,
-					idempotencyKey: `order:${order.id}:shipment:${shipment.id}:created`,
-					orderId: order.id,
-					orderGroupId: orderGroup.id,
-					shipmentId: shipment.id,
-				},
-			],
-		});
-
-		// Create OrderItems for this OrderGroup
-		for (const item of items) {
-			const orderItem = await db.orderItem.create({
-				data: {
-					orderGroupId: orderGroup.id,
-					productId: item.productId,
-					variantId: item.variantId,
-					sizeId: item.sizeId,
-					productSlug: item.productSlug,
-					variantSlug: item.variantSlug,
-					sku: item.sku,
-					name: item.name,
-					image: item.image,
-					size: item.size,
-					quantity: item.quantity,
-					price: item.price,
-					shippingFee: item.shippingFee,
-					totalPrice: item.totalPrice,
-				},
-			});
-			await db.shipmentItem.create({
-				data: {
-					shipmentId: shipment.id,
-					orderItemId: orderItem.id,
-					quantity: orderItem.quantity,
-				},
-			});
-		}
-
-		// Update order totals
-		orderTotalPrice += totalAfterDiscount;
-		orderShippingFee += groupShippingFees;
-	}
-
-	// Redeem GoCoins if requested
-	if (coinsToRedeem > 0) {
-		await redeemCoins(db, {
-			userId,
-			orderId: order.id,
-			coins: coinsToRedeem,
-			idempotencyKey: `redeem:${order.id}`,
-		});
-	}
-
-	// Update the main order with the final totals
-	const finalTotal = Math.max(0, orderTotalPrice - coinDiscount);
-	await db.order.update({
-		where: {
-			id: order.id,
+			};
 		},
-		data: {
-			subTotal: Math.max(0, orderTotalPrice - orderShippingFee),
-			shippingFees: orderShippingFee,
-			total: finalTotal,
-		},
-	});
+		{ maxWait: 10_000, timeout: 30_000 },
+	);
 
-	// Complete checkout in the same server action so the client never has to
-	// make a second authenticated request before navigating to payment.
-	await db.cart.deleteMany({ where: { id: cartId, userId } });
-
-	return {
-		orderId: order.id,
-	};
+	return result;
 };
 
 // Empty the user's cart

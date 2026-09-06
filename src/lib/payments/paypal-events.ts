@@ -5,6 +5,7 @@ import { DOMAIN_EVENT_TYPES, publishDomainEvent } from '@/lib/notifications/doma
 import { scheduleEmailOutboxDispatch } from '@/lib/email/schedule';
 import { RefundTransactionStatus, ReturnRequestStatus } from '@prisma/client';
 import type { PaymentStatus } from '@prisma/client';
+import { reconcileCoinsForRefund } from '@/lib/loyalty/coins';
 
 type PayPalWebhookEvent = {
 	id: string;
@@ -158,6 +159,12 @@ export async function handlePayPalEvent(event: PayPalWebhookEvent) {
 					},
 				});
 				await tx.returnRequest.updateMany({ where: { id: request.id, status: { not: ReturnRequestStatus.REFUNDED } }, data: { status: ReturnRequestStatus.REFUNDED, resolvedAt: new Date() } });
+				await reconcileCoinsForRefund(tx, {
+					orderId: request.orderId,
+					refundAmount: Number(pendingRefund.amount),
+					returnRequestId: request.id,
+					reason: 'PayPal Refund',
+				});
 				return { sourceEventId: domainEvent.id };
 			}, { maxWait: 10_000, timeout: 30_000 });
 			if (result.sourceEventId) scheduleEmailOutboxDispatch([result.sourceEventId]);

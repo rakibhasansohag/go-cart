@@ -1,4 +1,5 @@
-import { PrismaClient } from "@prisma/client";
+import { LoyaltyTxType, Prisma, PrismaClient } from "@prisma/client";
+import { DOMAIN_EVENT_TYPES, publishDomainEvent } from "@/lib/notifications/domain-events";
 
 export const COINS_PER_DOLLAR_EARNED = 2;
 export const COINS_PER_DOLLAR_REDEEMED = 100;
@@ -61,7 +62,7 @@ export function validateRedemption(
 }
 
 // Database transaction operations
-type DbTransactionClient = Omit<
+type DbTransactionClient = Prisma.TransactionClient | Omit<
   PrismaClient,
   "$connect" | "$disconnect" | "$on" | "$transaction" | "$use" | "$extends"
 >;
@@ -98,9 +99,14 @@ export async function awardCoins(
 
   const account = await getOrCreateAccount(tx, input.userId);
 
-  // Check if already awarded for this idempotencyKey
-  const existingTx = await tx.loyaltyTransaction.findUnique({
-    where: { idempotencyKey: input.idempotencyKey },
+  // Check if already awarded for this idempotencyKey or for this order's EARN event
+  const existingTx = await tx.loyaltyTransaction.findFirst({
+    where: {
+      OR: [
+        { idempotencyKey: input.idempotencyKey },
+        { orderId: input.orderId, type: LoyaltyTxType.EARN },
+      ],
+    },
   });
   if (existingTx) {
     return existingTx;
@@ -110,7 +116,7 @@ export async function awardCoins(
     data: {
       accountId: account.id,
       orderId: input.orderId,
-      type: "EARN",
+      type: LoyaltyTxType.EARN,
       points: pointsToEarn,
       idempotencyKey: input.idempotencyKey,
       note: `Earned ${pointsToEarn} GoCoins on paid order`,
@@ -125,32 +131,19 @@ export async function awardCoins(
     },
   });
 
-  // Emit in-app notification for earned coins
+  // Emit in-app notification for earned coins through the typed domain event pipeline
   try {
-    const domainEvent = await tx.domainEvent.create({
-      data: {
-        eventKey: `gocoin.earned:${input.idempotencyKey}`,
-        eventType: "gocoin.earned",
-        aggregateType: "LOYALTY_ACCOUNT",
-        aggregateId: account.id,
-        actorUserId: input.userId,
-        payload: {
-          coinsEarned: pointsToEarn,
-          newBalance: updatedAccount.balance,
-          orderId: input.orderId,
-        },
-      },
-    });
-
-    await tx.notification.create({
-      data: {
-        sourceEventId: domainEvent.id,
-        recipientId: input.userId,
-        category: "SYSTEM",
-        eventType: "gocoin.earned",
-        title: `You earned ${pointsToEarn.toLocaleString()} GoCoins!`,
-        message: `Order payment confirmed. ${pointsToEarn.toLocaleString()} GoCoins added to your balance.`,
-        actionUrl: "/profile/rewards",
+    await publishDomainEvent(tx, {
+      eventKey: `gocoin.earned:${input.idempotencyKey}`,
+      eventType: DOMAIN_EVENT_TYPES.GOCOIN_EARNED,
+      aggregateType: "LOYALTY_ACCOUNT",
+      aggregateId: account.id,
+      actorUserId: input.userId,
+      orderId: input.orderId,
+      payload: {
+        coinsEarned: pointsToEarn,
+        newBalance: updatedAccount.balance,
+        orderId: input.orderId,
       },
     });
   } catch (notifErr) {
@@ -197,7 +190,7 @@ export async function redeemCoins(
     data: {
       accountId: account.id,
       orderId: input.orderId,
-      type: "REDEEM",
+      type: LoyaltyTxType.REDEEM,
       points: -input.coins,
       idempotencyKey: input.idempotencyKey,
       note: `Redeemed ${input.coins} GoCoins ($${discount.toFixed(2)} discount)`,
@@ -213,5 +206,149 @@ export async function redeemCoins(
     },
   });
 
+  // Emit in-app notification for redeemed coins through typed pipeline
+  try {
+    const updated = await tx.loyaltyAccount.findUnique({ where: { id: account.id } });
+    await publishDomainEvent(tx, {
+      eventKey: `gocoin.redeemed:${input.idempotencyKey}`,
+      eventType: DOMAIN_EVENT_TYPES.GOCOIN_REDEEMED,
+      aggregateType: "LOYALTY_ACCOUNT",
+      aggregateId: account.id,
+      actorUserId: input.userId,
+      orderId: input.orderId,
+      payload: {
+        coinsRedeemed: input.coins,
+        newBalance: updated?.balance ?? 0,
+        orderId: input.orderId,
+        discount,
+      },
+    });
+  } catch (notifErr) {
+    console.warn("Failed to publish GoCoins redemption notification:", notifErr);
+  }
+
   return transaction;
+}
+
+export async function reconcileCoinsForRefund(
+  tx: DbTransactionClient,
+  input: {
+    orderId: string;
+    refundAmount: number;
+    returnRequestId?: string;
+    actorUserId?: string;
+    reason?: string;
+  },
+) {
+  if (input.refundAmount <= 0) return null;
+
+  const order = await tx.order.findUnique({
+    where: { id: input.orderId },
+    include: {
+      loyaltyRedemption: true,
+    },
+  });
+  if (!order) return null;
+
+  const account = await getOrCreateAccount(tx, order.userId);
+  const identifierSuffix = input.returnRequestId || input.orderId;
+
+  // 1. Claw back earned coins proportionally: 2 coins per $1 refunded
+  const coinsToClawback = Math.floor(input.refundAmount * COINS_PER_DOLLAR_EARNED);
+  const clawbackKey = `refund-clawback:${identifierSuffix}`;
+  let existingClawback = await tx.loyaltyTransaction.findUnique({
+    where: { idempotencyKey: clawbackKey },
+  });
+
+  let clawedBackPoints = 0;
+  if (!existingClawback && coinsToClawback > 0) {
+    // Check current balance to prevent balance < 0
+    const currentAccount = await tx.loyaltyAccount.findUnique({ where: { id: account.id } });
+    const currentBalance = currentAccount?.balance ?? 0;
+    const actualDeduction = Math.min(currentBalance, coinsToClawback);
+
+    if (actualDeduction > 0) {
+      await tx.loyaltyAccount.update({
+        where: { id: account.id },
+        data: {
+          balance: { decrement: actualDeduction },
+          lifetimeEarned: { decrement: actualDeduction },
+        },
+      });
+    }
+
+    existingClawback = await tx.loyaltyTransaction.create({
+      data: {
+        accountId: account.id,
+        orderId: order.id,
+        type: LoyaltyTxType.ADJUSTMENT,
+        points: -coinsToClawback,
+        idempotencyKey: clawbackKey,
+        note: `GoCoins adjustment for refunded order (${input.reason || "Refund"})`,
+      },
+    });
+    clawedBackPoints = coinsToClawback;
+  }
+
+  // 2. Restore redeemed coins proportionally if customer used GoCoins on this order
+  const restoreKey = `refund-restore:${identifierSuffix}`;
+  let existingRestore = await tx.loyaltyTransaction.findUnique({
+    where: { idempotencyKey: restoreKey },
+  });
+
+  let restoredPoints = 0;
+  if (!existingRestore && order.coinDiscount > 0 && order.loyaltyRedemption) {
+    const totalRedeemed = order.loyaltyRedemption.points;
+    const ratio = order.total > 0 ? Math.min(1, input.refundAmount / order.total) : 1;
+    const coinsToRestore = Math.min(totalRedeemed, Math.round(totalRedeemed * ratio));
+
+    if (coinsToRestore > 0) {
+      await tx.loyaltyAccount.update({
+        where: { id: account.id },
+        data: {
+          balance: { increment: coinsToRestore },
+        },
+      });
+
+      existingRestore = await tx.loyaltyTransaction.create({
+        data: {
+          accountId: account.id,
+          orderId: order.id,
+          type: LoyaltyTxType.REFUND,
+          points: coinsToRestore,
+          idempotencyKey: restoreKey,
+          note: `Restored ${coinsToRestore} GoCoins from refund of order`,
+        },
+      });
+      restoredPoints = coinsToRestore;
+    }
+  }
+
+  // Emit reversal notification if any adjustment or restore occurred
+  if (clawedBackPoints > 0 || restoredPoints > 0) {
+    try {
+      const refreshedAccount = await tx.loyaltyAccount.findUnique({ where: { id: account.id } });
+      await publishDomainEvent(tx, {
+        eventKey: `gocoin.reversed:${identifierSuffix}`,
+        eventType: DOMAIN_EVENT_TYPES.GOCOIN_REVERSED,
+        aggregateType: "LOYALTY_ACCOUNT",
+        aggregateId: account.id,
+        actorUserId: order.userId,
+        orderId: order.id,
+        payload: {
+          orderId: order.id,
+          coinsReversed: -clawedBackPoints + restoredPoints,
+          newBalance: refreshedAccount?.balance ?? 0,
+          reason: input.reason || "Order refund processed",
+        },
+      });
+    } catch (notifErr) {
+      console.warn("Failed to publish GoCoins refund reversal notification:", notifErr);
+    }
+  }
+
+  return {
+    clawback: existingClawback,
+    restoration: existingRestore,
+  };
 }

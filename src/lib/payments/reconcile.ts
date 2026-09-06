@@ -184,16 +184,22 @@ export async function reconcilePaymentEvent(input: ReconcilePaymentInput) {
           include: { paymentDetails: true },
         });
 
+        const isFirstPaidTransition =
+          order.paymentStatus !== PaymentStatus.Paid && nextStatus === PaymentStatus.Paid;
+
         return {
           duplicate: false,
           order: updatedOrder,
           paymentDetails,
+          isFirstPaidTransition,
         };
       },
       { maxWait: 10_000, timeout: 30_000 },
     );
     let sourceEventIds: string[] = [];
     if (
+      !result.duplicate &&
+      result.isFirstPaidTransition &&
       result.order?.paymentStatus === PaymentStatus.Paid &&
       result.paymentDetails
     ) {
@@ -205,12 +211,13 @@ export async function reconcilePaymentEvent(input: ReconcilePaymentInput) {
         amount: result.paymentDetails.amount ?? result.order.total,
         currency: result.paymentDetails.currency ?? "USD",
         paidAt: result.paymentDetails.updatedAt,
-        idempotencyKey: `earn:${input.providerEventId}`,
+        idempotencyKey: `order:${result.order.id}:paid:earn`,
       });
     }
     scheduleEmailOutboxDispatch(sourceEventIds);
     if (
       !result.duplicate &&
+      result.isFirstPaidTransition &&
       result.order?.paymentStatus === PaymentStatus.Paid
     ) {
       await createSettlementsForPaidOrder(result.order.id);

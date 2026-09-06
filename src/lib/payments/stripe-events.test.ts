@@ -1,17 +1,31 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { dbMock, reconcilePaymentEventMock, recordChargebackForOrderMock } = vi.hoisted(() => ({
-	dbMock: {
+const { dbMock, reconcilePaymentEventMock, recordChargebackForOrderMock, reconcileCoinsForRefundMock } = vi.hoisted(() => {
+	const mock: {
+		$transaction: ReturnType<typeof vi.fn>;
+		order: { findUnique: ReturnType<typeof vi.fn> };
+		paymentDetails: { findFirst: ReturnType<typeof vi.fn>; findUnique: ReturnType<typeof vi.fn> };
+		refundTransaction: { findFirst: ReturnType<typeof vi.fn>; update: ReturnType<typeof vi.fn> };
+		returnRequest: { findUnique: ReturnType<typeof vi.fn>; updateMany: ReturnType<typeof vi.fn> };
+	} = {
+		$transaction: vi.fn(),
 		order: { findUnique: vi.fn() },
 		paymentDetails: { findFirst: vi.fn(), findUnique: vi.fn() },
-		refundTransaction: { findFirst: vi.fn() },
-	},
-	reconcilePaymentEventMock: vi.fn(),
-	recordChargebackForOrderMock: vi.fn(),
-}));
+		refundTransaction: { findFirst: vi.fn(), update: vi.fn() },
+		returnRequest: { findUnique: vi.fn(), updateMany: vi.fn() },
+	};
+	mock.$transaction.mockImplementation(async (cb: (tx: typeof mock) => unknown) => cb(mock));
+	return {
+		dbMock: mock,
+		reconcilePaymentEventMock: vi.fn(),
+		recordChargebackForOrderMock: vi.fn(),
+		reconcileCoinsForRefundMock: vi.fn(),
+	};
+});
 
 vi.mock('@/lib/db', () => ({ db: dbMock }));
 vi.mock('./reconcile', () => ({ reconcilePaymentEvent: reconcilePaymentEventMock }));
+vi.mock('@/lib/loyalty/coins', () => ({ reconcileCoinsForRefund: reconcileCoinsForRefundMock }));
 vi.mock('@/lib/notifications/domain-events', () => ({
 	DOMAIN_EVENT_TYPES: { REFUND_ISSUED: 'refund.issued' },
 	publishDomainEvent: vi.fn(),

@@ -8,6 +8,7 @@ import type Stripe from 'stripe';
 import { SettlementLedgerEntryType, SettlementStatus } from '@prisma/client';
 import { reconcileStripeAccountUpdatedEvent } from './connect';
 import { recordChargebackForOrder, recordRefundForReturnRequest } from '@/lib/settlement/service';
+import { reconcileCoinsForRefund } from '@/lib/loyalty/coins';
 
 async function findOrderId(
 	providerPaymentId: string,
@@ -73,6 +74,13 @@ async function handleStripeDisputeEvent(event: Stripe.Event) {
 		amountCents: dispute.amount,
 		status: dispute.status,
 		reason: dispute.reason,
+	});
+	await db.$transaction(async (tx) => {
+		await reconcileCoinsForRefund(tx, {
+			orderId,
+			refundAmount: dispute.amount / 100,
+			reason: `Chargeback: ${dispute.reason || dispute.status}`,
+		});
 	});
 	return { duplicate: paymentResult.duplicate, settlement: settlementResult };
 }
@@ -236,6 +244,12 @@ export async function handleStripeEvent(event: Stripe.Event) {
 			await tx.returnRequest.updateMany({
 				where: { id: request.id, status: { not: ReturnRequestStatus.REFUNDED } },
 				data: { status: ReturnRequestStatus.REFUNDED, resolvedAt: new Date() },
+			});
+			await reconcileCoinsForRefund(tx, {
+				orderId: request.orderId,
+				refundAmount: Number(pendingRefund.amount),
+				returnRequestId: request.id,
+				reason: 'Stripe Refund',
 			});
 			return { sourceEventId: domainEvent.id };
 		}, { maxWait: 10_000, timeout: 30_000 });

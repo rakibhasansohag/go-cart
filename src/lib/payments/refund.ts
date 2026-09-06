@@ -6,6 +6,7 @@ import { paypalRequest } from '@/lib/payments/paypal-client';
 import { DOMAIN_EVENT_TYPES, publishDomainEvent } from '@/lib/notifications/domain-events';
 import { scheduleEmailOutboxDispatch } from '@/lib/email/schedule';
 import { recordRefundForReturnRequest } from '@/lib/settlement/service';
+import { reconcileCoinsForRefund } from '@/lib/loyalty/coins';
 
 const REFUND_TRANSACTION_OPTIONS = { maxWait: 10_000, timeout: 30_000 } as const;
 
@@ -113,6 +114,13 @@ export async function issueReturnRefundForAdmin(
 				},
 			});
 			const updatedRequest = await tx.returnRequest.update({ where: { id: request.id, status: ReturnRequestStatus.REFUND_PENDING }, data: { status: ReturnRequestStatus.REFUNDED, resolvedAt: new Date() } });
+			await reconcileCoinsForRefund(tx, {
+				orderId: request.orderId,
+				refundAmount: amount / 100,
+				returnRequestId: request.id,
+				actorUserId: adminUserId,
+				reason: 'Return Refund',
+			});
 			return { request: updatedRequest, eventId: event.id };
 		}, REFUND_TRANSACTION_OPTIONS);
 		if (updated.eventId) scheduleEmailOutboxDispatch([updated.eventId]);

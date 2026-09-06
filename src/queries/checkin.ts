@@ -1,5 +1,6 @@
 "use server";
 
+import { randomBytes } from "crypto";
 import { db } from "@/lib/db";
 import { auth } from "@clerk/nextjs/server";
 import { Prisma } from "@prisma/client";
@@ -9,6 +10,7 @@ import {
 } from "@/lib/checkin-constants";
 import { enforceSharedRateLimit } from "@/lib/security/rate-limit";
 import { requireAuthenticatedUser } from "@/lib/security/request-guards";
+import { DOMAIN_EVENT_TYPES, publishDomainEvent } from "@/lib/notifications/domain-events";
 
 type DailyCheckInStatus = {
   isAuthenticated: boolean;
@@ -122,10 +124,7 @@ export async function claimDailyCheckIn() {
       let generatedCouponCode: string | null = null;
 
       if (rewardSpec.couponDiscount && rewardSpec.couponCodePrefix) {
-        const randomSuffix = Math.random()
-          .toString(36)
-          .substring(2, 6)
-          .toUpperCase();
+        const randomSuffix = randomBytes(3).toString("hex").toUpperCase();
         generatedCouponCode = `${rewardSpec.couponCodePrefix}-${userId.slice(-4).toUpperCase()}-${randomSuffix}`;
 
         const now = new Date();
@@ -188,34 +187,16 @@ export async function claimDailyCheckIn() {
         },
       });
 
-      const domainEvent = await tx.domainEvent.create({
-        data: {
-          eventKey: `checkin.claimed:${userId}:${dateStr}`,
-          eventType: "checkin.claimed",
-          aggregateType: "DAILY_CHECKIN",
-          aggregateId: checkInRecord.id,
-          actorUserId: userId,
-          payload: {
-            dayIndex,
-            coinsEarned: rewardSpec.coins,
-            couponCode: generatedCouponCode,
-          },
-        },
-      });
-
-      const notifMessage = generatedCouponCode
-        ? `You earned ${rewardSpec.coins} GoCoins plus a ${rewardSpec.couponDiscount}% Personal Coupon ${generatedCouponCode}`
-        : `You earned ${rewardSpec.coins} GoCoins for checking in today Day ${dayIndex}`;
-
-      await tx.notification.create({
-        data: {
-          sourceEventId: domainEvent.id,
-          recipientId: userId,
-          category: "SYSTEM",
-          eventType: "checkin.claimed",
-          title: `Day ${dayIndex} Check In Claimed`,
-          message: notifMessage,
-          actionUrl: "/profile/rewards",
+      await publishDomainEvent(tx, {
+        eventKey: `checkin.claimed:${userId}:${dateStr}`,
+        eventType: DOMAIN_EVENT_TYPES.CHECKIN_CLAIMED,
+        aggregateType: "DAILY_CHECKIN",
+        aggregateId: checkInRecord.id,
+        actorUserId: userId,
+        payload: {
+          dayIndex,
+          coinsEarned: rewardSpec.coins,
+          couponCode: generatedCouponCode,
         },
       });
 

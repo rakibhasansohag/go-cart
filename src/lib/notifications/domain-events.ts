@@ -145,6 +145,10 @@ export const DOMAIN_EVENT_TYPES = {
   INQUIRY_SELLER_REPLIED: "inquiry.seller_replied",
   INVENTORY_LOW_STOCK: "inventory.low_stock",
   INVENTORY_RESTOCKED: "inventory.restocked",
+  GOCOIN_EARNED: "gocoin.earned",
+  GOCOIN_REDEEMED: "gocoin.redeemed",
+  GOCOIN_REVERSED: "gocoin.reversed",
+  CHECKIN_CLAIMED: "checkin.claimed",
 } as const;
 
 export type DomainEventType =
@@ -163,7 +167,9 @@ export type PublishDomainEventInput = {
     | "PRODUCT"
     | "PRODUCT_QUESTION"
     | "CONVERSATION"
-    | "INVENTORY_SKU";
+    | "INVENTORY_SKU"
+    | "LOYALTY_ACCOUNT"
+    | "DAILY_CHECKIN";
   aggregateId: string;
   actorUserId?: string | null;
   orderId?: string;
@@ -328,6 +334,17 @@ async function resolveRecipients(
     const buyerId = payloadText(input.payload, "buyerId");
     if (buyerId && buyerId !== input.actorUserId) {
       recipientIds.add(buyerId);
+    }
+  }
+
+  if (
+    input.eventType === DOMAIN_EVENT_TYPES.GOCOIN_EARNED ||
+    input.eventType === DOMAIN_EVENT_TYPES.GOCOIN_REDEEMED ||
+    input.eventType === DOMAIN_EVENT_TYPES.GOCOIN_REVERSED ||
+    input.eventType === DOMAIN_EVENT_TYPES.CHECKIN_CLAIMED
+  ) {
+    if (input.actorUserId) {
+      recipientIds.add(input.actorUserId);
     }
   }
 
@@ -539,6 +556,48 @@ function notificationFor(input: PublishDomainEventInput, recipient: Recipient) {
         actionUrl: storeUrl
           ? `/dashboard/seller/stores/${storeUrl}/inventory`
           : null,
+      };
+    }
+    case DOMAIN_EVENT_TYPES.GOCOIN_EARNED: {
+      const coins = payloadText(input.payload, "coinsEarned") || "0";
+      return {
+        category: NotificationCategory.SYSTEM,
+        title: `You earned ${Number(coins).toLocaleString()} GoCoins!`,
+        message: `Order payment confirmed. ${Number(coins).toLocaleString()} GoCoins added to your balance.`,
+        actionUrl: "/profile/rewards",
+      };
+    }
+    case DOMAIN_EVENT_TYPES.GOCOIN_REDEEMED: {
+      const coins = payloadText(input.payload, "coinsRedeemed") || "0";
+      return {
+        category: NotificationCategory.SYSTEM,
+        title: `Redeemed ${Number(coins).toLocaleString()} GoCoins`,
+        message: `You applied ${Number(coins).toLocaleString()} GoCoins discount to your order.`,
+        actionUrl: "/profile/rewards",
+      };
+    }
+    case DOMAIN_EVENT_TYPES.GOCOIN_REVERSED: {
+      const coins = payloadText(input.payload, "coinsReversed") || "0";
+      const reason = payloadText(input.payload, "reason") || "Order refund or adjustment";
+      return {
+        category: NotificationCategory.SYSTEM,
+        title: "GoCoins balance updated",
+        message: `${reason}: ${Number(coins).toLocaleString()} GoCoins adjusted.`,
+        actionUrl: "/profile/rewards",
+      };
+    }
+    case DOMAIN_EVENT_TYPES.CHECKIN_CLAIMED: {
+      const dayIndex = payloadText(input.payload, "dayIndex") || "1";
+      const coins = payloadText(input.payload, "coinsEarned") || "0";
+      const couponCode = payloadText(input.payload, "couponCode");
+      const msg = couponCode
+        ? `You earned ${coins} GoCoins plus a personal coupon ${couponCode} for checking in on Day ${dayIndex}!`
+        : `You earned ${coins} GoCoins for checking in today (Day ${dayIndex})!`;
+      return {
+        category: NotificationCategory.SYSTEM,
+        title: `Day ${dayIndex} Check In Claimed`,
+        message: msg,
+        actionUrl: "/profile/rewards",
       };
     }
   }

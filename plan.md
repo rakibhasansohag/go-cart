@@ -1313,17 +1313,17 @@ under retries, concurrency, failed payments, cancellations, refunds, and abuse.
 - [x] Add checkout redemption UI, rewards dashboard/history, daily check-in
       calendar, user-bound milestone coupons, and in-app reward notifications
 - [x] Enforce the current 100-coin minimum and 30% product-subtotal cap in helpers
-- [ ] Move order creation, inventory decrement, coupon use, coin validation,
+- [x] Move order creation, inventory decrement, coupon use, coin validation,
       conditional balance decrement, ledger rows, and cart completion into one
       atomic transaction or compensating workflow
-- [ ] Award coins once per order's transition to paid, not once per distinct
+- [x] Award coins once per order's transition to paid, not once per distinct
       provider event; add a database uniqueness invariant for the business event
-- [ ] Prevent concurrent redemption from making balances negative
-- [ ] Decide and implement cancellation/refund/chargeback coin reversal policy,
+- [x] Prevent concurrent redemption from making balances negative
+- [x] Decide and implement cancellation/refund/chargeback coin reversal policy,
       coupon stacking/allocation policy, expiry policy, and abuse controls
-- [ ] Use cryptographically secure coupon identifiers and define the business-day timezone
-- [ ] Route loyalty events through typed contracts and the shared delivery pipeline
-- [ ] **Test**: Unit tests remain green and database integration tests cover duplicate
+- [x] Use cryptographically secure coupon identifiers and define the business-day timezone
+- [x] Route loyalty events through typed contracts and the shared delivery pipeline
+- [x] **Test**: Unit tests remain green and database integration tests cover duplicate
       paid events, concurrent redemption/check-in, rollback, refund, and chargeback
 
 ### Phase 17.3 — Low Stock & Restock Alerts

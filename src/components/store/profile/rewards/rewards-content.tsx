@@ -15,6 +15,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { coinsToDiscount } from "@/lib/loyalty/coins";
 import CheckInCalendar from "@/components/store/checkin/checkin-calendar";
+import { LoyaltyTxType } from "@prisma/client";
 
 interface Props {
   initialPage?: number;
@@ -163,7 +164,10 @@ export default function RewardsContent({ initialPage = 1 }: Props) {
         ) : (
           <div className="divide-y divide-border/10">
             {transactions.map((tx) => {
-              const isEarn = tx.type === "EARN";
+              const isEarn = tx.type === LoyaltyTxType.EARN;
+              const isRefund = tx.type === LoyaltyTxType.REFUND;
+              const isAdjustment = tx.type === LoyaltyTxType.ADJUSTMENT;
+              const isPositive = isEarn || isRefund;
               return (
                 <div
                   key={tx.id}
@@ -174,10 +178,14 @@ export default function RewardsContent({ initialPage = 1 }: Props) {
                       className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${
                         isEarn
                           ? "bg-emerald-500/10 text-emerald-500"
+                          : isRefund
+                          ? "bg-teal-500/10 text-teal-500"
+                          : isAdjustment
+                          ? "bg-rose-500/10 text-rose-500"
                           : "bg-amber-500/10 text-amber-500"
                       }`}
                     >
-                      {isEarn ? (
+                      {isPositive ? (
                         <ArrowDownLeft className="w-5 h-5" />
                       ) : (
                         <ArrowUpRight className="w-5 h-5" />
@@ -186,7 +194,13 @@ export default function RewardsContent({ initialPage = 1 }: Props) {
                     <div className="min-w-0">
                       <p className="font-medium text-main-primary truncate">
                         {tx.note ||
-                          (isEarn ? "Earned GoCoins" : "Redeemed GoCoins")}
+                          (isEarn
+                            ? "Earned GoCoins"
+                            : isRefund
+                            ? "Restored GoCoins"
+                            : isAdjustment
+                            ? "Adjusted GoCoins"
+                            : "Redeemed GoCoins")}
                       </p>
                       <p className="text-xs text-main-secondary">
                         {new Date(tx.createdAt).toLocaleDateString(undefined, {
@@ -203,13 +217,25 @@ export default function RewardsContent({ initialPage = 1 }: Props) {
                   <div className="text-right shrink-0">
                     <span
                       className={`font-bold text-base ${
-                        isEarn ? "text-emerald-500" : "text-amber-500"
+                        isEarn
+                          ? "text-emerald-500"
+                          : isRefund
+                          ? "text-teal-500"
+                          : isAdjustment
+                          ? "text-rose-500"
+                          : "text-amber-500"
                       }`}
                     >
-                      {isEarn ? `+${tx.points}` : tx.points}
+                      {isPositive ? `+${tx.points}` : tx.points}
                     </span>
                     <span className="text-xs text-main-secondary block">
-                      {isEarn ? "coins earned" : "coins used"}
+                      {isEarn
+                        ? "coins earned"
+                        : isRefund
+                        ? "coins restored"
+                        : isAdjustment
+                        ? "coins adjusted"
+                        : "coins used"}
                     </span>
                   </div>
                 </div>

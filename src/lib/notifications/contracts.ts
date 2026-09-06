@@ -147,6 +147,28 @@ export const DOMAIN_EVENT_PAYLOAD_SCHEMAS = {
 		threshold: z.number().int(),
 		previousQuantity: z.number().int(),
 	}),
+	'gocoin.earned': commonPayload.extend({
+		coinsEarned: z.number().int().positive(),
+		newBalance: z.number().int().nonnegative(),
+		orderId: z.string().optional(),
+	}),
+	'gocoin.redeemed': commonPayload.extend({
+		coinsRedeemed: z.number().int().positive(),
+		newBalance: z.number().int().nonnegative(),
+		orderId: z.string().optional(),
+		discount: z.number().finite().optional(),
+	}),
+	'gocoin.reversed': commonPayload.extend({
+		coinsReversed: z.number().int(),
+		newBalance: z.number().int().nonnegative(),
+		orderId: z.string().optional(),
+		reason: z.string().min(1),
+	}),
+	'checkin.claimed': commonPayload.extend({
+		dayIndex: z.number().int().positive(),
+		coinsEarned: z.number().int().positive(),
+		couponCode: z.string().nullable().optional(),
+	}),
 } as const;
 
 export type DomainEventPayload = z.infer<

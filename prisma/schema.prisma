@@ -1719,6 +1719,8 @@ model RefundTransaction {
 enum LoyaltyTxType {
   EARN
   REDEEM
+  REFUND
+  ADJUSTMENT
 }
 
 model LoyaltyAccount {

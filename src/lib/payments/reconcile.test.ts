@@ -58,7 +58,7 @@ describe('payment reconciliation side effects', () => {
 
 		expect(result.duplicate).toBe(false);
 		expect(publishPaidOrderNotificationsMock).toHaveBeenCalledWith(dbMock, expect.objectContaining({ orderId: order.id }));
-		expect(awardCoinsMock).toHaveBeenCalledWith(tx, expect.objectContaining({ idempotencyKey: 'earn:evt-1' }));
+		expect(awardCoinsMock).toHaveBeenCalledWith(tx, expect.objectContaining({ idempotencyKey: `order:${order.id}:paid:earn` }));
 		expect(createSettlementsForPaidOrderMock).toHaveBeenCalledWith(order.id);
 		expect(scheduleEmailOutboxDispatchMock).toHaveBeenCalledWith(['event-1']);
 	});
@@ -101,7 +101,45 @@ describe('payment reconciliation side effects', () => {
 		});
 
 		expect(result).toMatchObject({ duplicate: false, order: updatedOrder, paymentDetails });
-		expect(awardCoinsMock).toHaveBeenCalledWith(tx, expect.objectContaining({ idempotencyKey: 'earn:evt-2' }));
+		expect(awardCoinsMock).toHaveBeenCalledWith(tx, expect.objectContaining({ idempotencyKey: `order:${order.id}:paid:earn` }));
 		expect(createSettlementsForPaidOrderMock).toHaveBeenCalledWith(order.id);
+	});
+
+	it('does not re-award GoCoins when an already paid order receives another webhook event', async () => {
+		const paymentDetails = {
+			updatedAt: new Date('2026-08-15T00:00:00.000Z'),
+			amount: 25,
+			currency: 'USD',
+		};
+		const alreadyPaidOrder = {
+			id: 'order-3',
+			userId: 'user-3',
+			total: 25,
+			paymentStatus: 'Paid',
+			paymentDetails,
+		};
+		const tx = {
+			paymentEvent: { findUnique: vi.fn().mockResolvedValue(null), create: vi.fn().mockResolvedValue({}) },
+			order: { findUnique: vi.fn().mockResolvedValue(alreadyPaidOrder), update: vi.fn().mockResolvedValue(alreadyPaidOrder) },
+			paymentDetails: { upsert: vi.fn().mockResolvedValue(paymentDetails) },
+		};
+		dbMock.$transaction.mockImplementation(async (callback: (client: typeof tx) => unknown) => callback(tx));
+		awardCoinsMock.mockClear();
+
+		const result = await reconcilePaymentEvent({
+			orderId: alreadyPaidOrder.id,
+			provider: 'Stripe',
+			providerEventId: 'evt-3-secondary',
+			providerPaymentId: 'pi-3',
+			eventType: 'charge.succeeded',
+			providerStatus: 'succeeded',
+			paymentStatus: 'Paid',
+			amount: 25,
+			currency: 'usd',
+			verifyOrderAmount: true,
+		});
+
+		expect(result.duplicate).toBe(false);
+		expect(awardCoinsMock).not.toHaveBeenCalled();
 	});
 });
