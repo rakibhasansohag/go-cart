@@ -5,6 +5,7 @@ import React from 'react';
 type StarRatingProps = {
 	count?: number;
 	value?: number;
+	rating?: number;
 	size?: number;
 	color?: string;
 	activeColor?: string;
@@ -88,7 +89,8 @@ function HalfStar({
 
 export default function StarRating({
 	count = 5,
-	value = 0,
+	value,
+	rating,
 	size = 20,
 	color = '#e2dfdf',
 	activeColor = '#FFD804',
@@ -97,10 +99,11 @@ export default function StarRating({
 	onChange,
 	className,
 }: StarRatingProps) {
+	const numericValue = value ?? rating ?? 0;
 	const stars = Array.from({ length: count }, (_, i) => {
 		const starNumber = i + 1;
-		const filled = value >= starNumber;
-		const half = !filled && isHalf && value >= starNumber - 0.5;
+		const filled = numericValue >= starNumber;
+		const half = !filled && isHalf && numericValue >= starNumber - 0.5;
 
 		const handleClick = () => {
 			if (edit && onChange) onChange(starNumber);

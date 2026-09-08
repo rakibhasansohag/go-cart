@@ -5,6 +5,7 @@ import { ThemeProvider } from 'next-themes';
 import { Toaster } from '@/components/ui/sonner';
 import ModalProvider from '@/providers/modal-provider';
 import UploadPreloader from '@/providers/UploadProvider';
+import { CurrencyProvider } from '@/providers/currency-provider';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { getQueryClient } from '@/lib/get-query-client';
@@ -30,13 +31,15 @@ export default function ClientProviders({ children }: Props) {
 				defaultTheme='system'
 				enableSystem
 			>
-				<ModalProvider>
-					{children}
-				</ModalProvider>
-				<Toaster position='top-right' expand richColors />
-				<UploadPreloader
-					key={process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_PRESET}
-				/>
+				<CurrencyProvider>
+					<ModalProvider>
+						{children}
+					</ModalProvider>
+					<Toaster position='top-right' expand richColors />
+					<UploadPreloader
+						key={process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_PRESET}
+					/>
+				</CurrencyProvider>
 			</ThemeProvider>
 			{process.env.NODE_ENV === 'development' && (
 				<ReactQueryDevtools initialIsOpen={false} />

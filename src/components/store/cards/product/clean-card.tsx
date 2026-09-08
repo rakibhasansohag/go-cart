@@ -4,12 +4,14 @@ import Link from 'next/link';
 import { useState } from 'react';
 import StarRating from '@/components/StarRating';
 import { Image as ImageIcon } from 'lucide-react';
+import { useCurrency } from '@/providers/currency-provider';
 
 export default function ProductCardClean({
 	product,
 }: {
 	product: ProductType;
 }) {
+	const { formatPrice } = useCurrency();
 	const [variant, setVariant] = useState<VariantSimplified>(
 		product.variants[0],
 	);
@@ -36,7 +38,7 @@ export default function ProductCardClean({
 							<span className='text-xs'>Image unavailable</span>
 						</div>
 					)}
-					<div className='price'>${size.price}</div>
+					<div className='price'>{formatPrice(size.price)}</div>
 				</div>
 				<div className='content'>
 					<div className='brand line-clamp-1'>{variant.variantName}</div>
@@ -62,16 +64,18 @@ export default function ProductCardClean({
 							</ul>
 						</div>
 					</div>
-					<div className='rating h-4'>
+					{/* Rating */}
+					<div className='flex items-center gap-x-1'>
 						<StarRating
-							count={5}
-							size={18}
-							color='#e2dfdf'
 							value={product.rating}
+							count={5}
+							size={14}
+							color='#e2dfdf'
+							activeColor='#FFD804'
 							isHalf
 							edit={false}
 						/>
-						({numReviews})
+						<span className='text-xs text-muted-foreground'>({numReviews})</span>
 					</div>
 				</div>
 			</div>

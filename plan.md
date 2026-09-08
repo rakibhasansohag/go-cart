@@ -1344,16 +1344,35 @@ Goal: help sellers avoid stockouts with threshold-crossing notifications.
 Goal: show estimated local prices while charging and recording one authoritative
 base currency until a separate multi-currency payment phase is approved.
 
-- [ ] Select a free, license-compatible exchange-rate source and persist daily
+- [x] Select a free, license-compatible exchange-rate source and persist daily
       versioned rates with last-known-good fallback, freshness, and failure alerts
-- [ ] Detect a default from country while allowing an explicit currency cookie override
-- [ ] Centralize Decimal/minor-unit conversion and currency-specific rounding
-- [ ] Display estimated converted prices on product, browse, cart, and checkout
+- [x] Detect a default from country while allowing an explicit currency cookie override
+- [x] Centralize Decimal/minor-unit conversion and currency-specific rounding
+- [x] Display estimated converted prices on product, browse, cart, and checkout
       with a persistent "Charged in [base currency]" disclosure
-- [ ] Keep order, payment, refund, GoCoins, analytics, and seller settlement
+- [x] Keep order, payment, refund, GoCoins, analytics, and seller settlement
       calculations exclusively in the authoritative charge currency
-- [ ] **Test**: Switching currency updates display only; stale/missing rates fail
+- [x] **Test**: Switching currency updates display only; stale/missing rates fail
       safely; checkout/provider amounts and ledger values never change
+
+- **Implementation evidence (2026-09-08)**: added `ExchangeRate` model and migration
+  `20260908230000_exchange_rates`. Centralized currency handling in `src/lib/currency/`
+  with `fallback-rates.json` baseline registry, daily rate caching and fetch via
+  `open.er-api.com` (`getExchangeRates()`), `country-currency-map.ts` ISO mapping,
+  and `converter.ts` for decimal-safe conversion and `Intl.NumberFormat` with
+  zero-decimal support (e.g. JPY). Added `CurrencyProvider` and `/api/setUserCurrencyInCookies`
+  cookie persistence route. Integrated currency selector in header trigger and dropdown.
+  Updated `ProductPrice`, `ProductCardClean`, `ProductCardSimple`, `CartSummary`,
+  and `PlaceOrderCard` to display estimated local currency amounts with persistent
+  "Charged in USD" disclosures while keeping all database orders, Stripe charges,
+  and ledger records strictly in USD.
+- **Validation evidence (2026-09-08)**: 18/18 unit tests in `src/lib/currency/currency.test.ts`
+  pass (country resolution, Decimal conversion precision, zero decimals for JPY,
+  formatting, fallback registry safety, dual pricing disclosures). Full Vitest test
+  suite passes 49/49 test files and 253 tests (`bun vitest run`). TypeScript
+  compilation passes with 0 errors (`bun run typecheck`). Verified live in browser
+  via BrowserOS Neo on home, browse, product, and cart routes with active cookie
+  persistence and instant price conversion across USD, EUR, and BDT.
 
 ### Phase 17.5 — Direct Buyer-Seller Inquiries & Messaging System
 

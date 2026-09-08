@@ -1,12 +1,14 @@
 import { SimpleProduct } from '@/lib/types';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useCurrency } from '@/providers/currency-provider';
 
 export default function ProductCardSimple({
 	product,
 }: {
 	product: SimpleProduct;
 }) {
+	const { formatPrice } = useCurrency();
 	return (
 		<Link href={`/product/${product.slug}?variant=${product.variantSlug}`}>
 			<div className='w-[120px] h-[170px] relative flex flex-col rounded-md items-center justify-between p-2'>
@@ -19,7 +21,7 @@ export default function ProductCardSimple({
 				/>
 				<div className='absolute bottom-6 mt-2 space-y-2'>
 					<div className='py-1.5 px-2 bg-red-500 text-white font-bold text-sm rounded-lg'>
-						${product.price?.toFixed(2)}
+						{formatPrice(product.price || 0)}
 					</div>
 				</div>
 			</div>

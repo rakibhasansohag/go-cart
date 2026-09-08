@@ -8,6 +8,7 @@ import { validateCouponCode } from '@/queries/coupon';
 import { PulseLoader } from 'react-spinners';
 import { useMutation } from '@tanstack/react-query';
 import { Tag, Check, X } from 'lucide-react';
+import { useCurrency } from '@/providers/currency-provider';
 
 interface Props {
 	cartItems: CartProductType[];
@@ -17,6 +18,7 @@ interface Props {
 
 const CartSummary: FC<Props> = ({ cartItems, selectedItems = [], shippingFees }) => {
 	const router = useRouter();
+	const { formatPrice, isBaseCurrency, currency } = useCurrency();
 	const [couponCode, setCouponCode] = useState('');
 	const [appliedCoupon, setAppliedCoupon] = useState<{
 		code: string;
@@ -167,7 +169,7 @@ const CartSummary: FC<Props> = ({ cartItems, selectedItems = [], shippingFees })
 				<h3 className='flex-1 w-0 min-w-0 text-right'>
 					<span className='px-0.5 text-main-primary'>
 						<div className='text-main-primary text-lg inline-block break-all font-semibold'>
-							${subtotal.toFixed(2)}
+							{formatPrice(subtotal)}
 						</div>
 					</span>
 				</h3>
@@ -179,7 +181,7 @@ const CartSummary: FC<Props> = ({ cartItems, selectedItems = [], shippingFees })
 				<h3 className='flex-1 w-0 min-w-0 text-right'>
 					<span className='px-0.5 text-main-primary'>
 						<div className='text-main-primary text-lg inline-block break-all font-semibold'>
-							+${shippingFees.toFixed(2)}
+							+{formatPrice(shippingFees)}
 						</div>
 					</span>
 				</h3>
@@ -193,7 +195,7 @@ const CartSummary: FC<Props> = ({ cartItems, selectedItems = [], shippingFees })
 					<h3 className='flex-1 w-0 min-w-0 text-right'>
 						<span className='px-0.5'>
 							<div className='text-lg inline-block break-all font-semibold'>
-								-${discountAmount.toFixed(2)}
+								-{formatPrice(discountAmount)}
 							</div>
 						</span>
 					</h3>
@@ -207,7 +209,7 @@ const CartSummary: FC<Props> = ({ cartItems, selectedItems = [], shippingFees })
 				<h3 className='flex-1 w-0 min-w-0 text-right'>
 					<span className='px-0.5 text-main-primary'>
 						<div className='text-main-primary text-lg inline-block break-all'>
-							+$0.00
+							+{formatPrice(0)}
 						</div>
 					</span>
 				</h3>
@@ -219,11 +221,18 @@ const CartSummary: FC<Props> = ({ cartItems, selectedItems = [], shippingFees })
 				<h3 className='flex-1 w-0 min-w-0 text-right'>
 					<span className='px-0.5 text-main-primary'>
 						<div className='text-main-primary text-xl font-bold inline-block break-all'>
-							${total.toFixed(2)}
+							{formatPrice(total)}
 						</div>
 					</span>
 				</h3>
 			</div>
+			{!isBaseCurrency && (
+				<div className='mt-2.5 p-2 rounded-lg bg-muted/40 text-[11px] text-muted-foreground border border-border/40'>
+					<span>
+						Orders are charged in USD (${total.toFixed(2)}). Displayed {currency} prices are estimates.
+					</span>
+				</div>
+			)}
 			<div className='my-3'>
 				<Button
 					onClick={handleSaveCart}

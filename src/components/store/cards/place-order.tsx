@@ -14,6 +14,7 @@ import { useMutation } from '@tanstack/react-query';
 
 import { coinsEarned, coinsToDiscount, maxRedeemableCoins, MIN_REDEEM_COINS } from '@/lib/loyalty/coins';
 import { Coins } from 'lucide-react';
+import { useCurrency } from '@/providers/currency-provider';
 
 interface Props {
 	shippingAddress: ShippingAddress | null;
@@ -29,6 +30,7 @@ const PlaceOrderCard: FC<Props> = ({
 	coinBalance = 0,
 }) => {
 	const { id, coupon, subTotal, shippingFees, total } = cartData;
+	const { formatPrice, isBaseCurrency, currency } = useCurrency();
 	const emptyCart = useCartStore((state) => state.emptyCart);
 	const submissionStarted = useRef(false);
 	const [isRedirecting, setIsRedirecting] = useState(false);
@@ -109,6 +111,18 @@ const PlaceOrderCard: FC<Props> = ({
 					/>
 				)}
 				<Info title='Total' text={`$${finalTotal.toFixed(2)}`} isBold noBorder />
+				{!isBaseCurrency && (
+					<div className='-mt-1 mb-2 text-right text-xs text-muted-foreground font-medium'>
+						<span>≈ {formatPrice(finalTotal)}</span>
+					</div>
+				)}
+				{!isBaseCurrency && (
+					<div className='mt-2 p-2 rounded-lg bg-muted/40 text-[11px] text-muted-foreground border border-border/40'>
+						<span>
+							Charged in <strong>USD (${finalTotal.toFixed(2)})</strong>. Converted {currency} price is an estimate.
+						</span>
+					</div>
+				)}
 
 				{/* Estimated GoCoins Earned Badge */}
 				<div className='mt-3 pt-3 border-t border-border/10 flex items-center justify-between text-xs text-amber-600 bg-amber-500/10 px-3 py-2 rounded-lg'>

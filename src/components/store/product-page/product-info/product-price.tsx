@@ -1,5 +1,6 @@
 import { CartProductType } from '@/lib/types';
 import { cn } from '@/lib/utils';
+import { useCurrency } from '@/providers/currency-provider';
 import { FC, useEffect, useState } from 'react';
 
 interface SimplifiedSize {
@@ -25,6 +26,7 @@ const ProductPrice: FC<Props> = ({
 	handleChange,
 	weight,
 }) => {
+	const { formatPrice, isBaseCurrency, currency } = useCurrency();
 	const [selectedSize, setSelectedSize] = useState<SimplifiedSize | undefined>(
 		undefined,
 	);
@@ -55,11 +57,18 @@ const ProductPrice: FC<Props> = ({
 			0,
 		);
 
-		const minPrice = Math.min(...discountedPrices).toFixed(2);
-		const maxPrice = Math.max(...discountedPrices).toFixed(2);
+		const minPriceNum = Math.min(...discountedPrices);
+		const maxPriceNum = Math.max(...discountedPrices);
 
 		const priceDisplay =
-			minPrice === maxPrice ? `$${minPrice}` : `$${minPrice} - $${maxPrice}`;
+			minPriceNum === maxPriceNum
+				? formatPrice(minPriceNum)
+				: `${formatPrice(minPriceNum)} - ${formatPrice(maxPriceNum)}`;
+
+		const usdRangeDisplay =
+			minPriceNum === maxPriceNum
+				? `$${minPriceNum.toFixed(2)}`
+				: `$${minPriceNum.toFixed(2)} - $${maxPriceNum.toFixed(2)}`;
 
 		return (
 			<div>
@@ -72,6 +81,11 @@ const ProductPrice: FC<Props> = ({
 						{priceDisplay}
 					</span>
 				</div>
+				{!isBaseCurrency && !isCard && (
+					<div className='text-xs text-muted-foreground mt-0.5'>
+						<span>Charged in USD ({usdRangeDisplay})</span>
+					</div>
+				)}
 				{!sizeId && !isCard && (
 					<div className='text-orange-background text-xs leading-4 mt-1'>
 						<span>Note : Select a size to see the exact price</span>
@@ -93,18 +107,23 @@ const ProductPrice: FC<Props> = ({
 			<div>
 				<div className='text-orange-primary inline-block font-bold leading-none mr-2.5'>
 					<span className='inline-block text-4xl'>
-						${discountedPrice.toFixed(2)}
+						{formatPrice(discountedPrice)}
 					</span>
 				</div>
 				{selectedSize.price !== discountedPrice && (
 					<span className='text-neutral-400 inline-block text-xl font-normal leading-6 mr-2 line-through'>
-						${selectedSize.price.toFixed(2)}
+						{formatPrice(selectedSize.price)}
 					</span>
 				)}
 				{selectedSize.discount > 0 && (
 					<span className='inline-block text-orange-secondary text-xl leading-6'>
 						{selectedSize.discount}% off
 					</span>
+				)}
+				{!isBaseCurrency && (
+					<div className='text-xs text-muted-foreground mt-1'>
+						<span>Charged in USD (${discountedPrice.toFixed(2)})</span>
+					</div>
 				)}
 				<p className='mt-2 text-xs'>
 					{weight && <span>{weight}kg - </span>}
@@ -118,7 +137,7 @@ const ProductPrice: FC<Props> = ({
 		);
 	}
 
-	return null; // Return nothing if no valid sizeId
+	return null;
 };
 
 export default ProductPrice;
