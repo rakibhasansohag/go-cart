@@ -42,9 +42,9 @@ function dateFor(index: number) {
 }
 
 const users = {
-  admin: process.env.E2E_ADMIN_EMAIL ?? "rakibhasansohag133@gmail.com",
-  seller: process.env.E2E_SELLER_EMAIL ?? "drdevil133@gmail.com",
-  customer: process.env.E2E_CUSTOMER_EMAIL ?? "rakibdev133@gmail.com",
+  admin: process.env.E2E_ADMIN_EMAIL ?? "admin@email.com",
+  seller: process.env.E2E_SELLER_EMAIL ?? "seller@email.com",
+  customer: process.env.E2E_CUSTOMER_EMAIL ?? "user@email.com",
 } as const;
 
 const statusFixtures = [

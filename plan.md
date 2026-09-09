@@ -739,13 +739,13 @@ db:e2e:prepare`, then `bun run test:e2e:local`)
 
 <!-- s -->
 
-- [ ] **Phase 12.2 — Critical integration coverage**
+- [x] **Phase 12.2 — Critical integration coverage**
   - [x] Keep the existing focused unit coverage for payment security/status,
         fulfillment transitions, return rules/reconciliation, notifications,
         email rendering/outbox, and loyalty helpers
   - [x] Cover real database permissions, totals, coupon usage, inventory changes,
         and order transitions against the isolated PostgreSQL database
-  - [ ] Cover query invalidation against the real application runtime
+  - [x] Cover query invalidation against the real application runtime
     - [x] Add a local Docker integration smoke check for seeded role permissions,
           order/group/item totals, coupon usage limits, order transitions, and
           non-negative inventory quantities, plus paid amount/payment-event
@@ -757,7 +757,7 @@ db:e2e:prepare`, then `bun run test:e2e:local`)
         covered at the provider boundary
   - [x] Cover concurrent partial returns, full settlement, parent status
         propagation, and idempotent restocking against the database
-  - [ ] Cover dispute workflows and their refund/return consequences
+  - [x] Cover dispute workflows and their refund/return consequences
   - [x] Cover split/consolidated shipment invariants and carrier-event idempotency
   - [x] Cover concurrent GoCoins award/redemption invariants with an atomic
         balance-guarded redemption decrement and idempotency checks
