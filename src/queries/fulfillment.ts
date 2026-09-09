@@ -710,3 +710,147 @@ export async function getShipmentTracking(orderId: string) {
 
 	return shipments;
 }
+
+export async function bulkUpdatePackageStatus(input: {
+	storeId: string;
+	groupIds: string[];
+	nextStatus: PackageStatus;
+	batchId?: string;
+}) {
+	const user = await currentUser();
+	if (!user) throw new Error('Unauthenticated.');
+	if (user.privateMetadata.role !== 'SELLER') {
+		throw new Error('Seller privileges are required.');
+	}
+	if (!input.groupIds || input.groupIds.length === 0) {
+		return { successCount: 0, failedCount: 0, results: [] };
+	}
+
+	const store = await db.store.findFirst({
+		where: { id: input.storeId, userId: user.id },
+		select: { id: true, url: true },
+	});
+	if (!store) throw new Error('You do not own this store.');
+
+	const results: Array<{
+		groupId: string;
+		status: PackageStatus;
+		success: boolean;
+		error?: string;
+	}> = [];
+	const batchId =
+		input.batchId?.trim() ||
+		`${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+
+	for (const groupId of input.groupIds) {
+		try {
+			const idempotencyKey = `bulk-${batchId}-${groupId}-${input.nextStatus}`;
+			const res = await updatePackageStatus({
+				storeId: store.id,
+				groupId,
+				nextStatus: input.nextStatus,
+				idempotencyKey,
+			});
+			results.push({ groupId, status: res, success: true });
+		} catch (error) {
+			results.push({
+				groupId,
+				status: input.nextStatus,
+				success: false,
+				error: error instanceof Error ? error.message : 'Transition failed',
+			});
+		}
+	}
+
+	try {
+		updateTag(`store-orders-${store.url}`);
+		updateTag(`store-dashboard-${store.url}`);
+	} catch {
+		// No request cache scope in some execution contexts
+	}
+
+	const successCount = results.filter((r) => r.success).length;
+	const failedCount = results.filter((r) => !r.success).length;
+
+	return {
+		successCount,
+		failedCount,
+		results,
+	};
+}
+
+export async function getStorePackingSlipDetails(storeUrl: string, orderId: string) {
+	const user = await currentUser();
+	if (!user) throw new Error('Unauthenticated.');
+	if (user.privateMetadata.role !== 'SELLER') {
+		throw new Error('Seller privileges are required.');
+	}
+
+	const store = await db.store.findUnique({
+		where: { url: storeUrl },
+		select: {
+			id: true,
+			name: true,
+			url: true,
+			email: true,
+			phone: true,
+			logo: true,
+			cover: true,
+			userId: true,
+		},
+	});
+
+	if (!store) throw new Error('Store not found.');
+	if (store.userId !== user.id) {
+		throw new Error("You don't have permission to access this store.");
+	}
+
+	const orderGroup = await db.orderGroup.findFirst({
+		where: {
+			orderId,
+			storeId: store.id,
+		},
+		include: {
+			items: true,
+			order: {
+				include: {
+					shippingAddress: {
+						include: {
+							country: true,
+							user: {
+								select: {
+									email: true,
+									name: true,
+								},
+							},
+						},
+					},
+					paymentDetails: true,
+				},
+			},
+			shipmentAssignments: {
+				include: {
+					shipment: {
+						include: {
+							trackingEvents: {
+								orderBy: { occurredAt: 'desc' },
+								take: 1,
+							},
+						},
+					},
+				},
+				orderBy: { createdAt: 'desc' },
+				take: 1,
+			},
+		},
+	});
+
+	if (!orderGroup) {
+		throw new Error('Order package not found for this store.');
+	}
+
+	return {
+		store,
+		orderGroup,
+	};
+}

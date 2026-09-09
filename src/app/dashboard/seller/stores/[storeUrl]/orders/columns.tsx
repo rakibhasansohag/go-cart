@@ -18,6 +18,186 @@ import StoreOrderSummary from '@/components/dashboard/shared/store-order-summary
 import Link from 'next/link';
 import { formatOrderId, formatPackageId } from '@/lib/utils';
 import ShipmentStatusTag from '@/components/shared/shipment-status';
+import { FileText } from 'lucide-react';
+
+interface GetColumnsOptions {
+	storeUrl: string;
+	selectedIds: Set<string>;
+	onToggleSelect: (id: string) => void;
+	onToggleSelectAll: () => void;
+	isAllSelected: boolean;
+}
+
+export const getColumns = ({
+	storeUrl,
+	selectedIds,
+	onToggleSelect,
+	onToggleSelectAll,
+	isAllSelected,
+}: GetColumnsOptions): ColumnDef<StoreOrderType>[] => [
+	{
+		id: 'select',
+		header: () => (
+			<div className='flex items-center justify-center'>
+				<input
+					type='checkbox'
+					checked={isAllSelected}
+					onChange={onToggleSelectAll}
+					aria-label='Select all packages'
+					className='w-4 h-4 rounded border-border text-primary focus:ring-primary cursor-pointer'
+				/>
+			</div>
+		),
+		cell: ({ row }) => (
+			<div className='flex items-center justify-center'>
+				<input
+					type='checkbox'
+					checked={selectedIds.has(row.original.id)}
+					onChange={() => onToggleSelect(row.original.id)}
+					aria-label={`Select package ${row.original.id}`}
+					className='w-4 h-4 rounded border-border text-primary focus:ring-primary cursor-pointer'
+				/>
+			</div>
+		),
+	},
+	{
+		accessorKey: 'id',
+		header: 'Package ID',
+		cell: ({ row }) => {
+			return (
+				<span className='font-mono text-xs font-bold text-foreground bg-muted/60 px-2 py-1 rounded-md border border-border/50'>
+					{formatPackageId(row.original.id)}
+				</span>
+			);
+		},
+	},
+	{
+		accessorKey: 'orderId',
+		header: 'Order ID',
+		cell: ({ row }) => {
+			return (
+				<span className='font-mono text-xs font-semibold text-muted-foreground'>
+					{formatOrderId(row.original.order.id)}
+				</span>
+			);
+		},
+	},
+	{
+		accessorKey: 'customer',
+		header: 'Customer',
+		cell: ({ row }) => {
+			const address = row.original.order.shippingAddress;
+			const fullName = `${address.firstName} ${address.lastName}`.trim() || 'Customer';
+			const email = address.user?.email || '';
+			return (
+				<div className='flex flex-col min-w-0 max-w-[180px]'>
+					<span className='font-semibold text-xs text-foreground truncate'>
+						{fullName}
+					</span>
+					<span className='text-[11px] text-muted-foreground truncate' title={email}>
+						{email}
+					</span>
+				</div>
+			);
+		},
+	},
+	{
+		accessorKey: 'products',
+		header: 'Products',
+		cell: ({ row }) => {
+			const items = row.original.items;
+			return (
+				<div className='flex flex-wrap gap-1 items-center'>
+					{items.map((item, i) => (
+						<Link
+							key={`${item.id}-${i}`}
+							href={`/product/${item.productSlug}?variant=${item.variantSlug}`}
+							target='_blank'
+							rel='noopener noreferrer'
+							title={`View ${item.name} in new tab`}
+							className='hover:opacity-80 transition-opacity'
+						>
+							<Image
+								src={item.image}
+								alt={item.name}
+								width={100}
+								height={100}
+								className='w-7 h-7 object-cover rounded-full border border-border shadow-2xs'
+								style={{ transform: `translateX(-${i * 10}px)` }}
+							/>
+						</Link>
+					))}
+				</div>
+			);
+		},
+	},
+	{
+		accessorKey: 'paymentStatus',
+		header: 'Payment',
+		cell: ({ row }) => {
+			return (
+				<div>
+					<PaymentStatusTag
+						status={row.original.order.paymentStatus as PaymentStatus}
+						isTable
+					/>
+				</div>
+			);
+		},
+	},
+	{
+		accessorKey: 'packageStatus',
+		header: 'Preparation',
+		cell: ({ row }) => {
+			return (
+				<div>
+					<PackageStatusSelect
+						groupId={row.original.id}
+						orderId={row.original.order.id}
+						status={row.original.packageStatus}
+						storeId={row.original.storeId}
+					/>
+				</div>
+			);
+		},
+	},
+	{
+		accessorKey: 'shipmentStatus',
+		header: 'Shipment',
+		cell: ({ row }) =>
+			row.original.shipment ? (
+				<ShipmentStatusTag status={row.original.shipment.status} />
+			) : (
+				<span className='text-xs text-muted-foreground'>Not created</span>
+			),
+	},
+	{
+		accessorKey: 'total',
+		header: 'Total',
+		cell: ({ row }) => {
+			return <span>${row.original.total.toFixed(2)}</span>;
+		},
+	},
+	{
+		id: 'actions',
+		header: '',
+		cell: ({ row }) => {
+			return (
+				<div className='flex items-center justify-end gap-2'>
+					<Link
+						href={`/dashboard/seller/stores/${storeUrl}/orders/${row.original.order.id}/packing-slip`}
+						target='_blank'
+						title='Print Packing Slip & Shipping Label'
+						className='p-2 rounded-lg border border-border/70 bg-background hover:bg-muted text-muted-foreground hover:text-foreground transition-all cursor-pointer'
+					>
+						<FileText className='w-4 h-4' />
+					</Link>
+					<ViewOrderButton group={row.original} />
+				</div>
+			);
+		},
+	},
+];
 
 export const columns: ColumnDef<StoreOrderType>[] = [
 	{

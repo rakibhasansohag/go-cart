@@ -542,6 +542,7 @@ export const getStoreOrders = async (
 				include: {
 					items: true,
 					coupon: true,
+					store: { select: { id: true, name: true, url: true } },
 					shipmentAssignments: {
 						include: { shipment: true },
 						orderBy: { createdAt: 'asc' },

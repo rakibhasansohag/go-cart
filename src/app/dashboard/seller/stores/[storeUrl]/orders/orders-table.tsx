@@ -1,16 +1,19 @@
 'use client';
 
-import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useMemo, useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import DataTable from '@/components/ui/data-table';
 import { getStoreOrders } from '@/queries/store';
-import { columns } from './columns';
+import { bulkUpdatePackageStatus } from '@/queries/fulfillment';
+import { getColumns } from './columns';
 import { queryKeys } from '@/lib/query-keys';
 import { StoreOrderType } from '@/lib/types';
 import { exportOrdersToCSV } from '@/lib/export-utils';
-import { Download } from 'lucide-react';
+import { Download, Layers, Loader2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useOrderStatusSync } from '@/hooks/use-order-status-sync';
+import { toast } from 'sonner';
+import { PackageStatus } from '@prisma/client';
 
 interface OrdersTableProps {
 	storeUrl: string;
@@ -34,11 +37,14 @@ const STATUS_TABS = [
 ];
 
 export default function OrdersTable({ storeUrl, initialData }: OrdersTableProps) {
+	const queryClient = useQueryClient();
 	const [page, setPage] = useState(initialData?.page ?? 1);
 	const initialPageSize = [5, 10, 20, 50].includes(initialData?.limit ?? 10) ? initialData?.limit ?? 10 : 10;
 	const [pageSize, setPageSize] = useState(initialPageSize);
 	const [search, setSearch] = useState('');
 	const [status, setStatus] = useState('ALL');
+	const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+	const [isBulkUpdating, setIsBulkUpdating] = useState<boolean>(false);
 
 	const { data, isPending } = useQuery({
 		queryKey: queryKeys.dashboard.orders(storeUrl, page, pageSize, search, status),
@@ -74,6 +80,87 @@ export default function OrdersTable({ storeUrl, initialData }: OrdersTableProps)
 	const totalCount = data?.totalCount ?? 0;
 	const totalPages = data?.totalPages ?? 1;
 
+	const onToggleSelect = (id: string) => {
+		setSelectedIds((prev) => {
+			const next = new Set(prev);
+			if (next.has(id)) next.delete(id);
+			else next.add(id);
+			return next;
+		});
+	};
+
+	const onToggleSelectAll = () => {
+		if (orders.length === 0) return;
+		const allSelected = orders.every((o) => selectedIds.has(o.id));
+		if (allSelected) {
+			setSelectedIds((prev) => {
+				const next = new Set(prev);
+				orders.forEach((o) => next.delete(o.id));
+				return next;
+			});
+		} else {
+			setSelectedIds((prev) => {
+				const next = new Set(prev);
+				orders.forEach((o) => next.add(o.id));
+				return next;
+			});
+		}
+	};
+
+	const isAllSelected = orders.length > 0 && orders.every((o) => selectedIds.has(o.id));
+
+	const columns = useMemo(
+		() =>
+			getColumns({
+				storeUrl,
+				selectedIds,
+				onToggleSelect,
+				onToggleSelectAll,
+				isAllSelected,
+			}),
+		[storeUrl, selectedIds, isAllSelected],
+	);
+
+	const handleBulkTransition = async (nextStatus: PackageStatus) => {
+		if (selectedIds.size === 0) return;
+		const storeId = orders[0]?.storeId;
+		if (!storeId) {
+			toast.error('Store information not found.');
+			return;
+		}
+
+		setIsBulkUpdating(true);
+		try {
+			const res = await bulkUpdatePackageStatus({
+				storeId,
+				groupIds: Array.from(selectedIds),
+				nextStatus,
+			});
+
+			if (res.successCount > 0) {
+				toast.success(
+					`Updated ${res.successCount} package${res.successCount > 1 ? 's' : ''} to ${nextStatus}.`
+				);
+				await Promise.all([
+					queryClient.invalidateQueries({
+						queryKey: queryKeys.dashboard.orders(storeUrl),
+					}),
+					queryClient.invalidateQueries({
+						queryKey: ['orders'],
+					}),
+				]);
+				setSelectedIds(new Set());
+			} else {
+				const errorMsg = res.results.find((r) => r.error)?.error || 'Transition not allowed for chosen packages.';
+				toast.error(`Bulk update failed: ${errorMsg}`);
+			}
+		} catch (error) {
+			toast.error(error instanceof Error ? error.message : 'Bulk status update failed.');
+		} finally {
+			setIsBulkUpdating(false);
+		}
+	};
+
 	return (
 		<div className='space-y-4'>
 			{/* Status Filter Tabs & Actions */}
@@ -87,6 +174,7 @@ export default function OrdersTable({ storeUrl, initialData }: OrdersTableProps)
 								onClick={() => {
 									setStatus(tab.value);
 									setPage(1);
+									setSelectedIds(new Set());
 								}}
 								className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer border ${
 									isActive
@@ -112,6 +200,68 @@ export default function OrdersTable({ storeUrl, initialData }: OrdersTableProps)
 				</Button>
 			</div>
 
+			{/* Bulk Fulfillment Action Bar */}
+			{selectedIds.size > 0 && (
+				<div
+					data-testid='bulk-fulfillment-bar'
+					className='flex flex-wrap items-center justify-between gap-3 p-3 bg-primary/10 border border-primary/20 rounded-xl animate-in fade-in slide-in-from-top-2'
+				>
+					<div className='flex items-center gap-2.5'>
+						<span className='inline-flex items-center justify-center bg-primary text-primary-foreground text-xs font-bold w-6 h-6 rounded-full'>
+							{selectedIds.size}
+						</span>
+						<span className='text-xs font-semibold text-foreground flex items-center gap-1.5'>
+							<Layers className='w-3.5 h-3.5 text-primary' />
+							{selectedIds.size} package{selectedIds.size > 1 ? 's' : ''} selected
+						</span>
+					</div>
+
+					<div className='flex items-center gap-2 flex-wrap'>
+						<span className='text-xs text-muted-foreground font-medium'>Bulk Transition:</span>
+						<Button
+							size='sm'
+							variant='outline'
+							disabled={isBulkUpdating}
+							onClick={() => handleBulkTransition('PROCESSING')}
+							className='h-7 text-xs font-semibold border-border hover:bg-muted cursor-pointer'
+						>
+							{isBulkUpdating ? <Loader2 className='w-3 h-3 animate-spin mr-1' /> : null}
+							Mark Processing
+						</Button>
+						<Button
+							size='sm'
+							variant='outline'
+							disabled={isBulkUpdating}
+							onClick={() => handleBulkTransition('READY_FOR_HANDOFF')}
+							className='h-7 text-xs font-semibold border-border hover:bg-muted cursor-pointer'
+						>
+							{isBulkUpdating ? <Loader2 className='w-3 h-3 animate-spin mr-1' /> : null}
+							Ready for Handoff
+						</Button>
+						<Button
+							size='sm'
+							variant='outline'
+							disabled={isBulkUpdating}
+							onClick={() => handleBulkTransition('HANDED_OFF')}
+							className='h-7 text-xs font-semibold border-border hover:bg-muted cursor-pointer'
+						>
+							{isBulkUpdating ? <Loader2 className='w-3 h-3 animate-spin mr-1' /> : null}
+							Handed Off
+						</Button>
+						<Button
+							size='sm'
+							variant='ghost'
+							disabled={isBulkUpdating}
+							onClick={() => setSelectedIds(new Set())}
+							className='h-7 text-xs text-muted-foreground hover:text-foreground cursor-pointer px-2'
+						>
+							<X className='w-3 h-3 mr-1' />
+							Clear
+						</Button>
+					</div>
+				</div>
+			)}
+
 			<DataTable
 				filterValue='id'
 				data={orders}
@@ -121,14 +271,19 @@ export default function OrdersTable({ storeUrl, initialData }: OrdersTableProps)
 				pageCount={totalPages}
 				pageIndex={page - 1}
 				pageSize={pageSize}
-				onPageChange={(newPage) => setPage(newPage)}
+				onPageChange={(newPage) => {
+					setPage(newPage);
+					setSelectedIds(new Set());
+				}}
 				onPageSizeChange={(newSize) => {
 					setPageSize(newSize);
 					setPage(1);
+					setSelectedIds(new Set());
 				}}
 				onSearchChange={(newSearch) => {
 					setSearch(newSearch);
 					setPage(1);
+					setSelectedIds(new Set());
 				}}
 				searchValue={search}
 				isLoading={isPending}

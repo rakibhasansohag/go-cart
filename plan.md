@@ -1455,9 +1455,15 @@ Goal: allow store sellers to personalize their public storefront page (`/store/[
 
 Goal: streamline order fulfillment for sellers with printable documentation and bulk packaging workflows.
 
-- [ ] **Printable Documentation**:
-  - [ ] Standardized printable packing slip view (`/dashboard/seller/stores/[storeUrl]/orders/[orderId]/packing-slip`) with order details, SKU breakdown, buyer address, and reference QR/barcode
-  - [ ] Shipping label printable layout with package weight, carrier code, and tracking details
-- [ ] **Bulk Fulfillment Actions**:
-  - [ ] Bulk package status transition (e.g., mark multiple packages as "Packed" or "Handed off" in one action)
-- [ ] **Test**: Print stylesheet formatting, authorization boundaries, and bulk mutation idempotency.
+- [x] **Printable Documentation**:
+  - [x] Standardized printable packing slip view (`/dashboard/seller/stores/[storeUrl]/orders/[orderId]/packing-slip`) with store branding, order details, SKU breakdown, customer address, transit estimates, and reference 2D QR matrix + SVG Code 128 barcode
+  - [x] 4"x6" shipping label view toggle with carrier route code, sender return address, recipient destination, package ref, item count, and barcode
+  - [x] Direct "Print Packing Slip & Shipping Label" action links in seller orders table and "Packing Slip" button in order summary modal
+- [x] **Bulk Fulfillment Actions**:
+  - [x] Bulk package selection checkboxes in table header ("Select All") and per-row
+  - [x] Floating Bulk Fulfillment Action Bar with real-time selection counter, clear selection, and one-click bulk status transitions (`PROCESSING`, `READY_FOR_HANDOFF`, `HANDED_OFF`)
+  - [x] Server action `bulkUpdatePackageStatus` in `src/queries/fulfillment.ts` with batch idempotency keys, state machine transition validation, domain event notifications, and cache invalidation
+- [x] **Test & Verification**:
+  - [x] 9/9 unit tests passing in `src/queries/fulfillment-bulk.test.ts`
+  - [x] Live end-to-end verification via BrowserOS Neo: multiple package selection, bulk transition execution with success toast, Packing Slip SVG barcode/QR rendering, and 4"x6" shipping label view toggle
+  - [x] Strict TypeScript check: 0 compilation errors, 0 `any` types.

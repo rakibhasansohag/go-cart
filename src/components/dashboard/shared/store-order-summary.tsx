@@ -8,7 +8,7 @@ import {
 import { FC } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ExternalLink, Printer } from 'lucide-react';
+import { ExternalLink, FileText, Printer } from 'lucide-react';
 import PackageStatusSelect from '../forms/package-status-select';
 import ShipmentStatusTag from '@/components/shared/shipment-status';
 import ProductStatusTag from '@/components/shared/product-status';
@@ -92,14 +92,26 @@ const StoreOrderSummary: FC<Props> = ({ group }) => {
 							)}
 						</div>
 					</div>
-					<Button
-						variant='outline'
-						size='sm'
-						onClick={handlePrint}
-						className='print:hidden gap-1.5 cursor-pointer font-medium text-xs'
-					>
-						<Printer className='w-4 h-4' /> Print Receipt
-					</Button>
+					<div className='flex items-center gap-2 print:hidden'>
+						{group.store?.url && (
+							<Link
+								href={`/dashboard/seller/stores/${group.store.url}/orders/${group.order.id}/packing-slip`}
+								target='_blank'
+								className='inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border bg-background hover:bg-muted text-xs font-semibold text-foreground transition-colors'
+							>
+								<FileText className='w-4 h-4' />
+								<span>Packing Slip</span>
+							</Link>
+						)}
+						<Button
+							variant='outline'
+							size='sm'
+							onClick={handlePrint}
+							className='gap-1.5 cursor-pointer font-medium text-xs'
+						>
+							<Printer className='w-4 h-4' /> Print Receipt
+						</Button>
+					</div>
 				</div>
 				<div className='mt-3 grid grid-cols-1 gap-4 py-4 border-b border-border mb-4 text-sm'>
 					{/* Shipping & Delivery info */}
