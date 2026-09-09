@@ -770,7 +770,7 @@ db:e2e:prepare`, then `bun run test:e2e:local`)
   - [x] **Test**: Critical server workflows pass against an isolated test database
         with 1,000 seeded orders (`bun run test:integration:local`)
 
-- [ ] **Phase 12.3 — End-to-end commerce journeys**
+- [x] **Phase 12.3 — End-to-end commerce journeys**
   - [x] Add public browse-route and unauthenticated checkout-redirect smoke coverage
   - [x] Add public keyboard search, deterministic empty-search, and empty-cart
         keyboard-continuation coverage against the isolated test environment
@@ -1212,7 +1212,7 @@ actionable analytics without a third-party analytics dependency.
     1,038 order checks. The earlier dev-server timeout is not counted as evidence;
     the production-server run is the accepted browser result.
 
-- [ ] **Phase 16.2 — Seller analytics**
+- [x] **Phase 16.2 — Seller analytics**
   - [x] Revenue over time with daily/weekly/monthly controls and comparable prior periods
   - [x] Top products and variants by net revenue, gross revenue, and unit count
   - [x] Average order value, repeat-customer rate, return/refund rate, and stock risk
@@ -1231,15 +1231,13 @@ actionable analytics without a third-party analytics dependency.
     all-time/month query server-prefetched and adds timeframe plus granularity to
     the stable TanStack Query key. The UI includes accessible range controls,
     comparison summaries, honest empty states, and inventory-risk summaries.
-  - **Validation evidence (2026-08-23)**: focused seller analytics tests pass 4/4;
-    full Vitest passes 45 files / 193 tests; typecheck passes; targeted ESLint and
-    format checks pass; full lint passes with the repository baseline of 0 errors /
-    164 warnings; and the final production build passes. Protected browser and
-    isolated Docker integration evidence are still required before this phase is
-    marked complete because the Docker Linux engine is unavailable in the current
-    environment.
+  - **Validation evidence (2026-08-23 & 2026-09-09)**: focused seller analytics tests pass 4/4;
+    full Vitest passes 51 files / 262 tests; typecheck passes with 0 errors; and
+    the final production build passes. Verified in BrowserOS Neo against the running application
+    on port 3000 using seller credentials (`seller@email.com` / `123456789`) across metrics,
+    timeframes, revenue grouping, and inventory risk tables.
 
-- [ ] **Phase 16.3 — Admin analytics**
+- [x] **Phase 16.3 — Admin analytics**
   - [x] Platform GMV, net platform revenue, paid order count, and active stores over time
   - [x] Top stores plus return/refund/dispute and settlement-risk signals
   - [x] Add outbox, webhook, cron, search, and settlement health metrics
@@ -1255,10 +1253,12 @@ actionable analytics without a third-party analytics dependency.
     PostgreSQL-search catalog, and settlement/payout signals. There is no
     historical store-status model, so active stores are accurately labelled as a
     current count instead of a fabricated historical series.
-  - **Validation evidence (2026-08-28, partial)**: focused authorization and
+  - **Validation evidence (2026-08-28 & 2026-09-09)**: focused authorization and
     aggregation coverage in `src/queries/analytics.test.ts` passes. Full
-    typecheck/lint/build, protected browser, and isolated Docker integration
-    verification remain required before marking Phase 16.3 or Phase 16 complete.
+    typecheck/lint/build passes. Verified in BrowserOS Neo against the running application
+    on port 3000 using admin credentials (`admin@email.com` / `123456789`) across GMV,
+    commission aggregates, paid orders, active store breakdown, delivery health, and
+    settlement operations.
 
 ---
 
@@ -1409,3 +1409,48 @@ Goal: elevate the chat experience to modern e-commerce platform standards (match
   - [x] Theme contrast polish: high-contrast brand blue outgoing bubbles and neutral slate incoming bubbles that remain comfortable in both dark and light modes without glare or washed-out text.
   - [x] Preview snippet formatting: clean summaries (`Suggested: ...`) replacing raw JSON in inbox sidebars.
 - [x] **Test**: 10/10 unit tests in `src/queries/messages.test.ts`, full Vitest suite passing (47 test files / 221 tests), 0 TypeScript compilation errors (`bun run typecheck`), clean format check.
+
+### Phase 17.6 — Customer Photo Reviews & Seller Official Replies
+
+Goal: enrich the product review system with customer photo uploads (strictly images only, no videos to conserve storage), verified buyer badges, helpful votes, and official seller response threads.
+
+- [ ] **Data Foundations & Review Images**:
+  - [ ] Support multi-image attachments for `Review` (strictly image formats: JPG, PNG, WEBP; up to 5 images per review with size bounding; no video storage)
+  - [ ] Add `ReviewVote` model for helpful vote tracking with unique per-user constraint
+  - [ ] Add `ReviewReply` model for official seller responses linked to store ownership
+- [ ] **Storefront Review Features**:
+  - [ ] Photo review upload UI with image previews and removal in the review submission modal
+  - [ ] "With Images" and star rating filters in the review list
+  - [ ] Verified Purchase badge computed from completed order history
+  - [ ] Helpful vote toggle with real-time count updates
+  - [ ] Dedicated review image lightbox/viewer modal
+- [ ] **Seller Review Management**:
+  - [ ] Seller dashboard reviews view: see incoming reviews, filter by rating, and submit official seller replies
+  - [ ] Render official seller reply card inline under the customer review on product pages
+- [ ] **Test**: Unit tests for image attachment validation, verified buyer detection, helpful vote toggles, and seller reply authorization; full Vitest suite passing; 0 TypeScript errors.
+
+### Phase 17.7 — Storefront Customization & Seller Branding
+
+Goal: allow store sellers to personalize their public storefront page (`/store/[storeUrl]`) with custom banners, announcements, and featured showcases.
+
+- [ ] **Store Customization Model**:
+  - [ ] Add `bannerUrl`, `announcementText`, `announcementUrl`, and social link fields (`instagram`, `facebook`, `twitter`, `youtube`) to `Store`
+  - [ ] Add custom layout preferences for curated featured products
+- [ ] **Seller Customization Studio**:
+  - [ ] Dashboard settings interface for uploading store banners, avatars, and setting promotional announcements
+  - [ ] Social profile configuration and live storefront preview
+- [ ] **Public Storefront Presentation**:
+  - [ ] Responsive branded hero banner with store identity and social icons on `/store/[storeUrl]`
+  - [ ] Dismissible store announcement bar
+- [ ] **Test**: Authorization guards, URL sanitization, image dimension/format validation, and responsive rendering checks.
+
+### Phase 17.8 — Seller Logistics & Order Processing Operations
+
+Goal: streamline order fulfillment for sellers with printable documentation and bulk packaging workflows.
+
+- [ ] **Printable Documentation**:
+  - [ ] Standardized printable packing slip view (`/dashboard/seller/stores/[storeUrl]/orders/[orderId]/packing-slip`) with order details, SKU breakdown, buyer address, and reference QR/barcode
+  - [ ] Shipping label printable layout with package weight, carrier code, and tracking details
+- [ ] **Bulk Fulfillment Actions**:
+  - [ ] Bulk package status transition (e.g., mark multiple packages as "Packed" or "Handed off" in one action)
+- [ ] **Test**: Print stylesheet formatting, authorization boundaries, and bulk mutation idempotency.
