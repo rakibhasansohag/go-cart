@@ -102,6 +102,14 @@ export const StoreFormSchema = z.object({
 		}),
 	featured: z.boolean().default(false).optional(),
 	status: z.string().default('PENDING').optional(),
+	announcementText: z.string().max(200, { message: 'Announcement cannot exceed 200 characters.' }).optional().or(z.literal('')),
+	announcementUrl: z.string().url({ message: 'Invalid URL format.' }).optional().or(z.literal('')),
+	announcementActive: z.boolean().default(false).optional(),
+	instagram: z.string().max(100).optional().or(z.literal('')),
+	facebook: z.string().max(100).optional().or(z.literal('')),
+	twitter: z.string().max(100).optional().or(z.literal('')),
+	youtube: z.string().max(100).optional().or(z.literal('')),
+	tiktok: z.string().max(100).optional().or(z.literal('')),
 });
 
 // Point : Products

@@ -24,8 +24,9 @@ export const upsertStore = async (store: Partial<Store>) => {
 		// Ensure user is authenticated
 		if (!user) throw new Error('Unauthenticated.');
 
-		// Verify seller permission
-		if (user.privateMetadata.role !== 'SELLER')
+		// Verify seller or admin permission
+		const role = user.privateMetadata.role;
+		if (role !== 'SELLER' && role !== 'ADMIN')
 			throw new Error(
 				'Unauthorized Access: Seller Privileges Required for Entry.',
 			);
@@ -37,6 +38,15 @@ export const upsertStore = async (store: Partial<Store>) => {
 			});
 
 			if (existingStoreById) {
+				if (
+					existingStoreById.userId !== user.id &&
+					role !== 'ADMIN'
+				) {
+					throw new Error(
+						'Unauthorized Access: You do not have permission to modify this store.',
+					);
+				}
+
 				// Server-side Guard: Email and Store URL are immutable once created.
 				// Strip email and url from update payload so they can never be modified.
 				const updateData = { ...store };
@@ -817,6 +827,14 @@ export const getStorePageDetails = async (storeUrl: string) => {
 			cover: true,
 			averageRating: true,
 			numReviews: true,
+			announcementText: true,
+			announcementUrl: true,
+			announcementActive: true,
+			instagram: true,
+			facebook: true,
+			twitter: true,
+			youtube: true,
+			tiktok: true,
 			_count: {
 				select: {
 					followers: true,

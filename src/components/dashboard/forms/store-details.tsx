@@ -73,6 +73,14 @@ const StoreDetails: FC<StoreDetailsProps> = ({ data }) => {
 			url: data?.url || '',
 			featured: data?.featured,
 			status: data?.status.toString(),
+			announcementText: data?.announcementText || '',
+			announcementUrl: data?.announcementUrl || '',
+			announcementActive: data?.announcementActive || false,
+			instagram: data?.instagram || '',
+			facebook: data?.facebook || '',
+			twitter: data?.twitter || '',
+			youtube: data?.youtube || '',
+			tiktok: data?.tiktok || '',
 		},
 	});
 
@@ -127,6 +135,14 @@ const StoreDetails: FC<StoreDetailsProps> = ({ data }) => {
 				url: data?.url,
 				featured: data?.featured,
 				status: data?.status,
+				announcementText: data?.announcementText || '',
+				announcementUrl: data?.announcementUrl || '',
+				announcementActive: data?.announcementActive || false,
+				instagram: data?.instagram || '',
+				facebook: data?.facebook || '',
+				twitter: data?.twitter || '',
+				youtube: data?.youtube || '',
+				tiktok: data?.tiktok || '',
 			});
 		}
 	}, [data, form]);
@@ -144,6 +160,14 @@ const StoreDetails: FC<StoreDetailsProps> = ({ data }) => {
 			cover: values.cover[0].url,
 			url: values.url,
 			featured: values.featured,
+			announcementText: values.announcementText || null,
+			announcementUrl: values.announcementUrl || null,
+			announcementActive: values.announcementActive || false,
+			instagram: values.instagram || null,
+			facebook: values.facebook || null,
+			twitter: values.twitter || null,
+			youtube: values.youtube || null,
+			tiktok: values.tiktok || null,
 			createdAt: new Date(),
 			updatedAt: new Date(),
 		});
@@ -331,6 +355,156 @@ const StoreDetails: FC<StoreDetailsProps> = ({ data }) => {
 									</FormItem>
 								)}
 							/>
+
+							<div className='rounded-lg border p-4 space-y-4 bg-muted/20'>
+								<div className='space-y-0.5'>
+									<h3 className='text-base font-semibold text-foreground'>
+										Storefront Announcement Bar
+									</h3>
+									<p className='text-sm text-muted-foreground'>
+										Highlight sales, discounts, or shipping notices across your public store header.
+									</p>
+								</div>
+								<FormField
+									control={form.control}
+									name='announcementActive'
+									render={({ field }) => (
+										<FormItem className='flex flex-row items-start space-x-3 space-y-0 rounded-md border p-3 bg-background'>
+											<FormControl>
+												<Checkbox
+													checked={field.value}
+													onCheckedChange={field.onChange}
+												/>
+											</FormControl>
+											<div className='space-y-1 leading-none'>
+												<FormLabel>Enable Announcement Bar</FormLabel>
+												<FormDescription>
+													Show this banner at the top of your public store page.
+												</FormDescription>
+											</div>
+										</FormItem>
+									)}
+								/>
+								<div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+									<FormField
+										disabled={isLoading}
+										control={form.control}
+										name='announcementText'
+										render={({ field }) => (
+											<FormItem className='flex-1'>
+												<FormLabel>Announcement Message</FormLabel>
+												<FormControl>
+													<Input
+														placeholder='e.g. Free shipping on all orders over $50!'
+														{...field}
+													/>
+												</FormControl>
+												<FormMessage />
+											</FormItem>
+										)}
+									/>
+									<FormField
+										disabled={isLoading}
+										control={form.control}
+										name='announcementUrl'
+										render={({ field }) => (
+											<FormItem className='flex-1'>
+												<FormLabel>Promo Link (Optional)</FormLabel>
+												<FormControl>
+													<Input
+														placeholder='https://... or /browse?offer=sale'
+														{...field}
+													/>
+												</FormControl>
+												<FormMessage />
+											</FormItem>
+										)}
+									/>
+								</div>
+							</div>
+
+							<div className='rounded-lg border p-4 space-y-4 bg-muted/20'>
+								<div className='space-y-0.5'>
+									<h3 className='text-base font-semibold text-foreground'>
+										Social Media Profiles
+									</h3>
+									<p className='text-sm text-muted-foreground'>
+										Connect your store official social accounts so shoppers can follow your brand.
+									</p>
+								</div>
+								<div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+									<FormField
+										disabled={isLoading}
+										control={form.control}
+										name='instagram'
+										render={({ field }) => (
+											<FormItem>
+												<FormLabel>Instagram</FormLabel>
+												<FormControl>
+													<Input placeholder='https://instagram.com/yourbrand' {...field} />
+												</FormControl>
+												<FormMessage />
+											</FormItem>
+										)}
+									/>
+									<FormField
+										disabled={isLoading}
+										control={form.control}
+										name='facebook'
+										render={({ field }) => (
+											<FormItem>
+												<FormLabel>Facebook</FormLabel>
+												<FormControl>
+													<Input placeholder='https://facebook.com/yourbrand' {...field} />
+												</FormControl>
+												<FormMessage />
+											</FormItem>
+										)}
+									/>
+									<FormField
+										disabled={isLoading}
+										control={form.control}
+										name='twitter'
+										render={({ field }) => (
+											<FormItem>
+												<FormLabel>X (Twitter)</FormLabel>
+												<FormControl>
+													<Input placeholder='https://x.com/yourbrand' {...field} />
+												</FormControl>
+												<FormMessage />
+											</FormItem>
+										)}
+									/>
+									<FormField
+										disabled={isLoading}
+										control={form.control}
+										name='youtube'
+										render={({ field }) => (
+											<FormItem>
+												<FormLabel>YouTube</FormLabel>
+												<FormControl>
+													<Input placeholder='https://youtube.com/@yourbrand' {...field} />
+												</FormControl>
+												<FormMessage />
+											</FormItem>
+										)}
+									/>
+									<FormField
+										disabled={isLoading}
+										control={form.control}
+										name='tiktok'
+										render={({ field }) => (
+											<FormItem>
+												<FormLabel>TikTok</FormLabel>
+												<FormControl>
+													<Input placeholder='https://tiktok.com/@yourbrand' {...field} />
+												</FormControl>
+												<FormMessage />
+											</FormItem>
+										)}
+									/>
+								</div>
+							</div>
 							<Button type='submit' disabled={isSaveDisabled}>
 								{isLoading
 									? 'loading...'

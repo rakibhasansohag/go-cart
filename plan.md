@@ -1433,16 +1433,23 @@ Goal: enrich the product review system with customer photo uploads (strictly ima
 
 Goal: allow store sellers to personalize their public storefront page (`/store/[storeUrl]`) with custom banners, announcements, and featured showcases.
 
-- [ ] **Store Customization Model**:
-  - [ ] Add `bannerUrl`, `announcementText`, `announcementUrl`, and social link fields (`instagram`, `facebook`, `twitter`, `youtube`) to `Store`
-  - [ ] Add custom layout preferences for curated featured products
-- [ ] **Seller Customization Studio**:
-  - [ ] Dashboard settings interface for uploading store banners, avatars, and setting promotional announcements
-  - [ ] Social profile configuration and live storefront preview
-- [ ] **Public Storefront Presentation**:
-  - [ ] Responsive branded hero banner with store identity and social icons on `/store/[storeUrl]`
-  - [ ] Dismissible store announcement bar
-- [ ] **Test**: Authorization guards, URL sanitization, image dimension/format validation, and responsive rendering checks.
+- [x] **Store Customization Model**:
+  - [x] Add `announcementText`, `announcementUrl`, `announcementActive`, and social link fields (`instagram`, `facebook`, `twitter`, `youtube`, `tiktok`) to `Store` (migration `20260909220000_storefront_customization`)
+  - [x] Integrate safe select projections in `getStorePageDetails`
+- [x] **Seller Customization Studio**:
+  - [x] Dashboard settings interface for store banners, avatars, and promotional announcement toggle/text/URL (`/dashboard/seller/stores/[storeUrl]/settings`)
+  - [x] Social profile configuration (Instagram, Facebook, X, YouTube, TikTok) with validation and seller authorization guards
+- [x] **Public Storefront Presentation**:
+  - [x] Branded storefront with cover banner, store avatar, verified badge, description, and social media icon badges on `/store/[storeUrl]`
+  - [x] Dismissible promotional announcement banner bar with link support and session-based persistence
+- [x] **Test & Verification**:
+  - [x] Unit tests in `src/queries/store-customization.test.ts` (6 passing tests)
+  - [x] End-to-end browser verification via BrowserOS Neo (seller dashboard form saving & live storefront presentation verified)
+  - [x] Strict TypeScript check: 0 errors, 0 `any` types.
+
+### Excluded Scope Decisions (Explicit User Directives)
+- **Cart & Checkout Save for Later / Multi-store Split Shipping**: Excluded per user directive; cart and checkout remain focused on unified standard order group calculation.
+- **Video Reviews**: Excluded per user directive to optimize storage; reviews support high-resolution image attachments with moderation.
 
 ### Phase 17.8 — Seller Logistics & Order Processing Operations
 

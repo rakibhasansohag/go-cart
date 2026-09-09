@@ -204,6 +204,15 @@ model Store {
   defaultDeliveryTimeMin              Int         @default(7)
   defaultDeliveryTimeMax              Int         @default(31)
 
+  announcementText                    String?
+  announcementUrl                     String?
+  announcementActive                  Boolean     @default(false)
+  instagram                           String?
+  facebook                            String?
+  twitter                             String?
+  youtube                             String?
+  tiktok                              String?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
