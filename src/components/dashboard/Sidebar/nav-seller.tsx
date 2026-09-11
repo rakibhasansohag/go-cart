@@ -23,6 +23,7 @@ import {
 } from '@/queries/store';
 import { getStoreProductQA } from '@/queries/qa';
 import { getSellerConversations } from '@/queries/messages';
+import { getStoreReviews } from '@/queries/review-actions';
 
 interface SidebarNavSellerProps {
 	menuLinks: DashboardSidebarMenuInterface[];
@@ -95,6 +96,11 @@ export default function SidebarNavSeller({
 			queryClient.prefetchQuery({
 				queryKey: ['seller-conversations', activeStore, 'all', ''],
 				queryFn: () => getSellerConversations(activeStore),
+			});
+		} else if (linkItem === 'reviews') {
+			queryClient.prefetchQuery({
+				queryKey: ['seller-reviews', activeStore, 1, 10, undefined, undefined],
+				queryFn: () => getStoreReviews(activeStore),
 			});
 		} else if (linkItem === 'settings') {
 			queryClient.prefetchQuery({

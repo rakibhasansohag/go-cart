@@ -141,21 +141,38 @@ export const getProductFilteredReviews = async (
 	const skip = (page - 1) * pageSize;
 	const take = pageSize;
 
+	// Identify current user for hasVoted mapping
+	const clerkUser = await currentUser();
+
 	const statistics = await getRatingStatistics(productId);
 	// Fetch reviews from the database
-	const reviews = await db.review.findMany({
+	const rawReviews = await db.review.findMany({
 		where: reviewFilter,
 		include: {
 			images: true,
 			user: true,
+			reply: { include: { store: true } },
+			votes: clerkUser ? { where: { userId: clerkUser.id } } : false,
 		},
 		orderBy: sortOption,
-		skip, // Skip records for pagination
-		take, // Take records for pagination
+		skip,
+		take,
+	});
+
+	const reviews = rawReviews.map((r) => {
+		const votes = 'votes' in r && Array.isArray(r.votes)
+			? (r.votes as { helpful: boolean }[])
+			: [];
+		return {
+			...r,
+			hasVoted: votes.length > 0 ? votes[0].helpful : null,
+			reply: r.reply ?? null,
+		};
 	});
 
 	return { reviews, statistics };
 };
+
 
 // Function: getShippingDetails
 // Description: Retrieves and calculates shipping details based on user country and product.

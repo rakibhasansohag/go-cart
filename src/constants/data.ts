@@ -115,6 +115,11 @@ export const SellerDashboardSidebarOptions: DashboardSidebarMenuInterface[] = [
 		link: 'earnings',
 	},
 	{
+		label: 'Reviews',
+		icon: 'reviews',
+		link: 'reviews',
+	},
+	{
 		label: 'Q&A',
 		icon: 'questions',
 		link: 'questions',

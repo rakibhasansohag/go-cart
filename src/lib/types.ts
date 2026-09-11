@@ -8,6 +8,7 @@ import {
 	ProductVariantImage,
 	Review,
 	ReviewImage,
+	ReviewReply,
 	ShippingAddress,
 	ShippingFeeMethod,
 	Size,
@@ -227,9 +228,13 @@ export type RatingStatisticsType = Prisma.PromiseReturnType<
 	typeof getRatingStatistics
 >;
 
+export type ReviewReplyWithStoreType = ReviewReply & { store: Store };
+
 export type ReviewWithImageType = Review & {
 	images: ReviewImage[];
 	user: User;
+	hasVoted: boolean | null;
+	reply: ReviewReplyWithStoreType | null;
 };
 
 export type ReviewsFiltersType = {

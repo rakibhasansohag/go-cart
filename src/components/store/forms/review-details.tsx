@@ -280,7 +280,7 @@ export default function ReviewDetails({
 														// only update local state here — don't call field.onChange directly
 														setImages((prev) => {
 															const updated = [...prev, { url }];
-															return updated.length <= 3 ? updated : prev;
+															return updated.length <= 5 ? updated : prev;
 														});
 													}}
 													onRemove={(url) => {
@@ -288,7 +288,7 @@ export default function ReviewDetails({
 															prev.filter((img) => img.url !== url),
 														);
 													}}
-													maxImages={3}
+													maxImages={5}
 												/>
 											</FormControl>
 										</FormItem>

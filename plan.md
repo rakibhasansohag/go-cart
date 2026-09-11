@@ -1414,20 +1414,20 @@ Goal: elevate the chat experience to modern e-commerce platform standards (match
 
 Goal: enrich the product review system with customer photo uploads (strictly images only, no videos to conserve storage), verified buyer badges, helpful votes, and official seller response threads.
 
-- [ ] **Data Foundations & Review Images**:
-  - [ ] Support multi-image attachments for `Review` (strictly image formats: JPG, PNG, WEBP; up to 5 images per review with size bounding; no video storage)
-  - [ ] Add `ReviewVote` model for helpful vote tracking with unique per-user constraint
-  - [ ] Add `ReviewReply` model for official seller responses linked to store ownership
-- [ ] **Storefront Review Features**:
-  - [ ] Photo review upload UI with image previews and removal in the review submission modal
-  - [ ] "With Images" and star rating filters in the review list
-  - [ ] Verified Purchase badge computed from completed order history
-  - [ ] Helpful vote toggle with real-time count updates
-  - [ ] Dedicated review image lightbox/viewer modal
-- [ ] **Seller Review Management**:
-  - [ ] Seller dashboard reviews view: see incoming reviews, filter by rating, and submit official seller replies
-  - [ ] Render official seller reply card inline under the customer review on product pages
-- [ ] **Test**: Unit tests for image attachment validation, verified buyer detection, helpful vote toggles, and seller reply authorization; full Vitest suite passing; 0 TypeScript errors.
+- [x] **Data Foundations & Review Images**:
+  - [x] Support multi-image attachments for `Review` (strictly image formats: JPG, PNG, WEBP; up to 5 images per review with size bounding; no video storage)
+  - [x] Add `ReviewVote` model for helpful vote tracking with unique per-user constraint
+  - [x] Add `ReviewReply` model for official seller responses linked to store ownership
+- [x] **Storefront Review Features**:
+  - [x] Photo review upload UI with image previews and removal in the review submission modal
+  - [x] "With Images" and star rating filters in the review list
+  - [x] Verified Purchase badge computed from completed order history
+  - [x] Helpful vote toggle with real-time count updates
+  - [x] Dedicated review image lightbox/viewer modal
+- [x] **Seller Review Management**:
+  - [x] Seller dashboard reviews view: see incoming reviews, filter by rating, and submit official seller replies
+  - [x] Render official seller reply card inline under the customer review on product pages
+- [x] **Test**: Unit tests for image attachment validation, verified buyer detection, helpful vote toggles, and seller reply authorization; full Vitest suite passing; 0 TypeScript errors.
 
 ### Phase 17.7 — Storefront Customization & Seller Branding
 

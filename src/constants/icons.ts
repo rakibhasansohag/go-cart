@@ -20,6 +20,7 @@ import {
 	Mail,
 	RotateCcw,
 	Settings2,
+	Star,
 	UserRound,
 	WalletCards,
 } from 'lucide-react';
@@ -129,5 +130,10 @@ export const icons = [
 		label: 'Messages',
 		value: 'messages',
 		path: MessagesIcon,
+	},
+	{
+		label: 'Reviews',
+		value: 'reviews',
+		path: Star,
 	},
 ];

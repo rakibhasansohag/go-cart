@@ -472,7 +472,7 @@ export const AddReviewSchema = z.object({
   review: z.string().min(10, "Your feedback matters! Please write a review of minimum 10 characters."),
   
   quantity: z.string().optional().default("1"),
-  images: z.object({ url: z.string() }).array().max(3, "You can upload up to 3 images for the review."),
+  images: z.object({ url: z.string() }).array().max(5, "You can upload up to 5 images for the review."),
   color: z.string().min(1, "Please select a color."),
 });
 

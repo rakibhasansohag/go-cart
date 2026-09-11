@@ -18,6 +18,8 @@ import { getProductFilteredReviews } from '@/queries/product-optimized';
 import ProductPageReviewsSkeletonLoader from '../../skeletons/product-page/reviews';
 import { DotLoader } from 'react-spinners';
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
+import ReviewImageLightbox from '../../shared/review-image-lightbox';
+
 
 interface Props {
 	productId: string;
@@ -50,6 +52,10 @@ const ProductReviews: FC<Props> = ({
 	const [statistics, setStatistics] =
 		useState<RatingStatisticsType>(defaultData);
 	const [averageRating, setAverageRating] = useState<number>(rating);
+	const [lightbox, setLightbox] = useState<{
+		images: string[];
+		startIndex: number;
+	} | null>(null);
 
 	const half = Math.ceil(data.length / 2);
 
@@ -130,12 +136,24 @@ const ProductReviews: FC<Props> = ({
 									<>
 										<div className='flex flex-col gap-3'>
 											{data.slice(0, half).map((review) => (
-												<ReviewCard key={review.id} review={review} />
+												<ReviewCard
+													key={review.id}
+													review={review}
+													onImageClick={(imgs, idx) =>
+														setLightbox({ images: imgs, startIndex: idx })
+													}
+												/>
 											))}
 										</div>
 										<div className='flex flex-col gap-3'>
 											{data.slice(half).map((review) => (
-												<ReviewCard key={review.id} review={review} />
+												<ReviewCard
+													key={review.id}
+													review={review}
+													onImageClick={(imgs, idx) =>
+														setLightbox({ images: imgs, startIndex: idx })
+													}
+												/>
 											))}
 										</div>
 									</>
@@ -161,7 +179,7 @@ const ProductReviews: FC<Props> = ({
 				</div>
 			)}
 
-			<div className='mt-10'>
+				<div className='mt-10'>
 				<ReviewDetails
 					productId={productId}
 					variantsInfo={variantsInfo}
@@ -171,6 +189,14 @@ const ProductReviews: FC<Props> = ({
 					setAverageRating={setAverageRating}
 				/>
 			</div>
+
+			{lightbox && (
+				<ReviewImageLightbox
+					images={lightbox.images}
+					startIndex={lightbox.startIndex}
+					onClose={() => setLightbox(null)}
+				/>
+			)}
 		</div>
 	);
 };

@@ -2,6 +2,7 @@
 
 import { db } from '@/lib/db';
 import { ReviewDetailsType } from '@/lib/types';
+import { OrderStatus } from '@prisma/client';
 import { currentUser } from '@clerk/nextjs/server';
 import { getRatingStatistics } from './product';
 
@@ -40,6 +41,19 @@ export const upsertReview = async (
 		if (existingReview) {
 			review_data = { ...review_data, id: existingReview.id };
 		}
+
+		// Detect verified purchase (user has a delivered order containing this product)
+		const deliveredItem = await db.orderItem.findFirst({
+			where: {
+				productId,
+				orderGroup: {
+					order: { userId: user.id },
+					status: OrderStatus.Delivered,
+				},
+			},
+		});
+		const isVerifiedPurchase = !!deliveredItem;
+
 		// Upsert review into the database
 		const reviewDetails = await db.review.upsert({
 			where: {
@@ -47,6 +61,7 @@ export const upsertReview = async (
 			},
 			update: {
 				...review_data,
+				isVerifiedPurchase,
 				images: {
 					deleteMany: {},
 					create: review_data.images.map((img) => ({
@@ -57,6 +72,7 @@ export const upsertReview = async (
 			},
 			create: {
 				...review_data,
+				isVerifiedPurchase,
 				images: {
 					create: review_data.images.map((img) => ({
 						url: img.url,
@@ -68,8 +84,20 @@ export const upsertReview = async (
 			include: {
 				images: true,
 				user: true,
+				reply: { include: { store: true } },
+				votes: { where: { userId: user.id } },
 			},
 		});
+
+		const mappedReview = {
+			...reviewDetails,
+			hasVoted:
+				reviewDetails.votes.length > 0
+					? reviewDetails.votes[0].helpful
+					: null,
+			reply: reviewDetails.reply ?? null,
+		};
+
 
 		// Calculate the new average rating
 		const productReviews = await db.review.findMany({
@@ -104,7 +132,7 @@ export const upsertReview = async (
 			: 'Thank you for submitting your review!';
 
 		return {
-			review: reviewDetails,
+			review: mappedReview,
 			rating: averageRating,
 			statistics,
 			message,
