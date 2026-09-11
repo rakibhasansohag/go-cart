@@ -1883,3 +1883,19 @@ model ExchangeRate {
   @@unique([base, target])
   @@index([target])
 }
+
+model HomepageSection {
+  id         String   @id @default(uuid())
+  sectionKey String   @unique
+  name       String
+  title      String?
+  subtitle   String?
+  isActive   Boolean  @default(true)
+  order      Int      @default(0)
+  config     Json?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([order])
+  @@index([isActive])
+}

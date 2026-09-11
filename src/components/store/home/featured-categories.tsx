@@ -5,7 +5,11 @@ import { useSuspenseQuery } from '@tanstack/react-query';
 import { getHomeFeaturedCategories } from '@/queries/home';
 import { queryKeys } from '@/lib/query-keys';
 
-export default function FeaturedCategories() {
+export default function FeaturedCategories({
+	title,
+}: {
+	title?: string | null;
+}) {
 	const { data: categories } = useSuspenseQuery<FeaturedCategoryType[]>({
 		queryKey: queryKeys.home.featuredCategories(),
 		queryFn: getHomeFeaturedCategories,
@@ -20,7 +24,7 @@ export default function FeaturedCategories() {
 				</div>
 				<div className='relative flex justify-center'>
 					<h2 id='featured-categories-heading' className='px-4 bg-secondary z-10 text-foreground font-extrabold text-[24px]'>
-						Featured Categories
+						{title || 'Featured Categories'}
 					</h2>
 				</div>
 			</div>

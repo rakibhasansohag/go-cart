@@ -6,15 +6,21 @@ import { getProducts } from '@/queries/product';
 import { queryKeys } from '@/lib/query-keys';
 import ProductCard from '@/components/store/cards/product/product-card';
 
-export default function MoreToLoveSection() {
+export default function MoreToLoveSection({
+	title,
+	itemsLimit = 12,
+}: {
+	title?: string | null;
+	itemsLimit?: number;
+}) {
 	const { data: productsData } = useSuspenseQuery({
 		queryKey: queryKeys.products.list({ sort: 'most-popular' }, 'most-popular', null),
-		queryFn: () => getProducts({}, 'most-popular', null, 12),
+		queryFn: () => getProducts({}, 'most-popular', null, 24),
 	});
 
 	const { products } = productsData;
-	// Limit to max 2 rows of products (12 products max across responsive grid)
-	const topPopularProducts = (products || []).slice(0, 12);
+	// Limit to configured count (default 12)
+	const topPopularProducts = (products || []).slice(0, itemsLimit);
 
 	return (
 		<section id='more-to-love' aria-labelledby='more-to-love-heading'>
@@ -25,7 +31,7 @@ export default function MoreToLoveSection() {
 				</div>
 				<div className='relative flex justify-center'>
 					<h2 id='more-to-love-heading' className='px-4 bg-secondary z-10 text-foreground font-extrabold text-[24px]'>
-						More to love
+						{title || 'More to love'}
 					</h2>
 				</div>
 			</div>

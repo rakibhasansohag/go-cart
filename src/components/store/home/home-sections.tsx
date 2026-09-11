@@ -2,31 +2,38 @@
 
 import React from 'react';
 import { useSuspenseQuery } from '@tanstack/react-query';
-import Image from 'next/image';
 import { SimpleProduct } from '@/lib/types';
 import { getHomeDataDynamic } from '@/queries/home';
 import { queryKeys } from '@/lib/query-keys';
+import { HomepageSectionConfig } from '@/lib/homepage-types';
 import HomeMainSwiper from './main/home-swiper';
 import Featured from './main/featured';
 import HomeUserCard from './main/user/user';
 import AnimatedDeals from './animated-deals';
-import MainSwiper from '../shared/swiper';
 
-export function HomeMainAndDeals({
+export interface UserMetadataType {
+	imageUrl: string;
+	fullName: string | null;
+	role?: string;
+}
+
+export function HeroGridSection({
 	user,
+	title,
+	subtitle,
+	config,
 }: {
-	user: {
-		imageUrl: string;
-		fullName: string | null;
-		role?: string;
-	} | null;
+	user: UserMetadataType | null;
+	title?: string | null;
+	subtitle?: string | null;
+	config?: HomepageSectionConfig | null;
 }) {
 	const { data } = useSuspenseQuery({
 		queryKey: queryKeys.home.dynamic(['best-deals', 'super-deals', 'user-card', 'featured']),
 		queryFn: () =>
 			getHomeDataDynamic([
 				{ property: 'offer', value: 'best-deals', type: 'simple' },
-				{ property: 'offer', value: 'super-deals', type: 'full' },
+				{ property: 'offer', value: 'super-deals', type: 'simple' },
 				{ property: 'offer', value: 'user-card', type: 'simple' },
 				{ property: 'offer', value: 'featured', type: 'simple' },
 			]),
@@ -34,30 +41,35 @@ export function HomeMainAndDeals({
 
 	const products_featured = (data.products_featured || []) as SimpleProduct[];
 	const products_user_card = (data.products_user_card || []) as SimpleProduct[];
-	const products_best_deals = (data.products_best_deals || []) as SimpleProduct[];
-	const products_super_deals = data.products_super_deals || [];
+
+	const showSideAd = config?.showSideAd !== false;
+	const showUserCard = config?.showUserCard !== false;
 
 	return (
-		<>
-			{/* Main Grid */}
-			<section aria-label='Featured hero products and promotions' className='w-full grid gap-2 min-[1170px]:grid-cols-[1fr_350px] min-[1465px]:grid-cols-[200px_1fr_350px]'>
-				{/* Left Ad */}
+		<section
+			aria-label={title || 'Featured hero products and promotions'}
+			className='w-full grid gap-2 min-[1170px]:grid-cols-[1fr_350px] min-[1465px]:grid-cols-[200px_1fr_350px]'
+		>
+			{/* Left Ad */}
+			{showSideAd && (
 				<div
 					className='cursor-pointer hidden min-[1465px]:block bg-cover bg-no-repeat rounded-md'
 					style={{
 						backgroundImage: 'url(/assets/images/ads/winter-sports-clothing.webp)',
 					}}
 				/>
-				{/* Middle Swiper & Featured */}
-				<div className='space-y-2 h-fit'>
-					<HomeMainSwiper />
-					<Featured
-						products={products_featured.filter(
-							(product): product is SimpleProduct => 'variantSlug' in product,
-						)}
-					/>
-				</div>
-				{/* Right User Card */}
+			)}
+			{/* Middle Swiper & Featured */}
+			<div className='space-y-2 h-fit'>
+				<HomeMainSwiper />
+				<Featured
+					products={products_featured.filter(
+						(product): product is SimpleProduct => 'variantSlug' in product,
+					)}
+				/>
+			</div>
+			{/* Right User Card */}
+			{showUserCard && (
 				<div className='h-full'>
 					<HomeUserCard
 						products={products_user_card.filter(
@@ -66,25 +78,67 @@ export function HomeMainAndDeals({
 						user={user}
 					/>
 				</div>
-			</section>
+			)}
+		</section>
+	);
+}
 
-			{/* Animated deals */}
-			<section aria-label='Live flash deals' className='mt-2 hidden min-[915px]:block'>
-				<AnimatedDeals
-					products={products_best_deals.filter(
-						(product): product is SimpleProduct => 'variantSlug' in product,
-					)}
-				/>
-			</section>
+export function SuperDealsSection({
+	title,
+	subtitle,
+	config,
+}: {
+	title?: string | null;
+	subtitle?: string | null;
+	config?: HomepageSectionConfig | null;
+}) {
+	const { data } = useSuspenseQuery({
+		queryKey: queryKeys.home.dynamic(['best-deals', 'super-deals', 'user-card', 'featured']),
+		queryFn: () =>
+			getHomeDataDynamic([
+				{ property: 'offer', value: 'best-deals', type: 'simple' },
+				{ property: 'offer', value: 'super-deals', type: 'simple' },
+				{ property: 'offer', value: 'user-card', type: 'simple' },
+				{ property: 'offer', value: 'featured', type: 'simple' },
+			]),
+	});
 
-			{/* Super Deals Swiper */}
-			<section aria-label='Super deals carousel' className='mt-10 bg-background rounded-md'>
-				<MainSwiper products={products_super_deals} type='curved'>
-					<div className='mb-4 pl-4 flex items-center justify-between'>
-						<Image src='/assets/images/ads/super-deals.avif' alt='Super deals' width={200} height={50} style={{ width: 200, height: 50 }} />
-					</div>
-				</MainSwiper>
-			</section>
+	const products_best_deals = (data.products_best_deals || []) as SimpleProduct[];
+	const products_super_deals = (data.products_super_deals || []) as SimpleProduct[];
+	const combined = [...products_best_deals, ...products_super_deals];
+	const uniqueDeals = Array.from(
+		new Map(combined.map((p) => [p.slug || p.variantSlug, p])).values()
+	);
+
+	const maxItems = typeof config?.itemsLimit === 'number' ? config.itemsLimit : 10;
+	const countdownEnd = typeof config?.countdownEnd === 'string' ? config.countdownEnd : undefined;
+	const badgeText = typeof config?.badge === 'string' ? config.badge : undefined;
+
+	return (
+		<AnimatedDeals
+			products={uniqueDeals.slice(0, maxItems).filter(
+				(product): product is SimpleProduct => 'variantSlug' in product,
+			)}
+			title={title}
+			subtitle={subtitle}
+			targetDate={countdownEnd}
+			badgeText={badgeText}
+		/>
+	);
+}
+
+// Backward-compatible compound export
+export function HomeMainAndDeals({
+	user,
+}: {
+	user: UserMetadataType | null;
+}) {
+	return (
+		<>
+			<HeroGridSection user={user} />
+			<div className='mt-6'>
+				<SuperDealsSection />
+			</div>
 		</>
 	);
 }

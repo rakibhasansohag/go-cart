@@ -17,6 +17,7 @@ import {
 import {
 	FolderTree,
 	Landmark,
+	LayoutTemplate,
 	Mail,
 	RotateCcw,
 	Settings2,
@@ -85,6 +86,11 @@ export const icons = [
 		label: 'Settlements',
 		value: 'settlements',
 		path: Landmark,
+	},
+	{
+		label: 'Homepage',
+		value: 'homepage',
+		path: LayoutTemplate,
 	},
 	{
 		label: 'Marketplace Settings',

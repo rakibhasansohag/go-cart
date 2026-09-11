@@ -12,6 +12,7 @@ export const queryKeys = {
 	home: {
 		dynamic: (tags: string[]) => ['home', 'dynamic', tags] as const,
 		featuredCategories: () => ['home', 'featuredCategories'] as const,
+		layout: () => ['home', 'layout'] as const,
 	},
 	profile: {
 		orderLists: () => ['profile', 'orders'] as const,
@@ -108,5 +109,6 @@ export const queryKeys = {
 		inventory: (storeUrl: string) =>
 			['dashboard', 'inventory', storeUrl] as const,
 		adminInventory: () => ['dashboard', 'adminInventory'] as const,
+		adminHomepageLayout: () => ['dashboard', 'admin', 'homepage', 'layout'] as const,
 	},
 } as const;
