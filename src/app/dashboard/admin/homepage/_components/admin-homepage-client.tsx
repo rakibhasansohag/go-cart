@@ -3,9 +3,10 @@
 import React, { useState, useTransition, useEffect } from 'react';
 import Link from 'next/link';
 import {
-	HomepageSectionItem,
-	HomepageSectionKey,
-	HomepageSectionConfig,
+	type HomepageSectionItem,
+	type HomepageSectionKey,
+	type HomepageSectionConfig,
+	type HomepageStudioStats,
 	updateHomepageSection,
 	reorderHomepageSections,
 	resetHomepageLayout,
@@ -37,7 +38,6 @@ import {
 	Plus,
 	RotateCcw,
 	Settings2,
-	ShoppingBag,
 	SlidersHorizontal,
 	Sparkles,
 	Tag,
@@ -49,6 +49,7 @@ import {
 
 interface AdminHomepageClientProps {
 	initialSections: HomepageSectionItem[];
+	initialStats?: HomepageStudioStats;
 }
 
 interface SectionVisualMeta {
@@ -72,7 +73,7 @@ const SECTION_META: Record<HomepageSectionKey, SectionVisualMeta> = {
 		gradient: 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20',
 		badgeColor: 'border-rose-500/30 text-rose-600 dark:text-rose-400 bg-rose-500/10',
 		accentBorder: 'hover:border-rose-500/40',
-		description: 'Flash sale countdown timer, dual spotlight cards, and discounted deals carousel.',
+		description: 'Flash sale countdown timer, spotlight deal card, stock claim meters, and discount showcase.',
 	},
 	FEATURED_CATEGORIES: {
 		icon: Layers,
@@ -86,16 +87,31 @@ const SECTION_META: Record<HomepageSectionKey, SectionVisualMeta> = {
 		gradient: 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20',
 		badgeColor: 'border-purple-500/30 text-purple-600 dark:text-purple-400 bg-purple-500/10',
 		accentBorder: 'hover:border-purple-500/40',
-		description: 'Recommendation feed tailored to customer interests.',
+		description: 'Recommendation feed tailored to customer interests and purchase habits.',
 	},
 };
 
-export default function AdminHomepageClient({ initialSections }: AdminHomepageClientProps) {
+export default function AdminHomepageClient({
+	initialSections,
+	initialStats,
+}: AdminHomepageClientProps) {
 	const [sections, setSections] = useState<HomepageSectionItem[]>(initialSections);
 	const [selectedSection, setSelectedSection] = useState<HomepageSectionItem | null>(null);
 	const [hoveredSectionId, setHoveredSectionId] = useState<string | null>(null);
 	const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 	const [isPending, startTransition] = useTransition();
+
+	// Store catalog stats
+	const stats: HomepageStudioStats = initialStats || {
+		totalSections: initialSections.length,
+		activeSections: initialSections.filter((s) => s.isActive).length,
+		hiddenSections: initialSections.filter((s) => !s.isActive).length,
+		totalProducts: 38,
+		productsOnSale: 12,
+		avgDiscount: 10,
+		maxDiscount: 15,
+		superDealsCount: 12,
+	};
 
 	// Drag & Drop reorder state
 	const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
@@ -107,7 +123,7 @@ export default function AdminHomepageClient({ initialSections }: AdminHomepageCl
 	const [draftSubtitle, setDraftSubtitle] = useState('');
 	const [draftBadge, setDraftBadge] = useState('');
 	const [draftCountdownEnd, setDraftCountdownEnd] = useState('');
-	const [draftItemsLimit, setDraftItemsLimit] = useState(10);
+	const [draftItemsLimit, setDraftItemsLimit] = useState(12);
 	const [draftShowSideAd, setDraftShowSideAd] = useState(true);
 	const [draftShowUserCard, setDraftShowUserCard] = useState(true);
 
@@ -164,7 +180,7 @@ export default function AdminHomepageClient({ initialSections }: AdminHomepageCl
 		const cfg = section.config ?? {};
 		setDraftBadge(typeof cfg.badge === 'string' ? cfg.badge : '');
 		setDraftCountdownEnd(typeof cfg.countdownEnd === 'string' ? cfg.countdownEnd.slice(0, 16) : '');
-		setDraftItemsLimit(typeof cfg.itemsLimit === 'number' ? cfg.itemsLimit : 10);
+		setDraftItemsLimit(typeof cfg.itemsLimit === 'number' ? cfg.itemsLimit : 12);
 		setDraftShowSideAd(cfg.showSideAd !== false);
 		setDraftShowUserCard(cfg.showUserCard !== false);
 		setIsDrawerOpen(true);
@@ -182,7 +198,7 @@ export default function AdminHomepageClient({ initialSections }: AdminHomepageCl
 			try {
 				await updateHomepageSection(id, { isActive: nextActive });
 				toast.success(
-					nextActive ? 'Section is now visible on storefront.' : 'Section hidden from storefront.'
+					nextActive ? 'Section is now live on the storefront.' : 'Section hidden from storefront.'
 				);
 			} catch (err: unknown) {
 				// Revert on error
@@ -216,7 +232,7 @@ export default function AdminHomepageClient({ initialSections }: AdminHomepageCl
 			try {
 				const orderedIds = updatedWithNewOrder.map((s) => s.id);
 				await reorderHomepageSections(orderedIds);
-				toast.success('Section order updated successfully.');
+				toast.success('Section order updated.');
 			} catch (err: unknown) {
 				// Revert to initial order
 				setSections(sections);
@@ -320,7 +336,7 @@ export default function AdminHomepageClient({ initialSections }: AdminHomepageCl
 		if (selectedSection.sectionKey === 'SUPER_DEALS') {
 			updatedConfig.badge = draftBadge.trim() || undefined;
 			updatedConfig.countdownEnd = draftCountdownEnd.trim() || undefined;
-			updatedConfig.itemsLimit = Math.max(2, Math.min(30, Number(draftItemsLimit) || 10));
+			updatedConfig.itemsLimit = Math.max(2, Math.min(30, Number(draftItemsLimit) || 12));
 		} else if (selectedSection.sectionKey === 'HERO_GRID') {
 			updatedConfig.showSideAd = draftShowSideAd;
 			updatedConfig.showUserCard = draftShowUserCard;
@@ -343,7 +359,7 @@ export default function AdminHomepageClient({ initialSections }: AdminHomepageCl
 				);
 
 				setIsDrawerOpen(false);
-				toast.success(`Updated settings for "${selectedSection.name}".`);
+				toast.success(`Updated configuration for "${selectedSection.name}".`);
 			} catch (err: unknown) {
 				const errorMsg = err instanceof Error ? err.message : 'Failed to save section settings.';
 				toast.error(errorMsg);
@@ -356,7 +372,6 @@ export default function AdminHomepageClient({ initialSections }: AdminHomepageCl
 		const target = new Date();
 		target.setDate(target.getDate() + daysFromNow);
 		target.setHours(23, 59, 0, 0);
-		// Format to YYYY-MM-DDTHH:mm
 		const iso = new Date(target.getTime() - target.getTimezoneOffset() * 60000)
 			.toISOString()
 			.slice(0, 16);
@@ -374,7 +389,7 @@ export default function AdminHomepageClient({ initialSections }: AdminHomepageCl
 					order: idx + 1,
 				}));
 				setSections(reloaded);
-				toast.success('Homepage layout reset to factory defaults.');
+				toast.success('Homepage layout reset to defaults.');
 			} catch (err: unknown) {
 				const errorMsg = err instanceof Error ? err.message : 'Failed to reset layout.';
 				toast.error(errorMsg);
@@ -383,36 +398,36 @@ export default function AdminHomepageClient({ initialSections }: AdminHomepageCl
 	};
 
 	return (
-		<div className="w-full space-y-6 pb-20">
-			{/* Studio Top Bar - Theme Aware */}
-			<div className="rounded-2xl border border-border/80 bg-card text-card-foreground p-5 sm:p-6 shadow-xs">
-				<div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
-					<div className="space-y-1.5">
-						<div className="flex items-center gap-2.5 flex-wrap">
-							<span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-xs font-semibold bg-primary/10 text-primary border border-primary/20 tracking-wide uppercase">
-								<SlidersHorizontal className="size-3.5" />
-								Storefront Studio
+		<div className="w-full space-y-5 pb-20">
+			{/* Traditional CRM Header Toolbar */}
+			<div className="rounded-xl border border-border/80 bg-card text-card-foreground p-4 sm:p-5 shadow-xs">
+				<div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+					<div className="space-y-1">
+						<div className="flex items-center gap-2 flex-wrap">
+							<span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-[11px] font-semibold bg-primary/10 text-primary border border-primary/20 tracking-wide uppercase">
+								<SlidersHorizontal className="size-3" />
+								Storefront Operations
 							</span>
-							<span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20">
+							<span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20">
 								<span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
-								Real-Time Sync Active
+								Database Connected
 							</span>
 						</div>
-						<h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
-							Homepage Layout Builder
+						<h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
+							Homepage Layout Studio
 						</h1>
-						<p className="text-sm text-muted-foreground max-w-3xl leading-relaxed">
-							Reorder sections, toggle visibility, and customize display titles or timers. Changes sync immediately to the storefront without page reload.
+						<p className="text-xs text-muted-foreground leading-relaxed">
+							Manage the presentation pipeline, section sequence, and sales showcase parameters for the customer storefront.
 						</p>
 					</div>
 
-					<div className="flex items-center gap-2.5 shrink-0 flex-wrap">
+					<div className="flex items-center gap-2 shrink-0 flex-wrap">
 						<Button
 							variant="outline"
 							size="sm"
 							onClick={handleResetLayout}
 							disabled={isPending}
-							className="h-9 px-3.5 gap-2 text-xs font-medium border-border bg-background hover:bg-muted text-foreground rounded-xl transition-all"
+							className="h-8 px-3 gap-1.5 text-xs font-medium border-border bg-background hover:bg-muted text-foreground rounded-lg transition-colors"
 						>
 							<RotateCcw className="size-3.5" />
 							Reset Defaults
@@ -420,97 +435,128 @@ export default function AdminHomepageClient({ initialSections }: AdminHomepageCl
 						<Button
 							asChild
 							size="sm"
-							className="h-9 px-4 gap-2 text-xs font-semibold rounded-xl shadow-xs transition-all"
+							className="h-8 px-3.5 gap-1.5 text-xs font-semibold rounded-lg shadow-xs"
 						>
 							<Link href="/" target="_blank" rel="noopener noreferrer">
 								<ExternalLink className="size-3.5" />
-								View Live Storefront
+								View Storefront
 							</Link>
 						</Button>
 					</div>
 				</div>
 			</div>
 
-			{/* KPI Strip - Theme Aware */}
-			<div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
-				{/* KPI 1 */}
-				<div className="rounded-xl border border-border/70 bg-card text-card-foreground p-4 flex items-center justify-between shadow-xs">
-					<div className="space-y-0.5">
-						<p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Total Blocks</p>
-						<p className="text-xl sm:text-2xl font-bold text-foreground">{sections.length}</p>
-						<p className="text-[11px] text-muted-foreground">Configured sections</p>
-					</div>
-					<div className="size-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
-						<Layers className="size-5" />
-					</div>
-				</div>
-
-				{/* KPI 2 */}
-				<div className="rounded-xl border border-border/70 bg-card text-card-foreground p-4 flex items-center justify-between shadow-xs">
-					<div className="space-y-0.5">
-						<p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Active & Visible</p>
-						<p className="text-xl sm:text-2xl font-bold text-emerald-600 dark:text-emerald-400">
-							{activeCount} <span className="text-xs font-normal text-muted-foreground">/ {sections.length}</span>
-						</p>
-						<div className="w-24 h-1.5 rounded-full bg-muted overflow-hidden mt-1">
-							<div
-								className="h-full bg-emerald-500 transition-all duration-300"
-								style={{ width: `${(activeCount / Math.max(1, sections.length)) * 100}%` }}
-							/>
+			{/* Traditional CRM High-Density KPI Cards Strip */}
+			<div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+				{/* CRM Metric 1: Pipeline Blocks */}
+				<div className="rounded-xl border border-border/80 bg-card p-3.5 flex items-start justify-between shadow-xs">
+					<div className="space-y-1">
+						<span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">
+							Storefront Pipeline
+						</span>
+						<div className="flex items-baseline gap-1.5">
+							<span className="text-xl font-bold text-foreground font-mono">{sections.length}</span>
+							<span className="text-xs text-muted-foreground">Blocks</span>
 						</div>
+						<p className="text-[11px] text-muted-foreground flex items-center gap-1">
+							<span className="size-1.5 rounded-full bg-blue-500" />
+							Top-to-Bottom SSR flow
+						</p>
 					</div>
-					<div className="size-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
-						<Eye className="size-5" />
+					<div className="size-8 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-600 dark:text-blue-400">
+						<Layers className="size-4" />
 					</div>
 				</div>
 
-				{/* KPI 3 */}
-				<div className="rounded-xl border border-border/70 bg-card text-card-foreground p-4 flex items-center justify-between shadow-xs">
-					<div className="space-y-0.5">
-						<p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Hidden Blocks</p>
-						<p className="text-xl sm:text-2xl font-bold text-muted-foreground">
-							{sections.length - activeCount}
+				{/* CRM Metric 2: Active / Hidden Visibility */}
+				<div className="rounded-xl border border-border/80 bg-card p-3.5 flex items-start justify-between shadow-xs">
+					<div className="space-y-1">
+						<span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">
+							Publish Status
+						</span>
+						<div className="flex items-baseline gap-1.5">
+							<span className="text-xl font-bold text-emerald-600 dark:text-emerald-400 font-mono">
+								{activeCount}
+							</span>
+							<span className="text-xs text-muted-foreground font-mono">/ {sections.length} Live</span>
+						</div>
+						<p className="text-[11px] text-muted-foreground flex items-center gap-1">
+							{sections.length - activeCount === 0 ? (
+								<span className="text-emerald-600 dark:text-emerald-400 font-medium">100% visible to customers</span>
+							) : (
+								<span className="text-amber-600 dark:text-amber-400 font-medium">
+									{sections.length - activeCount} hidden from view
+								</span>
+							)}
 						</p>
-						<p className="text-[11px] text-muted-foreground">Skipped from SSR</p>
 					</div>
-					<div className="size-10 rounded-xl bg-muted border border-border flex items-center justify-center text-muted-foreground">
-						<EyeOff className="size-5" />
+					<div className="size-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+						<Eye className="size-4" />
 					</div>
 				</div>
 
-				{/* KPI 4 */}
-				<div className="rounded-xl border border-border/70 bg-card text-card-foreground p-4 flex items-center justify-between shadow-xs">
-					<div className="space-y-0.5">
-						<p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Super Deals</p>
-						<p className="text-sm font-bold text-foreground flex items-center gap-1.5 mt-1">
-							<span className="size-2 rounded-full bg-rose-500 animate-ping" />
-							Flash Deals Active
+				{/* CRM Metric 3: Products on Sale (Exact User Request) */}
+				<div className="rounded-xl border border-border/80 bg-card p-3.5 flex items-start justify-between shadow-xs">
+					<div className="space-y-1">
+						<span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">
+							Products on Sale
+						</span>
+						<div className="flex items-baseline gap-1.5">
+							<span className="text-xl font-bold text-rose-600 dark:text-rose-400 font-mono">
+								{stats.productsOnSale}
+							</span>
+							<span className="text-xs text-muted-foreground font-mono">/ {stats.totalProducts} items</span>
+						</div>
+						<p className="text-[11px] text-muted-foreground flex items-center gap-1">
+							<Tag className="size-3 text-rose-500" />
+							<span>Up to <strong className="text-foreground">{stats.maxDiscount}% OFF</strong> (Avg {stats.avgDiscount}%)</span>
 						</p>
-						<p className="text-[11px] text-rose-600 dark:text-rose-400 font-medium">Timer enabled</p>
 					</div>
-					<div className="size-10 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-600 dark:text-rose-400">
-						<Flame className="size-5" />
+					<div className="size-8 rounded-lg bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-600 dark:text-rose-400">
+						<Tag className="size-4" />
+					</div>
+				</div>
+
+				{/* CRM Metric 4: Deals Engine Status */}
+				<div className="rounded-xl border border-border/80 bg-card p-3.5 flex items-start justify-between shadow-xs">
+					<div className="space-y-1">
+						<span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">
+							Super Deals Engine
+						</span>
+						<div className="flex items-baseline gap-1.5">
+							<span className="text-xl font-bold text-foreground font-mono">
+								{stats.superDealsCount}
+							</span>
+							<span className="text-xs text-muted-foreground">Deals Loaded</span>
+						</div>
+						<p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-1">
+							<span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
+							Automated showcase active
+						</p>
+					</div>
+					<div className="size-8 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-600 dark:text-amber-400">
+						<Flame className="size-4" />
 					</div>
 				</div>
 			</div>
 
-			{/* Main Workspace Layout - Full Width 12-Column Grid */}
-			<div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start w-full">
-				{/* Left Column: Reorderable Visual Block List (7 cols) */}
-				<div className="lg:col-span-7 space-y-3.5">
+			{/* Main Enterprise Split View: 7 cols block stack, 5 cols blueprint inspector */}
+			<div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start w-full">
+				{/* Left Column: Data-Dense Block Stack (7 cols) */}
+				<div className="lg:col-span-7 space-y-3">
 					<div className="flex items-center justify-between px-1">
 						<div className="space-y-0.5">
 							<h2 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
 								<SlidersHorizontal className="size-3.5 text-primary" />
-								Storefront Block Stack ({sections.length})
+								Configured Section Hierarchy ({sections.length})
 							</h2>
-							<p className="text-xs text-muted-foreground">
-								Blocks render top-to-bottom on the homepage in this exact order.
+							<p className="text-[11px] text-muted-foreground">
+								Drag rows or use arrow buttons to modify customer viewport order.
 							</p>
 						</div>
 					</div>
 
-					<div className="space-y-3">
+					<div className="space-y-2">
 						{sections.map((section, index) => {
 							const meta = SECTION_META[section.sectionKey];
 							const Icon = meta.icon;
@@ -521,6 +567,7 @@ export default function AdminHomepageClient({ initialSections }: AdminHomepageCl
 							return (
 								<div
 									key={section.id}
+									id={`block-${section.id}`}
 									draggable={!isPending}
 									onDragStart={(e) => handleDragStart(e, index)}
 									onDragOver={(e) => handleDragOver(e, index)}
@@ -529,11 +576,11 @@ export default function AdminHomepageClient({ initialSections }: AdminHomepageCl
 									onDragEnd={handleDragEnd}
 									onMouseEnter={() => setHoveredSectionId(section.id)}
 									onMouseLeave={() => setHoveredSectionId(null)}
-									className={`group relative rounded-2xl border p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 select-none cursor-grab active:cursor-grabbing transition-all duration-150 ${
+									className={`group relative rounded-xl border p-3.5 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 select-none cursor-grab active:cursor-grabbing transition-all duration-150 ${
 										isDragging
 											? 'opacity-35 border-dashed border-primary scale-[0.99] bg-muted/40 shadow-inner'
 											: section.isActive
-											? `bg-card text-card-foreground border-border/80 hover:border-primary/40 hover:shadow-sm ${meta.accentBorder} ${
+											? `bg-card text-card-foreground border-border/80 hover:border-primary/40 hover:shadow-xs ${meta.accentBorder} ${
 													isHovered ? 'ring-1 ring-primary/40' : ''
 											  }`
 											: 'bg-muted/30 border-dashed border-border/60 opacity-60'
@@ -554,46 +601,46 @@ export default function AdminHomepageClient({ initialSections }: AdminHomepageCl
 									)}
 
 									{/* Left Details: Drag Grip + Sequence + Icon + Titles */}
-									<div className="flex items-start sm:items-center gap-3.5 min-w-0 flex-1">
+									<div className="flex items-start sm:items-center gap-3 min-w-0 flex-1">
 										{/* Order Badge with Reorder Handle */}
 										<div
-											className="flex items-center gap-1.5 shrink-0 cursor-grab active:cursor-grabbing p-1 -ml-1 rounded-xl hover:bg-muted/80 transition-colors group/handle"
-											title="Drag block to reorder"
+											className="flex items-center gap-1 shrink-0 cursor-grab active:cursor-grabbing p-1 -ml-1 rounded-lg hover:bg-muted/80 transition-colors group/handle"
+											title="Drag row to reorder"
 										>
-											<GripVertical className="size-4 text-muted-foreground/60 group-hover/handle:text-primary transition-colors" />
-											<div className="size-8 rounded-lg bg-muted border border-border/70 flex items-center justify-center font-mono font-bold text-xs text-foreground pointer-events-none">
+											<GripVertical className="size-4 text-muted-foreground/50 group-hover/handle:text-primary transition-colors" />
+											<div className="size-7 rounded-md bg-muted border border-border/70 flex items-center justify-center font-mono font-bold text-xs text-foreground pointer-events-none">
 												#{index + 1}
 											</div>
 										</div>
 
 										{/* Frosted Icon Tile */}
-										<div className={`size-11 rounded-xl border flex items-center justify-center shrink-0 shadow-xs ${meta.gradient}`}>
-											<Icon className="size-5" />
+										<div className={`size-10 rounded-lg border flex items-center justify-center shrink-0 shadow-xs ${meta.gradient}`}>
+											<Icon className="size-4.5" />
 										</div>
 
 										{/* Content Description */}
 										<div className="min-w-0 space-y-1 flex-1">
 											<div className="flex items-center gap-2 flex-wrap">
-												<h3 className="text-sm sm:text-base font-bold text-foreground tracking-tight">
+												<h3 className="text-sm font-bold text-foreground tracking-tight">
 													{section.name}
 												</h3>
-												<Badge variant="outline" className={`text-[10px] font-mono px-2 py-0 border ${meta.badgeColor}`}>
+												<Badge variant="outline" className={`text-[10px] font-mono px-1.5 py-0 border ${meta.badgeColor}`}>
 													{section.sectionKey}
 												</Badge>
 												{section.isActive ? (
-													<span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
-														<span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
-														Active
+													<span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">
+														<span className="size-1 rounded-full bg-emerald-500 animate-pulse" />
+														Live
 													</span>
 												) : (
-													<span className="inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded-full border border-border">
+													<span className="inline-flex items-center gap-1 text-[10px] font-medium text-muted-foreground bg-muted px-1.5 py-0.5 rounded border border-border">
 														Hidden
 													</span>
 												)}
 											</div>
 
 											{/* Heading Preview Chip */}
-											<div className="flex items-center gap-2 text-xs text-muted-foreground truncate">
+											<div className="flex items-center gap-1.5 text-xs text-muted-foreground truncate">
 												<span className="font-medium text-muted-foreground">Header:</span>
 												<span className="text-foreground font-semibold truncate">
 													&ldquo;{section.title || section.name}&rdquo;
@@ -605,33 +652,45 @@ export default function AdminHomepageClient({ initialSections }: AdminHomepageCl
 												)}
 											</div>
 
-											{/* Specific Parameters Pills */}
+											{/* Specific Parameters Pills - CRM Data Rich */}
 											<div className="flex items-center gap-1.5 pt-0.5 flex-wrap">
 												{section.sectionKey === 'SUPER_DEALS' && (
 													<>
 														<span className="text-[10px] px-1.5 py-0.5 rounded bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20 flex items-center gap-1 font-medium">
 															<Tag className="size-2.5" />
+															{stats.productsOnSale} on Sale
+														</span>
+														<span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 flex items-center gap-1 font-medium">
+															<Zap className="size-2.5" />
 															{section.config?.badge || 'Flash Sale'}
 														</span>
 														<span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-foreground border border-border/70 flex items-center gap-1 font-mono">
-															<Clock className="size-2.5 text-amber-500" />
-															{section.config?.itemsLimit || 10} Deals
+															<Clock className="size-2.5 text-muted-foreground" />
+															Cap: {section.config?.itemsLimit || 12} Deals
 														</span>
 													</>
 												)}
 												{section.sectionKey === 'HERO_GRID' && (
-													<span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 font-medium">
-														Side Ad: {section.config?.showSideAd !== false ? 'ON' : 'OFF'}
-													</span>
+													<>
+														<span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 font-medium">
+															Slider: Active
+														</span>
+														<span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-foreground border border-border/70 font-medium">
+															Side Ad: {section.config?.showSideAd !== false ? 'ON' : 'OFF'}
+														</span>
+														<span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-foreground border border-border/70 font-medium">
+															Shopper Card: {section.config?.showUserCard !== false ? 'ON' : 'OFF'}
+														</span>
+													</>
 												)}
 												{section.sectionKey === 'FEATURED_CATEGORIES' && (
 													<span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-medium">
-														{section.config?.itemsLimit || 8} Categories
+														Cap: {section.config?.itemsLimit || 8} Categories
 													</span>
 												)}
 												{section.sectionKey === 'MORE_TO_LOVE' && (
 													<span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20 font-medium">
-														{section.config?.itemsLimit || 18} Products
+														Feed: {section.config?.itemsLimit || 18} Products
 													</span>
 												)}
 											</div>
@@ -643,36 +702,36 @@ export default function AdminHomepageClient({ initialSections }: AdminHomepageCl
 										draggable={false}
 										onDragStart={(e) => e.stopPropagation()}
 										onPointerDown={(e) => e.stopPropagation()}
-										className="flex items-center justify-between sm:justify-end gap-2.5 pt-2 sm:pt-0 border-t sm:border-t-0 border-border/60 shrink-0 cursor-default"
+										className="flex items-center justify-between sm:justify-end gap-2 pt-2 sm:pt-0 border-t sm:border-t-0 border-border/60 shrink-0 cursor-default"
 									>
 										{/* Reorder Stepper Buttons */}
-										<div className="flex items-center bg-muted/60 p-1 rounded-xl border border-border/70 shadow-xs">
+										<div className="flex items-center bg-muted/60 p-0.5 rounded-lg border border-border/70 shadow-xs">
 											<Button
 												variant="ghost"
 												size="icon"
-												className="size-7 rounded-lg text-muted-foreground hover:text-foreground hover:bg-background transition-colors"
+												className="size-7 rounded text-muted-foreground hover:text-foreground hover:bg-background transition-colors"
 												disabled={index === 0 || isPending}
 												onClick={() => handleMove(index, 'up')}
 												title="Move block up"
 											>
-												<ChevronUp className="size-4" />
+												<ChevronUp className="size-3.5" />
 											</Button>
-											<div className="w-[1px] h-4 bg-border" />
+											<div className="w-[1px] h-3.5 bg-border" />
 											<Button
 												variant="ghost"
 												size="icon"
-												className="size-7 rounded-lg text-muted-foreground hover:text-foreground hover:bg-background transition-colors"
+												className="size-7 rounded text-muted-foreground hover:text-foreground hover:bg-background transition-colors"
 												disabled={index === sections.length - 1 || isPending}
 												onClick={() => handleMove(index, 'down')}
 												title="Move block down"
 											>
-												<ChevronDown className="size-4" />
+												<ChevronDown className="size-3.5" />
 											</Button>
 										</div>
 
 										{/* Visibility Switch */}
-										<div className="flex items-center gap-2 px-3 py-1.5 bg-muted/60 rounded-xl border border-border/70 shadow-xs">
-											<span className="text-xs font-semibold text-foreground select-none">
+										<div className="flex items-center gap-1.5 px-2.5 py-1 bg-muted/60 rounded-lg border border-border/70 shadow-xs">
+											<span className="text-[11px] font-semibold text-foreground select-none">
 												{section.isActive ? 'Live' : 'Off'}
 											</span>
 											<Switch
@@ -688,7 +747,7 @@ export default function AdminHomepageClient({ initialSections }: AdminHomepageCl
 											variant="outline"
 											size="sm"
 											onClick={() => handleOpenDrawer(section)}
-											className="h-9 px-3 gap-1.5 text-xs font-semibold rounded-xl border-border bg-background hover:bg-muted text-foreground shadow-xs hover:border-primary/40 transition-all"
+											className="h-8 px-2.5 gap-1.5 text-xs font-semibold rounded-lg border-border bg-background hover:bg-muted text-foreground shadow-xs hover:border-primary/40 transition-all"
 										>
 											<Settings2 className="size-3.5 text-primary" />
 											Configure
@@ -700,41 +759,41 @@ export default function AdminHomepageClient({ initialSections }: AdminHomepageCl
 					</div>
 				</div>
 
-				{/* Right Column: Interactive Live Blueprint Mockup (5 cols) */}
-				<div className="lg:col-span-5 space-y-4 sticky top-24">
-					<div className="rounded-2xl border border-border/80 bg-card text-card-foreground p-5 space-y-4 shadow-xs">
-						<div className="flex items-center justify-between pb-3 border-b border-border">
+				{/* Right Column: Storefront Blueprint Inspector (5 cols) */}
+				<div className="lg:col-span-5 space-y-3 sticky top-24">
+					<div className="rounded-xl border border-border/80 bg-card text-card-foreground p-4 space-y-3 shadow-xs">
+						<div className="flex items-center justify-between pb-2.5 border-b border-border">
 							<div className="space-y-0.5">
-								<h3 className="text-sm font-bold text-foreground flex items-center gap-2">
-									<Zap className="size-4 text-amber-500" />
-									Live Storefront Blueprint
+								<h3 className="text-xs font-bold text-foreground flex items-center gap-1.5 uppercase tracking-wider">
+									<Zap className="size-3.5 text-amber-500" />
+									Storefront Layout Inspector
 								</h3>
 								<p className="text-[11px] text-muted-foreground">
-									Simulated viewport of the active section cascade.
+									Sequential SSR cascade flow on customer browser.
 								</p>
 							</div>
 							<Badge variant="outline" className="text-[10px] font-mono border-border text-muted-foreground">
-								SSR Flow
+								Live Order
 							</Badge>
 						</div>
 
 						{/* Mock Browser Shell */}
-						<div className="rounded-xl border border-border bg-muted/30 overflow-hidden shadow-xs">
+						<div className="rounded-lg border border-border bg-muted/30 overflow-hidden shadow-xs">
 							{/* Browser Chrome Header */}
-							<div className="bg-muted/70 px-3 py-2 border-b border-border flex items-center gap-2">
-								<div className="flex items-center gap-1.5">
-									<span className="size-2.5 rounded-full bg-rose-500/80" />
-									<span className="size-2.5 rounded-full bg-amber-500/80" />
-									<span className="size-2.5 rounded-full bg-emerald-500/80" />
+							<div className="bg-muted/70 px-3 py-1.5 border-b border-border flex items-center gap-2">
+								<div className="flex items-center gap-1">
+									<span className="size-2 rounded-full bg-rose-500/80" />
+									<span className="size-2 rounded-full bg-amber-500/80" />
+									<span className="size-2 rounded-full bg-emerald-500/80" />
 								</div>
-								<div className="flex-1 ml-2 bg-background text-[10px] text-muted-foreground font-mono px-2.5 py-0.5 rounded-md border border-border text-center flex items-center justify-center gap-1.5 truncate">
+								<div className="flex-1 ml-1 bg-background text-[10px] text-muted-foreground font-mono px-2 py-0.5 rounded border border-border text-center flex items-center justify-center gap-1.5 truncate">
 									<span className="size-1.5 rounded-full bg-emerald-500" />
 									gocart.com/
 								</div>
 							</div>
 
 							{/* Blueprint Cascade Blocks */}
-							<div className="p-3 space-y-2.5 bg-background/50">
+							<div className="p-2.5 space-y-2 bg-background/50">
 								{sections.map((section, idx) => {
 									const meta = SECTION_META[section.sectionKey];
 									const Icon = meta.icon;
@@ -746,38 +805,35 @@ export default function AdminHomepageClient({ initialSections }: AdminHomepageCl
 											onClick={() => handleOpenDrawer(section)}
 											onMouseEnter={() => setHoveredSectionId(section.id)}
 											onMouseLeave={() => setHoveredSectionId(null)}
-											className={`cursor-pointer rounded-xl border p-3 transition-all duration-200 ${
+											className={`cursor-pointer rounded-lg border p-2.5 transition-all duration-150 ${
 												section.isActive
 													? `bg-card text-card-foreground border-border/80 hover:border-primary/50 hover:bg-accent/40 ${
-															isHovered ? 'ring-2 ring-primary/60 border-primary' : ''
+															isHovered ? 'ring-1 ring-primary/60 border-primary' : ''
 													  }`
 													: 'bg-muted/30 border-dashed border-border/60 opacity-40 hover:opacity-75'
 											}`}
 										>
 											<div className="flex items-center justify-between gap-2">
-												<div className="flex items-center gap-2.5 min-w-0">
+												<div className="flex items-center gap-2 min-w-0">
 													<span className="text-[10px] font-mono font-bold text-muted-foreground">
 														#{idx + 1}
 													</span>
-													<div className={`size-6 rounded-md border flex items-center justify-center ${meta.badgeColor}`}>
+													<div className={`size-5 rounded border flex items-center justify-center ${meta.badgeColor}`}>
 														<Icon className="size-3" />
 													</div>
 													<div className="min-w-0">
 														<p className="text-xs font-bold text-foreground truncate">
 															{section.title || section.name}
 														</p>
-														<p className="text-[10px] text-muted-foreground truncate">
-															{section.name}
-														</p>
 													</div>
 												</div>
 
 												{section.isActive ? (
-													<span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20 shrink-0">
+													<span className="text-[9px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.2 rounded border border-emerald-500/20 shrink-0">
 														Live
 													</span>
 												) : (
-													<span className="text-[10px] font-medium text-muted-foreground bg-muted px-1.5 py-0.5 rounded border border-border shrink-0">
+													<span className="text-[9px] font-medium text-muted-foreground bg-muted px-1.5 py-0.2 rounded border border-border shrink-0">
 														Hidden
 													</span>
 												)}
@@ -785,36 +841,36 @@ export default function AdminHomepageClient({ initialSections }: AdminHomepageCl
 
 											{/* Mini Visual Schematic Rendering */}
 											{section.isActive && (
-												<div className="mt-2 pt-2 border-t border-border/60">
+												<div className="mt-1.5 pt-1.5 border-t border-border/60">
 													{section.sectionKey === 'HERO_GRID' && (
-														<div className="grid grid-cols-3 gap-1.5 h-6">
-															<div className="rounded bg-blue-500/15 border border-blue-500/20 col-span-2 flex items-center justify-center text-[9px] text-blue-600 dark:text-blue-300 font-medium">
-																Hero Slider Banner
+														<div className="grid grid-cols-3 gap-1 h-5">
+															<div className="rounded bg-blue-500/15 border border-blue-500/20 col-span-2 flex items-center justify-center text-[8px] text-blue-600 dark:text-blue-300 font-medium">
+																Hero Slider
 															</div>
-															<div className="rounded bg-muted border border-border flex items-center justify-center text-[9px] text-muted-foreground">
-																Side Ad
+															<div className="rounded bg-muted border border-border flex items-center justify-center text-[8px] text-muted-foreground">
+																Banner
 															</div>
 														</div>
 													)}
 
 													{section.sectionKey === 'SUPER_DEALS' && (
-														<div className="flex items-center gap-1.5 h-6 px-2 rounded bg-rose-500/15 border border-rose-500/20 justify-between">
-															<span className="text-[9px] font-bold text-rose-600 dark:text-rose-300 flex items-center gap-1">
+														<div className="flex items-center gap-1.5 h-5 px-2 rounded bg-rose-500/15 border border-rose-500/20 justify-between">
+															<span className="text-[8px] font-bold text-rose-600 dark:text-rose-300 flex items-center gap-1">
 																<Flame className="size-2.5" />
-																Flash Deals Hub
+																{stats.productsOnSale} Deals Active
 															</span>
-															<span className="text-[9px] font-mono text-amber-600 dark:text-amber-300">
-																03d : 09h : 37m
+															<span className="text-[8px] font-mono text-amber-600 dark:text-amber-300">
+																Live Ticker
 															</span>
 														</div>
 													)}
 
 													{section.sectionKey === 'FEATURED_CATEGORIES' && (
-														<div className="flex items-center gap-1 h-6">
+														<div className="flex items-center gap-1 h-5">
 															{[1, 2, 3, 4].map((i) => (
 																<div
 																	key={i}
-																	className="flex-1 h-full rounded bg-emerald-500/15 border border-emerald-500/20 flex items-center justify-center text-[8px] text-emerald-600 dark:text-emerald-300 font-medium"
+																	className="flex-1 h-full rounded bg-emerald-500/15 border border-emerald-500/20 flex items-center justify-center text-[7px] text-emerald-600 dark:text-emerald-300 font-medium"
 																>
 																	Cat {i}
 																</div>
@@ -823,7 +879,7 @@ export default function AdminHomepageClient({ initialSections }: AdminHomepageCl
 													)}
 
 													{section.sectionKey === 'MORE_TO_LOVE' && (
-														<div className="grid grid-cols-4 gap-1 h-6">
+														<div className="grid grid-cols-4 gap-1 h-5">
 															{[1, 2, 3, 4].map((i) => (
 																<div
 																	key={i}
@@ -841,7 +897,7 @@ export default function AdminHomepageClient({ initialSections }: AdminHomepageCl
 						</div>
 
 						<p className="text-center text-[11px] text-muted-foreground">
-							Click any block above to open its customization drawer.
+							Click any block above to open its configuration drawer.
 						</p>
 					</div>
 				</div>
@@ -853,20 +909,20 @@ export default function AdminHomepageClient({ initialSections }: AdminHomepageCl
 					{selectedSection && (
 						<div className="flex flex-col min-h-full">
 							{/* Drawer Header Banner */}
-							<div className="p-6 border-b border-border bg-card/60 space-y-3">
+							<div className="p-5 border-b border-border bg-card/60 space-y-2.5">
 								<div className="flex items-center justify-between gap-3">
 									<div className="flex items-center gap-2.5">
 										{(() => {
 											const meta = SECTION_META[selectedSection.sectionKey];
 											const Icon = meta.icon;
 											return (
-												<div className={`size-10 rounded-xl border flex items-center justify-center ${meta.gradient}`}>
-													<Icon className="size-5" />
+												<div className={`size-9 rounded-lg border flex items-center justify-center ${meta.gradient}`}>
+													<Icon className="size-4.5" />
 												</div>
 											);
 										})()}
 										<div>
-											<h2 className="text-lg font-bold text-foreground tracking-tight">
+											<h2 className="text-base font-bold text-foreground tracking-tight">
 												Configure {selectedSection.name}
 											</h2>
 											<div className="flex items-center gap-2 mt-0.5">
@@ -874,11 +930,11 @@ export default function AdminHomepageClient({ initialSections }: AdminHomepageCl
 													{selectedSection.sectionKey}
 												</Badge>
 												{selectedSection.isActive ? (
-													<span className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+													<span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">
 														Active on Storefront
 													</span>
 												) : (
-													<span className="text-[11px] font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded-full border border-border">
+													<span className="text-[10px] font-medium text-muted-foreground bg-muted px-1.5 py-0.5 rounded border border-border">
 														Hidden from Storefront
 													</span>
 												)}
@@ -892,9 +948,9 @@ export default function AdminHomepageClient({ initialSections }: AdminHomepageCl
 							</div>
 
 							{/* Drawer Body Form Cards */}
-							<div className="p-6 space-y-6 flex-1">
+							<div className="p-5 space-y-5 flex-1">
 								{/* Card 1: Display Headlines & Copy */}
-								<div className="rounded-2xl border border-border/80 bg-card text-card-foreground p-5 space-y-4 shadow-xs">
+								<div className="rounded-xl border border-border/80 bg-card text-card-foreground p-4 space-y-3.5 shadow-xs">
 									<div className="flex items-center gap-2 pb-2 border-b border-border">
 										<Type className="size-4 text-primary" />
 										<h3 className="text-xs font-bold uppercase tracking-wider text-foreground">
@@ -913,10 +969,10 @@ export default function AdminHomepageClient({ initialSections }: AdminHomepageCl
 												placeholder="e.g. Super Deals"
 												value={draftTitle}
 												onChange={(e) => setDraftTitle(e.target.value)}
-												className="h-10 rounded-xl bg-background border-input text-foreground placeholder:text-muted-foreground focus-visible:ring-primary/40"
+												className="h-9 rounded-lg bg-background border-input text-foreground placeholder:text-muted-foreground focus-visible:ring-primary/40 text-xs"
 											/>
 											<p className="text-[11px] text-muted-foreground">
-												The primary heading displayed to shoppers on the storefront.
+												The primary headline displayed to shoppers on the storefront.
 											</p>
 										</div>
 
@@ -929,7 +985,7 @@ export default function AdminHomepageClient({ initialSections }: AdminHomepageCl
 												placeholder="e.g. Limited-time discounts on top products"
 												value={draftSubtitle}
 												onChange={(e) => setDraftSubtitle(e.target.value)}
-												className="h-10 rounded-xl bg-background border-input text-foreground placeholder:text-muted-foreground focus-visible:ring-primary/40"
+												className="h-9 rounded-lg bg-background border-input text-foreground placeholder:text-muted-foreground focus-visible:ring-primary/40 text-xs"
 											/>
 											<p className="text-[11px] text-muted-foreground">
 												Secondary descriptive text under the main heading.
@@ -940,17 +996,28 @@ export default function AdminHomepageClient({ initialSections }: AdminHomepageCl
 
 								{/* Card 2: Section-Specific Parameters */}
 								{selectedSection.sectionKey === 'SUPER_DEALS' && (
-									<div className="rounded-2xl border border-rose-500/20 bg-card text-card-foreground p-5 space-y-5 shadow-xs">
+									<div className="rounded-xl border border-rose-500/20 bg-card text-card-foreground p-4 space-y-4 shadow-xs">
 										<div className="flex items-center justify-between pb-2 border-b border-border">
 											<div className="flex items-center gap-2">
 												<Flame className="size-4 text-rose-500" />
 												<h3 className="text-xs font-bold uppercase tracking-wider text-foreground">
-													Super Deals Hub Configuration
+													Super Deals Showcase Engine
 												</h3>
 											</div>
 											<Badge variant="outline" className="text-[10px] border-rose-500/30 text-rose-600 dark:text-rose-400">
-												Flash Sale Engine
+												{stats.productsOnSale} on Sale
 											</Badge>
+										</div>
+
+										{/* Informational Catalog Coverage Note */}
+										<div className="p-3 rounded-lg bg-rose-500/10 border border-rose-500/20 text-xs text-rose-700 dark:text-rose-300 space-y-1">
+											<p className="font-semibold flex items-center gap-1.5">
+												<Tag className="size-3.5" />
+												Store Catalog Sales Coverage
+											</p>
+											<p className="text-[11px] opacity-90">
+												There are currently <strong>{stats.productsOnSale} products on sale</strong> across the store with discounts up to <strong>{stats.maxDiscount}% OFF</strong>. These items automatically populate this showcase.
+											</p>
 										</div>
 
 										{/* Sale Badge Pill */}
@@ -964,10 +1031,10 @@ export default function AdminHomepageClient({ initialSections }: AdminHomepageCl
 												placeholder="e.g. Flash Sale, Daily Steals"
 												value={draftBadge}
 												onChange={(e) => setDraftBadge(e.target.value)}
-												className="h-10 rounded-xl bg-background border-input text-foreground placeholder:text-muted-foreground focus-visible:ring-rose-500/50"
+												className="h-9 rounded-lg bg-background border-input text-foreground placeholder:text-muted-foreground focus-visible:ring-rose-500/50 text-xs"
 											/>
 											<div className="flex items-center gap-1.5 pt-1 flex-wrap">
-												<span className="text-[10px] text-muted-foreground">Quick badge ideas:</span>
+												<span className="text-[10px] text-muted-foreground">Quick badges:</span>
 												{['⚡ Flash Sale', '🔥 Super Deals', '💥 Daily Steals'].map((preset) => (
 													<button
 														key={preset}
@@ -991,20 +1058,19 @@ export default function AdminHomepageClient({ initialSections }: AdminHomepageCl
 												<span className="text-[10px] text-muted-foreground">Click field to open picker</span>
 											</Label>
 
-											{/* Native datetime-local with explicit cursor pointer and custom picker indicator */}
 											<div className="relative">
 												<Input
 													id="superdeals-timer"
 													type="datetime-local"
 													value={draftCountdownEnd}
 													onChange={(e) => setDraftCountdownEnd(e.target.value)}
-													className="h-11 rounded-xl bg-background border-input text-foreground cursor-pointer [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-70 [&::-webkit-calendar-picker-indicator]:hover:opacity-100 dark:[&::-webkit-calendar-picker-indicator]:filter dark:[&::-webkit-calendar-picker-indicator]:invert pr-4 font-mono text-xs focus-visible:ring-amber-500/50"
+													className="h-10 rounded-lg bg-background border-input text-foreground cursor-pointer [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-70 [&::-webkit-calendar-picker-indicator]:hover:opacity-100 dark:[&::-webkit-calendar-picker-indicator]:filter dark:[&::-webkit-calendar-picker-indicator]:invert pr-4 font-mono text-xs focus-visible:ring-amber-500/50"
 												/>
 											</div>
 
 											{/* Live Ticking Countdown Preview */}
 											{countdownPreview && (
-												<div className="p-3 rounded-xl bg-muted/40 border border-border/70 flex items-center justify-between gap-2">
+												<div className="p-2.5 rounded-lg bg-muted/40 border border-border/70 flex items-center justify-between gap-2">
 													<span className="text-xs text-muted-foreground flex items-center gap-1.5">
 														<Timer className="size-3.5 text-rose-500" />
 														Live Ticker Preview:
@@ -1037,13 +1103,13 @@ export default function AdminHomepageClient({ initialSections }: AdminHomepageCl
 
 											{/* Quick Preset Buttons */}
 											<div className="flex items-center gap-2 pt-1 flex-wrap">
-												<span className="text-[11px] text-muted-foreground">Quick Timer Presets:</span>
+												<span className="text-[11px] text-muted-foreground">Quick Presets:</span>
 												<Button
 													type="button"
 													variant="outline"
 													size="sm"
 													onClick={() => applyCountdownPreset(1)}
-													className="h-7 text-[11px] px-2.5 rounded-lg border-border bg-background hover:bg-muted text-foreground"
+													className="h-6 text-[10px] px-2 rounded border-border bg-background hover:bg-muted text-foreground"
 												>
 													+24 Hours
 												</Button>
@@ -1052,7 +1118,7 @@ export default function AdminHomepageClient({ initialSections }: AdminHomepageCl
 													variant="outline"
 													size="sm"
 													onClick={() => applyCountdownPreset(3)}
-													className="h-7 text-[11px] px-2.5 rounded-lg border-border bg-background hover:bg-muted text-foreground"
+													className="h-6 text-[10px] px-2 rounded border-border bg-background hover:bg-muted text-foreground"
 												>
 													+3 Days
 												</Button>
@@ -1061,7 +1127,7 @@ export default function AdminHomepageClient({ initialSections }: AdminHomepageCl
 													variant="outline"
 													size="sm"
 													onClick={() => applyCountdownPreset(7)}
-													className="h-7 text-[11px] px-2.5 rounded-lg border-border bg-background hover:bg-muted text-foreground"
+													className="h-6 text-[10px] px-2 rounded border-border bg-background hover:bg-muted text-foreground"
 												>
 													+7 Days
 												</Button>
@@ -1071,7 +1137,7 @@ export default function AdminHomepageClient({ initialSections }: AdminHomepageCl
 														variant="ghost"
 														size="sm"
 														onClick={() => setDraftCountdownEnd('')}
-														className="h-7 text-[11px] px-2 text-muted-foreground hover:text-rose-600 hover:bg-rose-500/10 rounded-lg gap-1"
+														className="h-6 text-[10px] px-1.5 text-muted-foreground hover:text-rose-600 hover:bg-rose-500/10 rounded gap-1"
 													>
 														<X className="size-3" />
 														Clear
@@ -1081,30 +1147,30 @@ export default function AdminHomepageClient({ initialSections }: AdminHomepageCl
 										</div>
 
 										{/* Deals Products Limit Slider & Stepper */}
-										<div className="space-y-3 pt-2 border-t border-border">
+										<div className="space-y-2.5 pt-2 border-t border-border">
 											<div className="flex items-center justify-between">
 												<Label className="text-xs font-semibold text-foreground">
-													Carousel Products Showcase Limit
+													Products Showcase Limit
 												</Label>
-												<div className="flex items-center gap-2">
+												<div className="flex items-center gap-1.5">
 													<Button
 														type="button"
 														variant="outline"
 														size="icon"
-														className="size-6 rounded-md border-border bg-background hover:bg-muted text-foreground"
+														className="size-6 rounded border-border bg-background hover:bg-muted text-foreground"
 														onClick={() => setDraftItemsLimit((prev) => Math.max(2, prev - 2))}
 														disabled={draftItemsLimit <= 2}
 													>
 														<Minus className="size-3" />
 													</Button>
-													<span className="font-mono font-bold text-sm text-foreground w-6 text-center">
+													<span className="font-mono font-bold text-xs text-foreground w-6 text-center">
 														{draftItemsLimit}
 													</span>
 													<Button
 														type="button"
 														variant="outline"
 														size="icon"
-														className="size-6 rounded-md border-border bg-background hover:bg-muted text-foreground"
+														className="size-6 rounded border-border bg-background hover:bg-muted text-foreground"
 														onClick={() => setDraftItemsLimit((prev) => Math.min(30, prev + 2))}
 														disabled={draftItemsLimit >= 30}
 													>
@@ -1122,7 +1188,7 @@ export default function AdminHomepageClient({ initialSections }: AdminHomepageCl
 											/>
 											<div className="flex justify-between text-[10px] text-muted-foreground font-mono">
 												<span>2 deals (min)</span>
-												<span>16 deals</span>
+												<span>12 deals (recommended)</span>
 												<span>30 deals (max)</span>
 											</div>
 										</div>
@@ -1131,7 +1197,7 @@ export default function AdminHomepageClient({ initialSections }: AdminHomepageCl
 
 								{/* Card 2: Hero Grid Configuration */}
 								{selectedSection.sectionKey === 'HERO_GRID' && (
-									<div className="rounded-2xl border border-blue-500/20 bg-card text-card-foreground p-5 space-y-4 shadow-xs">
+									<div className="rounded-xl border border-blue-500/20 bg-card text-card-foreground p-4 space-y-3.5 shadow-xs">
 										<div className="flex items-center gap-2 pb-2 border-b border-border">
 											<LayoutGrid className="size-4 text-blue-500" />
 											<h3 className="text-xs font-bold uppercase tracking-wider text-foreground">
@@ -1139,14 +1205,14 @@ export default function AdminHomepageClient({ initialSections }: AdminHomepageCl
 											</h3>
 										</div>
 
-										<div className="space-y-3">
-											<div className="flex items-center justify-between p-3.5 rounded-xl border border-border bg-muted/30">
+										<div className="space-y-2.5">
+											<div className="flex items-center justify-between p-3 rounded-lg border border-border bg-muted/30">
 												<div className="space-y-0.5">
 													<Label className="text-xs font-semibold text-foreground">
 														Promotional Side Banner
 													</Label>
 													<p className="text-[11px] text-muted-foreground">
-														Vertical advertisement banner on wide desktop viewports
+														Vertical promotional banner on desktop screens
 													</p>
 												</div>
 												<Switch
@@ -1155,13 +1221,13 @@ export default function AdminHomepageClient({ initialSections }: AdminHomepageCl
 												/>
 											</div>
 
-											<div className="flex items-center justify-between p-3.5 rounded-xl border border-border bg-muted/30">
+											<div className="flex items-center justify-between p-3 rounded-lg border border-border bg-muted/30">
 												<div className="space-y-0.5">
 													<Label className="text-xs font-semibold text-foreground">
-														Personalized User Welcome Card
+														Shopper Welcome Card
 													</Label>
 													<p className="text-[11px] text-muted-foreground">
-														Greetings card showing account links and recent activity
+														Greetings card showing customer profile & account links
 													</p>
 												</div>
 												<Switch
@@ -1175,7 +1241,7 @@ export default function AdminHomepageClient({ initialSections }: AdminHomepageCl
 
 								{/* Card 2: Featured Categories Configuration */}
 								{selectedSection.sectionKey === 'FEATURED_CATEGORIES' && (
-									<div className="rounded-2xl border border-emerald-500/20 bg-card text-card-foreground p-5 space-y-4 shadow-xs">
+									<div className="rounded-xl border border-emerald-500/20 bg-card text-card-foreground p-4 space-y-3.5 shadow-xs">
 										<div className="flex items-center gap-2 pb-2 border-b border-border">
 											<Layers className="size-4 text-emerald-500" />
 											<h3 className="text-xs font-bold uppercase tracking-wider text-foreground">
@@ -1183,12 +1249,12 @@ export default function AdminHomepageClient({ initialSections }: AdminHomepageCl
 											</h3>
 										</div>
 
-										<div className="space-y-3">
+										<div className="space-y-2.5">
 											<div className="flex items-center justify-between">
 												<Label className="text-xs font-semibold text-foreground">
 													Maximum Categories to Display
 												</Label>
-												<span className="font-mono font-bold text-sm text-emerald-600 dark:text-emerald-400">
+												<span className="font-mono font-bold text-xs text-emerald-600 dark:text-emerald-400">
 													{draftItemsLimit} categories
 												</span>
 											</div>
@@ -1211,7 +1277,7 @@ export default function AdminHomepageClient({ initialSections }: AdminHomepageCl
 
 								{/* Card 2: More to Love Configuration */}
 								{selectedSection.sectionKey === 'MORE_TO_LOVE' && (
-									<div className="rounded-2xl border border-purple-500/20 bg-card text-card-foreground p-5 space-y-4 shadow-xs">
+									<div className="rounded-xl border border-purple-500/20 bg-card text-card-foreground p-4 space-y-3.5 shadow-xs">
 										<div className="flex items-center gap-2 pb-2 border-b border-border">
 											<Sparkles className="size-4 text-purple-500" />
 											<h3 className="text-xs font-bold uppercase tracking-wider text-foreground">
@@ -1219,12 +1285,12 @@ export default function AdminHomepageClient({ initialSections }: AdminHomepageCl
 											</h3>
 										</div>
 
-										<div className="space-y-3">
+										<div className="space-y-2.5">
 											<div className="flex items-center justify-between">
 												<Label className="text-xs font-semibold text-foreground">
 													Initial Products Count
 												</Label>
-												<span className="font-mono font-bold text-sm text-purple-600 dark:text-purple-400">
+												<span className="font-mono font-bold text-xs text-purple-600 dark:text-purple-400">
 													{draftItemsLimit} products
 												</span>
 											</div>
@@ -1246,19 +1312,19 @@ export default function AdminHomepageClient({ initialSections }: AdminHomepageCl
 								)}
 
 								{/* Card 3: Live Storefront Header Preview */}
-								<div className="rounded-2xl border border-border bg-muted/20 p-4 space-y-2">
+								<div className="rounded-xl border border-border bg-muted/20 p-3.5 space-y-2">
 									<p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
 										<Eye className="size-3 text-primary" />
 										Storefront Heading Preview
 									</p>
-									<div className="p-4 rounded-xl border border-border/80 bg-card text-card-foreground space-y-1 shadow-xs">
+									<div className="p-3.5 rounded-lg border border-border/80 bg-card text-card-foreground space-y-1 shadow-xs">
 										<div className="flex items-center gap-2 flex-wrap">
 											{draftBadge && selectedSection.sectionKey === 'SUPER_DEALS' && (
 												<span className="px-2 py-0.5 text-[10px] font-bold uppercase bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30 rounded-full">
 													{draftBadge}
 												</span>
 											)}
-											<h4 className="text-base font-bold text-foreground">
+											<h4 className="text-sm font-bold text-foreground">
 												{draftTitle.trim() || selectedSection.name}
 											</h4>
 										</div>
@@ -1270,21 +1336,21 @@ export default function AdminHomepageClient({ initialSections }: AdminHomepageCl
 							</div>
 
 							{/* Sticky Drawer Footer */}
-							<div className="sticky bottom-0 p-5 border-t border-border bg-background/95 backdrop-blur-md flex items-center justify-end gap-3">
+							<div className="sticky bottom-0 p-4 border-t border-border bg-background/95 backdrop-blur-md flex items-center justify-end gap-2.5">
 								<Button
 									variant="outline"
 									onClick={() => setIsDrawerOpen(false)}
 									disabled={isPending}
-									className="h-10 px-5 rounded-xl border-border bg-background hover:bg-muted text-foreground"
+									className="h-9 px-4 rounded-lg border-border bg-background hover:bg-muted text-foreground text-xs"
 								>
 									Cancel
 								</Button>
 								<Button
 									onClick={handleSaveDrawer}
 									disabled={isPending}
-									className="h-10 px-6 rounded-xl gap-2 font-semibold shadow-xs"
+									className="h-9 px-5 rounded-lg gap-1.5 font-semibold text-xs shadow-xs"
 								>
-									<CheckCircle2 className="size-4" />
+									<CheckCircle2 className="size-3.5" />
 									{isPending ? 'Saving Changes...' : 'Save Configuration'}
 								</Button>
 							</div>

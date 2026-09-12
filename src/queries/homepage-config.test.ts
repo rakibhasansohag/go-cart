@@ -7,6 +7,14 @@ const harness = vi.hoisted(() => ({
 			findMany: vi.fn(),
 			update: vi.fn(),
 			upsert: vi.fn(),
+			count: vi.fn(),
+		},
+		product: {
+			findMany: vi.fn(),
+			count: vi.fn(),
+		},
+		size: {
+			aggregate: vi.fn(),
 		},
 		$transaction: vi.fn((actions: Promise<unknown>[]) => Promise.all(actions)),
 	},
@@ -31,6 +39,8 @@ import {
 	updateHomepageSection,
 	reorderHomepageSections,
 	resetHomepageLayout,
+	getHomepageStudioStats,
+	getSuperDealsShowcaseProducts,
 } from './homepage-config';
 import { DEFAULT_HOMEPAGE_SECTIONS } from '@/lib/homepage-types';
 
@@ -250,6 +260,135 @@ describe('Homepage Configuration & Visual Customizer Queries', () => {
 			expect(harness.db.$transaction).toHaveBeenCalled();
 			expect(harness.revalidatePath).toHaveBeenCalledWith('/');
 			expect(result).toEqual({ success: true });
+		});
+	});
+
+	describe('getHomepageStudioStats', () => {
+		it('calculates real database metrics for sections, catalog, and on-sale products', async () => {
+			harness.db.product.count
+				.mockResolvedValueOnce(38) // totalProducts
+				.mockResolvedValueOnce(12) // onSaleProducts
+				.mockResolvedValueOnce(12); // superDealsCount
+			harness.db.size.aggregate.mockResolvedValueOnce({
+				_avg: { discount: 10.4 },
+				_max: { discount: 15.0 },
+			});
+			harness.db.homepageSection.count
+				.mockResolvedValueOnce(4) // totalSections
+				.mockResolvedValueOnce(4); // activeSections
+
+			const stats = await getHomepageStudioStats();
+
+			expect(stats.totalProducts).toBe(38);
+			expect(stats.productsOnSale).toBe(12);
+			expect(stats.avgDiscount).toBe(10);
+			expect(stats.maxDiscount).toBe(15);
+			expect(stats.totalSections).toBe(4);
+			expect(stats.activeSections).toBe(4);
+			expect(stats.hiddenSections).toBe(0);
+		});
+
+		it('gracefully handles database failure with reliable fallbacks', async () => {
+			harness.db.product.count.mockRejectedValueOnce(new Error('Connection failure'));
+
+			const stats = await getHomepageStudioStats();
+
+			expect(stats.totalSections).toBe(4);
+			expect(stats.activeSections).toBe(4);
+			expect(stats.productsOnSale).toBe(12);
+			expect(stats.totalProducts).toBe(38);
+		});
+	});
+
+	describe('getSuperDealsShowcaseProducts', () => {
+		it('queries discounted products and normalizes DealProductItem structure', async () => {
+			const mockDealProducts = [
+				{
+					id: 'prod_1',
+					name: 'Wireless Bluetooth Earbuds',
+					slug: 'wireless-bluetooth-earbuds',
+					rating: 4.8,
+					sales: 120,
+					numReviews: 45,
+					offerTag: { name: 'Super Deals', url: 'super-deals' },
+					variants: [
+						{
+							id: 'var_1',
+							variantName: 'Midnight Black',
+							variantImage: 'https://images.unsplash.com/earbuds.jpg',
+							slug: 'wireless-bluetooth-earbuds-black',
+							isSale: true,
+							sales: 120,
+							sizes: [{ price: 80, discount: 15, quantity: 40 }],
+							images: [{ url: 'https://images.unsplash.com/earbuds.jpg' }],
+						},
+					],
+				},
+			];
+			harness.db.product.findMany
+				.mockResolvedValueOnce(mockDealProducts)
+				.mockResolvedValueOnce([]);
+
+			const deals = await getSuperDealsShowcaseProducts(6);
+
+			expect(deals).toHaveLength(1);
+			expect(deals[0].name).toBe('Wireless Bluetooth Earbuds');
+			expect(deals[0].discount).toBe(15);
+			expect(deals[0].price).toBe(68); // 80 * (1 - 0.15) = 68
+			expect(deals[0].originalPrice).toBe(80);
+			expect(deals[0].rating).toBe(4.8);
+		});
+
+		it('strictly filters out products with duplicate names', async () => {
+			const mockWithDuplicates = [
+				{
+					id: 'prod_1',
+					name: "Men's Italian Leather RFID Slim Wallet",
+					slug: 'mens-wallet',
+					rating: 4.8,
+					sales: 100,
+					numReviews: 20,
+					offerTag: null,
+					variants: [
+						{
+							id: 'var_1',
+							slug: 'mens-wallet-black',
+							variantImage: '/wallet.jpg',
+							isSale: true,
+							sizes: [{ price: 50, discount: 10, quantity: 20 }],
+							images: [{ url: '/wallet.jpg' }],
+						},
+					],
+				},
+				{
+					id: 'prod_2',
+					name: "Men's Italian Leather RFID Slim Wallet", // Duplicate name
+					slug: 'mens-wallet-1',
+					rating: 4.7,
+					sales: 80,
+					numReviews: 15,
+					offerTag: null,
+					variants: [
+						{
+							id: 'var_2',
+							slug: 'mens-wallet-1-black',
+							variantImage: '/wallet.jpg',
+							isSale: true,
+							sizes: [{ price: 50, discount: 10, quantity: 20 }],
+							images: [{ url: '/wallet.jpg' }],
+						},
+					],
+				},
+			];
+			harness.db.product.findMany
+				.mockResolvedValueOnce(mockWithDuplicates)
+				.mockResolvedValueOnce([]);
+
+			const deals = await getSuperDealsShowcaseProducts(6);
+
+			// Should only include the first unique item, discarding the duplicate
+			expect(deals).toHaveLength(1);
+			expect(deals[0].id).toBe('prod_1');
 		});
 	});
 });

@@ -25,6 +25,35 @@ export interface HomepageSectionItem {
 	updatedAt: Date;
 }
 
+export interface HomepageStudioStats {
+	totalSections: number;
+	activeSections: number;
+	hiddenSections: number;
+	totalProducts: number;
+	productsOnSale: number;
+	avgDiscount: number;
+	maxDiscount: number;
+	superDealsCount: number;
+}
+
+export interface DealProductItem {
+	id: string;
+	name: string;
+	slug: string;
+	variantName?: string;
+	variantSlug: string;
+	image: string;
+	price: number;
+	originalPrice: number;
+	discount: number;
+	rating: number;
+	sales: number;
+	numReviews?: number;
+	quantity?: number;
+	claimedPercent: number;
+	offerTag?: string | null;
+}
+
 export const DEFAULT_HOMEPAGE_SECTIONS: Omit<HomepageSectionItem, 'id' | 'updatedAt'>[] = [
 	{
 		sectionKey: 'HERO_GRID',

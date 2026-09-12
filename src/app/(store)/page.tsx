@@ -5,7 +5,7 @@ import { currentUser } from '@clerk/nextjs/server';
 import { queryKeys } from '@/lib/query-keys';
 import { getProducts } from '@/queries/product';
 import { getHomeDataDynamic, getHomeFeaturedCategories } from '@/queries/home';
-import { getHomepageLayout } from '@/queries/homepage-config';
+import { getHomepageLayout, getSuperDealsShowcaseProducts } from '@/queries/homepage-config';
 import Header from '@/components/store/layout/header/header';
 import CategoriesHeader from '@/components/store/layout/categories-header/categories-header';
 import Sideline from '@/components/store/home/sideline/sideline';
@@ -47,6 +47,10 @@ export default async function HomePage() {
 		queryClient.prefetchQuery({
 			queryKey: queryKeys.home.featuredCategories(),
 			queryFn: getHomeFeaturedCategories,
+		}),
+		queryClient.prefetchQuery({
+			queryKey: queryKeys.home.superDeals(12),
+			queryFn: () => getSuperDealsShowcaseProducts(12),
 		}),
 		queryClient.prefetchQuery({
 			queryKey: queryKeys.home.dynamic(['best-deals', 'super-deals', 'user-card', 'featured']),

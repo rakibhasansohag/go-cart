@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { getAdminHomepageSections } from '@/queries/homepage-config';
+import { getAdminHomepageSections, getHomepageStudioStats } from '@/queries/homepage-config';
 import AdminHomepageClient from './_components/admin-homepage-client';
 
 export const metadata: Metadata = {
@@ -9,7 +9,15 @@ export const metadata: Metadata = {
 };
 
 export default async function AdminHomepagePage() {
-	const initialSections = await getAdminHomepageSections();
+	const [initialSections, initialStats] = await Promise.all([
+		getAdminHomepageSections(),
+		getHomepageStudioStats(),
+	]);
 
-	return <AdminHomepageClient initialSections={initialSections} />;
+	return (
+		<AdminHomepageClient
+			initialSections={initialSections}
+			initialStats={initialStats}
+		/>
+	);
 }

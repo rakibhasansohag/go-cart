@@ -4,6 +4,7 @@ import React from 'react';
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { SimpleProduct } from '@/lib/types';
 import { getHomeDataDynamic } from '@/queries/home';
+import { getSuperDealsShowcaseProducts } from '@/queries/homepage-config';
 import { queryKeys } from '@/lib/query-keys';
 import { HomepageSectionConfig } from '@/lib/homepage-types';
 import HomeMainSwiper from './main/home-swiper';
@@ -92,33 +93,18 @@ export function SuperDealsSection({
 	subtitle?: string | null;
 	config?: HomepageSectionConfig | null;
 }) {
-	const { data } = useSuspenseQuery({
-		queryKey: queryKeys.home.dynamic(['best-deals', 'super-deals', 'user-card', 'featured']),
-		queryFn: () =>
-			getHomeDataDynamic([
-				{ property: 'offer', value: 'best-deals', type: 'simple' },
-				{ property: 'offer', value: 'super-deals', type: 'simple' },
-				{ property: 'offer', value: 'user-card', type: 'simple' },
-				{ property: 'offer', value: 'featured', type: 'simple' },
-			]),
-	});
-
-	const products_best_deals = (data.products_best_deals || []) as SimpleProduct[];
-	const products_super_deals = (data.products_super_deals || []) as SimpleProduct[];
-	const combined = [...products_best_deals, ...products_super_deals];
-	const uniqueDeals = Array.from(
-		new Map(combined.map((p) => [p.slug || p.variantSlug, p])).values()
-	);
-
-	const maxItems = typeof config?.itemsLimit === 'number' ? config.itemsLimit : 10;
+	const maxItems = typeof config?.itemsLimit === 'number' ? config.itemsLimit : 12;
 	const countdownEnd = typeof config?.countdownEnd === 'string' ? config.countdownEnd : undefined;
 	const badgeText = typeof config?.badge === 'string' ? config.badge : undefined;
 
+	const { data: deals = [] } = useSuspenseQuery({
+		queryKey: queryKeys.home.superDeals(maxItems),
+		queryFn: () => getSuperDealsShowcaseProducts(maxItems),
+	});
+
 	return (
 		<AnimatedDeals
-			products={uniqueDeals.slice(0, maxItems).filter(
-				(product): product is SimpleProduct => 'variantSlug' in product,
-			)}
+			products={deals}
 			title={title}
 			subtitle={subtitle}
 			targetDate={countdownEnd}

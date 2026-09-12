@@ -1456,10 +1456,6 @@ input[type="number"],
   overflow: hidden !important;
 }
 
-.swiper-slide {
-  width: auto !important;
-}
-
 /* Dark mode overrides for .card components */
 :root.dark .card {
   background: var(--color-card) !important;
