@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useTransition, useEffect } from 'react';
+import React, { useState, useTransition, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import {
@@ -26,6 +26,7 @@ import {
 } from '@/components/ui/sheet';
 import { toast } from 'sonner';
 import {
+	Calendar,
 	CheckCircle2,
 	ChevronDown,
 	ChevronUp,
@@ -39,6 +40,7 @@ import {
 	LayoutGrid,
 	Loader2,
 	Minus,
+	Pin,
 	Plus,
 	RotateCcw,
 	Search,
@@ -149,6 +151,19 @@ export default function AdminHomepageClient({
 	} | null>(null);
 
 	const activeCount = sections.filter((s) => s.isActive).length;
+
+	// Dedicated ref and trigger to open native browser date & time picker dialog
+	const countdownInputRef = useRef<HTMLInputElement>(null);
+
+	const handleOpenDatePicker = () => {
+		if (countdownInputRef.current) {
+			try {
+				countdownInputRef.current.showPicker();
+			} catch {
+				countdownInputRef.current.focus();
+			}
+		}
+	};
 
 	// Calculate live countdown preview in drawer
 	useEffect(() => {
@@ -607,219 +622,238 @@ export default function AdminHomepageClient({
 			{/* Main Enterprise Split View: 7 cols block stack, 5 cols blueprint inspector */}
 			<div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start w-full">
 				{/* Left Column: Data-Dense Block Stack (7 cols) */}
-				<div className="lg:col-span-7 space-y-3">
-					<div className="flex items-center justify-between px-1">
-						<div className="space-y-0.5">
-							<h2 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-								<SlidersHorizontal className="size-3.5 text-primary" />
-								Configured Section Hierarchy ({sections.length})
-							</h2>
-							<p className="text-[11px] text-muted-foreground">
-								Drag rows or use arrow buttons to modify customer viewport order.
-							</p>
+				<div className="lg:col-span-7">
+					<div className="rounded-xl border border-border/80 bg-card text-card-foreground p-4 sm:p-5 space-y-4 shadow-xs">
+						{/* Card Header matching Storefront Layout Inspector */}
+						<div className="flex items-center justify-between pb-3 border-b border-border">
+							<div className="space-y-1">
+								<h2 className="text-sm sm:text-base font-bold text-foreground flex items-center gap-2 tracking-tight">
+									<span className="p-1.5 rounded-lg bg-primary/10 text-primary border border-primary/20">
+										<SlidersHorizontal className="size-4 text-primary" />
+									</span>
+									<span>Configured Section Hierarchy</span>
+									<Badge variant="outline" className="text-xs font-mono px-2 py-0.5 border-primary/30 text-primary bg-primary/5">
+										{sections.length} Live Blocks
+									</Badge>
+								</h2>
+								<p className="text-xs text-muted-foreground">
+									Drag rows or use arrow buttons to modify customer viewport sequence.
+								</p>
+							</div>
+							<div className="hidden sm:flex items-center gap-1.5 text-xs font-medium text-muted-foreground bg-muted/60 px-2.5 py-1 rounded-md border border-border/60">
+								<GripVertical className="size-3.5 text-muted-foreground" />
+								<span>Drag to reorder</span>
+							</div>
 						</div>
-					</div>
 
-					<div className="space-y-2">
-						{sections.map((section, index) => {
-							const meta = SECTION_META[section.sectionKey];
-							const Icon = meta.icon;
-							const isHovered = hoveredSectionId === section.id;
-							const isDragging = draggedIndex === index;
-							const isDropTarget = dragOverIndex === index && draggedIndex !== null && draggedIndex !== index;
+						{/* Section Draggable Rows Stack */}
+						<div className="space-y-3">
+							{sections.map((section, index) => {
+								const meta = SECTION_META[section.sectionKey];
+								const Icon = meta.icon;
+								const isHovered = hoveredSectionId === section.id;
+								const isDragging = draggedIndex === index;
+								const isDropTarget = dragOverIndex === index && draggedIndex !== null && draggedIndex !== index;
 
-							return (
-								<div
-									key={section.id}
-									id={`block-${section.id}`}
-									draggable={!isPending}
-									onDragStart={(e) => handleDragStart(e, index)}
-									onDragOver={(e) => handleDragOver(e, index)}
-									onDragLeave={handleDragLeave}
-									onDrop={(e) => handleDrop(e, index)}
-									onDragEnd={handleDragEnd}
-									onMouseEnter={() => setHoveredSectionId(section.id)}
-									onMouseLeave={() => setHoveredSectionId(null)}
-									className={`group relative rounded-xl border p-3.5 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 select-none cursor-grab active:cursor-grabbing transition-all duration-150 ${
-										isDragging
-											? 'opacity-35 border-dashed border-primary scale-[0.99] bg-muted/40 shadow-inner'
-											: section.isActive
-											? `bg-card text-card-foreground border-border/80 hover:border-primary/40 hover:shadow-xs ${meta.accentBorder} ${
-													isHovered ? 'ring-1 ring-primary/40' : ''
-											  }`
-											: 'bg-muted/30 border-dashed border-border/60 opacity-60'
-									} ${isDropTarget ? 'border-primary/60 shadow-xs' : ''}`}
-								>
-									{/* Visual Drop Insertion Indicators */}
-									{isDropTarget && dropPosition === 'before' && (
-										<div className="absolute -top-1.5 left-2 right-2 h-1 bg-primary rounded-full shadow-[0_0_12px_rgba(59,130,246,0.8)] flex items-center justify-between px-1 pointer-events-none z-30 animate-pulse">
-											<span className="size-2 rounded-full bg-primary ring-2 ring-background" />
-											<span className="size-2 rounded-full bg-primary ring-2 ring-background" />
-										</div>
-									)}
-									{isDropTarget && dropPosition === 'after' && (
-										<div className="absolute -bottom-1.5 left-2 right-2 h-1 bg-primary rounded-full shadow-[0_0_12px_rgba(59,130,246,0.8)] flex items-center justify-between px-1 pointer-events-none z-30 animate-pulse">
-											<span className="size-2 rounded-full bg-primary ring-2 ring-background" />
-											<span className="size-2 rounded-full bg-primary ring-2 ring-background" />
-										</div>
-									)}
-
-									{/* Left Details: Drag Grip + Sequence + Icon + Titles */}
-									<div className="flex items-start sm:items-center gap-3 min-w-0 flex-1">
-										{/* Order Badge with Reorder Handle */}
-										<div
-											className="flex items-center gap-1 shrink-0 cursor-grab active:cursor-grabbing p-1 -ml-1 rounded-lg hover:bg-muted/80 transition-colors group/handle"
-											title="Drag row to reorder"
-										>
-											<GripVertical className="size-4 text-muted-foreground/50 group-hover/handle:text-primary transition-colors" />
-											<div className="size-7 rounded-md bg-muted border border-border/70 flex items-center justify-center font-mono font-bold text-xs text-foreground pointer-events-none">
-												#{index + 1}
-											</div>
-										</div>
-
-										{/* Frosted Icon Tile */}
-										<div className={`size-10 rounded-lg border flex items-center justify-center shrink-0 shadow-xs ${meta.gradient}`}>
-											<Icon className="size-4.5" />
-										</div>
-
-										{/* Content Description */}
-										<div className="min-w-0 space-y-1 flex-1">
-											<div className="flex items-center gap-2 flex-wrap">
-												<h3 className="text-sm font-bold text-foreground tracking-tight">
-													{section.name}
-												</h3>
-												<Badge variant="outline" className={`text-[10px] font-mono px-1.5 py-0 border ${meta.badgeColor}`}>
-													{section.sectionKey}
-												</Badge>
-												{section.isActive ? (
-													<span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">
-														<span className="size-1 rounded-full bg-emerald-500 animate-pulse" />
-														Live
-													</span>
-												) : (
-													<span className="inline-flex items-center gap-1 text-[10px] font-medium text-muted-foreground bg-muted px-1.5 py-0.5 rounded border border-border">
-														Hidden
-													</span>
-												)}
-											</div>
-
-											{/* Heading Preview Chip */}
-											<div className="flex items-center gap-1.5 text-xs text-muted-foreground truncate">
-												<span className="font-medium text-muted-foreground">Header:</span>
-												<span className="text-foreground font-semibold truncate">
-													&ldquo;{section.title || section.name}&rdquo;
-												</span>
-												{section.subtitle && (
-													<span className="text-muted-foreground truncate hidden md:inline">
-														&mdash; {section.subtitle}
-													</span>
-												)}
-											</div>
-
-											{/* Specific Parameters Pills - CRM Data Rich */}
-											<div className="flex items-center gap-1.5 pt-0.5 flex-wrap">
-												{section.sectionKey === 'SUPER_DEALS' && (
-													<>
-														<span className="text-[10px] px-1.5 py-0.5 rounded bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20 flex items-center gap-1 font-medium">
-															<Tag className="size-2.5" />
-															{stats.productsOnSale} on Sale
-														</span>
-														<span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 flex items-center gap-1 font-medium">
-															<Zap className="size-2.5" />
-															{section.config?.badge || 'Flash Sale'}
-														</span>
-														<span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-foreground border border-border/70 flex items-center gap-1 font-mono">
-															<Clock className="size-2.5 text-muted-foreground" />
-															Cap: {section.config?.itemsLimit || 12} Deals
-														</span>
-													</>
-												)}
-												{section.sectionKey === 'HERO_GRID' && (
-													<>
-														<span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 font-medium">
-															Slider: Active
-														</span>
-														<span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-foreground border border-border/70 font-medium">
-															Side Ad: {section.config?.showSideAd !== false ? 'ON' : 'OFF'}
-														</span>
-														<span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-foreground border border-border/70 font-medium">
-															Shopper Card: {section.config?.showUserCard !== false ? 'ON' : 'OFF'}
-														</span>
-													</>
-												)}
-												{section.sectionKey === 'FEATURED_CATEGORIES' && (
-													<span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-medium">
-														Cap: {section.config?.itemsLimit || 8} Categories
-													</span>
-												)}
-												{section.sectionKey === 'MORE_TO_LOVE' && (
-													<span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20 font-medium">
-														Feed: {section.config?.itemsLimit || 18} Products
-													</span>
-												)}
-											</div>
-										</div>
-									</div>
-
-									{/* Right Controls: Steppers, Switch, Configure */}
+								return (
 									<div
-										draggable={false}
-										onDragStart={(e) => e.stopPropagation()}
-										onPointerDown={(e) => e.stopPropagation()}
-										className="flex items-center justify-between sm:justify-end gap-2 pt-2 sm:pt-0 border-t sm:border-t-0 border-border/60 shrink-0 cursor-default"
+										key={section.id}
+										id={`block-${section.id}`}
+										draggable={!isPending}
+										onDragStart={(e) => handleDragStart(e, index)}
+										onDragOver={(e) => handleDragOver(e, index)}
+										onDragLeave={handleDragLeave}
+										onDrop={(e) => handleDrop(e, index)}
+										onDragEnd={handleDragEnd}
+										onMouseEnter={() => setHoveredSectionId(section.id)}
+										onMouseLeave={() => setHoveredSectionId(null)}
+										className={`group relative rounded-xl border p-3.5 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 select-none cursor-grab active:cursor-grabbing transition-all duration-150 ${
+											isDragging
+												? 'opacity-35 border-dashed border-primary scale-[0.99] bg-muted/40 shadow-inner'
+												: section.isActive
+												? `bg-background text-card-foreground border-border/80 hover:border-primary/50 hover:shadow-xs ${meta.accentBorder} ${
+														isHovered ? 'ring-1 ring-primary/40' : ''
+												  }`
+												: 'bg-muted/30 border-dashed border-border/60 opacity-60'
+										} ${isDropTarget ? 'border-primary/60 shadow-xs' : ''}`}
 									>
-										{/* Reorder Stepper Buttons */}
-										<div className="flex items-center bg-muted/60 p-0.5 rounded-lg border border-border/70 shadow-xs">
-											<Button
-												variant="ghost"
-												size="icon"
-												className="size-7 rounded text-muted-foreground hover:text-foreground hover:bg-background transition-colors"
-												disabled={index === 0 || isPending}
-												onClick={() => handleMove(index, 'up')}
-												title="Move block up"
+										{/* Visual Drop Insertion Indicators */}
+										{isDropTarget && dropPosition === 'before' && (
+											<div className="absolute -top-1.5 left-2 right-2 h-1 bg-primary rounded-full shadow-[0_0_12px_rgba(59,130,246,0.8)] flex items-center justify-between px-1 pointer-events-none z-30 animate-pulse">
+												<span className="size-2 rounded-full bg-primary ring-2 ring-background" />
+												<span className="size-2 rounded-full bg-primary ring-2 ring-background" />
+											</div>
+										)}
+										{isDropTarget && dropPosition === 'after' && (
+											<div className="absolute -bottom-1.5 left-2 right-2 h-1 bg-primary rounded-full shadow-[0_0_12px_rgba(59,130,246,0.8)] flex items-center justify-between px-1 pointer-events-none z-30 animate-pulse">
+												<span className="size-2 rounded-full bg-primary ring-2 ring-background" />
+												<span className="size-2 rounded-full bg-primary ring-2 ring-background" />
+											</div>
+										)}
+
+										{/* Left Details: Drag Grip + Sequence + Icon + Titles */}
+										<div className="flex items-start sm:items-center gap-3 min-w-0 flex-1">
+											{/* Order Badge with Reorder Handle */}
+											<div
+												className="flex items-center gap-1 shrink-0 cursor-grab active:cursor-grabbing p-1 -ml-1 rounded-lg hover:bg-muted/80 transition-colors group/handle"
+												title="Drag row to reorder"
 											>
-												<ChevronUp className="size-3.5" />
-											</Button>
-											<div className="w-[1px] h-3.5 bg-border" />
-											<Button
-												variant="ghost"
-												size="icon"
-												className="size-7 rounded text-muted-foreground hover:text-foreground hover:bg-background transition-colors"
-												disabled={index === sections.length - 1 || isPending}
-												onClick={() => handleMove(index, 'down')}
-												title="Move block down"
-											>
-												<ChevronDown className="size-3.5" />
-											</Button>
+												<GripVertical className="size-4 text-muted-foreground/50 group-hover/handle:text-primary transition-colors" />
+												<div className="size-7 rounded-md bg-muted border border-border/70 flex items-center justify-center font-mono font-bold text-xs text-foreground pointer-events-none">
+													#{index + 1}
+												</div>
+											</div>
+
+											{/* Frosted Icon Tile */}
+											<div className={`size-10 rounded-lg border flex items-center justify-center shrink-0 shadow-xs ${meta.gradient}`}>
+												<Icon className="size-4.5" />
+											</div>
+
+											{/* Content Description */}
+											<div className="min-w-0 space-y-1 flex-1">
+												<div className="flex items-center gap-2 flex-wrap">
+													<h3 className="text-sm font-bold text-foreground tracking-tight">
+														{section.name}
+													</h3>
+													<Badge variant="outline" className={`text-[10px] font-mono px-1.5 py-0 border ${meta.badgeColor}`}>
+														{section.sectionKey}
+													</Badge>
+													{section.isActive ? (
+														<span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">
+															<span className="size-1 rounded-full bg-emerald-500 animate-pulse" />
+															Live
+														</span>
+													) : (
+														<span className="inline-flex items-center gap-1 text-[10px] font-medium text-muted-foreground bg-muted px-1.5 py-0.5 rounded border border-border">
+															Hidden
+														</span>
+													)}
+												</div>
+
+												{/* Heading Preview Chip */}
+												<div className="flex items-center gap-1.5 text-xs text-muted-foreground truncate">
+													<span className="font-medium text-muted-foreground">Header:</span>
+													<span className="text-foreground font-semibold truncate">
+														&ldquo;{section.title || section.name}&rdquo;
+													</span>
+													{section.subtitle && (
+														<span className="text-muted-foreground truncate hidden md:inline">
+															&mdash; {section.subtitle}
+														</span>
+													)}
+												</div>
+
+												{/* Specific Parameters Pills - CRM Data Rich */}
+												<div className="flex items-center gap-1.5 pt-0.5 flex-wrap">
+													{section.sectionKey === 'SUPER_DEALS' && (
+														<>
+															<span className="text-[10px] px-1.5 py-0.5 rounded bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20 flex items-center gap-1 font-medium">
+																<Tag className="size-2.5" />
+																{stats.productsOnSale} on Sale
+															</span>
+															<span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 flex items-center gap-1 font-medium">
+																<Pin className="size-2.5" />
+																{Array.isArray(section.config?.pinnedProductIds) && section.config.pinnedProductIds.length > 0
+																	? `${section.config.pinnedProductIds.length} Pinned (Opt 2)`
+																	: 'Auto Deals (Opt 1)'}
+															</span>
+															<span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 flex items-center gap-1 font-medium">
+																<Zap className="size-2.5" />
+																{section.config?.badge || 'Flash Sale'}
+															</span>
+															<span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-foreground border border-border/70 flex items-center gap-1 font-mono">
+																<Clock className="size-2.5 text-muted-foreground" />
+																Cap: {section.config?.itemsLimit || 12} Deals
+															</span>
+														</>
+													)}
+													{section.sectionKey === 'HERO_GRID' && (
+														<>
+															<span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 font-medium">
+																Slider: Active
+															</span>
+															<span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-foreground border border-border/70 font-medium">
+																Side Ad: {section.config?.showSideAd !== false ? 'ON' : 'OFF'}
+															</span>
+															<span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-foreground border border-border/70 font-medium">
+																Shopper Card: {section.config?.showUserCard !== false ? 'ON' : 'OFF'}
+															</span>
+														</>
+													)}
+													{section.sectionKey === 'FEATURED_CATEGORIES' && (
+														<span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-medium">
+															Cap: {section.config?.itemsLimit || 8} Categories
+														</span>
+													)}
+													{section.sectionKey === 'MORE_TO_LOVE' && (
+														<span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20 font-medium">
+															Feed: {section.config?.itemsLimit || 18} Products
+														</span>
+													)}
+												</div>
+											</div>
 										</div>
 
-										{/* Visibility Switch */}
-										<div className="flex items-center gap-1.5 px-2.5 py-1 bg-muted/60 rounded-lg border border-border/70 shadow-xs">
-											<span className="text-[11px] font-semibold text-foreground select-none">
-												{section.isActive ? 'Live' : 'Off'}
-											</span>
-											<Switch
-												checked={section.isActive}
-												onCheckedChange={() => handleToggleActive(section.id, section.isActive)}
-												disabled={isPending}
-												className="data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-500"
-											/>
-										</div>
-
-										{/* Configure Action Button */}
-										<Button
-											variant="outline"
-											size="sm"
-											onClick={() => handleOpenDrawer(section)}
-											className="h-8 px-2.5 gap-1.5 text-xs font-semibold rounded-lg border-border bg-background hover:bg-muted text-foreground shadow-xs hover:border-primary/40 transition-all"
+										{/* Right Controls: Steppers, Switch, Configure */}
+										<div
+											draggable={false}
+											onDragStart={(e) => e.stopPropagation()}
+											onPointerDown={(e) => e.stopPropagation()}
+											className="flex items-center justify-between sm:justify-end gap-2 pt-2 sm:pt-0 border-t sm:border-t-0 border-border/60 shrink-0 cursor-default"
 										>
-											<Settings2 className="size-3.5 text-primary" />
-											Configure
-										</Button>
+											{/* Reorder Stepper Buttons */}
+											<div className="flex items-center bg-muted/60 p-0.5 rounded-lg border border-border/70 shadow-xs">
+												<Button
+													variant="ghost"
+													size="icon"
+													className="size-7 rounded text-muted-foreground hover:text-foreground hover:bg-background transition-colors"
+													disabled={index === 0 || isPending}
+													onClick={() => handleMove(index, 'up')}
+													title="Move block up"
+												>
+													<ChevronUp className="size-3.5" />
+												</Button>
+												<div className="w-[1px] h-3.5 bg-border" />
+												<Button
+													variant="ghost"
+													size="icon"
+													className="size-7 rounded text-muted-foreground hover:text-foreground hover:bg-background transition-colors"
+													disabled={index === sections.length - 1 || isPending}
+													onClick={() => handleMove(index, 'down')}
+													title="Move block down"
+												>
+													<ChevronDown className="size-3.5" />
+												</Button>
+											</div>
+
+											{/* Visibility Switch */}
+											<div className="flex items-center gap-1.5 px-2.5 py-1 bg-muted/60 rounded-lg border border-border/70 shadow-xs">
+												<span className="text-[11px] font-semibold text-foreground select-none">
+													{section.isActive ? 'Live' : 'Off'}
+												</span>
+												<Switch
+													checked={section.isActive}
+													onCheckedChange={() => handleToggleActive(section.id, section.isActive)}
+													disabled={isPending}
+													className="data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-500"
+												/>
+											</div>
+
+											{/* Configure Action Button */}
+											<Button
+												variant="outline"
+												size="sm"
+												onClick={() => handleOpenDrawer(section)}
+												className="h-8 px-2.5 gap-1.5 text-xs font-semibold rounded-lg border-border bg-background hover:bg-muted text-foreground shadow-xs hover:border-primary/40 transition-all"
+											>
+												<Settings2 className="size-3.5 text-primary" />
+												Configure
+											</Button>
+										</div>
 									</div>
-								</div>
-							);
-						})}
+								);
+							})}
+						</div>
 					</div>
 				</div>
 
@@ -893,11 +927,11 @@ export default function AdminHomepageClient({
 												</div>
 
 												{section.isActive ? (
-													<span className="text-[9px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.2 rounded border border-emerald-500/20 shrink-0">
+													<span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20 shrink-0">
 														Live
 													</span>
 												) : (
-													<span className="text-[9px] font-medium text-muted-foreground bg-muted px-1.5 py-0.2 rounded border border-border shrink-0">
+													<span className="text-[10px] font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded border border-border shrink-0">
 														Hidden
 													</span>
 												)}
@@ -905,36 +939,37 @@ export default function AdminHomepageClient({
 
 											{/* Mini Visual Schematic Rendering */}
 											{section.isActive && (
-												<div className="mt-1.5 pt-1.5 border-t border-border/60">
+												<div className="mt-2 pt-2 border-t border-border/60">
 													{section.sectionKey === 'HERO_GRID' && (
-														<div className="grid grid-cols-3 gap-1 h-5">
-															<div className="rounded bg-blue-500/15 border border-blue-500/20 col-span-2 flex items-center justify-center text-[8px] text-blue-600 dark:text-blue-300 font-medium">
+														<div className="grid grid-cols-3 gap-1.5 min-h-[26px]">
+															<div className="rounded-md bg-blue-500/15 border border-blue-500/25 col-span-2 flex items-center justify-center text-[10px] text-blue-600 dark:text-blue-300 font-semibold px-2">
 																Hero Slider
 															</div>
-															<div className="rounded bg-muted border border-border flex items-center justify-center text-[8px] text-muted-foreground">
+															<div className="rounded-md bg-muted border border-border flex items-center justify-center text-[10px] text-muted-foreground font-semibold px-1">
 																Banner
 															</div>
 														</div>
 													)}
 
 													{section.sectionKey === 'SUPER_DEALS' && (
-														<div className="flex items-center gap-1.5 h-5 px-2 rounded bg-rose-500/15 border border-rose-500/20 justify-between">
-															<span className="text-[8px] font-bold text-rose-600 dark:text-rose-300 flex items-center gap-1">
-																<Flame className="size-2.5" />
+														<div className="flex items-center gap-2 min-h-[26px] px-2.5 rounded-md bg-rose-500/15 border border-rose-500/25 justify-between">
+															<span className="text-[10px] font-bold text-rose-600 dark:text-rose-300 flex items-center gap-1.5">
+																<Flame className="size-3 text-rose-500" />
 																{stats.productsOnSale} Deals Active
 															</span>
-															<span className="text-[8px] font-mono text-amber-600 dark:text-amber-300">
+															<span className="text-[10px] font-mono font-medium text-amber-600 dark:text-amber-300 flex items-center gap-1">
+																<Clock className="size-2.5 text-amber-500" />
 																Live Ticker
 															</span>
 														</div>
 													)}
 
 													{section.sectionKey === 'FEATURED_CATEGORIES' && (
-														<div className="flex items-center gap-1 h-5">
+														<div className="flex items-center gap-1.5 min-h-[26px]">
 															{[1, 2, 3, 4].map((i) => (
 																<div
 																	key={i}
-																	className="flex-1 h-full rounded bg-emerald-500/15 border border-emerald-500/20 flex items-center justify-center text-[7px] text-emerald-600 dark:text-emerald-300 font-medium"
+																	className="flex-1 h-full py-1 rounded-md bg-emerald-500/15 border border-emerald-500/25 flex items-center justify-center text-[10px] text-emerald-600 dark:text-emerald-300 font-semibold"
 																>
 																	Cat {i}
 																</div>
@@ -943,12 +978,14 @@ export default function AdminHomepageClient({
 													)}
 
 													{section.sectionKey === 'MORE_TO_LOVE' && (
-														<div className="grid grid-cols-4 gap-1 h-5">
+														<div className="grid grid-cols-4 gap-1.5 min-h-[26px]">
 															{[1, 2, 3, 4].map((i) => (
 																<div
 																	key={i}
-																	className="h-full rounded bg-purple-500/15 border border-purple-500/20"
-																/>
+																	className="h-full py-1 rounded-md bg-purple-500/15 border border-purple-500/25 flex items-center justify-center text-[10px] text-purple-600 dark:text-purple-300 font-semibold"
+																>
+																	Item {i}
+																</div>
 															))}
 														</div>
 													)}
@@ -1068,20 +1105,178 @@ export default function AdminHomepageClient({
 													Super Deals Showcase Engine
 												</h3>
 											</div>
-											<Badge variant="outline" className="text-[10px] border-rose-500/30 text-rose-600 dark:text-rose-400">
+											<Badge variant="outline" className="text-[10px] border-rose-500/30 text-rose-600 dark:text-rose-400 font-mono">
 												{stats.productsOnSale} on Sale
 											</Badge>
 										</div>
 
-										{/* Informational Catalog Coverage Note */}
-										<div className="p-3 rounded-lg bg-rose-500/10 border border-rose-500/20 text-xs text-rose-700 dark:text-rose-300 space-y-1">
-											<p className="font-semibold flex items-center gap-1.5">
-												<Tag className="size-3.5" />
-												Store Catalog Sales Coverage
-											</p>
-											<p className="text-[11px] opacity-90">
-												There are currently <strong>{stats.productsOnSale} products on sale</strong> across the store with discounts up to <strong>{stats.maxDiscount}% OFF</strong>. These items automatically populate this showcase.
-											</p>
+										{/* Product Selection Strategy Overview: Option 1 vs Option 2 */}
+										<div className="rounded-xl border border-border/80 bg-muted/30 p-3.5 space-y-2.5">
+											<div className="flex items-center justify-between">
+												<span className="text-xs font-bold text-foreground flex items-center gap-1.5">
+													<Layers className="size-3.5 text-primary" />
+													Product Selection Strategy (Option 1 vs Option 2)
+												</span>
+												<Badge variant="outline" className="text-[10px] font-mono border-primary/30 text-primary bg-primary/5">
+													{draftPinnedProductIds.length > 0 ? 'Option 2 (Pinned) Active' : 'Option 1 (Auto) Active'}
+												</Badge>
+											</div>
+
+											<div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+												<div className="p-2.5 rounded-lg border border-border/70 bg-card space-y-1">
+													<div className="flex items-center gap-1.5 font-semibold text-foreground text-[11px]">
+														<Flame className="size-3 text-rose-500" />
+														Option 1: Auto Catalog Deals
+													</div>
+													<p className="text-[10.5px] text-muted-foreground leading-relaxed">
+														Automatically surfaces <strong>{stats.productsOnSale} discounted products</strong> (up to <strong>{stats.maxDiscount}% OFF</strong>) based on store discounts.
+													</p>
+												</div>
+
+												<div className={`p-2.5 rounded-lg border space-y-1 transition-all ${
+													draftPinnedProductIds.length > 0
+														? 'border-amber-500/40 bg-amber-500/10 ring-1 ring-amber-500/30'
+														: 'border-border/70 bg-card'
+												}`}>
+													<div className="flex items-center justify-between">
+														<span className="flex items-center gap-1.5 font-semibold text-amber-600 dark:text-amber-400 text-[11px]">
+															<Pin className="size-3 text-amber-500" />
+															Option 2: Curated Spotlight
+														</span>
+														<Badge className="text-[9px] px-1.5 py-0 bg-amber-500/20 text-amber-700 dark:text-amber-300 border-none font-mono">
+															{draftPinnedProductIds.length} Pinned
+														</Badge>
+													</div>
+													<p className="text-[10.5px] text-muted-foreground leading-relaxed">
+														Handpick and pin specific items below to lock them at the front of the customer showcase.
+													</p>
+												</div>
+											</div>
+										</div>
+
+										{/* Option 2: Curated Spotlight Products Section (Search & Pin) */}
+										<div className="rounded-xl border-2 border-amber-500/30 bg-amber-500/5 p-3.5 space-y-3">
+											<div className="flex items-center justify-between">
+												<div className="space-y-0.5">
+													<Label className="text-xs font-bold text-foreground flex items-center gap-1.5">
+														<Pin className="size-3.5 text-amber-500" />
+														Option 2: Pin Specific Products to Showcase
+													</Label>
+													<p className="text-[11px] text-muted-foreground">
+														Search catalog to feature handpicked products first in this section.
+													</p>
+												</div>
+												<Badge variant="outline" className="text-[10px] font-mono border-amber-500/40 text-amber-600 dark:text-amber-400 bg-amber-500/10">
+													{draftPinnedProductIds.length} Selected
+												</Badge>
+											</div>
+
+											{/* Pinned Items Chips */}
+											{draftPinnedProductIds.length > 0 && (
+												<div className="flex flex-wrap gap-1.5 p-2 rounded-lg bg-background/80 border border-border/70">
+													{draftPinnedProductIds.map((id, index) => {
+														const item = pinnedProductDetails.get(id);
+														return (
+															<div
+																key={id}
+																className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-card border border-border text-[11px] font-medium text-foreground shadow-2xs group"
+															>
+																<span className="size-4 rounded-full bg-amber-500/20 text-amber-600 dark:text-amber-400 text-[10px] font-bold flex items-center justify-center">
+																	{index + 1}
+																</span>
+																<span className="max-w-[140px] truncate">
+																	{item?.name || `Product #${id.slice(0, 8)}`}
+																</span>
+																<button
+																	type="button"
+																	onClick={() => unpinProduct(id)}
+																	className="size-4 rounded-full hover:bg-rose-500/20 text-muted-foreground hover:text-rose-600 flex items-center justify-center transition-colors"
+																	aria-label="Unpin product"
+																>
+																	<X className="size-3" />
+																</button>
+															</div>
+														);
+													})}
+												</div>
+											)}
+
+											{/* Search input for curation */}
+											<div className="relative">
+												<Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground pointer-events-none" />
+												<Input
+													placeholder="Search catalog by name or category to pin..."
+													value={curationSearchQuery}
+													onChange={(e) => setCurationSearchQuery(e.target.value)}
+													className="h-9 pl-8 pr-8 rounded-lg bg-background border-input text-foreground placeholder:text-muted-foreground text-xs"
+												/>
+												{isSearchingCuration && (
+													<Loader2 className="absolute right-2.5 top-1/2 -translate-y-1/2 size-3.5 animate-spin text-muted-foreground" />
+												)}
+												{curationSearchQuery && !isSearchingCuration && (
+													<button
+														type="button"
+														onClick={() => setCurationSearchQuery('')}
+														className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+													>
+														<X className="size-3.5" />
+													</button>
+												)}
+											</div>
+
+											{/* Search Results Dropdown / List */}
+											{curationSearchResults.length > 0 && (
+												<div className="rounded-lg border border-border bg-popover text-popover-foreground shadow-md max-h-48 overflow-y-auto divide-y divide-border/60">
+													{curationSearchResults.map((prod) => {
+														const isPinned = draftPinnedProductIds.includes(prod.id);
+														return (
+															<div
+																key={prod.id}
+																className="p-2 flex items-center justify-between gap-2 hover:bg-muted/50 transition-colors text-xs"
+															>
+																<div className="flex items-center gap-2 min-w-0">
+																	<div className="relative size-8 rounded bg-muted shrink-0 overflow-hidden border border-border/60">
+																		<Image
+																			src={prod.image}
+																			alt={prod.name}
+																			fill
+																			sizes="32px"
+																			className="object-contain p-0.5"
+																		/>
+																	</div>
+																	<div className="min-w-0">
+																		<p className="font-semibold text-foreground truncate text-[11px]">
+																			{prod.name}
+																		</p>
+																		<div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+																			<span>{prod.categoryName || 'General'}</span>
+																			<span>•</span>
+																			<span className="font-mono text-foreground font-semibold">
+																				${prod.price.toFixed(2)}
+																			</span>
+																			{prod.discount > 0 && (
+																				<span className="text-rose-600 font-bold">
+																					-{prod.discount}%
+																				</span>
+																			)}
+																		</div>
+																	</div>
+																</div>
+
+																<Button
+																	type="button"
+																	size="sm"
+																	variant={isPinned ? 'destructive' : 'outline'}
+																	onClick={() => togglePinProduct(prod)}
+																	className="h-6 px-2 text-[10px] shrink-0"
+																>
+																	{isPinned ? 'Unpin' : 'Pin'}
+																</Button>
+															</div>
+														);
+													})}
+												</div>
+											)}
 										</div>
 
 										{/* Sale Badge Pill */}
@@ -1112,24 +1307,47 @@ export default function AdminHomepageClient({
 											</div>
 										</div>
 
-										{/* Countdown Target Time with Proper Cursor Pointer & Styling */}
+										{/* Countdown Target Time with Proper Cursor Pointer, showPicker click, and dedicated button */}
 										<div className="space-y-2 pt-2 border-t border-border">
 											<Label htmlFor="superdeals-timer" className="text-xs font-semibold text-foreground flex items-center justify-between">
 												<span className="flex items-center gap-1.5">
 													<Clock className="size-3.5 text-amber-500" />
 													Countdown Target Date & Time
 												</span>
-												<span className="text-[10px] text-muted-foreground">Click field to open picker</span>
+												<span className="text-[10px] text-muted-foreground">Click field or button to open picker</span>
 											</Label>
 
-											<div className="relative">
-												<Input
-													id="superdeals-timer"
-													type="datetime-local"
-													value={draftCountdownEnd}
-													onChange={(e) => setDraftCountdownEnd(e.target.value)}
-													className="h-10 rounded-lg bg-background border-input text-foreground cursor-pointer [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-70 [&::-webkit-calendar-picker-indicator]:hover:opacity-100 dark:[&::-webkit-calendar-picker-indicator]:filter dark:[&::-webkit-calendar-picker-indicator]:invert pr-4 font-mono text-xs focus-visible:ring-amber-500/50"
-												/>
+											<div className="flex items-center gap-2">
+												<div className="relative flex-1">
+													<Input
+														ref={countdownInputRef}
+														id="superdeals-timer"
+														type="datetime-local"
+														value={draftCountdownEnd}
+														onChange={(e) => setDraftCountdownEnd(e.target.value)}
+														onClick={handleOpenDatePicker}
+														className="h-10 rounded-lg bg-background border-input text-foreground cursor-pointer pr-9 font-mono text-xs focus-visible:ring-amber-500/50 [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-80 [&::-webkit-calendar-picker-indicator]:hover:opacity-100 dark:[&::-webkit-calendar-picker-indicator]:filter dark:[&::-webkit-calendar-picker-indicator]:invert"
+													/>
+													<button
+														type="button"
+														onClick={handleOpenDatePicker}
+														className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-muted text-amber-500 hover:text-amber-400 transition-colors"
+														title="Open Date & Time Picker"
+														aria-label="Open Date & Time Picker"
+													>
+														<Calendar className="size-4" />
+													</button>
+												</div>
+												<Button
+													type="button"
+													variant="outline"
+													size="sm"
+													onClick={handleOpenDatePicker}
+													className="h-10 px-3 gap-1.5 rounded-lg border-border bg-background hover:bg-muted text-foreground shrink-0 font-medium text-xs shadow-xs"
+												>
+													<Calendar className="size-3.5 text-amber-500" />
+													<span>Pick Date</span>
+												</Button>
 											</div>
 
 											{/* Live Ticking Countdown Preview */}
@@ -1255,131 +1473,6 @@ export default function AdminHomepageClient({
 												<span>12 deals (recommended)</span>
 												<span>30 deals (max)</span>
 											</div>
-										</div>
-
-										{/* Curated Spotlight Products Section */}
-										<div className="space-y-3 pt-3 border-t border-border">
-											<div className="flex items-center justify-between">
-												<div className="space-y-0.5">
-													<Label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-														<Sparkles className="size-3.5 text-amber-500" />
-														Curated Spotlight Products
-													</Label>
-													<p className="text-[11px] text-muted-foreground">
-														Handpicked products pinned to the front of this deals carousel.
-													</p>
-												</div>
-												<Badge variant="outline" className="text-[10px] font-mono border-amber-500/30 text-amber-600 dark:text-amber-400">
-													{draftPinnedProductIds.length} Pinned
-												</Badge>
-											</div>
-
-											{/* Pinned Items Chips */}
-											{draftPinnedProductIds.length > 0 && (
-												<div className="flex flex-wrap gap-1.5 p-2 rounded-lg bg-muted/40 border border-border/70">
-													{draftPinnedProductIds.map((id, index) => {
-														const item = pinnedProductDetails.get(id);
-														return (
-															<div
-																key={id}
-																className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-card border border-border text-[11px] font-medium text-foreground shadow-2xs group"
-															>
-																<span className="size-4 rounded-full bg-amber-500/20 text-amber-600 text-[10px] font-bold flex items-center justify-center">
-																	{index + 1}
-																</span>
-																<span className="max-w-[140px] truncate">
-																	{item?.name || `Product #${id.slice(0, 8)}`}
-																</span>
-																<button
-																	type="button"
-																	onClick={() => unpinProduct(id)}
-																	className="size-4 rounded-full hover:bg-rose-500/20 text-muted-foreground hover:text-rose-600 flex items-center justify-center transition-colors"
-																	aria-label="Unpin product"
-																>
-																	<X className="size-3" />
-																</button>
-															</div>
-														);
-													})}
-												</div>
-											)}
-
-											{/* Search input for curation */}
-											<div className="relative">
-												<Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground pointer-events-none" />
-												<Input
-													placeholder="Search catalog by name or category to pin..."
-													value={curationSearchQuery}
-													onChange={(e) => setCurationSearchQuery(e.target.value)}
-													className="h-9 pl-8 pr-8 rounded-lg bg-background border-input text-foreground placeholder:text-muted-foreground text-xs"
-												/>
-												{isSearchingCuration && (
-													<Loader2 className="absolute right-2.5 top-1/2 -translate-y-1/2 size-3.5 animate-spin text-muted-foreground" />
-												)}
-												{curationSearchQuery && !isSearchingCuration && (
-													<button
-														type="button"
-														onClick={() => setCurationSearchQuery('')}
-														className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-													>
-														<X className="size-3.5" />
-													</button>
-												)}
-											</div>
-
-											{/* Search Results Dropdown / List */}
-											{curationSearchResults.length > 0 && (
-												<div className="rounded-lg border border-border bg-popover text-popover-foreground shadow-md max-h-48 overflow-y-auto divide-y divide-border/60">
-													{curationSearchResults.map((prod) => {
-														const isPinned = draftPinnedProductIds.includes(prod.id);
-														return (
-															<div
-																key={prod.id}
-																className="p-2 flex items-center justify-between gap-2 hover:bg-muted/50 transition-colors text-xs"
-															>
-																<div className="flex items-center gap-2 min-w-0">
-																	<div className="relative size-8 rounded bg-muted shrink-0 overflow-hidden border border-border/60">
-																		<Image
-																			src={prod.image}
-																			alt={prod.name}
-																			fill
-																			sizes="32px"
-																			className="object-contain p-0.5"
-																		/>
-																	</div>
-																	<div className="min-w-0">
-																		<p className="font-semibold text-foreground truncate text-[11px]">
-																			{prod.name}
-																		</p>
-																		<div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-																			<span>{prod.categoryName || 'General'}</span>
-																			<span>•</span>
-																			<span className="font-mono text-foreground font-semibold">
-																				${prod.price.toFixed(2)}
-																			</span>
-																			{prod.discount > 0 && (
-																				<span className="text-rose-600 font-bold">
-																					-{prod.discount}%
-																				</span>
-																			)}
-																		</div>
-																	</div>
-																</div>
-
-																<Button
-																	type="button"
-																	size="sm"
-																	variant={isPinned ? 'destructive' : 'outline'}
-																	onClick={() => togglePinProduct(prod)}
-																	className="h-6 px-2 text-[10px] shrink-0"
-																>
-																	{isPinned ? 'Unpin' : 'Pin'}
-																</Button>
-															</div>
-														);
-													})}
-												</div>
-											)}
 										</div>
 									</div>
 								)}
