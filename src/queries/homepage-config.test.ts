@@ -41,6 +41,8 @@ import {
 	resetHomepageLayout,
 	getHomepageStudioStats,
 	getSuperDealsShowcaseProducts,
+	searchProductsForCuration,
+	recordSectionInteraction,
 } from './homepage-config';
 import { DEFAULT_HOMEPAGE_SECTIONS } from '@/lib/homepage-types';
 
@@ -389,6 +391,122 @@ describe('Homepage Configuration & Visual Customizer Queries', () => {
 			// Should only include the first unique item, discarding the duplicate
 			expect(deals).toHaveLength(1);
 			expect(deals[0].id).toBe('prod_1');
+		});
+
+		it('prioritizes pinned products from section config at the front of the showcase', async () => {
+			const mockPinned = [
+				{
+					id: 'pinned_1',
+					name: 'Handpicked Spotlight Deal',
+					slug: 'spotlight-deal',
+					rating: 4.9,
+					sales: 500,
+					numReviews: 80,
+					offerTag: { name: 'Super Deals', url: 'super-deals' },
+					variants: [
+						{
+							id: 'var_p',
+							slug: 'spotlight-deal-var',
+							variantName: 'Default',
+							variantImage: '/spotlight.jpg',
+							isSale: true,
+							sales: 500,
+							sizes: [{ price: 100, discount: 20, quantity: 15 }],
+							images: [{ url: '/spotlight.jpg' }],
+						},
+					],
+				},
+			];
+
+			const mockRegular = [
+				{
+					id: 'regular_1',
+					name: 'Standard Discounted Product',
+					slug: 'standard-product',
+					rating: 4.5,
+					sales: 50,
+					numReviews: 10,
+					offerTag: null,
+					variants: [
+						{
+							id: 'var_r',
+							slug: 'standard-var',
+							variantName: 'Default',
+							variantImage: '/standard.jpg',
+							isSale: true,
+							sales: 50,
+							sizes: [{ price: 40, discount: 15, quantity: 30 }],
+							images: [{ url: '/standard.jpg' }],
+						},
+					],
+				},
+			];
+
+			// Mock findMany: first call is for pinned items, second call is for automated items, third fallback
+			harness.db.product.findMany
+				.mockResolvedValueOnce(mockPinned)
+				.mockResolvedValueOnce(mockRegular)
+				.mockResolvedValueOnce([]);
+
+			const deals = await getSuperDealsShowcaseProducts(6, {
+				pinnedProductIds: ['pinned_1'],
+			});
+
+			expect(deals.length).toBeGreaterThanOrEqual(2);
+			expect(deals[0].id).toBe('pinned_1');
+			expect(deals[0].name).toBe('Handpicked Spotlight Deal');
+			expect(deals[1].id).toBe('regular_1');
+		});
+	});
+
+	describe('searchProductsForCuration', () => {
+		it('returns empty array when query is empty', async () => {
+			harness.currentUser.mockResolvedValue({
+				id: 'admin_user',
+				privateMetadata: { role: 'ADMIN' },
+			});
+
+			const results = await searchProductsForCuration('   ');
+			expect(results).toEqual([]);
+		});
+
+		it('searches and maps catalog products for admin curation', async () => {
+			harness.currentUser.mockResolvedValue({
+				id: 'admin_user',
+				privateMetadata: { role: 'ADMIN' },
+			});
+
+			harness.db.product.findMany.mockResolvedValueOnce([
+				{
+					id: 'prod_search_1',
+					name: 'Gaming Headset Pro',
+					slug: 'gaming-headset-pro',
+					rating: 4.8,
+					sales: 120,
+					category: { name: 'Audio' },
+					variants: [
+						{
+							variantImage: '/headset.jpg',
+							sizes: [{ price: 79.99, discount: 15 }],
+							images: [{ url: '/headset.jpg' }],
+						},
+					],
+				},
+			]);
+
+			const results = await searchProductsForCuration('Headset');
+			expect(results).toHaveLength(1);
+			expect(results[0].id).toBe('prod_search_1');
+			expect(results[0].name).toBe('Gaming Headset Pro');
+			expect(results[0].categoryName).toBe('Audio');
+			expect(results[0].price).toBe(79.99);
+		});
+	});
+
+	describe('recordSectionInteraction', () => {
+		it('successfully logs section interaction without error', async () => {
+			const res = await recordSectionInteraction('SUPER_DEALS', 'prod_123', 'click');
+			expect(res).toEqual({ success: true });
 		});
 	});
 });

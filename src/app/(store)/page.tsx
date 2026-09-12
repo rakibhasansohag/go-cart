@@ -34,11 +34,19 @@ export default async function HomePage() {
 		  }
 		: null;
 
+	const layoutSections = await getHomepageLayout();
+	const superDealsSection = layoutSections.find((s) => s.sectionKey === 'SUPER_DEALS');
+	const superDealsConfig = superDealsSection?.config;
+	const superDealsLimit = typeof superDealsConfig?.itemsLimit === 'number' ? superDealsConfig.itemsLimit : 12;
+	const superDealsPinned = Array.isArray(superDealsConfig?.pinnedProductIds)
+		? (superDealsConfig.pinnedProductIds as string[])
+		: undefined;
+
 	// Initiate parallel non-blocking prefetching on the server
 	const prefetchPromises = [
 		queryClient.prefetchQuery({
 			queryKey: queryKeys.home.layout(),
-			queryFn: getHomepageLayout,
+			queryFn: async () => layoutSections,
 		}),
 		queryClient.prefetchQuery({
 			queryKey: queryKeys.products.list({ sort: 'most-popular' }, 'most-popular', null),
@@ -49,8 +57,8 @@ export default async function HomePage() {
 			queryFn: getHomeFeaturedCategories,
 		}),
 		queryClient.prefetchQuery({
-			queryKey: queryKeys.home.superDeals(12),
-			queryFn: () => getSuperDealsShowcaseProducts(12),
+			queryKey: queryKeys.home.superDeals(superDealsLimit, superDealsPinned),
+			queryFn: () => getSuperDealsShowcaseProducts(superDealsLimit, superDealsConfig),
 		}),
 		queryClient.prefetchQuery({
 			queryKey: queryKeys.home.dynamic(['best-deals', 'super-deals', 'user-card', 'featured']),
@@ -66,7 +74,6 @@ export default async function HomePage() {
 
 	// Non-blocking parallel execution
 	await Promise.allSettled(prefetchPromises);
-	const layoutSections = await getHomepageLayout();
 
 	return (
 		<>

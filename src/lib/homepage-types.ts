@@ -10,8 +10,23 @@ export interface HomepageSectionConfig {
 	itemsLimit?: number;
 	showSideAd?: boolean;
 	showUserCard?: boolean;
+	pinnedProductIds?: string[];
+	pinnedProductSlugs?: string[];
 	[key: string]: unknown;
 }
+
+export interface CuratedProductSearchResult {
+	id: string;
+	name: string;
+	slug: string;
+	image: string;
+	price: number;
+	discount: number;
+	rating: number;
+	sales: number;
+	categoryName?: string;
+}
+
 
 export interface HomepageSectionItem {
 	id: string;

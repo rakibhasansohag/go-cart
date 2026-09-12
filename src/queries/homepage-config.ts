@@ -12,6 +12,7 @@ import {
 	type HomepageSectionKey,
 	type HomepageStudioStats,
 	type DealProductItem,
+	type CuratedProductSearchResult,
 } from '@/lib/homepage-types';
 
 export type {
@@ -20,6 +21,7 @@ export type {
 	HomepageSectionKey,
 	HomepageStudioStats,
 	DealProductItem,
+	CuratedProductSearchResult,
 };
 
 // Helper: Seed default sections if the table is empty
@@ -305,73 +307,106 @@ export async function getHomepageStudioStats(): Promise<HomepageStudioStats> {
 }
 
 // Function: getSuperDealsShowcaseProducts
-// Description: Retrieves active discounted and on-sale products for the storefront Super Deals section.
+// Description: Retrieves active discounted and on-sale products for the storefront Super Deals section, prioritizing curated/pinned items when configured.
 // Access Level: Public
-export async function getSuperDealsShowcaseProducts(limit: number = 12): Promise<DealProductItem[]> {
+export async function getSuperDealsShowcaseProducts(
+	limit: number = 12,
+	config?: HomepageSectionConfig | null
+): Promise<DealProductItem[]> {
 	try {
-		const products = await db.product.findMany({
+		const dealProductSelect = {
+			id: true,
+			name: true,
+			slug: true,
+			rating: true,
+			sales: true,
+			numReviews: true,
+			offerTag: {
+				select: { name: true, url: true },
+			},
+			variants: {
+				take: 1,
+				select: {
+					id: true,
+					variantName: true,
+					variantImage: true,
+					slug: true,
+					isSale: true,
+					sales: true,
+					sizes: {
+						orderBy: { price: 'asc' as const },
+						select: {
+							price: true,
+							discount: true,
+							quantity: true,
+						},
+					},
+					images: {
+						take: 1,
+						orderBy: { order: 'asc' as const },
+						select: { url: true },
+					},
+				},
+			},
+		};
+
+		const seenNames = new Set<string>();
+		const seenIds = new Set<string>();
+		const curatedProducts = [];
+
+		// 1. If pinned product IDs are configured, fetch and prioritize them first
+		const pinnedIds = config?.pinnedProductIds;
+		if (Array.isArray(pinnedIds) && pinnedIds.length > 0) {
+			const pinned = await db.product.findMany({
+				where: {
+					id: { in: pinnedIds },
+				},
+				select: dealProductSelect,
+			});
+
+			// Maintain the explicit pinning order specified by admin
+			const pinnedMap = new Map(pinned.map((p) => [p.id, p]));
+			for (const id of pinnedIds) {
+				const item = pinnedMap.get(id);
+				if (item) {
+					const norm = item.name.trim().toLowerCase();
+					if (!seenNames.has(norm) && !seenIds.has(item.id)) {
+						seenNames.add(norm);
+						seenIds.add(item.id);
+						curatedProducts.push(item);
+					}
+				}
+			}
+		}
+
+		// 2. Fetch automated discounted and sale products to fill remaining capacity
+		const remainingCount = Math.max(limit * 2, 24) - curatedProducts.length;
+		const products = remainingCount > 0 ? await db.product.findMany({
 			where: {
+				id: { notIn: Array.from(seenIds) },
 				OR: [
 					{ variants: { some: { isSale: true } } },
 					{ variants: { some: { sizes: { some: { discount: { gt: 0 } } } } } },
 					{ offerTag: { url: { in: ['super-deals', 'best-deals', 'flash-deals'] } } },
 				],
 			},
-			take: Math.max(limit * 2, 24),
+			take: remainingCount,
 			orderBy: [{ sales: 'desc' }, { rating: 'desc' }],
-			select: {
-				id: true,
-				name: true,
-				slug: true,
-				rating: true,
-				sales: true,
-				numReviews: true,
-				offerTag: {
-					select: { name: true, url: true },
-				},
-				variants: {
-					take: 1,
-					select: {
-						id: true,
-						variantName: true,
-						variantImage: true,
-						slug: true,
-						isSale: true,
-						sales: true,
-						sizes: {
-							orderBy: { price: 'asc' },
-							select: {
-								price: true,
-								discount: true,
-								quantity: true,
-							},
-						},
-						images: {
-							take: 1,
-							orderBy: { order: 'asc' },
-							select: { url: true },
-						},
-					},
-				},
-			},
-		});
+			select: dealProductSelect,
+		}) : [];
 
-		// Deduplicate products strictly by trimmed normalized name so identical items never appear simultaneously
-		const seenNames = new Set<string>();
-		const seenIds = new Set<string>();
-		const uniqueProducts = [];
-
+		// Deduplicate products strictly by trimmed normalized name
 		for (const p of products) {
 			const normalizedName = p.name.trim().toLowerCase();
 			if (!seenNames.has(normalizedName) && !seenIds.has(p.id)) {
 				seenNames.add(normalizedName);
 				seenIds.add(p.id);
-				uniqueProducts.push(p);
+				curatedProducts.push(p);
 			}
 		}
 
-		// Fallback: If not enough unique discounted products, supplement with top products
-		let finalProducts = uniqueProducts;
+		// 3. Fallback: If not enough unique discounted products, supplement with top products
+		let finalProducts = curatedProducts;
 		if (finalProducts.length < 4) {
 			const extra = await db.product.findMany({
 				where: {
@@ -379,35 +414,7 @@ export async function getSuperDealsShowcaseProducts(limit: number = 12): Promise
 				},
 				take: 4 - finalProducts.length,
 				orderBy: { sales: 'desc' },
-				select: {
-					id: true,
-					name: true,
-					slug: true,
-					rating: true,
-					sales: true,
-					numReviews: true,
-					offerTag: { select: { name: true, url: true } },
-					variants: {
-						take: 1,
-						select: {
-							id: true,
-							variantName: true,
-							variantImage: true,
-							slug: true,
-							isSale: true,
-							sales: true,
-							sizes: {
-								orderBy: { price: 'asc' },
-								select: { price: true, discount: true, quantity: true },
-							},
-							images: {
-								take: 1,
-								orderBy: { order: 'asc' },
-								select: { url: true },
-							},
-						},
-					},
-				},
+				select: dealProductSelect,
 			});
 			for (const item of (Array.isArray(extra) ? extra : [])) {
 				const norm = item.name.trim().toLowerCase();
@@ -453,5 +460,101 @@ export async function getSuperDealsShowcaseProducts(limit: number = 12): Promise
 	} catch (error) {
 		console.error('[SUPER_DEALS_SHOWCASE] Failed to load deals products:', error);
 		return [];
+	}
+}
+
+// Function: searchProductsForCuration
+// Description: Searches catalog products for admin manual curation in homepage drawers.
+// Access Level: Admin only
+export async function searchProductsForCuration(
+	query: string
+): Promise<CuratedProductSearchResult[]> {
+	await assertAdmin();
+
+	if (!query || query.trim().length === 0) {
+		return [];
+	}
+
+	const trimmed = query.trim();
+	try {
+		const products = await db.product.findMany({
+			where: {
+				OR: [
+					{ name: { contains: trimmed, mode: 'insensitive' } },
+					{ slug: { contains: trimmed, mode: 'insensitive' } },
+					{ category: { name: { contains: trimmed, mode: 'insensitive' } } },
+				],
+			},
+			take: 8,
+			orderBy: { sales: 'desc' },
+			select: {
+				id: true,
+				name: true,
+				slug: true,
+				rating: true,
+				sales: true,
+				category: { select: { name: true } },
+				variants: {
+					take: 1,
+					select: {
+						variantImage: true,
+						sizes: {
+							take: 1,
+							orderBy: { price: 'asc' },
+							select: { price: true, discount: true },
+						},
+						images: {
+							take: 1,
+							orderBy: { order: 'asc' },
+							select: { url: true },
+						},
+					},
+				},
+			},
+		});
+
+		return products.map((p): CuratedProductSearchResult => {
+			const variant = p.variants[0];
+			const size = variant?.sizes[0];
+			const price = size?.price || 49.99;
+			const discount = size?.discount || 0;
+			const image =
+				variant?.variantImage || variant?.images[0]?.url || '/assets/images/placeholder.webp';
+
+			return {
+				id: p.id,
+				name: p.name,
+				slug: p.slug,
+				image,
+				price,
+				discount,
+				rating: p.rating,
+				sales: p.sales,
+				categoryName: p.category?.name,
+			};
+		});
+	} catch (error) {
+		console.error('[SEARCH_PRODUCTS_CURATION] Failed to search products:', error);
+		return [];
+	}
+}
+
+// Function: recordSectionInteraction
+// Description: Logs storefront section interactions (impressions, deal button clicks).
+// Access Level: Public
+export async function recordSectionInteraction(
+	sectionKey: string,
+	productId?: string,
+	type: 'view' | 'click' = 'click'
+): Promise<{ success: boolean }> {
+	try {
+		if (process.env.NODE_ENV !== 'production') {
+			console.log(
+				`[SECTION_INTERACTION] ${type.toUpperCase()} recorded for section=${sectionKey}, product=${productId || 'none'}`
+			);
+		}
+		return { success: true };
+	} catch {
+		return { success: false };
 	}
 }

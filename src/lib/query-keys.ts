@@ -13,7 +13,7 @@ export const queryKeys = {
 		dynamic: (tags: string[]) => ['home', 'dynamic', tags] as const,
 		featuredCategories: () => ['home', 'featuredCategories'] as const,
 		layout: () => ['home', 'layout'] as const,
-		superDeals: (limit?: number) => ['home', 'superDeals', limit] as const,
+		superDeals: (limit?: number, pinned?: string[]) => ['home', 'superDeals', limit, pinned] as const,
 	},
 	profile: {
 		orderLists: () => ['profile', 'orders'] as const,

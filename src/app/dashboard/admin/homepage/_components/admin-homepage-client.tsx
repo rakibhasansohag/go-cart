@@ -2,14 +2,17 @@
 
 import React, { useState, useTransition, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import {
 	type HomepageSectionItem,
 	type HomepageSectionKey,
 	type HomepageSectionConfig,
 	type HomepageStudioStats,
+	type CuratedProductSearchResult,
 	updateHomepageSection,
 	reorderHomepageSections,
 	resetHomepageLayout,
+	searchProductsForCuration,
 } from '@/queries/homepage-config';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -34,9 +37,11 @@ import {
 	GripVertical,
 	Layers,
 	LayoutGrid,
+	Loader2,
 	Minus,
 	Plus,
 	RotateCcw,
+	Search,
 	Settings2,
 	SlidersHorizontal,
 	Sparkles,
@@ -127,6 +132,13 @@ export default function AdminHomepageClient({
 	const [draftShowSideAd, setDraftShowSideAd] = useState(true);
 	const [draftShowUserCard, setDraftShowUserCard] = useState(true);
 
+	// Pinned products curation state for drawer
+	const [draftPinnedProductIds, setDraftPinnedProductIds] = useState<string[]>([]);
+	const [curationSearchQuery, setCurationSearchQuery] = useState('');
+	const [curationSearchResults, setCurationSearchResults] = useState<CuratedProductSearchResult[]>([]);
+	const [isSearchingCuration, setIsSearchingCuration] = useState(false);
+	const [pinnedProductDetails, setPinnedProductDetails] = useState<Map<string, CuratedProductSearchResult>>(new Map());
+
 	// Ticking preview time for drawer countdown
 	const [countdownPreview, setCountdownPreview] = useState<{
 		days: number;
@@ -172,6 +184,53 @@ export default function AdminHomepageClient({
 		return () => clearInterval(interval);
 	}, [draftCountdownEnd]);
 
+	// Debounced product search for manual section curation
+	useEffect(() => {
+		if (!curationSearchQuery.trim()) {
+			setCurationSearchResults([]);
+			return;
+		}
+
+		const timer = setTimeout(async () => {
+			setIsSearchingCuration(true);
+			try {
+				const results = await searchProductsForCuration(curationSearchQuery.trim());
+				setCurationSearchResults(results);
+				setPinnedProductDetails((prev) => {
+					const next = new Map(prev);
+					for (const item of results) {
+						next.set(item.id, item);
+					}
+					return next;
+				});
+			} catch {
+				setCurationSearchResults([]);
+			} finally {
+				setIsSearchingCuration(false);
+			}
+		}, 300);
+
+		return () => clearTimeout(timer);
+	}, [curationSearchQuery]);
+
+	const togglePinProduct = (product: CuratedProductSearchResult) => {
+		setDraftPinnedProductIds((prev) => {
+			if (prev.includes(product.id)) {
+				return prev.filter((id) => id !== product.id);
+			}
+			return [...prev, product.id];
+		});
+		setPinnedProductDetails((prev) => {
+			const next = new Map(prev);
+			next.set(product.id, product);
+			return next;
+		});
+	};
+
+	const unpinProduct = (productId: string) => {
+		setDraftPinnedProductIds((prev) => prev.filter((id) => id !== productId));
+	};
+
 	// Open edit drawer and populate fields cleanly
 	const handleOpenDrawer = (section: HomepageSectionItem) => {
 		setSelectedSection(section);
@@ -183,6 +242,10 @@ export default function AdminHomepageClient({
 		setDraftItemsLimit(typeof cfg.itemsLimit === 'number' ? cfg.itemsLimit : 12);
 		setDraftShowSideAd(cfg.showSideAd !== false);
 		setDraftShowUserCard(cfg.showUserCard !== false);
+		const pinned = Array.isArray(cfg.pinnedProductIds) ? (cfg.pinnedProductIds as string[]) : [];
+		setDraftPinnedProductIds(pinned);
+		setCurationSearchQuery('');
+		setCurationSearchResults([]);
 		setIsDrawerOpen(true);
 	};
 
@@ -337,6 +400,7 @@ export default function AdminHomepageClient({
 			updatedConfig.badge = draftBadge.trim() || undefined;
 			updatedConfig.countdownEnd = draftCountdownEnd.trim() || undefined;
 			updatedConfig.itemsLimit = Math.max(2, Math.min(30, Number(draftItemsLimit) || 12));
+			updatedConfig.pinnedProductIds = draftPinnedProductIds;
 		} else if (selectedSection.sectionKey === 'HERO_GRID') {
 			updatedConfig.showSideAd = draftShowSideAd;
 			updatedConfig.showUserCard = draftShowUserCard;
@@ -1191,6 +1255,131 @@ export default function AdminHomepageClient({
 												<span>12 deals (recommended)</span>
 												<span>30 deals (max)</span>
 											</div>
+										</div>
+
+										{/* Curated Spotlight Products Section */}
+										<div className="space-y-3 pt-3 border-t border-border">
+											<div className="flex items-center justify-between">
+												<div className="space-y-0.5">
+													<Label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+														<Sparkles className="size-3.5 text-amber-500" />
+														Curated Spotlight Products
+													</Label>
+													<p className="text-[11px] text-muted-foreground">
+														Handpicked products pinned to the front of this deals carousel.
+													</p>
+												</div>
+												<Badge variant="outline" className="text-[10px] font-mono border-amber-500/30 text-amber-600 dark:text-amber-400">
+													{draftPinnedProductIds.length} Pinned
+												</Badge>
+											</div>
+
+											{/* Pinned Items Chips */}
+											{draftPinnedProductIds.length > 0 && (
+												<div className="flex flex-wrap gap-1.5 p-2 rounded-lg bg-muted/40 border border-border/70">
+													{draftPinnedProductIds.map((id, index) => {
+														const item = pinnedProductDetails.get(id);
+														return (
+															<div
+																key={id}
+																className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-card border border-border text-[11px] font-medium text-foreground shadow-2xs group"
+															>
+																<span className="size-4 rounded-full bg-amber-500/20 text-amber-600 text-[10px] font-bold flex items-center justify-center">
+																	{index + 1}
+																</span>
+																<span className="max-w-[140px] truncate">
+																	{item?.name || `Product #${id.slice(0, 8)}`}
+																</span>
+																<button
+																	type="button"
+																	onClick={() => unpinProduct(id)}
+																	className="size-4 rounded-full hover:bg-rose-500/20 text-muted-foreground hover:text-rose-600 flex items-center justify-center transition-colors"
+																	aria-label="Unpin product"
+																>
+																	<X className="size-3" />
+																</button>
+															</div>
+														);
+													})}
+												</div>
+											)}
+
+											{/* Search input for curation */}
+											<div className="relative">
+												<Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground pointer-events-none" />
+												<Input
+													placeholder="Search catalog by name or category to pin..."
+													value={curationSearchQuery}
+													onChange={(e) => setCurationSearchQuery(e.target.value)}
+													className="h-9 pl-8 pr-8 rounded-lg bg-background border-input text-foreground placeholder:text-muted-foreground text-xs"
+												/>
+												{isSearchingCuration && (
+													<Loader2 className="absolute right-2.5 top-1/2 -translate-y-1/2 size-3.5 animate-spin text-muted-foreground" />
+												)}
+												{curationSearchQuery && !isSearchingCuration && (
+													<button
+														type="button"
+														onClick={() => setCurationSearchQuery('')}
+														className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+													>
+														<X className="size-3.5" />
+													</button>
+												)}
+											</div>
+
+											{/* Search Results Dropdown / List */}
+											{curationSearchResults.length > 0 && (
+												<div className="rounded-lg border border-border bg-popover text-popover-foreground shadow-md max-h-48 overflow-y-auto divide-y divide-border/60">
+													{curationSearchResults.map((prod) => {
+														const isPinned = draftPinnedProductIds.includes(prod.id);
+														return (
+															<div
+																key={prod.id}
+																className="p-2 flex items-center justify-between gap-2 hover:bg-muted/50 transition-colors text-xs"
+															>
+																<div className="flex items-center gap-2 min-w-0">
+																	<div className="relative size-8 rounded bg-muted shrink-0 overflow-hidden border border-border/60">
+																		<Image
+																			src={prod.image}
+																			alt={prod.name}
+																			fill
+																			sizes="32px"
+																			className="object-contain p-0.5"
+																		/>
+																	</div>
+																	<div className="min-w-0">
+																		<p className="font-semibold text-foreground truncate text-[11px]">
+																			{prod.name}
+																		</p>
+																		<div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+																			<span>{prod.categoryName || 'General'}</span>
+																			<span>•</span>
+																			<span className="font-mono text-foreground font-semibold">
+																				${prod.price.toFixed(2)}
+																			</span>
+																			{prod.discount > 0 && (
+																				<span className="text-rose-600 font-bold">
+																					-{prod.discount}%
+																				</span>
+																			)}
+																		</div>
+																	</div>
+																</div>
+
+																<Button
+																	type="button"
+																	size="sm"
+																	variant={isPinned ? 'destructive' : 'outline'}
+																	onClick={() => togglePinProduct(prod)}
+																	className="h-6 px-2 text-[10px] shrink-0"
+																>
+																	{isPinned ? 'Unpin' : 'Pin'}
+																</Button>
+															</div>
+														);
+													})}
+												</div>
+											)}
 										</div>
 									</div>
 								)}

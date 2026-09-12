@@ -17,6 +17,7 @@ import type { Swiper as SwiperType } from 'swiper';
 import { SimpleProduct } from '@/lib/types';
 import { DealProductItem } from '@/lib/homepage-types';
 import { useCurrency } from '@/providers/currency-provider';
+import { recordSectionInteraction } from '@/queries/homepage-config';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import 'swiper/css';
 
@@ -338,9 +339,12 @@ export default function AnimatedDeals({
 											</div>
 										</div>
 
-										{/* Action Button */}
+										{/* Action Button with Interaction Tracking */}
 										<Link
 											href={`/product/${product.slug}?variant=${product.variantSlug}`}
+											onClick={() => {
+												recordSectionInteraction('SUPER_DEALS', product.id, 'click');
+											}}
 											className="w-full h-7.5 rounded-lg bg-primary hover:bg-primary/90 active:scale-[0.97] text-primary-foreground font-semibold text-[11px] flex items-center justify-center gap-1.5 shadow-xs transition-all duration-150 group/btn"
 										>
 											<ShoppingBag className="size-3 transition-transform group-hover/btn:scale-110" />

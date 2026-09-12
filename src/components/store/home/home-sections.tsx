@@ -96,10 +96,11 @@ export function SuperDealsSection({
 	const maxItems = typeof config?.itemsLimit === 'number' ? config.itemsLimit : 12;
 	const countdownEnd = typeof config?.countdownEnd === 'string' ? config.countdownEnd : undefined;
 	const badgeText = typeof config?.badge === 'string' ? config.badge : undefined;
+	const pinned = Array.isArray(config?.pinnedProductIds) ? (config.pinnedProductIds as string[]) : undefined;
 
 	const { data: deals = [] } = useSuspenseQuery({
-		queryKey: queryKeys.home.superDeals(maxItems),
-		queryFn: () => getSuperDealsShowcaseProducts(maxItems),
+		queryKey: queryKeys.home.superDeals(maxItems, pinned),
+		queryFn: () => getSuperDealsShowcaseProducts(maxItems, config),
 	});
 
 	return (
