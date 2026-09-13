@@ -1,7 +1,7 @@
 'use client';
 import { ProductType, VariantSimplified } from '@/lib/types';
 import Link from 'next/link';
-import { useState, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import StarRating from '@/components/StarRating';
 import { AnimatePresence, motion } from 'framer-motion';
 import ProductCardImageSwiper from './swiper';
@@ -15,7 +15,11 @@ import { toast } from 'sonner';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/query-keys';
 
-export default function ProductCard({
+// ⚡ Bolt Optimization: Use a stable reference to prevent breaking memoization of child components
+const NOOP_HANDLE_CHANGE = () => {};
+
+// ⚡ Bolt Optimization: Wrap component in React.memo to prevent unnecessary re-renders in product lists
+export default React.memo(function ProductCard({
 	product,
 	className,
 }: {
@@ -114,7 +118,7 @@ export default function ProductCard({
 							</div>
 						)}
 						{/* Price */}
-						<ProductPrice sizes={sizes} isCard handleChange={() => {}} />
+						<ProductPrice sizes={sizes} isCard handleChange={NOOP_HANDLE_CHANGE} />
 					</Link>
 				</div>
 				<AnimatePresence>
@@ -150,4 +154,4 @@ export default function ProductCard({
 			</div>
 		</div>
 	);
-}
+});

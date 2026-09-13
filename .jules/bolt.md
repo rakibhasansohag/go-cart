@@ -1,0 +1,3 @@
+## 2024-05-18 - Memoizing Heavily Rendered Cards
+**Learning:** `ProductCard` and `ProductPrice` components are heavily rendered in lists but were missing basic memoization, causing unnecessary re-renders. A stable inline function was also needed to prevent breaking child component memoization. Additionally, extracting a `useMemo` block inside a component calculating simple aggregate logic avoids doing repeated mapping on unchanged data arrays.
+**Action:** Always check heavily-used map iterations and list-rendered cards for missing `React.memo` or expensive calculations that should use `useMemo`. When adding memoization, extract any dynamically generated inline functions into stable outside references.

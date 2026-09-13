@@ -1,6 +1,6 @@
 import { CartProductType } from '@/lib/types';
 import { cn } from '@/lib/utils';
-import { FC, useEffect, useState } from 'react';
+import React, { FC, useEffect, useState, useMemo } from 'react';
 
 interface SimplifiedSize {
 	id: string;
@@ -45,21 +45,30 @@ const ProductPrice: FC<Props> = ({
 	}, [sizeId, sizes]);
 
 	// If no sizeId passed, calculate range of prices and total quantity
-	if (!sizeId && sizes && sizes.length > 0) {
-		const discountedPrices = sizes.map(
-			(size) => size.price * (1 - size.discount / 100),
-		);
+	// ⚡ Bolt Optimization: Memoize the calculations for price range and total quantity
+	// This prevents iterating and reducing the `sizes` array on every render,
+	// especially beneficial when rendered in a list context like `ProductCard`.
+	const aggregatedData = useMemo(() => {
+		if (!sizeId && sizes && sizes.length > 0) {
+			const discountedPrices = sizes.map(
+				(size) => size.price * (1 - size.discount / 100),
+			);
+			const totalQuantity = sizes.reduce(
+				(total, size) => total + size.quantity,
+				0,
+			);
+			const minPrice = Math.min(...discountedPrices).toFixed(2);
+			const maxPrice = Math.max(...discountedPrices).toFixed(2);
+			const priceDisplay =
+				minPrice === maxPrice ? `$${minPrice}` : `$${minPrice} - $${maxPrice}`;
 
-		const totalQuantity = sizes.reduce(
-			(total, size) => total + size.quantity,
-			0,
-		);
+			return { priceDisplay, totalQuantity };
+		}
+		return null;
+	}, [sizeId, sizes]);
 
-		const minPrice = Math.min(...discountedPrices).toFixed(2);
-		const maxPrice = Math.max(...discountedPrices).toFixed(2);
-
-		const priceDisplay =
-			minPrice === maxPrice ? `$${minPrice}` : `$${minPrice} - $${maxPrice}`;
+	if (aggregatedData) {
+		const { priceDisplay, totalQuantity } = aggregatedData;
 
 		return (
 			<div>
@@ -121,4 +130,5 @@ const ProductPrice: FC<Props> = ({
 	return null; // Return nothing if no valid sizeId
 };
 
-export default ProductPrice;
+// ⚡ Bolt Optimization: Wrap component in React.memo to prevent unnecessary re-renders when parent state updates
+export default React.memo(ProductPrice);
