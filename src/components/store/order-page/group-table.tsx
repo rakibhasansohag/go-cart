@@ -145,7 +145,7 @@ export default function OrderGroupTable({
 								height={32}
 								className='w-7 h-7 rounded-full object-cover ring-1 ring-border/50'
 							/>
-							<span className='text-xs font-semibold text-foreground group-hover:text-primary transition-colors underline-offset-2 group-hover:underline'>
+							<span className='text-sm font-semibold text-foreground group-hover:text-primary transition-colors underline-offset-2 group-hover:underline'>
 								{group.store.name}
 							</span>
 						</Link>
@@ -159,10 +159,10 @@ export default function OrderGroupTable({
 							trigger={
 								<button
 									type='button'
-									className='flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary bg-muted/40 hover:bg-muted px-2.5 py-1 rounded-lg border border-border/30 transition-colors cursor-pointer'
+									className='flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-primary bg-muted/40 hover:bg-muted px-3 py-1.5 rounded-lg border border-border/30 transition-colors cursor-pointer'
 									title={`Contact ${group.store.name} regarding this package`}
 								>
-									<MessageSquare className='w-3 h-3' />
+									<MessageSquare className='w-3.5 h-3.5' />
 									<span>Contact Seller</span>
 								</button>
 							}

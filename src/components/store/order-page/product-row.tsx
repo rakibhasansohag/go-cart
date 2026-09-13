@@ -28,16 +28,16 @@ export default function ProductRow({
 			<div className='flex-1 min-w-0 flex flex-col justify-between self-stretch'>
 				<div>
 					<div className='flex items-start justify-between gap-2'>
-						<h2 className='font-bold text-sm text-foreground line-clamp-2 leading-snug'>
+						<h2 className='font-bold text-base text-foreground line-clamp-2 leading-snug'>
 							{mainName}
 						</h2>
-						<span className='font-extrabold text-sm text-primary shrink-0'>
+						<span className='font-extrabold text-base text-primary shrink-0'>
 							${product.price.toFixed(2)}
 						</span>
 					</div>
 
 					{variantName && (
-						<p className='text-xs text-muted-foreground font-medium mt-0.5'>
+						<p className='text-sm text-muted-foreground font-medium mt-0.5'>
 							{variantName}
 						</p>
 					)}

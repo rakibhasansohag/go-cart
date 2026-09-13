@@ -17,9 +17,9 @@ export default function CategoryCard({
 				<span className="text-base sm:text-lg text-foreground font-extrabold line-clamp-1 tracking-tight group-hover/title:text-primary transition-colors">
 					{category.name}
 				</span>
-				<span className="inline-flex items-center gap-1 text-xs font-semibold text-muted-foreground group-hover/title:text-primary transition-colors">
+				<span className="inline-flex items-center gap-1 text-sm font-semibold text-muted-foreground group-hover/title:text-primary transition-colors">
 					<span>View all</span>
-					<ArrowRight className="size-3 transition-transform group-hover/title:translate-x-0.5" />
+					<ArrowRight className="size-3.5 transition-transform group-hover/title:translate-x-0.5" />
 				</span>
 			</Link>
 			<div className="flex gap-2.5 p-3.5 pt-1">
@@ -37,7 +37,7 @@ export default function CategoryCard({
 							className="object-cover group-hover/sub:scale-105 transition-transform duration-300"
 						/>
 						<div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 via-black/30 to-transparent p-2 pt-4">
-							<span className="text-xs font-semibold text-white truncate block drop-shadow-xs">
+							<span className="text-xs sm:text-sm font-semibold text-white truncate block drop-shadow-xs">
 								{sub.name}
 							</span>
 						</div>

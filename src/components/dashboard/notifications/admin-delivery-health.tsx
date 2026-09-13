@@ -166,7 +166,7 @@ export default function AdminDeliveryHealth({ initialData }: Props) {
 
 			{/* Navigation Tabs */}
 			<div className='flex flex-wrap items-center justify-between gap-3 border-b border-border pb-2'>
-				<div className='flex items-center gap-1 border border-border/60 bg-muted/40 p-1 rounded-xl text-xs font-semibold'>
+				<div className='flex items-center gap-1 border border-border/60 bg-muted/40 p-1 rounded-xl text-xs sm:text-sm font-medium'>
 					<button
 						onClick={() => handleTabChange('QUEUE')}
 						className={`px-3 py-1.5 rounded-lg transition-colors flex items-center gap-2 ${
@@ -208,7 +208,7 @@ export default function AdminDeliveryHealth({ initialData }: Props) {
 						size='sm'
 						onClick={() => query.refetch()}
 						disabled={query.isFetching}
-						className='h-8 text-xs gap-1'
+						className='h-8 text-sm gap-1.5 font-medium'
 					>
 						<RefreshCw className={`size-3.5 ${query.isFetching ? 'animate-spin' : ''}`} />
 						Refresh
@@ -239,7 +239,7 @@ export default function AdminDeliveryHealth({ initialData }: Props) {
 									size='sm'
 									onClick={handleRetrySelected}
 									disabled={bulkRetryMutation.isPending}
-									className='h-8 text-xs gap-1.5 bg-primary text-primary-foreground'
+									className='h-8 text-sm font-medium gap-1.5 bg-primary text-primary-foreground'
 								>
 									<SendHorizontal className='size-3.5' />
 									Retry Selected ({selectedIds.size})
@@ -252,7 +252,7 @@ export default function AdminDeliveryHealth({ initialData }: Props) {
 									variant='outline'
 									onClick={handleRetryAllFailed}
 									disabled={bulkRetryMutation.isPending}
-									className='h-8 text-xs gap-1.5 text-destructive border-destructive/30 hover:bg-destructive/10'
+									className='h-8 text-sm font-medium gap-1.5 text-destructive border-destructive/30 hover:bg-destructive/10'
 								>
 									<RefreshCw className='size-3.5' />
 									Retry All Failed ({stats.failedCount})
@@ -268,7 +268,7 @@ export default function AdminDeliveryHealth({ initialData }: Props) {
 					) : (
 						<>
 							<div className='overflow-x-auto'>
-								<table className='w-full min-w-[750px] text-xs text-left'>
+								<table className='w-full min-w-[750px] text-sm text-left'>
 									<thead className='border-b border-border bg-muted/30 text-muted-foreground uppercase text-xs font-semibold'>
 										<tr>
 											<th className='p-2.5 w-10 text-center'>
@@ -314,10 +314,10 @@ export default function AdminDeliveryHealth({ initialData }: Props) {
 														</button>
 													</td>
 													<td className='p-2.5'>
-														<div className='font-semibold text-foreground'>
+														<div className='font-semibold text-sm text-foreground'>
 															{job.recipient.name?.trim() || 'User'}
 														</div>
-														<div className='text-xs font-medium text-primary flex items-center gap-1.5 mt-0.5'>
+														<div className='text-sm font-medium text-primary flex items-center gap-1.5 mt-0.5'>
 															<Mail className='size-3.5 text-muted-foreground shrink-0' />
 															<span>{job.recipient.email?.trim() || job.recipientEmail?.trim() || 'No email address'}</span>
 														</div>
@@ -351,7 +351,7 @@ export default function AdminDeliveryHealth({ initialData }: Props) {
 															variant='outline'
 															disabled={retryingId === job.id || singleRetryMutation.isPending}
 															onClick={() => singleRetryMutation.mutate(job.id)}
-															className='h-7 text-xs px-2.5'
+															className='h-8 text-sm font-medium px-3'
 														>
 															{retryingId === job.id ? 'Retrying…' : 'Retry'}
 														</Button>
@@ -433,7 +433,7 @@ export default function AdminDeliveryHealth({ initialData }: Props) {
 						</p>
 					) : (
 						<div className='overflow-x-auto'>
-							<table className='w-full min-w-[700px] text-xs text-left'>
+							<table className='w-full min-w-[700px] text-sm text-left'>
 								<thead className='border-b border-border bg-muted/30 text-muted-foreground uppercase text-xs font-semibold'>
 									<tr>
 										<th className='p-2.5'>Recipient / Email</th>
@@ -447,10 +447,10 @@ export default function AdminDeliveryHealth({ initialData }: Props) {
 									{sentOutbox.map((job) => (
 										<tr key={job.id} className='border-b border-border/40 last:border-0 hover:bg-muted/20'>
 											<td className='p-2.5'>
-												<div className='font-semibold text-foreground'>
+												<div className='font-semibold text-sm text-foreground'>
 													{job.recipient.name?.trim() || 'User'}
 												</div>
-												<div className='text-xs font-medium text-primary flex items-center gap-1.5 mt-0.5'>
+												<div className='text-sm font-medium text-primary flex items-center gap-1.5 mt-0.5'>
 													<Mail className='size-3.5 text-muted-foreground shrink-0' />
 													<span>{job.recipient.email?.trim() || job.recipientEmail?.trim() || 'No email address'}</span>
 												</div>
@@ -497,7 +497,7 @@ export default function AdminDeliveryHealth({ initialData }: Props) {
 						</p>
 					) : (
 						<div className='overflow-x-auto'>
-							<table className='w-full min-w-[650px] text-xs text-left'>
+							<table className='w-full min-w-[650px] text-sm text-left'>
 								<thead className='border-b border-border bg-muted/30 text-muted-foreground uppercase text-xs font-semibold'>
 									<tr>
 										<th className='p-2.5'>Started At</th>

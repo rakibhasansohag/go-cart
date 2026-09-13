@@ -1495,17 +1495,17 @@ Goal: Elevate high-impact text elements across active components to standard rea
 
 **Why**: Converting small pixel values (`text-[10px]`, `text-[11px]`, `text-[12px]`) to `text-xs` preserved layout constraints but reduced visual hierarchy in key interactive areas. Elements requiring reading comfort (customer return explanations, event timelines, table primary cells, action buttons) should use `text-sm`, while compact badges and metadata stay `text-xs`.
 
-- [ ] **Storefront Action & Grid Typography**:
-  - [ ] Update action buttons in `src/components/store/order-page/return-link.tsx` and `product-row-grid.tsx` from `text-xs` to `text-sm font-medium`
-  - [ ] Adjust category showcase item labels in `src/components/store/home/category-card.tsx` to maintain proportional balance with card titles
-- [ ] **Admin & Seller Management Tables**:
-  - [ ] Update customer return reason notes and status event timelines in `src/components/dashboard/returns/admin-returns-table.tsx` to `text-sm`
-  - [ ] Adjust recipient addresses and action triggers in `src/components/dashboard/notifications/admin-delivery-health.tsx` to `text-sm`
-  - [ ] Review seller chat and order action triggers in `messages-inbox.tsx` and `buyer-messages-view.tsx`
-- [ ] **Verification**:
-  - [ ] `bun run typecheck`: 0 errors
-  - [ ] `bun run test:unit`: All tests pass
-  - [ ] Visual verification of table readability and button ergonomics
+- [x] **Storefront Action & Grid Typography**:
+  - [x] Update action buttons in `src/components/store/order-page/return-link.tsx` and `product-row-grid.tsx` from `text-xs` to `text-sm font-medium`
+  - [x] Adjust category showcase item labels in `src/components/store/home/category-card.tsx` to maintain proportional balance with card titles
+- [x] **Admin & Seller Management Tables**:
+  - [x] Update customer return reason notes and status event timelines in `src/components/dashboard/returns/admin-returns-table.tsx` to `text-sm`
+  - [x] Adjust recipient addresses and action triggers in `src/components/dashboard/notifications/admin-delivery-health.tsx` to `text-sm`
+  - [x] Review seller chat and order action triggers in `messages-inbox.tsx` and `buyer-messages-view.tsx`
+- [x] **Verification**:
+  - [x] `bun run typecheck`: 0 errors
+  - [x] `bun run test:unit`: All tests pass (55 test files, 312/312 passing)
+  - [x] Visual verification of table readability and button ergonomics
 
 ---
 

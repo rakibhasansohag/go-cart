@@ -103,34 +103,34 @@ export default function ShipmentTrackingCard({ shipment }: ShipmentTrackingProps
 			</div>
 
 			{/* Carrier & Tracking Meta */}
-			<div className='grid grid-cols-1 sm:grid-cols-3 gap-3 rounded-lg bg-muted/40 p-3 text-xs'>
+			<div className='grid grid-cols-1 sm:grid-cols-3 gap-3 rounded-lg bg-muted/40 p-3'>
 				<div>
-					<span className='text-muted-foreground block font-medium'>Carrier / Method</span>
-					<span className='font-semibold text-foreground'>{carrier || serviceLevel || 'Standard Carrier'}</span>
+					<span className='text-xs text-muted-foreground block font-medium'>Carrier / Method</span>
+					<span className='text-sm font-semibold text-foreground'>{carrier || serviceLevel || 'Standard Carrier'}</span>
 				</div>
 				<div>
-					<span className='text-muted-foreground block font-medium'>Tracking Reference</span>
+					<span className='text-xs text-muted-foreground block font-medium'>Tracking Reference</span>
 					{trackingNumber ? (
 						trackingUrl ? (
 							<a
 								href={trackingUrl}
 								target='_blank'
 								rel='noreferrer'
-								className='inline-flex items-center gap-1 font-semibold text-primary hover:underline'
+								className='inline-flex items-center gap-1 text-sm font-semibold text-primary hover:underline'
 							>
 								{trackingNumber}
-								<ExternalLink className='size-3' />
+								<ExternalLink className='size-3.5' />
 							</a>
 						) : (
-							<span className='font-semibold text-foreground'>{trackingNumber}</span>
+							<span className='text-sm font-semibold text-foreground'>{trackingNumber}</span>
 						)
 					) : (
-						<span className='text-muted-foreground italic'>Pending tracking #</span>
+						<span className='text-sm text-muted-foreground italic'>Pending tracking #</span>
 					)}
 				</div>
 				<div>
-					<span className='text-muted-foreground block font-medium'>Estimated Delivery</span>
-					<span className='font-semibold text-foreground'>
+					<span className='text-xs text-muted-foreground block font-medium'>Estimated Delivery</span>
+					<span className='text-sm font-semibold text-foreground'>
 						{estimatedDeliveryAt ? new Date(estimatedDeliveryAt).toLocaleDateString() : '7 - 14 Days'}
 					</span>
 				</div>

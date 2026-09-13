@@ -69,7 +69,7 @@ export default function AdminReturnsTable({ initialData }: Props) {
 	return (
 		<div className='space-y-5'>
 			<div className='flex flex-wrap gap-2 border-b border-border pb-3'>
-				{FILTERS.map((filter) => <button key={filter.value} type='button' className={`cursor-pointer rounded-lg border px-3 py-1.5 text-xs font-semibold ${status === filter.value ? 'border-primary bg-primary text-primary-foreground' : 'border-border bg-muted/40 hover:bg-muted'}`} onClick={() => { setStatus(filter.value); setPage(1); }}>{filter.label}</button>)}
+				{FILTERS.map((filter) => <button key={filter.value} type='button' className={`cursor-pointer rounded-lg border px-3 py-1.5 text-xs sm:text-sm font-medium ${status === filter.value ? 'border-primary bg-primary text-primary-foreground' : 'border-border bg-muted/40 hover:bg-muted'}`} onClick={() => { setStatus(filter.value); setPage(1); }}>{filter.label}</button>)}
 			</div>
 			<div className='relative max-w-lg'>
 				<Search className='pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground' />
@@ -89,8 +89,8 @@ export default function AdminReturnsTable({ initialData }: Props) {
 								<td className='p-3'><div className='max-w-64 font-medium'>{item?.name || 'Order item'}</div><div className='text-xs text-muted-foreground'>{item?.sku || ''} · Qty {request.items.reduce((sum, entry) => sum + entry.quantity, 0)}</div></td>
 								<td className='p-3 font-semibold'>{request.currency} {request.requestedAmount.toFixed(2)}</td>
 								<td className='p-3'><ReturnStatus status={request.status} /></td>
-																<td className='p-3'><div className='flex flex-wrap items-center gap-2'><button type='button' className='inline-flex cursor-pointer items-center gap-1 rounded-lg border border-border bg-muted/50 px-2.5 py-1.5 text-xs font-medium hover:bg-muted' onClick={() => setTimelineRequest(request)}><Eye className='size-3.5' />Timeline</button>{actions.length === 0 && request.status !== 'REFUND_PENDING' && !['RECEIVED', 'REFUNDED', 'EXCHANGED'].includes(request.status) ? <span className='text-xs text-muted-foreground'>No admin action</span> : <select aria-label='Choose next step' defaultValue='' disabled={mutation.isPending || refundMutation.isPending || restockMutation.isPending} className='inline-flex cursor-pointer items-center gap-1 rounded-lg border border-border bg-background px-3 py-2 text-xs font-semibold hover:bg-muted disabled:cursor-wait disabled:opacity-60' onChange={(event) => { const selectedValue = event.currentTarget.value; const selectedStatus = actions.find((next) => next === selectedValue); if (selectedStatus) mutation.mutate({ id: request.id, toStatus: selectedStatus }); else if (selectedValue === 'REFUND') refundMutation.mutate(request.id); event.currentTarget.value = ''; }}><option value='' disabled>Choose next step</option>{actions.map((next) => <option key={next} value={next}>{getReturnStatusLabel(next)}</option>)}{request.status === 'REFUND_PENDING' && <option value='REFUND'>Issue payment refund</option>}</select>}{['RECEIVED', 'REFUNDED', 'EXCHANGED'].includes(request.status) && <button type='button' className='cursor-pointer rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-xs font-semibold text-emerald-700 hover:bg-emerald-500/20 dark:text-emerald-300' onClick={() => { setRestockRequest(request); setRestockChoices(Object.fromEntries(request.items.map((item) => [item.id, item.restockable ?? false]))); }}>Reconcile inventory</button>}</div></td>
-			</tr>;
+								<td className='p-3'><div className='flex flex-wrap items-center gap-2'><button type='button' className='inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-border bg-muted/50 px-3 py-1.5 text-sm font-medium hover:bg-muted' onClick={() => setTimelineRequest(request)}><Eye className='size-3.5' />Timeline</button>{actions.length === 0 && request.status !== 'REFUND_PENDING' && !['RECEIVED', 'REFUNDED', 'EXCHANGED'].includes(request.status) ? <span className='text-xs text-muted-foreground'>No admin action</span> : <select aria-label='Choose next step' defaultValue='' disabled={mutation.isPending || refundMutation.isPending || restockMutation.isPending} className='inline-flex cursor-pointer items-center gap-1 rounded-lg border border-border bg-background px-3 py-1.5 text-sm font-medium hover:bg-muted disabled:cursor-wait disabled:opacity-60' onChange={(event) => { const selectedValue = event.currentTarget.value; const selectedStatus = actions.find((next) => next === selectedValue); if (selectedStatus) mutation.mutate({ id: request.id, toStatus: selectedStatus }); else if (selectedValue === 'REFUND') refundMutation.mutate(request.id); event.currentTarget.value = ''; }}><option value='' disabled>Choose next step</option>{actions.map((next) => <option key={next} value={next}>{getReturnStatusLabel(next)}</option>)}{request.status === 'REFUND_PENDING' && <option value='REFUND'>Issue payment refund</option>}</select>}{['RECEIVED', 'REFUNDED', 'EXCHANGED'].includes(request.status) && <button type='button' className='cursor-pointer rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-3 py-1.5 text-sm font-medium text-emerald-700 hover:bg-emerald-500/20 dark:text-emerald-300' onClick={() => { setRestockRequest(request); setRestockChoices(Object.fromEntries(request.items.map((item) => [item.id, item.restockable ?? false]))); }}>Reconcile inventory</button>}</div></td>
+							</tr>;
 						})}</tbody>
 					</table>
 				</div>
@@ -114,14 +114,14 @@ export default function AdminReturnsTable({ initialData }: Props) {
 					{timelineRequest && (
 						<div className='space-y-4 py-2 text-sm'>
 							{timelineRequest.customerNote && (
-								<div className='rounded-lg bg-muted/50 p-3 border border-border/60'>
-									<span className='font-semibold text-xs text-muted-foreground block mb-1'>Customer Reason Note:</span>
-									<p className='text-xs italic text-foreground'>{timelineRequest.customerNote}</p>
+								<div className='rounded-lg bg-muted/50 p-3.5 border border-border/60'>
+									<span className='font-semibold text-sm text-muted-foreground block mb-1'>Customer Reason Note:</span>
+									<p className='text-sm text-foreground leading-relaxed'>{timelineRequest.customerNote}</p>
 								</div>
 							)}
 							{timelineRequest.evidence && timelineRequest.evidence.length > 0 && (
 								<div>
-									<span className='font-semibold text-xs text-muted-foreground block mb-2'>Uploaded Evidence ({timelineRequest.evidence.length}):</span>
+									<span className='font-semibold text-sm text-muted-foreground block mb-2'>Uploaded Evidence ({timelineRequest.evidence.length}):</span>
 									<div className='grid grid-cols-2 sm:grid-cols-3 gap-2'>
 										{timelineRequest.evidence.map((item) => (
 											<a key={item.id} href={item.url} target='_blank' rel='noreferrer' className='block overflow-hidden rounded-lg border border-border bg-muted group'>
@@ -132,14 +132,14 @@ export default function AdminReturnsTable({ initialData }: Props) {
 								</div>
 							)}
 							<div>
-								<span className='font-semibold text-xs text-muted-foreground block mb-2'>Event Audit History:</span>
+								<span className='font-semibold text-sm text-muted-foreground block mb-2'>Event Audit History:</span>
 								<div className='space-y-2 border-l-2 border-primary/30 pl-4'>
 									{timelineRequest.events && timelineRequest.events.length > 0 ? (
 										timelineRequest.events.map((event) => (
-											<div key={event.id} className='text-xs space-y-0.5'>
-												<div className='flex items-center justify-between font-semibold text-foreground'>
+											<div key={event.id} className='space-y-0.5 py-1 border-b border-border/20 last:border-0'>
+												<div className='flex items-center justify-between font-semibold text-sm text-foreground'>
 													<span className='capitalize'>{event.eventType.replaceAll('.', ' ').replaceAll('_', ' ')}</span>
-													<span className='text-xs text-muted-foreground'>{new Date(event.createdAt).toLocaleString()}</span>
+													<span className='text-xs text-muted-foreground font-normal'>{new Date(event.createdAt).toLocaleString()}</span>
 												</div>
 												<div className='text-muted-foreground text-xs'>Actor: <span className='font-medium text-foreground'>{event.actorRole}</span> ({event.actorId})</div>
 											</div>

@@ -201,11 +201,11 @@ export default function BuyerMessagesView({
 								className='pl-8 h-8 text-xs bg-muted/40'
 							/>
 						</div>
-						<div className='flex items-center gap-1 bg-muted/50 p-0.5 rounded-lg text-xs'>
+						<div className='flex items-center gap-1 bg-muted/50 p-0.5 rounded-lg text-xs sm:text-sm font-medium'>
 							<button
 								type='button'
 								onClick={() => setActiveTab('all')}
-								className={`flex-1 py-1 rounded-md font-medium text-xs transition-colors ${activeTab === 'all'
+								className={`flex-1 py-1 rounded-md font-medium text-xs sm:text-sm transition-colors ${activeTab === 'all'
 									? 'bg-background text-foreground shadow-xs'
 									: 'text-muted-foreground hover:text-foreground'
 									}`}
@@ -215,7 +215,7 @@ export default function BuyerMessagesView({
 							<button
 								type='button'
 								onClick={() => setActiveTab('open')}
-								className={`flex-1 py-1 rounded-md font-medium text-xs transition-colors ${activeTab === 'open'
+								className={`flex-1 py-1 rounded-md font-medium text-xs sm:text-sm transition-colors ${activeTab === 'open'
 									? 'bg-background text-foreground shadow-xs'
 									: 'text-muted-foreground hover:text-foreground'
 									}`}
@@ -225,7 +225,7 @@ export default function BuyerMessagesView({
 							<button
 								type='button'
 								onClick={() => setActiveTab('resolved')}
-								className={`flex-1 py-1 rounded-md font-medium text-xs transition-colors ${activeTab === 'resolved'
+								className={`flex-1 py-1 rounded-md font-medium text-xs sm:text-sm transition-colors ${activeTab === 'resolved'
 									? 'bg-background text-foreground shadow-xs'
 									: 'text-muted-foreground hover:text-foreground'
 									}`}
@@ -268,7 +268,7 @@ export default function BuyerMessagesView({
 										</Avatar>
 										<div className='flex-1 min-w-0 space-y-0.5'>
 											<div className='flex items-center justify-between gap-1'>
-												<span className='font-semibold text-xs text-foreground truncate'>
+												<span className='font-semibold text-sm text-foreground truncate'>
 													{c.store.name}
 												</span>
 												<span className='text-xs text-muted-foreground shrink-0'>
@@ -278,7 +278,7 @@ export default function BuyerMessagesView({
 													})}
 												</span>
 											</div>
-											<p className='text-xs font-medium text-foreground/80 truncate'>
+											<p className='text-sm font-medium text-foreground/80 truncate'>
 												{c.subject || 'General Inquiry'}
 											</p>
 											<div className='flex items-center justify-between gap-1 pt-0.5'>
@@ -542,7 +542,7 @@ export default function BuyerMessagesView({
 													/>
 												) : (
 													<div
-														className={`rounded-2xl px-4 py-2.5 text-xs shadow-xs leading-relaxed break-words ${
+														className={`rounded-2xl px-4 py-2.5 text-sm shadow-xs leading-relaxed break-words ${
 															isBuyer
 																? 'bg-blue-600 text-white rounded-tr-xs'
 																: 'bg-slate-100 dark:bg-slate-800/90 text-slate-900 dark:text-slate-100 border border-slate-200/80 dark:border-slate-700/60 rounded-tl-xs'
@@ -568,7 +568,7 @@ export default function BuyerMessagesView({
 										onKeyDown={handleKeyDown}
 										rows={2}
 										maxLength={2000}
-										className='resize-none text-xs leading-relaxed pr-10'
+										className='resize-none text-sm leading-relaxed pr-10'
 									/>
 									<Button
 										size='sm'
