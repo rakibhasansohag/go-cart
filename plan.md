@@ -1509,23 +1509,27 @@ Goal: Elevate high-impact text elements across active components to standard rea
 
 ---
 
-### Phase 20 — Real-Time Push Events for Chat & Notifications (Server-Sent Events)
+### Phase 20 — Smart Adaptive Real-Time Sync & Cursor Polling (Vercel-Friendly)
 
-Goal: Replace client-side polling with persistent real-time event streaming for instant messaging and notification delivery.
+Goal: Replace heavy, blind database polling (`refetchInterval: 3000`) with an optimized smart adaptive cursor polling architecture designed specifically for Vercel Hobby and serverless hosts.
 
-**Why**: Currently, buyer-seller chat and system notification counters execute database queries every 3 seconds (`refetchInterval: 3000`). Under multiple concurrent users, continuous polling creates unnecessary database load and introduces a 3-second latency delay for chat conversations. Server-Sent Events (SSE) provide immediate updates with lightweight HTTP streaming.
+**Why**: In serverless environments, long-lived connections (SSE/WebSockets) are terminated after 10–60 seconds, and ephemeral functions do not share process memory. Smart Adaptive Cursor Polling solves this using a lightweight indexed probe (`/api/realtime/sync`), tab-visibility awareness, and user-activity decay.
 
-- [ ] **SSE Streaming Infrastructure**:
-  - [ ] Create `/api/realtime/events/route.ts` supporting authenticated SSE connections per user
-  - [ ] Build server-side broadcast bus (in-memory emitter with Redis Pub/Sub adapter readiness)
-  - [ ] Create client hook `useEventSource` with auto-reconnection, backoff, and heartbeat monitoring
-- [ ] **Real-Time Feature Integration**:
-  - [ ] Stream new chat messages directly into active thread caches (`queryClient.setQueryData`)
-  - [ ] Stream real-time unread count updates to `src/components/shared/notification-bell.tsx`
-  - [ ] Fallback gracefully to polling if SSE connection drops or is blocked by network proxies
-- [ ] **Verification**:
-  - [ ] Integration tests verifying event dispatch on new message creation
-  - [ ] Browser verification of sub-second message arrival without manual refetching
+- [x] **Lightweight Sync Route & Contracts**:
+  - [x] Create contracts in `src/lib/realtime/types.ts` (`RealtimeSyncParams`, `RealtimeSyncResult`)
+  - [x] Authenticated endpoint at `/api/realtime/sync/route.ts` executing ~10ms index seeks for message cursors, conversation updates, and unread notification counts
+  - [x] Unit tests passing in `src/app/api/realtime/sync/route.test.ts` (5/5 tests)
+- [x] **Client Adaptive Sync Engine**:
+  - [x] Create `src/hooks/use-adaptive-realtime-sync.ts` with visibility detection (`visibilitychange`), activity decay (2.5s active / 12s idle / paused when hidden), and instant re-focus trigger
+  - [x] Automatic selective cache invalidation on `conversation-detail`, `seller-conversations`, and `buyer-conversations`, plus notification bell count sync
+- [x] **Component Integration & Polling Removal**:
+  - [x] Remove blind `refetchInterval: 3000` from `src/app/dashboard/seller/stores/[storeUrl]/messages/messages-inbox.tsx`
+  - [x] Remove blind `refetchInterval: 3000` from `src/app/(store)/profile/messages/buyer-messages-view.tsx`
+  - [x] Add query keys in `src/lib/query-keys.ts` for `messages` and `realtime.sync`
+- [x] **Verification**:
+  - [x] `bun run typecheck`: 0 errors
+  - [x] `bun vitest run`: All 56 test files passing (317/317 tests)
+  - [x] `git diff --check`: 0 formatting issues
 
 ---
 

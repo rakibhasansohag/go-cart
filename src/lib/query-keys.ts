@@ -48,6 +48,17 @@ export const queryKeys = {
 			['notifications', 'summary', viewerId] as const,
 		list: (filters: object) => ['notifications', 'list', filters] as const,
 	},
+	messages: {
+		all: () => ['messages'] as const,
+		conversation: (id: string | null) => ['conversation-detail', id] as const,
+		sellerList: (storeUrl: string, filter?: string, search?: string) =>
+			['seller-conversations', storeUrl, filter, search] as const,
+		buyerList: (filter?: string, search?: string) =>
+			['buyer-conversations', filter, search] as const,
+	},
+	realtime: {
+		sync: (params?: object) => ['realtime', 'sync', params] as const,
+	},
 	categories: {
 		all: () => ['categories'] as const,
 		withSubs: () => ['categories', 'withSubs'] as const,

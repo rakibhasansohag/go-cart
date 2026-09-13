@@ -44,6 +44,7 @@ import {
 import { ConversationStatus, MessageSenderRole } from '@prisma/client';
 import { toast } from 'sonner';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useAdaptiveRealtimeSync } from '@/hooks/use-adaptive-realtime-sync';
 import { formatMessageSnippet } from '@/lib/utils';
 
 interface Props {
@@ -80,7 +81,13 @@ export default function SellerMessagesInbox({
 		}
 	}, [searchParams]);
 
-	// Conversations list query with 3-second live polling
+	// Adaptive real-time sync (cursor probe, activity decay, tab visibility awareness)
+	const { triggerSyncNow } = useAdaptiveRealtimeSync({
+		storeUrl,
+		conversationId: selectedId,
+	});
+
+	// Conversations list query
 	const { data: listData } = useQuery({
 		queryKey: ['seller-conversations', storeUrl, activeTab, searchQuery],
 		queryFn: () =>
@@ -89,7 +96,6 @@ export default function SellerMessagesInbox({
 				search: searchQuery,
 			}),
 		initialData: activeTab === 'all' && !searchQuery ? initialData : undefined,
-		refetchInterval: 3000, // 3 seconds snappy live polling
 	});
 
 	const conversations = listData?.conversations ?? initialData.conversations;
@@ -102,7 +108,7 @@ export default function SellerMessagesInbox({
 		}
 	}, [conversations, selectedId]);
 
-	// Active conversation details query with 3-second live polling
+	// Active conversation details query
 	const {
 		data: activeDetailData,
 		isLoading: isLoadingDetails,
@@ -112,7 +118,6 @@ export default function SellerMessagesInbox({
 		queryKey: ['conversation-detail', selectedId],
 		queryFn: () => (selectedId ? getConversationDetails(selectedId) : null),
 		enabled: Boolean(selectedId),
-		refetchInterval: 3000, // 3 seconds snappy live polling
 	});
 
 	const activeConv = activeDetailData?.conversation;
@@ -141,6 +146,7 @@ export default function SellerMessagesInbox({
 			setReplyText('');
 			queryClient.invalidateQueries({ queryKey: ['conversation-detail', selectedId] });
 			queryClient.invalidateQueries({ queryKey: ['seller-conversations', storeUrl] });
+			triggerSyncNow();
 		},
 		onError: (error: Error) => {
 			toast.error(error.message || 'Could not send reply.');
