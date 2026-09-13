@@ -120,6 +120,7 @@ export default function ProductSwiper({
 							}}
 							className='absolute top-3 right-3 z-20 w-9 h-9 rounded-xl bg-background/80 backdrop-blur-md border border-border/60 shadow-sm flex items-center justify-center text-foreground hover:bg-background hover:scale-110 transition-all cursor-pointer opacity-80 group-hover:opacity-100'
 							title='Expand image gallery modal'
+							aria-label='Expand image gallery modal'
 						>
 							<Maximize2 className='w-4 h-4' />
 						</button>
@@ -136,6 +137,7 @@ export default function ProductSwiper({
 							onClick={() => setModalZoomScale((s) => Math.min(s + 0.5, 3.5))}
 							className='p-2 rounded-xl text-white hover:bg-white/20 transition-all cursor-pointer'
 							title='Zoom In'
+							aria-label='Zoom In'
 						>
 							<ZoomIn className='w-5 h-5' />
 						</button>
@@ -143,6 +145,7 @@ export default function ProductSwiper({
 							onClick={() => setModalZoomScale((s) => Math.max(s - 0.5, 1))}
 							className='p-2 rounded-xl text-white hover:bg-white/20 transition-all cursor-pointer'
 							title='Zoom Out'
+							aria-label='Zoom Out'
 						>
 							<ZoomOut className='w-5 h-5' />
 						</button>
@@ -150,6 +153,7 @@ export default function ProductSwiper({
 							onClick={() => setModalZoomScale(1)}
 							className='p-2 rounded-xl text-white hover:bg-white/20 transition-all cursor-pointer'
 							title='Reset Zoom'
+							aria-label='Reset Zoom'
 						>
 							<RotateCcw className='w-5 h-5' />
 						</button>
@@ -158,6 +162,7 @@ export default function ProductSwiper({
 							onClick={() => setIsZoomModalOpen(false)}
 							className='p-2 rounded-xl text-white hover:bg-red-500/80 transition-all cursor-pointer'
 							title='Close Gallery'
+							aria-label='Close Gallery'
 						>
 							<X className='w-5 h-5' />
 						</button>
@@ -169,6 +174,7 @@ export default function ProductSwiper({
 							onClick={handlePrev}
 							className='absolute left-4 top-1/2 -translate-y-1/2 z-50 p-3 rounded-full bg-black/60 border border-white/20 text-white hover:bg-white/20 transition-all cursor-pointer'
 							title='Previous image'
+							aria-label='Previous image'
 						>
 							<ChevronLeft className='w-6 h-6' />
 						</button>
@@ -196,6 +202,7 @@ export default function ProductSwiper({
 							onClick={handleNext}
 							className='absolute right-4 top-1/2 -translate-y-1/2 z-50 p-3 rounded-full bg-black/60 border border-white/20 text-white hover:bg-white/20 transition-all cursor-pointer'
 							title='Next image'
+							aria-label='Next image'
 						>
 							<ChevronRight className='w-6 h-6' />
 						</button>
