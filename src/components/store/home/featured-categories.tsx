@@ -15,6 +15,13 @@ export default function FeaturedCategories({
 		queryFn: getHomeFeaturedCategories,
 	});
 
+	const gridColsClass =
+		categories.length === 4
+			? 'grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 w-full mt-7'
+			: categories.length === 2
+			? 'grid grid-cols-1 sm:grid-cols-2 gap-4 w-full mt-7'
+			: 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 w-full mt-7';
+
 	return (
 		<section id='featured-categories' aria-labelledby='featured-categories-heading' className='w-full mx-auto'>
 			{/* Header */}
@@ -29,7 +36,7 @@ export default function FeaturedCategories({
 				</div>
 			</div>
 			{/* List */}
-			<div className='grid min-[770px]:grid-cols-2 min-[1120px]:grid-cols-3 gap-4 w-full mt-7'>
+			<div className={gridColsClass}>
 				{categories.map((category) => (
 					<CategoryCard key={category.id} category={category} />
 				))}

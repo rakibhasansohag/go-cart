@@ -37,7 +37,7 @@ export function FeaturedCategoriesSkeleton() {
 				{Array.from({ length: 6 }).map((_, i) => (
 					<div
 						key={i}
-						className='h-[160px] w-full rounded-md bg-neutral-300 dark:bg-neutral-800'
+						className='h-[295px] w-full rounded-2xl bg-neutral-300 dark:bg-neutral-800'
 					/>
 				))}
 			</div>

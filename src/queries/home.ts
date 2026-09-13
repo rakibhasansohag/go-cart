@@ -199,7 +199,7 @@ export const getHomeFeaturedCategories = async () => {
 						_count: 'desc', // Order by product count
 					},
 				},
-				take: 3, // Limit subCategories to 3
+				take: 4, // Allow up to 4 subcategories for 2x2 grid
 			},
 			_count: {
 				select: {
@@ -219,6 +219,7 @@ export const getHomeFeaturedCategories = async () => {
 		id: category.id,
 		name: category.name,
 		url: category.url,
+		image: category.image,
 		productCount: category._count.products,
 		subCategories: category.subCategories.map((subcategory) => ({
 			id: subcategory.id,
