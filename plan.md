@@ -1467,3 +1467,130 @@ Goal: streamline order fulfillment for sellers with printable documentation and 
   - [x] 9/9 unit tests passing in `src/queries/fulfillment-bulk.test.ts`
   - [x] Live end-to-end verification via BrowserOS Neo: multiple package selection, bulk transition execution with success toast, Packing Slip SVG barcode/QR rendering, and 4"x6" shipping label view toggle
   - [x] Strict TypeScript check: 0 compilation errors, 0 `any` types.
+
+---
+
+### Phase 18 — SuperDeals Redesign & Visual Homepage Customizer Studio
+
+Goal: Provide administrators with a live drag-and-drop homepage layout customizer and modernize the storefront SuperDeals showcase.
+
+- [x] **Database & Layout Model**:
+  - [x] Add `HomepageSection` model to `prisma/schema.prisma` with ordering, enabled flags, and section identifier keys
+  - [x] Migration `20260911140000_homepage_sections` applied and verified
+- [x] **Queries & Layout Management**:
+  - [x] Server actions for `getHomepageLayout`, `getAdminHomepageSections`, `updateHomepageSection`, `reorderHomepageSections`, `resetHomepageLayout` in `src/queries/homepage-config.ts`
+  - [x] Unit tests passing in `src/queries/homepage-config.test.ts` (11/11 tests)
+- [x] **Storefront SuperDeals Showcase**:
+  - [x] Dynamic section renderer in `src/components/store/home/home-sections.tsx`
+  - [x] Countdown timers, real-time discount calculations, and stock progress bars
+- [x] **Admin Customizer Studio**:
+  - [x] Visual block editor at `/dashboard/admin/homepage` with section toggles, reordering controls, and configuration drawer
+  - [x] Sidebar navigation registered in `AdminDashboardSidebarOptions`
+
+---
+
+### Phase 19 — Typography Scale Hierarchy & Readability Fine-Tuning
+
+Goal: Elevate high-impact text elements across active components to standard readable sizes (`text-sm` / `text-base`), preventing content from feeling undersized or flat following the arbitrary pixel migration.
+
+**Why**: Converting small pixel values (`text-[10px]`, `text-[11px]`, `text-[12px]`) to `text-xs` preserved layout constraints but reduced visual hierarchy in key interactive areas. Elements requiring reading comfort (customer return explanations, event timelines, table primary cells, action buttons) should use `text-sm`, while compact badges and metadata stay `text-xs`.
+
+- [ ] **Storefront Action & Grid Typography**:
+  - [ ] Update action buttons in `src/components/store/order-page/return-link.tsx` and `product-row-grid.tsx` from `text-xs` to `text-sm font-medium`
+  - [ ] Adjust category showcase item labels in `src/components/store/home/category-card.tsx` to maintain proportional balance with card titles
+- [ ] **Admin & Seller Management Tables**:
+  - [ ] Update customer return reason notes and status event timelines in `src/components/dashboard/returns/admin-returns-table.tsx` to `text-sm`
+  - [ ] Adjust recipient addresses and action triggers in `src/components/dashboard/notifications/admin-delivery-health.tsx` to `text-sm`
+  - [ ] Review seller chat and order action triggers in `messages-inbox.tsx` and `buyer-messages-view.tsx`
+- [ ] **Verification**:
+  - [ ] `bun run typecheck`: 0 errors
+  - [ ] `bun run test:unit`: All tests pass
+  - [ ] Visual verification of table readability and button ergonomics
+
+---
+
+### Phase 20 — Real-Time Push Events for Chat & Notifications (Server-Sent Events)
+
+Goal: Replace client-side polling with persistent real-time event streaming for instant messaging and notification delivery.
+
+**Why**: Currently, buyer-seller chat and system notification counters execute database queries every 3 seconds (`refetchInterval: 3000`). Under multiple concurrent users, continuous polling creates unnecessary database load and introduces a 3-second latency delay for chat conversations. Server-Sent Events (SSE) provide immediate updates with lightweight HTTP streaming.
+
+- [ ] **SSE Streaming Infrastructure**:
+  - [ ] Create `/api/realtime/events/route.ts` supporting authenticated SSE connections per user
+  - [ ] Build server-side broadcast bus (in-memory emitter with Redis Pub/Sub adapter readiness)
+  - [ ] Create client hook `useEventSource` with auto-reconnection, backoff, and heartbeat monitoring
+- [ ] **Real-Time Feature Integration**:
+  - [ ] Stream new chat messages directly into active thread caches (`queryClient.setQueryData`)
+  - [ ] Stream real-time unread count updates to `src/components/shared/notification-bell.tsx`
+  - [ ] Fallback gracefully to polling if SSE connection drops or is blocked by network proxies
+- [ ] **Verification**:
+  - [ ] Integration tests verifying event dispatch on new message creation
+  - [ ] Browser verification of sub-second message arrival without manual refetching
+
+---
+
+### Phase 21 — Seller Automated Payout Disbursements (Stripe Connect)
+
+Goal: Automate seller balance payouts through Stripe Connect transfers once approved by admin.
+
+**Why**: The marketplace currently calculates net seller earnings, platform fees, and pending balances in the ledger, with manual approval workflows. Integrating Stripe Connect allows automated electronic transfers to seller bank accounts upon scheduled disbursement or admin approval, completing the financial loop.
+
+- [ ] **Seller Onboarding & Connect Accounts**:
+  - [ ] Store Stripe connected account ID in `Store` model
+  - [ ] Onboarding link generation endpoint (`/api/seller/stripe/onboard`) redirecting to Stripe Express onboarding
+  - [ ] Webhook handler for `account.updated` to record account capability status (`charges_enabled`, `payouts_enabled`)
+- [ ] **Disbursement Processing Engine**:
+  - [ ] Server action `processSellerDisbursement` to initiate Stripe Transfer from platform balance to connected seller
+  - [ ] Idempotency key tracking and ledger balance debiting upon successful Stripe transfer
+  - [ ] Handling transfer failure events with ledger reversal and notification alerts
+- [ ] **Verification**:
+  - [ ] Stripe test mode transfer execution and ledger integrity verification
+  - [ ] Unit tests for transfer validation and unauthorized disbursement protection
+
+---
+
+### Phase 22 — Advanced Faceted Search, Filtering & Discovery
+
+Goal: Provide shoppers with multi-attribute filtering, price range sliders, brand selectors, and rating aggregations on `/browse`.
+
+**Why**: As product catalogs grow, keyword search alone is insufficient for product discovery. Customers need the ability to narrow down listings by attributes (color, size, material), star ratings (4+ stars), brand, and dynamic price ranges without full page reloads.
+
+- [ ] **Faceted Query Engine**:
+  - [ ] Dynamic aggregation query in `src/queries/search.ts` returning available facet counts for the current search term/category
+  - [ ] Support multi-select filter parameters in URL search params (`?brands=nike,adidas&rating=4&minPrice=20&maxPrice=100`)
+- [ ] **Faceted Sidebar & Filter Chips**:
+  - [ ] Collapsible filter sections (Price Slider, Star Rating, Brands, Variant Options)
+  - [ ] Active filter pill tags with 1-click removal and "Clear All" action
+  - [ ] Mobile-responsive filter drawer with live result counter
+- [ ] **Verification**:
+  - [ ] Unit tests verifying query aggregation logic and param serialization
+  - [ ] End-to-end verification of filter combinations and URL synchronization
+
+---
+
+### Phase 23 — Platform Security Audit, Hardening & Verification
+
+Goal: Conduct a comprehensive security inspection across API routes, server actions, authentication boundaries, and data access controls.
+
+**Why**: E-commerce platforms handle sensitive user data, payment webhooks, and multi-tenant seller assets. Systematic security checks prevent unauthorized data access, privilege escalation, injection, rate exploitation, and cross-tenant leakage.
+
+- [ ] **Access Control & Authorization Audit**:
+  - [ ] Verify role-based guards on all admin endpoints (`/dashboard/admin/*`) and seller store actions
+  - [ ] Cross-tenant data isolation test: ensure sellers cannot query, view, or modify products, orders, or coupons belonging to another store
+  - [ ] Customer order isolation: ensure order details and returns cannot be accessed by non-owner user IDs
+- [ ] **Rate Limiting & Abuse Prevention**:
+  - [ ] Implement IP and user-based sliding-window rate limiting on sensitive routes:
+    - `/api/auth/*` (login, registration, password reset)
+    - `/api/chat/*` (message spam prevention)
+    - `/api/reviews/*` (review submission spam prevention)
+    - Coupon application attempts
+- [ ] **Input Sanitization, Upload Guards & Headers**:
+  - [ ] Validate strict MIME type and magic number checks on all file uploads (product images, avatar, review attachments)
+  - [ ] Sanitize rich text inputs against stored XSS
+  - [ ] Verify HTTP security response headers (`Content-Security-Policy`, `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`)
+- [ ] **Webhook & Financial Transaction Security**:
+  - [ ] Verify Stripe / PayPal webhook cryptographic signature validation and replay attack prevention
+  - [ ] Verify ledger transaction idempotency to eliminate any potential double-credit or double-debit vulnerabilities
+- [ ] **Verification**:
+  - [ ] Security test suite executing unauthorized query attempts (expecting 401/403)
+  - [ ] Penetration testing with invalid tokens, mismatched store IDs, and malicious payloads
