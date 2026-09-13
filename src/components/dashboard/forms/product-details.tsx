@@ -76,8 +76,8 @@ import {
 // React date time picker
 import DateTimePicker from 'react-datetime-picker';
 import 'react-datetime-picker/dist/DateTimePicker.css';
-import 'react-calendar/dist/Calendar.css';
-import 'react-clock/dist/Clock.css';
+
+
 import { format } from 'date-fns';
 
 // Jodit text editor
