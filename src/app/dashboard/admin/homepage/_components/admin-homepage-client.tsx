@@ -483,11 +483,11 @@ export default function AdminHomepageClient({
 				<div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
 					<div className="space-y-1">
 						<div className="flex items-center gap-2 flex-wrap">
-							<span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-[11px] font-semibold bg-primary/10 text-primary border border-primary/20 tracking-wide uppercase">
+							<span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-xs font-semibold bg-primary/10 text-primary border border-primary/20 tracking-wide uppercase">
 								<SlidersHorizontal className="size-3" />
 								Storefront Operations
 							</span>
-							<span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20">
+							<span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-xs font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20">
 								<span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
 								Database Connected
 							</span>
@@ -530,14 +530,14 @@ export default function AdminHomepageClient({
 				{/* CRM Metric 1: Pipeline Blocks */}
 				<div className="rounded-xl border border-border/80 bg-card p-3.5 flex items-start justify-between shadow-xs">
 					<div className="space-y-1">
-						<span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">
+						<span className="text-xs font-bold text-muted-foreground uppercase tracking-wider block">
 							Storefront Pipeline
 						</span>
 						<div className="flex items-baseline gap-1.5">
 							<span className="text-xl font-bold text-foreground font-mono">{sections.length}</span>
 							<span className="text-xs text-muted-foreground">Blocks</span>
 						</div>
-						<p className="text-[11px] text-muted-foreground flex items-center gap-1">
+						<p className="text-xs text-muted-foreground flex items-center gap-1">
 							<span className="size-1.5 rounded-full bg-blue-500" />
 							Top-to-Bottom SSR flow
 						</p>
@@ -550,7 +550,7 @@ export default function AdminHomepageClient({
 				{/* CRM Metric 2: Active / Hidden Visibility */}
 				<div className="rounded-xl border border-border/80 bg-card p-3.5 flex items-start justify-between shadow-xs">
 					<div className="space-y-1">
-						<span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">
+						<span className="text-xs font-bold text-muted-foreground uppercase tracking-wider block">
 							Publish Status
 						</span>
 						<div className="flex items-baseline gap-1.5">
@@ -559,7 +559,7 @@ export default function AdminHomepageClient({
 							</span>
 							<span className="text-xs text-muted-foreground font-mono">/ {sections.length} Live</span>
 						</div>
-						<p className="text-[11px] text-muted-foreground flex items-center gap-1">
+						<p className="text-xs text-muted-foreground flex items-center gap-1">
 							{sections.length - activeCount === 0 ? (
 								<span className="text-emerald-600 dark:text-emerald-400 font-medium">100% visible to customers</span>
 							) : (
@@ -577,7 +577,7 @@ export default function AdminHomepageClient({
 				{/* CRM Metric 3: Products on Sale (Exact User Request) */}
 				<div className="rounded-xl border border-border/80 bg-card p-3.5 flex items-start justify-between shadow-xs">
 					<div className="space-y-1">
-						<span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">
+						<span className="text-xs font-bold text-muted-foreground uppercase tracking-wider block">
 							Products on Sale
 						</span>
 						<div className="flex items-baseline gap-1.5">
@@ -586,7 +586,7 @@ export default function AdminHomepageClient({
 							</span>
 							<span className="text-xs text-muted-foreground font-mono">/ {stats.totalProducts} items</span>
 						</div>
-						<p className="text-[11px] text-muted-foreground flex items-center gap-1">
+						<p className="text-xs text-muted-foreground flex items-center gap-1">
 							<Tag className="size-3 text-rose-500" />
 							<span>Up to <strong className="text-foreground">{stats.maxDiscount}% OFF</strong> (Avg {stats.avgDiscount}%)</span>
 						</p>
@@ -599,7 +599,7 @@ export default function AdminHomepageClient({
 				{/* CRM Metric 4: Deals Engine Status */}
 				<div className="rounded-xl border border-border/80 bg-card p-3.5 flex items-start justify-between shadow-xs">
 					<div className="space-y-1">
-						<span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">
+						<span className="text-xs font-bold text-muted-foreground uppercase tracking-wider block">
 							Super Deals Engine
 						</span>
 						<div className="flex items-baseline gap-1.5">
@@ -608,7 +608,7 @@ export default function AdminHomepageClient({
 							</span>
 							<span className="text-xs text-muted-foreground">Deals Loaded</span>
 						</div>
-						<p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-1">
+						<p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-1">
 							<span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
 							Automated showcase active
 						</p>
@@ -715,16 +715,16 @@ export default function AdminHomepageClient({
 													<h3 className="text-sm font-bold text-foreground tracking-tight">
 														{section.name}
 													</h3>
-													<Badge variant="outline" className={`text-[10px] font-mono px-1.5 py-0 border ${meta.badgeColor}`}>
+													<Badge variant="outline" className={`text-xs font-mono px-1.5 py-0 border ${meta.badgeColor}`}>
 														{section.sectionKey}
 													</Badge>
 													{section.isActive ? (
-														<span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">
+														<span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">
 															<span className="size-1 rounded-full bg-emerald-500 animate-pulse" />
 															Live
 														</span>
 													) : (
-														<span className="inline-flex items-center gap-1 text-[10px] font-medium text-muted-foreground bg-muted px-1.5 py-0.5 rounded border border-border">
+														<span className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground bg-muted px-1.5 py-0.5 rounded border border-border">
 															Hidden
 														</span>
 													)}
@@ -747,21 +747,21 @@ export default function AdminHomepageClient({
 												<div className="flex items-center gap-1.5 pt-0.5 flex-wrap">
 													{section.sectionKey === 'SUPER_DEALS' && (
 														<>
-															<span className="text-[10px] px-1.5 py-0.5 rounded bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20 flex items-center gap-1 font-medium">
+															<span className="text-xs px-1.5 py-0.5 rounded bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20 flex items-center gap-1 font-medium">
 																<Tag className="size-2.5" />
 																{stats.productsOnSale} on Sale
 															</span>
-															<span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 flex items-center gap-1 font-medium">
+															<span className="text-xs px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 flex items-center gap-1 font-medium">
 																<Pin className="size-2.5" />
 																{Array.isArray(section.config?.pinnedProductIds) && section.config.pinnedProductIds.length > 0
 																	? `${section.config.pinnedProductIds.length} Pinned (Opt 2)`
 																	: 'Auto Deals (Opt 1)'}
 															</span>
-															<span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 flex items-center gap-1 font-medium">
+															<span className="text-xs px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 flex items-center gap-1 font-medium">
 																<Zap className="size-2.5" />
 																{section.config?.badge || 'Flash Sale'}
 															</span>
-															<span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-foreground border border-border/70 flex items-center gap-1 font-mono">
+															<span className="text-xs px-1.5 py-0.5 rounded bg-muted text-foreground border border-border/70 flex items-center gap-1 font-mono">
 																<Clock className="size-2.5 text-muted-foreground" />
 																Cap: {section.config?.itemsLimit || 12} Deals
 															</span>
@@ -769,24 +769,24 @@ export default function AdminHomepageClient({
 													)}
 													{section.sectionKey === 'HERO_GRID' && (
 														<>
-															<span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 font-medium">
+															<span className="text-xs px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 font-medium">
 																Slider: Active
 															</span>
-															<span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-foreground border border-border/70 font-medium">
+															<span className="text-xs px-1.5 py-0.5 rounded bg-muted text-foreground border border-border/70 font-medium">
 																Side Ad: {section.config?.showSideAd !== false ? 'ON' : 'OFF'}
 															</span>
-															<span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-foreground border border-border/70 font-medium">
+															<span className="text-xs px-1.5 py-0.5 rounded bg-muted text-foreground border border-border/70 font-medium">
 																Shopper Card: {section.config?.showUserCard !== false ? 'ON' : 'OFF'}
 															</span>
 														</>
 													)}
 													{section.sectionKey === 'FEATURED_CATEGORIES' && (
-														<span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-medium">
+														<span className="text-xs px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-medium">
 															Cap: {section.config?.itemsLimit || 8} Categories
 														</span>
 													)}
 													{section.sectionKey === 'MORE_TO_LOVE' && (
-														<span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20 font-medium">
+														<span className="text-xs px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20 font-medium">
 															Feed: {section.config?.itemsLimit || 18} Products
 														</span>
 													)}
@@ -828,7 +828,7 @@ export default function AdminHomepageClient({
 
 											{/* Visibility Switch */}
 											<div className="flex items-center gap-1.5 px-2.5 py-1 bg-muted/60 rounded-lg border border-border/70 shadow-xs">
-												<span className="text-[11px] font-semibold text-foreground select-none">
+												<span className="text-xs font-semibold text-foreground select-none">
 													{section.isActive ? 'Live' : 'Off'}
 												</span>
 												<Switch
@@ -866,11 +866,11 @@ export default function AdminHomepageClient({
 									<Zap className="size-3.5 text-amber-500" />
 									Storefront Layout Inspector
 								</h3>
-								<p className="text-[11px] text-muted-foreground">
+								<p className="text-xs text-muted-foreground">
 									Sequential SSR cascade flow on customer browser.
 								</p>
 							</div>
-							<Badge variant="outline" className="text-[10px] font-mono border-border text-muted-foreground">
+							<Badge variant="outline" className="text-xs font-mono border-border text-muted-foreground">
 								Live Order
 							</Badge>
 						</div>
@@ -884,7 +884,7 @@ export default function AdminHomepageClient({
 									<span className="size-2 rounded-full bg-amber-500/80" />
 									<span className="size-2 rounded-full bg-emerald-500/80" />
 								</div>
-								<div className="flex-1 ml-1 bg-background text-[10px] text-muted-foreground font-mono px-2 py-0.5 rounded border border-border text-center flex items-center justify-center gap-1.5 truncate">
+								<div className="flex-1 ml-1 bg-background text-xs text-muted-foreground font-mono px-2 py-0.5 rounded border border-border text-center flex items-center justify-center gap-1.5 truncate">
 									<span className="size-1.5 rounded-full bg-emerald-500" />
 									gocart.com/
 								</div>
@@ -913,7 +913,7 @@ export default function AdminHomepageClient({
 										>
 											<div className="flex items-center justify-between gap-2">
 												<div className="flex items-center gap-2 min-w-0">
-													<span className="text-[10px] font-mono font-bold text-muted-foreground">
+													<span className="text-xs font-mono font-bold text-muted-foreground">
 														#{idx + 1}
 													</span>
 													<div className={`size-5 rounded border flex items-center justify-center ${meta.badgeColor}`}>
@@ -927,11 +927,11 @@ export default function AdminHomepageClient({
 												</div>
 
 												{section.isActive ? (
-													<span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20 shrink-0">
+													<span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20 shrink-0">
 														Live
 													</span>
 												) : (
-													<span className="text-[10px] font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded border border-border shrink-0">
+													<span className="text-xs font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded border border-border shrink-0">
 														Hidden
 													</span>
 												)}
@@ -941,23 +941,23 @@ export default function AdminHomepageClient({
 											{section.isActive && (
 												<div className="mt-2 pt-2 border-t border-border/60">
 													{section.sectionKey === 'HERO_GRID' && (
-														<div className="grid grid-cols-3 gap-1.5 min-h-[26px]">
-															<div className="rounded-md bg-blue-500/15 border border-blue-500/25 col-span-2 flex items-center justify-center text-[10px] text-blue-600 dark:text-blue-300 font-semibold px-2">
+														<div className="grid grid-cols-3 gap-1.5 min-h-7">
+															<div className="rounded-md bg-blue-500/15 border border-blue-500/25 col-span-2 flex items-center justify-center text-xs text-blue-600 dark:text-blue-300 font-semibold px-2 py-1">
 																Hero Slider
 															</div>
-															<div className="rounded-md bg-muted border border-border flex items-center justify-center text-[10px] text-muted-foreground font-semibold px-1">
+															<div className="rounded-md bg-muted border border-border flex items-center justify-center text-xs text-muted-foreground font-semibold px-1 py-1">
 																Banner
 															</div>
 														</div>
 													)}
 
 													{section.sectionKey === 'SUPER_DEALS' && (
-														<div className="flex items-center gap-2 min-h-[26px] px-2.5 rounded-md bg-rose-500/15 border border-rose-500/25 justify-between">
-															<span className="text-[10px] font-bold text-rose-600 dark:text-rose-300 flex items-center gap-1.5">
+														<div className="flex items-center gap-2 min-h-7 px-2.5 py-1 rounded-md bg-rose-500/15 border border-rose-500/25 justify-between">
+															<span className="text-xs font-bold text-rose-600 dark:text-rose-300 flex items-center gap-1.5">
 																<Flame className="size-3 text-rose-500" />
 																{stats.productsOnSale} Deals Active
 															</span>
-															<span className="text-[10px] font-mono font-medium text-amber-600 dark:text-amber-300 flex items-center gap-1">
+															<span className="text-xs font-mono font-medium text-amber-600 dark:text-amber-300 flex items-center gap-1">
 																<Clock className="size-2.5 text-amber-500" />
 																Live Ticker
 															</span>
@@ -965,11 +965,11 @@ export default function AdminHomepageClient({
 													)}
 
 													{section.sectionKey === 'FEATURED_CATEGORIES' && (
-														<div className="flex items-center gap-1.5 min-h-[26px]">
+														<div className="flex items-center gap-1.5 min-h-7">
 															{[1, 2, 3, 4].map((i) => (
 																<div
 																	key={i}
-																	className="flex-1 h-full py-1 rounded-md bg-emerald-500/15 border border-emerald-500/25 flex items-center justify-center text-[10px] text-emerald-600 dark:text-emerald-300 font-semibold"
+																	className="flex-1 h-full py-1 rounded-md bg-emerald-500/15 border border-emerald-500/25 flex items-center justify-center text-xs text-emerald-600 dark:text-emerald-300 font-semibold"
 																>
 																	Cat {i}
 																</div>
@@ -978,11 +978,11 @@ export default function AdminHomepageClient({
 													)}
 
 													{section.sectionKey === 'MORE_TO_LOVE' && (
-														<div className="grid grid-cols-4 gap-1.5 min-h-[26px]">
+														<div className="grid grid-cols-4 gap-1.5 min-h-7">
 															{[1, 2, 3, 4].map((i) => (
 																<div
 																	key={i}
-																	className="h-full py-1 rounded-md bg-purple-500/15 border border-purple-500/25 flex items-center justify-center text-[10px] text-purple-600 dark:text-purple-300 font-semibold"
+																	className="h-full py-1 rounded-md bg-purple-500/15 border border-purple-500/25 flex items-center justify-center text-xs text-purple-600 dark:text-purple-300 font-semibold"
 																>
 																	Item {i}
 																</div>
@@ -997,7 +997,7 @@ export default function AdminHomepageClient({
 							</div>
 						</div>
 
-						<p className="text-center text-[11px] text-muted-foreground">
+						<p className="text-center text-xs text-muted-foreground">
 							Click any block above to open its configuration drawer.
 						</p>
 					</div>
@@ -1027,15 +1027,15 @@ export default function AdminHomepageClient({
 												Configure {selectedSection.name}
 											</h2>
 											<div className="flex items-center gap-2 mt-0.5">
-												<Badge variant="outline" className="text-[10px] font-mono px-1.5 py-0 border-border text-muted-foreground">
+												<Badge variant="outline" className="text-xs font-mono px-1.5 py-0 border-border text-muted-foreground">
 													{selectedSection.sectionKey}
 												</Badge>
 												{selectedSection.isActive ? (
-													<span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">
+													<span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">
 														Active on Storefront
 													</span>
 												) : (
-													<span className="text-[10px] font-medium text-muted-foreground bg-muted px-1.5 py-0.5 rounded border border-border">
+													<span className="text-xs font-medium text-muted-foreground bg-muted px-1.5 py-0.5 rounded border border-border">
 														Hidden from Storefront
 													</span>
 												)}
@@ -1063,7 +1063,7 @@ export default function AdminHomepageClient({
 										<div className="space-y-1.5">
 											<Label htmlFor="drawer-title" className="text-xs font-semibold text-foreground flex items-center justify-between">
 												<span>Section Display Title</span>
-												<span className="text-[10px] text-muted-foreground">Required</span>
+												<span className="text-xs text-muted-foreground">Required</span>
 											</Label>
 											<Input
 												id="drawer-title"
@@ -1072,7 +1072,7 @@ export default function AdminHomepageClient({
 												onChange={(e) => setDraftTitle(e.target.value)}
 												className="h-9 rounded-lg bg-background border-input text-foreground placeholder:text-muted-foreground focus-visible:ring-primary/40 text-xs"
 											/>
-											<p className="text-[11px] text-muted-foreground">
+											<p className="text-xs text-muted-foreground">
 												The primary headline displayed to shoppers on the storefront.
 											</p>
 										</div>
@@ -1088,7 +1088,7 @@ export default function AdminHomepageClient({
 												onChange={(e) => setDraftSubtitle(e.target.value)}
 												className="h-9 rounded-lg bg-background border-input text-foreground placeholder:text-muted-foreground focus-visible:ring-primary/40 text-xs"
 											/>
-											<p className="text-[11px] text-muted-foreground">
+											<p className="text-xs text-muted-foreground">
 												Secondary descriptive text under the main heading.
 											</p>
 										</div>
@@ -1105,7 +1105,7 @@ export default function AdminHomepageClient({
 													Super Deals Showcase Engine
 												</h3>
 											</div>
-											<Badge variant="outline" className="text-[10px] border-rose-500/30 text-rose-600 dark:text-rose-400 font-mono">
+											<Badge variant="outline" className="text-xs border-rose-500/30 text-rose-600 dark:text-rose-400 font-mono">
 												{stats.productsOnSale} on Sale
 											</Badge>
 										</div>
@@ -1117,18 +1117,18 @@ export default function AdminHomepageClient({
 													<Layers className="size-3.5 text-primary" />
 													Product Selection Strategy (Option 1 vs Option 2)
 												</span>
-												<Badge variant="outline" className="text-[10px] font-mono border-primary/30 text-primary bg-primary/5">
+												<Badge variant="outline" className="text-xs font-mono border-primary/30 text-primary bg-primary/5">
 													{draftPinnedProductIds.length > 0 ? 'Option 2 (Pinned) Active' : 'Option 1 (Auto) Active'}
 												</Badge>
 											</div>
 
 											<div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
 												<div className="p-2.5 rounded-lg border border-border/70 bg-card space-y-1">
-													<div className="flex items-center gap-1.5 font-semibold text-foreground text-[11px]">
+													<div className="flex items-center gap-1.5 font-semibold text-foreground text-xs">
 														<Flame className="size-3 text-rose-500" />
 														Option 1: Auto Catalog Deals
 													</div>
-													<p className="text-[10.5px] text-muted-foreground leading-relaxed">
+													<p className="text-xs text-muted-foreground leading-relaxed">
 														Automatically surfaces <strong>{stats.productsOnSale} discounted products</strong> (up to <strong>{stats.maxDiscount}% OFF</strong>) based on store discounts.
 													</p>
 												</div>
@@ -1139,15 +1139,15 @@ export default function AdminHomepageClient({
 														: 'border-border/70 bg-card'
 												}`}>
 													<div className="flex items-center justify-between">
-														<span className="flex items-center gap-1.5 font-semibold text-amber-600 dark:text-amber-400 text-[11px]">
+														<span className="flex items-center gap-1.5 font-semibold text-amber-600 dark:text-amber-400 text-xs">
 															<Pin className="size-3 text-amber-500" />
 															Option 2: Curated Spotlight
 														</span>
-														<Badge className="text-[9px] px-1.5 py-0 bg-amber-500/20 text-amber-700 dark:text-amber-300 border-none font-mono">
+														<Badge className="text-xs px-1.5 py-0 bg-amber-500/20 text-amber-700 dark:text-amber-300 border-none font-mono">
 															{draftPinnedProductIds.length} Pinned
 														</Badge>
 													</div>
-													<p className="text-[10.5px] text-muted-foreground leading-relaxed">
+													<p className="text-xs text-muted-foreground leading-relaxed">
 														Handpick and pin specific items below to lock them at the front of the customer showcase.
 													</p>
 												</div>
@@ -1162,11 +1162,11 @@ export default function AdminHomepageClient({
 														<Pin className="size-3.5 text-amber-500" />
 														Option 2: Pin Specific Products to Showcase
 													</Label>
-													<p className="text-[11px] text-muted-foreground">
+													<p className="text-xs text-muted-foreground">
 														Search catalog to feature handpicked products first in this section.
 													</p>
 												</div>
-												<Badge variant="outline" className="text-[10px] font-mono border-amber-500/40 text-amber-600 dark:text-amber-400 bg-amber-500/10">
+												<Badge variant="outline" className="text-xs font-mono border-amber-500/40 text-amber-600 dark:text-amber-400 bg-amber-500/10">
 													{draftPinnedProductIds.length} Selected
 												</Badge>
 											</div>
@@ -1179,9 +1179,9 @@ export default function AdminHomepageClient({
 														return (
 															<div
 																key={id}
-																className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-card border border-border text-[11px] font-medium text-foreground shadow-2xs group"
+																className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-card border border-border text-xs font-medium text-foreground shadow-2xs group"
 															>
-																<span className="size-4 rounded-full bg-amber-500/20 text-amber-600 dark:text-amber-400 text-[10px] font-bold flex items-center justify-center">
+																<span className="size-4 rounded-full bg-amber-500/20 text-amber-600 dark:text-amber-400 text-xs font-bold flex items-center justify-center">
 																	{index + 1}
 																</span>
 																<span className="max-w-[140px] truncate">
@@ -1245,10 +1245,10 @@ export default function AdminHomepageClient({
 																		/>
 																	</div>
 																	<div className="min-w-0">
-																		<p className="font-semibold text-foreground truncate text-[11px]">
+																		<p className="font-semibold text-foreground truncate text-xs">
 																			{prod.name}
 																		</p>
-																		<div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+																		<div className="flex items-center gap-1.5 text-xs text-muted-foreground">
 																			<span>{prod.categoryName || 'General'}</span>
 																			<span>•</span>
 																			<span className="font-mono text-foreground font-semibold">
@@ -1268,7 +1268,7 @@ export default function AdminHomepageClient({
 																	size="sm"
 																	variant={isPinned ? 'destructive' : 'outline'}
 																	onClick={() => togglePinProduct(prod)}
-																	className="h-6 px-2 text-[10px] shrink-0"
+																	className="h-6 px-2 text-xs shrink-0"
 																>
 																	{isPinned ? 'Unpin' : 'Pin'}
 																</Button>
@@ -1293,13 +1293,13 @@ export default function AdminHomepageClient({
 												className="h-9 rounded-lg bg-background border-input text-foreground placeholder:text-muted-foreground focus-visible:ring-rose-500/50 text-xs"
 											/>
 											<div className="flex items-center gap-1.5 pt-1 flex-wrap">
-												<span className="text-[10px] text-muted-foreground">Quick badges:</span>
+												<span className="text-xs text-muted-foreground">Quick badges:</span>
 												{['⚡ Flash Sale', '🔥 Super Deals', '💥 Daily Steals'].map((preset) => (
 													<button
 														key={preset}
 														type="button"
 														onClick={() => setDraftBadge(preset)}
-														className="text-[10px] px-2 py-0.5 rounded bg-muted hover:bg-accent text-foreground border border-border/70 transition-colors"
+														className="text-xs px-2 py-0.5 rounded bg-muted hover:bg-accent text-foreground border border-border/70 transition-colors"
 													>
 														{preset}
 													</button>
@@ -1314,7 +1314,7 @@ export default function AdminHomepageClient({
 													<Clock className="size-3.5 text-amber-500" />
 													Countdown Target Date & Time
 												</span>
-												<span className="text-[10px] text-muted-foreground">Click field or button to open picker</span>
+												<span className="text-xs text-muted-foreground">Click field or button to open picker</span>
 											</Label>
 
 											<div className="flex items-center gap-2">
@@ -1385,13 +1385,13 @@ export default function AdminHomepageClient({
 
 											{/* Quick Preset Buttons */}
 											<div className="flex items-center gap-2 pt-1 flex-wrap">
-												<span className="text-[11px] text-muted-foreground">Quick Presets:</span>
+												<span className="text-xs text-muted-foreground">Quick Presets:</span>
 												<Button
 													type="button"
 													variant="outline"
 													size="sm"
 													onClick={() => applyCountdownPreset(1)}
-													className="h-6 text-[10px] px-2 rounded border-border bg-background hover:bg-muted text-foreground"
+													className="h-6 text-xs px-2 rounded border-border bg-background hover:bg-muted text-foreground"
 												>
 													+24 Hours
 												</Button>
@@ -1400,7 +1400,7 @@ export default function AdminHomepageClient({
 													variant="outline"
 													size="sm"
 													onClick={() => applyCountdownPreset(3)}
-													className="h-6 text-[10px] px-2 rounded border-border bg-background hover:bg-muted text-foreground"
+													className="h-6 text-xs px-2 rounded border-border bg-background hover:bg-muted text-foreground"
 												>
 													+3 Days
 												</Button>
@@ -1409,7 +1409,7 @@ export default function AdminHomepageClient({
 													variant="outline"
 													size="sm"
 													onClick={() => applyCountdownPreset(7)}
-													className="h-6 text-[10px] px-2 rounded border-border bg-background hover:bg-muted text-foreground"
+													className="h-6 text-xs px-2 rounded border-border bg-background hover:bg-muted text-foreground"
 												>
 													+7 Days
 												</Button>
@@ -1419,7 +1419,7 @@ export default function AdminHomepageClient({
 														variant="ghost"
 														size="sm"
 														onClick={() => setDraftCountdownEnd('')}
-														className="h-6 text-[10px] px-1.5 text-muted-foreground hover:text-rose-600 hover:bg-rose-500/10 rounded gap-1"
+														className="h-6 text-xs px-1.5 text-muted-foreground hover:text-rose-600 hover:bg-rose-500/10 rounded gap-1"
 													>
 														<X className="size-3" />
 														Clear
@@ -1468,7 +1468,7 @@ export default function AdminHomepageClient({
 												onValueChange={(val) => setDraftItemsLimit(val[0])}
 												className="py-1"
 											/>
-											<div className="flex justify-between text-[10px] text-muted-foreground font-mono">
+											<div className="flex justify-between text-xs text-muted-foreground font-mono">
 												<span>2 deals (min)</span>
 												<span>12 deals (recommended)</span>
 												<span>30 deals (max)</span>
@@ -1493,7 +1493,7 @@ export default function AdminHomepageClient({
 													<Label className="text-xs font-semibold text-foreground">
 														Promotional Side Banner
 													</Label>
-													<p className="text-[11px] text-muted-foreground">
+													<p className="text-xs text-muted-foreground">
 														Vertical promotional banner on desktop screens
 													</p>
 												</div>
@@ -1508,7 +1508,7 @@ export default function AdminHomepageClient({
 													<Label className="text-xs font-semibold text-foreground">
 														Shopper Welcome Card
 													</Label>
-													<p className="text-[11px] text-muted-foreground">
+													<p className="text-xs text-muted-foreground">
 														Greetings card showing customer profile & account links
 													</p>
 												</div>
@@ -1548,7 +1548,7 @@ export default function AdminHomepageClient({
 												onValueChange={(val) => setDraftItemsLimit(val[0])}
 												className="py-1"
 											/>
-											<div className="flex justify-between text-[10px] text-muted-foreground font-mono">
+											<div className="flex justify-between text-xs text-muted-foreground font-mono">
 												<span>4 (min)</span>
 												<span>12</span>
 												<span>24 (max)</span>
@@ -1584,7 +1584,7 @@ export default function AdminHomepageClient({
 												onValueChange={(val) => setDraftItemsLimit(val[0])}
 												className="py-1"
 											/>
-											<div className="flex justify-between text-[10px] text-muted-foreground font-mono">
+											<div className="flex justify-between text-xs text-muted-foreground font-mono">
 												<span>6 items</span>
 												<span>24 items</span>
 												<span>48 items</span>
@@ -1595,14 +1595,14 @@ export default function AdminHomepageClient({
 
 								{/* Card 3: Live Storefront Header Preview */}
 								<div className="rounded-xl border border-border bg-muted/20 p-3.5 space-y-2">
-									<p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+									<p className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
 										<Eye className="size-3 text-primary" />
 										Storefront Heading Preview
 									</p>
 									<div className="p-3.5 rounded-lg border border-border/80 bg-card text-card-foreground space-y-1 shadow-xs">
 										<div className="flex items-center gap-2 flex-wrap">
 											{draftBadge && selectedSection.sectionKey === 'SUPER_DEALS' && (
-												<span className="px-2 py-0.5 text-[10px] font-bold uppercase bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30 rounded-full">
+												<span className="px-2 py-0.5 text-xs font-bold uppercase bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30 rounded-full">
 													{draftBadge}
 												</span>
 											)}
