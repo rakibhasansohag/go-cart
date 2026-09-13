@@ -263,7 +263,7 @@ export default function SellerQuestionsTable({ storeUrl, initialData }: Props) {
 										<div className='flex items-center gap-2.5'>
 											<Avatar className='h-8 w-8 shrink-0'>
 												<AvatarImage src={q.customer.picture} />
-												<AvatarFallback className='text-[10px] uppercase font-bold bg-primary/10 text-primary'>
+												<AvatarFallback className='text-xs uppercase font-bold bg-primary/10 text-primary'>
 													{q.customer.name.slice(0, 2)}
 												</AvatarFallback>
 											</Avatar>
@@ -271,7 +271,7 @@ export default function SellerQuestionsTable({ storeUrl, initialData }: Props) {
 												<p className='text-xs font-semibold text-foreground truncate'>
 													{q.customer.name}
 												</p>
-												<p className='text-[11px] text-muted-foreground truncate' title={q.customer.email}>
+												<p className='text-xs text-muted-foreground truncate' title={q.customer.email}>
 													{q.customer.email || 'No email provided'}
 												</p>
 											</div>
@@ -307,7 +307,7 @@ export default function SellerQuestionsTable({ storeUrl, initialData }: Props) {
 												{q.isPinned && (
 													<Badge
 														variant='outline'
-														className='bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20 text-[10px] py-0 h-4 gap-1'
+														className='bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20 text-xs py-0 h-4 gap-1'
 													>
 														<Pin className='w-2.5 h-2.5' />
 														Pinned
@@ -316,12 +316,12 @@ export default function SellerQuestionsTable({ storeUrl, initialData }: Props) {
 												{q.status === QAModerationStatus.HIDDEN && (
 													<Badge
 														variant='outline'
-														className='bg-destructive/10 text-destructive border-destructive/20 text-[10px] py-0 h-4'
+														className='bg-destructive/10 text-destructive border-destructive/20 text-xs py-0 h-4'
 													>
 														Hidden
 													</Badge>
 												)}
-												<span className='text-[11px] text-muted-foreground'>
+												<span className='text-xs text-muted-foreground'>
 													{new Date(q.createdAt).toLocaleDateString()}
 												</span>
 											</div>
@@ -345,14 +345,14 @@ export default function SellerQuestionsTable({ storeUrl, initialData }: Props) {
 											<div className='space-y-1'>
 												<Badge
 													variant='outline'
-													className='gap-1 border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 text-[10px] font-semibold py-0.5'
+													className='gap-1 border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 text-xs font-semibold py-0.5'
 												>
 													<CheckCircle2 className='w-2.5 h-2.5' />
 													Answered by Seller
 												</Badge>
 												{q.answers.length > 0 && (
 													<p
-														className='text-[11px] text-muted-foreground line-clamp-1 italic'
+														className='text-xs text-muted-foreground line-clamp-1 italic'
 														title={q.answers[0].answer}
 													>
 														"{q.answers[0].answer}"
@@ -362,7 +362,7 @@ export default function SellerQuestionsTable({ storeUrl, initialData }: Props) {
 										) : (
 											<Badge
 												variant='outline'
-												className='gap-1 border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-400 text-[10px] font-semibold py-0.5'
+												className='gap-1 border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-400 text-xs font-semibold py-0.5'
 											>
 												<Clock className='w-2.5 h-2.5' />
 												Needs Answer
@@ -459,7 +459,7 @@ export default function SellerQuestionsTable({ storeUrl, initialData }: Props) {
 								<p className='text-foreground font-medium text-sm leading-snug'>
 									"{selectedQuestion.question}"
 								</p>
-								<p className='text-[11px] text-muted-foreground'>
+								<p className='text-xs text-muted-foreground'>
 									Product: <span className='font-medium text-foreground'>{selectedQuestion.product.name}</span>
 								</p>
 							</div>

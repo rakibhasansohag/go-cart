@@ -172,7 +172,7 @@ export default function ShipmentTrackingCard({ shipment }: ShipmentTrackingProps
 										'•'
 									)}
 								</div>
-								<span className={`text-[11px] font-medium leading-tight max-w-[70px] ${state === 'ACTIVE' ? 'text-primary font-semibold' : 'text-muted-foreground'}`}>
+								<span className={`text-xs font-medium leading-tight max-w-[70px] ${state === 'ACTIVE' ? 'text-primary font-semibold' : 'text-muted-foreground'}`}>
 									{step.label}
 								</span>
 							</div>

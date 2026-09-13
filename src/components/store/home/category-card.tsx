@@ -37,7 +37,7 @@ export default function CategoryCard({
 							className="object-cover group-hover/sub:scale-105 transition-transform duration-300"
 						/>
 						<div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 via-black/30 to-transparent p-2 pt-4">
-							<span className="text-[11px] font-semibold text-white truncate block drop-shadow-xs">
+							<span className="text-xs font-semibold text-white truncate block drop-shadow-xs">
 								{sub.name}
 							</span>
 						</div>

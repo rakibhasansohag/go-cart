@@ -119,7 +119,7 @@ export default function HomeUserCard({
 					>
 						<Link href='/browse'>
 							<div className='h-24'>
-								<div className='mt-2.5 text-main-primary leading-[18px] text-[13px] overflow-hidden'>
+								<div className='mt-2.5 text-main-primary leading-[18px] text-sm overflow-hidden'>
 									Your favorite store
 								</div>
 								<div className='leading-5 font-bold mt-2.5 text-main-primary'>

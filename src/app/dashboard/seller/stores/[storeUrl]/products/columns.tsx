@@ -106,7 +106,7 @@ export const columns: ColumnDef<StoreProductType>[] = [
 														return (
 															<span
 																key={size.size}
-																className={`w-full max-w-full px-2 py-0.5 rounded-md text-[11px] font-medium border flex items-center gap-1.5 truncate ${
+																className={`w-full max-w-full px-2 py-0.5 rounded-md text-xs font-medium border flex items-center gap-1.5 truncate ${
 																	isOut
 																		? 'bg-destructive/10 text-destructive border-destructive/30'
 																		: isLow

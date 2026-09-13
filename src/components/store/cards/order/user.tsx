@@ -39,7 +39,7 @@ export default function OrderUserDetailsCard({
 							<h2 className='font-bold text-base text-foreground truncate capitalize tracking-tight'>
 								{firstName} {lastName}
 							</h2>
-							<span className='text-[10px] uppercase tracking-wider bg-primary/10 text-primary px-2 py-0.5 rounded-full font-bold border border-primary/20 shrink-0 flex items-center gap-1'>
+							<span className='text-xs uppercase tracking-wider bg-primary/10 text-primary px-2 py-0.5 rounded-full font-bold border border-primary/20 shrink-0 flex items-center gap-1'>
 								<UserCheck className='w-3 h-3' />
 								Customer
 							</span>

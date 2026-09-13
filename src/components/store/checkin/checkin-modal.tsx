@@ -123,14 +123,14 @@ export default function CheckInModal() {
                 <Trophy className="w-36 h-36 sm:w-48 sm:h-48 text-white" />
               </div>
               <div className="relative z-10 flex flex-col items-center justify-center gap-y-1 sm:gap-y-1.5 px-8 sm:px-0">
-                <div className="inline-flex items-center gap-x-1.5 bg-white/20 backdrop-blur-md px-3 py-0.5 sm:px-4 sm:py-1 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-wider">
+                <div className="inline-flex items-center gap-x-1.5 bg-white/20 backdrop-blur-md px-3 py-0.5 sm:px-4 sm:py-1 rounded-full text-xs font-bold uppercase tracking-wider">
                   <Sparkles className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> Daily
                   Visitor Reward
                 </div>
                 <h1 className="text-lg sm:text-2xl font-extrabold tracking-tight">
                   Claim Your Daily GoCoins & Coupons!
                 </h1>
-                <p className="text-[11px] sm:text-xs text-white/90 max-w-lg hidden sm:block">
+                <p className="text-xs text-white/90 max-w-lg hidden sm:block">
                   Welcome back! Check in each day of the month to unlock GoCoins
                   balance, free shipping perks, and personal promo codes.
                 </p>

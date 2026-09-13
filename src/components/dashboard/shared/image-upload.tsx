@@ -156,7 +156,7 @@ const ImageUpload = ({
 
               <button
                 type="button"
-                className="z-20 absolute right-0 bottom-2 sm:bottom-6 flex items-center font-medium text-[17px] h-10 w-10 sm:h-14 sm:w-14 justify-center text-white bg-gradient-to-t from-blue-500 to-blue-300 border-none shadow-lg rounded-full hover:shadow-md active:shadow-sm cursor-pointer hover:scale-110 transition-transform duration-300 ease-bezier-1 ease-in-out will-change-transform"
+                className="z-20 absolute right-0 bottom-2 sm:bottom-6 flex items-center font-medium text-base h-10 w-10 sm:h-14 sm:w-14 justify-center text-white bg-gradient-to-t from-blue-500 to-blue-300 border-none shadow-lg rounded-full hover:shadow-md active:shadow-sm cursor-pointer hover:scale-110 transition-transform duration-300 ease-bezier-1 ease-in-out will-change-transform"
                 disabled={disabled}
                 onClick={(e) => {
                   e.stopPropagation();
@@ -226,7 +226,7 @@ const ImageUpload = ({
             return (
               <button
                 type="button"
-                className="absolute bottom-4 right-4 flex items-center font-medium text-[17px] py-3 px-6 text-white bg-gradient-to-t from-blue-500 to-blue-300 border-none shadow-lg rounded-full hover:shadow-md active:shadow-sm cursor-pointer"
+                className="absolute bottom-4 right-4 flex items-center font-medium text-base py-3 px-6 text-white bg-gradient-to-t from-blue-500 to-blue-300 border-none shadow-lg rounded-full hover:shadow-md active:shadow-sm cursor-pointer"
                 disabled={disabled}
                 onClick={onClick}
               >
@@ -308,7 +308,7 @@ const ImageUpload = ({
               <>
                 <button
                   type="button"
-                  className="flex items-center font-medium text-[17px] py-3 px-6 text-white bg-gradient-to-t from-blue-500 to-blue-300 border-none shadow-lg rounded-full hover:shadow-md active:shadow-sm cursor-pointer"
+                  className="flex items-center font-medium text-base py-3 px-6 text-white bg-gradient-to-t from-blue-500 to-blue-300 border-none shadow-lg rounded-full hover:shadow-md active:shadow-sm cursor-pointer"
                   disabled={disabled}
                   onClick={handleUploadClick}
                 >

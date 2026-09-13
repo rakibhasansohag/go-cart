@@ -9,7 +9,7 @@ export default function Cart() {
 	return (
 		<div className='relative flex h-11 items-center px-2 cursor-pointer'>
 			<Link href='/cart' className='flex items-center text-white'>
-				<span className='text-[32px] inline-block'>
+				<span className='text-3xl inline-block'>
 					<CartIcon />
 				</span>
 				<div className='ml-1'>

@@ -267,7 +267,7 @@ export default function AdminInventoryView({ initialData }: AdminInventoryViewPr
 																	className='h-10 w-10 rounded-md object-cover border border-border/60 shrink-0 bg-muted/30'
 																/>
 															) : (
-																<div className='h-10 w-10 rounded-md bg-muted/40 border border-border/60 shrink-0 flex items-center justify-center text-[10px] text-muted-foreground font-semibold'>
+																<div className='h-10 w-10 rounded-md bg-muted/40 border border-border/60 shrink-0 flex items-center justify-center text-xs text-muted-foreground font-semibold'>
 																	N/A
 																</div>
 															)}
@@ -275,11 +275,11 @@ export default function AdminInventoryView({ initialData }: AdminInventoryViewPr
 																<span className='font-semibold text-foreground truncate max-w-[200px]'>
 																	{item.productName}
 																</span>
-																<span className='text-[11px] text-muted-foreground truncate max-w-[200px]'>
+																<span className='text-xs text-muted-foreground truncate max-w-[200px]'>
 																	{item.variantName}
 																</span>
 																{item.sku && (
-																	<span className='text-[10px] font-mono text-muted-foreground'>
+																	<span className='text-xs font-mono text-muted-foreground'>
 																		SKU: {item.sku}
 																	</span>
 																)}
@@ -301,11 +301,11 @@ export default function AdminInventoryView({ initialData }: AdminInventoryViewPr
 													</td>
 													<td className='p-3'>
 														{isOos ? (
-															<Badge className='bg-destructive/15 text-destructive border-destructive/30 hover:bg-destructive/20 text-[11px] font-medium'>
+															<Badge className='bg-destructive/15 text-destructive border-destructive/30 hover:bg-destructive/20 text-xs font-medium'>
 																0 (Out of Stock)
 															</Badge>
 														) : (
-															<Badge className='bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30 hover:bg-amber-500/20 text-[11px] font-medium'>
+															<Badge className='bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30 hover:bg-amber-500/20 text-xs font-medium'>
 																{item.quantity} units left
 															</Badge>
 														)}
@@ -375,7 +375,7 @@ export default function AdminInventoryView({ initialData }: AdminInventoryViewPr
 											</td>
 											<td className='p-3'>
 												{s.lowStockCount > 0 ? (
-													<Badge className='bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30 text-[11px] font-medium'>
+													<Badge className='bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30 text-xs font-medium'>
 														{s.lowStockCount}
 													</Badge>
 												) : (
@@ -384,7 +384,7 @@ export default function AdminInventoryView({ initialData }: AdminInventoryViewPr
 											</td>
 											<td className='p-3'>
 												{s.outOfStockCount > 0 ? (
-													<Badge className='bg-destructive/15 text-destructive border-destructive/30 text-[11px] font-medium'>
+													<Badge className='bg-destructive/15 text-destructive border-destructive/30 text-xs font-medium'>
 														{s.outOfStockCount}
 													</Badge>
 												) : (

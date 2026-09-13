@@ -160,18 +160,18 @@ export default function AnimatedDeals({
 					</div>
 					<div>
 						<div className="flex items-center gap-2 flex-wrap">
-							<span className="px-2.5 py-0.5 text-[10px] font-bold tracking-wider uppercase bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20 rounded-full flex items-center gap-1">
+							<span className="px-2.5 py-0.5 text-xs font-bold tracking-wider uppercase bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20 rounded-full flex items-center gap-1">
 								<Zap className="size-3" />
 								{badgeText || 'Flash Sale'}
 							</span>
 							<h2 className="text-lg sm:text-xl font-extrabold tracking-tight text-foreground">
 								{title || 'Super Deals Hub'}
 							</h2>
-							<span className="text-[11px] font-semibold text-muted-foreground bg-muted px-2 py-0.5 rounded-md border border-border/60">
+							<span className="text-xs font-semibold text-muted-foreground bg-muted px-2 py-0.5 rounded-md border border-border/60">
 								{uniqueProducts.length} Deals Live • Up to {maxDiscount}% OFF
 							</span>
 						</div>
-						<p className="text-[11px] text-muted-foreground mt-0.5">
+						<p className="text-xs text-muted-foreground mt-0.5">
 							{subtitle || 'Limited-time discounts on top products'}
 						</p>
 					</div>
@@ -185,7 +185,7 @@ export default function AnimatedDeals({
 							<span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75" />
 							<span className="relative inline-flex rounded-full size-2 bg-rose-500" />
 						</span>
-						<span className="text-[11px] font-medium text-muted-foreground flex items-center gap-1">
+						<span className="text-xs font-medium text-muted-foreground flex items-center gap-1">
 							<Clock className="size-3 text-amber-500" />
 							Ends in:
 						</span>
@@ -277,12 +277,12 @@ export default function AnimatedDeals({
 												className="object-contain p-2 group-hover/card:scale-105 transition-transform duration-300"
 											/>
 											{/* Discount Tag */}
-											<span className="absolute top-1.5 left-1.5 bg-rose-600 text-white font-black text-[10px] px-1.5 py-0.5 rounded shadow-xs">
+											<span className="absolute top-1.5 left-1.5 bg-rose-600 text-white font-black text-xs px-1.5 py-0.5 rounded shadow-xs">
 												-{product.discount}% OFF
 											</span>
 											{/* Top Deal Tag on First Card */}
 											{idx === 0 && (
-												<span className="absolute top-1.5 right-1.5 bg-amber-500 text-black font-bold text-[9px] px-1.5 py-0.5 rounded shadow-xs flex items-center gap-0.5">
+												<span className="absolute top-1.5 right-1.5 bg-amber-500 text-black font-bold text-xs px-1.5 py-0.5 rounded shadow-xs flex items-center gap-0.5">
 													<Flame className="size-2.5" />
 													Top Deal
 												</span>
@@ -290,7 +290,7 @@ export default function AnimatedDeals({
 										</div>
 
 										{/* Rating & Sales count */}
-										<div className="flex items-center gap-1 text-[10px] text-amber-500 font-semibold h-4 mt-2">
+										<div className="flex items-center gap-1 text-xs text-amber-500 font-semibold h-4 mt-2">
 											<Star className="size-3 fill-amber-500 text-amber-500" />
 											<span>{product.rating.toFixed(1)}</span>
 											<span className="text-muted-foreground font-normal">
@@ -299,7 +299,7 @@ export default function AnimatedDeals({
 										</div>
 
 										{/* Title with fixed 2-line height for aligned baseline */}
-										<h3 className="text-xs sm:text-[13px] font-semibold text-foreground line-clamp-2 h-9 min-h-[2.25rem] leading-snug group-hover/card:text-primary transition-colors mt-0.5 w-full min-w-0 break-words">
+										<h3 className="text-xs sm:text-sm font-semibold text-foreground line-clamp-2 h-9 min-h-[2.25rem] leading-snug group-hover/card:text-primary transition-colors mt-0.5 w-full min-w-0 break-words">
 											{product.name}
 										</h3>
 									</div>
@@ -312,11 +312,11 @@ export default function AnimatedDeals({
 												<span className="text-base sm:text-lg font-black text-rose-600 dark:text-rose-400 tracking-tight">
 													{formatPrice(product.price)}
 												</span>
-												<span className="text-[11px] text-muted-foreground line-through font-mono">
+												<span className="text-xs text-muted-foreground line-through font-mono">
 													{formatPrice(product.originalPrice)}
 												</span>
 											</div>
-											<div className="flex items-center justify-between text-[9px] gap-1">
+											<div className="flex items-center justify-between text-xs gap-1">
 												<span className="font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-1 py-0.2 rounded shrink-0">
 													Save {formatPrice(product.originalPrice - product.price)}
 												</span>
@@ -328,7 +328,7 @@ export default function AnimatedDeals({
 
 										{/* Stock Claim Meter */}
 										<div className="space-y-0.5">
-											<div className="flex items-center justify-between text-[9px] text-muted-foreground">
+											<div className="flex items-center justify-between text-xs text-muted-foreground">
 												<span>Claimed {product.claimedPercent}%</span>
 											</div>
 											<div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
@@ -345,7 +345,7 @@ export default function AnimatedDeals({
 											onClick={() => {
 												recordSectionInteraction('SUPER_DEALS', product.id, 'click');
 											}}
-											className="w-full h-7.5 rounded-lg bg-primary hover:bg-primary/90 active:scale-[0.97] text-primary-foreground font-semibold text-[11px] flex items-center justify-center gap-1.5 shadow-xs transition-all duration-150 group/btn"
+											className="w-full h-7.5 rounded-lg bg-primary hover:bg-primary/90 active:scale-[0.97] text-primary-foreground font-semibold text-xs flex items-center justify-center gap-1.5 shadow-xs transition-all duration-150 group/btn"
 										>
 											<ShoppingBag className="size-3 transition-transform group-hover/btn:scale-110" />
 											Claim Deal

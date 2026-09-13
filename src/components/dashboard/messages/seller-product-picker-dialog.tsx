@@ -118,7 +118,7 @@ export const SellerProductPickerDialog: FC<Props> = ({
 							variant='ghost'
 							size='sm'
 							onClick={() => setSelectedIds([])}
-							className='h-6 text-[11px] px-2 text-muted-foreground hover:text-foreground'
+							className='h-6 text-xs px-2 text-muted-foreground hover:text-foreground'
 						>
 							Clear selection
 						</Button>
@@ -187,7 +187,7 @@ export const SellerProductPickerDialog: FC<Props> = ({
 												{p.size && (
 													<Badge
 														variant='outline'
-														className='text-[9px] py-0 h-4 px-1.5 font-mono text-muted-foreground'
+														className='text-xs py-0 h-4 px-1.5 font-mono text-muted-foreground'
 													>
 														{p.size}
 													</Badge>
@@ -204,7 +204,7 @@ export const SellerProductPickerDialog: FC<Props> = ({
 											e.stopPropagation();
 											handleQuickSendSingle(p);
 										}}
-										className='h-7 px-2 text-[11px] gap-1 shrink-0 text-muted-foreground hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/30'
+										className='h-7 px-2 text-xs gap-1 shrink-0 text-muted-foreground hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/30'
 										title='Send only this product immediately'
 									>
 										<Plus className='w-3 h-3' />
@@ -217,7 +217,7 @@ export const SellerProductPickerDialog: FC<Props> = ({
 				</div>
 
 				<DialogFooter className='sm:justify-between items-center pt-2 border-t'>
-					<p className='text-[11px] text-muted-foreground'>
+					<p className='text-xs text-muted-foreground'>
 						{selectedIds.length > 0
 							? `${selectedIds.length} item${selectedIds.length > 1 ? 's' : ''} ready to send`
 							: 'Select one or more items to send together'}

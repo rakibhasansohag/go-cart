@@ -227,7 +227,7 @@ const CartSummary: FC<Props> = ({ cartItems, selectedItems = [], shippingFees })
 				</h3>
 			</div>
 			{!isBaseCurrency && (
-				<div className='mt-2.5 p-2 rounded-lg bg-muted/40 text-[11px] text-muted-foreground border border-border/40'>
+				<div className='mt-2.5 p-2 rounded-lg bg-muted/40 text-xs text-muted-foreground border border-border/40'>
 					<span>
 						Orders are charged in USD (${total.toFixed(2)}). Displayed {currency} prices are estimates.
 					</span>

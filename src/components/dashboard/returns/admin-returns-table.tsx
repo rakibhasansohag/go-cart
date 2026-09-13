@@ -139,9 +139,9 @@ export default function AdminReturnsTable({ initialData }: Props) {
 											<div key={event.id} className='text-xs space-y-0.5'>
 												<div className='flex items-center justify-between font-semibold text-foreground'>
 													<span className='capitalize'>{event.eventType.replaceAll('.', ' ').replaceAll('_', ' ')}</span>
-													<span className='text-[10px] text-muted-foreground'>{new Date(event.createdAt).toLocaleString()}</span>
+													<span className='text-xs text-muted-foreground'>{new Date(event.createdAt).toLocaleString()}</span>
 												</div>
-												<div className='text-muted-foreground text-[11px]'>Actor: <span className='font-medium text-foreground'>{event.actorRole}</span> ({event.actorId})</div>
+												<div className='text-muted-foreground text-xs'>Actor: <span className='font-medium text-foreground'>{event.actorRole}</span> ({event.actorId})</div>
 											</div>
 										))
 									) : (

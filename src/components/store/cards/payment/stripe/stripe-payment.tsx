@@ -110,7 +110,7 @@ export default function StripePayment({ orderId }: { orderId: string }) {
 		>
 			<div>
 				<p className='text-xs font-semibold text-foreground'>Pay securely by card</p>
-				<p className='mt-0.5 text-[11px] text-muted-foreground'>
+				<p className='mt-0.5 text-xs text-muted-foreground'>
 					Your card details are handled by Stripe and never stored by GoCart.
 				</p>
 			</div>

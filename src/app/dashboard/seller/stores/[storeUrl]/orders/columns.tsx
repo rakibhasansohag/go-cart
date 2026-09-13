@@ -94,7 +94,7 @@ export const getColumns = ({
 					<span className='font-semibold text-xs text-foreground truncate'>
 						{fullName}
 					</span>
-					<span className='text-[11px] text-muted-foreground truncate' title={email}>
+					<span className='text-xs text-muted-foreground truncate' title={email}>
 						{email}
 					</span>
 				</div>
@@ -234,7 +234,7 @@ export const columns: ColumnDef<StoreOrderType>[] = [
 					<span className='font-semibold text-xs text-foreground truncate'>
 						{fullName}
 					</span>
-					<span className='text-[11px] text-muted-foreground truncate' title={email}>
+					<span className='text-xs text-muted-foreground truncate' title={email}>
 						{email}
 					</span>
 				</div>

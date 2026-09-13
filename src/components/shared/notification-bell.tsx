@@ -139,7 +139,7 @@ export default function NotificationBell() {
 					<Bell className="size-5" />
 					{unreadCount > 0 && (
 						<span
-							className="absolute -right-0.5 -top-0.5 min-w-4 rounded-full bg-destructive px-1 text-[10px] font-bold leading-4 text-destructive-foreground"
+							className="absolute -right-0.5 -top-0.5 min-w-4 rounded-full bg-destructive px-1 text-xs font-bold leading-none text-destructive-foreground"
 							aria-hidden="true"
 						>
 							{unreadCount > 99 ? '99+' : unreadCount}
@@ -207,7 +207,7 @@ export default function NotificationBell() {
 										<p className="mt-0.5 text-xs text-muted-foreground">
 											{notification.message}
 										</p>
-										<time className="mt-1 block text-[11px] text-muted-foreground">
+										<time className="mt-1 block text-xs text-muted-foreground">
 											{formatDistanceToNow(
 												notification.createdAt,
 												{

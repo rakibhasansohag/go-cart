@@ -101,7 +101,7 @@ export default function CountryLanguageCurrencySelector({
 				<div className='relative mt-12 -ml-32 w-[320px] bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-700/40 rounded-[24px] text-foreground pt-2 px-6 pb-6 z-50 shadow-lg'>
 					{/* Triangle */}
 					<div className='w-0 h-0 absolute -top-1.5 right-24 border-l-[10px] border-l-transparent border-b-[10px] border-white dark:border-b-slate-900 border-r-[10px] border-r-transparent' />
-					<div className='mt-4 leading-6 text-[20px] font-bold text-foreground'>
+					<div className='mt-4 leading-6 text-xl font-bold text-foreground'>
 						Ship to
 					</div>
 					<div className='mt-2'>
@@ -118,7 +118,7 @@ export default function CountryLanguageCurrencySelector({
 								}
 							/>
 							<div>
-								<div className='mt-4 leading-6 text-[20px] font-bold text-foreground'>
+								<div className='mt-4 leading-6 text-xl font-bold text-foreground'>
 									Language
 								</div>
 								<div className='relative mt-2.5 h-10 border-[1px] border-black/20 dark:border-white/20 rounded-lg flex items-center cursor-pointer text-foreground bg-transparent'>
@@ -143,7 +143,7 @@ export default function CountryLanguageCurrencySelector({
 								</div>
 							</div>
 							<div>
-								<div className='mt-4 leading-6 text-[20px] font-bold text-foreground'>
+								<div className='mt-4 leading-6 text-xl font-bold text-foreground'>
 									Currency
 								</div>
 								<div className='relative mt-2 h-10 border-[1px] border-black/20 dark:border-white/20 rounded-lg flex items-center cursor-pointer text-foreground bg-transparent'>
@@ -167,7 +167,7 @@ export default function CountryLanguageCurrencySelector({
 									</span>
 								</div>
 								{currency !== 'USD' && (
-									<p className='mt-1.5 text-[11px] text-muted-foreground'>
+									<p className='mt-1.5 text-xs text-muted-foreground'>
 										Orders are charged in USD. Prices in {currency} are estimated.
 									</p>
 								)}

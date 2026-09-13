@@ -41,17 +41,17 @@ export default function ProductRow({
 							{variantName}
 						</p>
 					)}
-					<p className='text-[11px] font-mono text-muted-foreground/70 mt-0.5'>
+					<p className='text-xs font-mono text-muted-foreground/70 mt-0.5'>
 						SKU: #{product.sku}
 					</p>
 				</div>
 
 				<div className='flex items-center justify-between gap-2 mt-2 pt-2 border-t border-border/20 text-xs flex-wrap'>
 					<div className='flex items-center gap-2'>
-						<span className='px-2 py-0.5 rounded-md bg-muted/60 border border-border/40 font-medium text-foreground text-[11px]'>
+						<span className='px-2 py-0.5 rounded-md bg-muted/60 border border-border/40 font-medium text-foreground text-xs'>
 							Size: <strong className='text-foreground'>{product.size}</strong>
 						</span>
-						<span className='px-2 py-0.5 rounded-md bg-muted/60 border border-border/40 font-medium text-foreground text-[11px]'>
+						<span className='px-2 py-0.5 rounded-md bg-muted/60 border border-border/40 font-medium text-foreground text-xs'>
 							Qty: <strong className='text-foreground'>{product.quantity}</strong>
 						</span>
 					</div>

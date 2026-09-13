@@ -17,8 +17,8 @@ const buttonVariants = cva(
 				outline:
 					'bg-transparent hover:bg-orange-background hover:text-white text-orange-background rounded-md border-orange-background px-2 !h-7 text-sm font-normal',
 				'orange-gradient':
-					'bg-gradient-to-r from-red-600 to-orange-500 hover:bg-gradient-to-l text-white inline-block w-full h-[36px] leading-[36px] text-[14px] font-bold text-center rounded-full cursor-pointer',
-				gray: 'bg-f5 text-main-primary border-f5 inline-block w-full h-[36px] leading-[36px] text-[14px] font-bold text-center rounded-full cursor-pointer',
+					'bg-gradient-to-r from-red-600 to-orange-500 hover:bg-gradient-to-l text-white inline-block w-full h-[36px] leading-[36px] text-sm font-bold text-center rounded-full cursor-pointer',
+				gray: 'bg-f5 text-main-primary border-f5 inline-block w-full h-[36px] leading-[36px] text-sm font-bold text-center rounded-full cursor-pointer',
 				unstyled: '',
 			},
 			size: {

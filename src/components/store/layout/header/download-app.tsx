@@ -12,7 +12,7 @@ export default function DownloadApp() {
 		<div className='relative group'>
 			{/* Trigger */}
 			<div className='flex h-11 items-center px-2 cursor-pointer'>
-				<span className='text-[32px]'>
+				<span className='text-3xl'>
 					<AppIcon />
 				</span>
 				<div className='ml-1'>
@@ -32,7 +32,7 @@ export default function DownloadApp() {
 					<div className='py-3 px-1 break-words '>
 						<div className='flex '>
 							<div className='mx-3'>
-								<h3 className='font-bold text-[20px] text-foreground m-0 max-w-40 mx-auto'>
+								<h3 className='font-bold text-xl text-foreground m-0 max-w-40 mx-auto'>
 									Download the GoCart app
 								</h3>
 								<div className='mt-4 flex items-center gap-x-2'>

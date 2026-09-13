@@ -117,7 +117,7 @@ const PlaceOrderCard: FC<Props> = ({
 					</div>
 				)}
 				{!isBaseCurrency && (
-					<div className='mt-2 p-2 rounded-lg bg-muted/40 text-[11px] text-muted-foreground border border-border/40'>
+					<div className='mt-2 p-2 rounded-lg bg-muted/40 text-xs text-muted-foreground border border-border/40'>
 						<span>
 							Charged in <strong>USD (${finalTotal.toFixed(2)})</strong>. Converted {currency} price is an estimate.
 						</span>

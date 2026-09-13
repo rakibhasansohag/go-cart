@@ -125,7 +125,7 @@ export default async function ProductVariantsPage({
 										sizes='(max-width: 768px) 100vw, 300px'
 										className='object-cover transition-transform duration-300 group-hover:scale-105'
 									/>
-									<div className='absolute top-2.5 right-2.5 bg-background/80 backdrop-blur-md px-2 py-0.5 rounded-full border border-border/60 text-[11px] font-mono font-medium text-foreground'>
+									<div className='absolute top-2.5 right-2.5 bg-background/80 backdrop-blur-md px-2 py-0.5 rounded-full border border-border/60 text-xs font-mono font-medium text-foreground'>
 										Stock: {totalStock}
 									</div>
 								</div>
@@ -146,7 +146,7 @@ export default async function ProductVariantsPage({
 									{/* Colors */}
 									{variant.colors.length > 0 && (
 										<div className='flex items-center gap-1.5 pt-1'>
-											<span className='text-[11px] font-medium text-muted-foreground mr-1'>
+											<span className='text-xs font-medium text-muted-foreground mr-1'>
 												Colors:
 											</span>
 											<div className='flex flex-wrap gap-1'>
@@ -164,7 +164,7 @@ export default async function ProductVariantsPage({
 
 									{/* Sizes & Stock Badges */}
 									<div className='space-y-1.5 pt-1'>
-										<span className='text-[11px] font-medium text-muted-foreground block'>
+										<span className='text-xs font-medium text-muted-foreground block'>
 											Sizes & Pricing:
 										</span>
 										<div className='flex flex-wrap gap-1.5'>
@@ -175,7 +175,7 @@ export default async function ProductVariantsPage({
 													<Badge
 														key={size.id || size.size}
 														variant='outline'
-														className={`text-[11px] font-medium px-2 py-0.5 border flex items-center gap-1 ${
+														className={`text-xs font-medium px-2 py-0.5 border flex items-center gap-1 ${
 															isOut
 																? 'bg-destructive/10 text-destructive border-destructive/30'
 																: isLow

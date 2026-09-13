@@ -205,7 +205,7 @@ export default function BuyerMessagesView({
 							<button
 								type='button'
 								onClick={() => setActiveTab('all')}
-								className={`flex-1 py-1 rounded-md font-medium text-[11px] transition-colors ${activeTab === 'all'
+								className={`flex-1 py-1 rounded-md font-medium text-xs transition-colors ${activeTab === 'all'
 									? 'bg-background text-foreground shadow-xs'
 									: 'text-muted-foreground hover:text-foreground'
 									}`}
@@ -215,7 +215,7 @@ export default function BuyerMessagesView({
 							<button
 								type='button'
 								onClick={() => setActiveTab('open')}
-								className={`flex-1 py-1 rounded-md font-medium text-[11px] transition-colors ${activeTab === 'open'
+								className={`flex-1 py-1 rounded-md font-medium text-xs transition-colors ${activeTab === 'open'
 									? 'bg-background text-foreground shadow-xs'
 									: 'text-muted-foreground hover:text-foreground'
 									}`}
@@ -225,7 +225,7 @@ export default function BuyerMessagesView({
 							<button
 								type='button'
 								onClick={() => setActiveTab('resolved')}
-								className={`flex-1 py-1 rounded-md font-medium text-[11px] transition-colors ${activeTab === 'resolved'
+								className={`flex-1 py-1 rounded-md font-medium text-xs transition-colors ${activeTab === 'resolved'
 									? 'bg-background text-foreground shadow-xs'
 									: 'text-muted-foreground hover:text-foreground'
 									}`}
@@ -241,7 +241,7 @@ export default function BuyerMessagesView({
 							<div className='p-6 text-center text-xs text-muted-foreground space-y-1.5'>
 								<MessageSquare className='w-6 h-6 mx-auto text-muted-foreground/40' />
 								<p className='font-medium text-foreground'>No conversations found</p>
-								<p className='text-[11px]'>
+								<p className='text-xs'>
 									{searchQuery
 										? 'No messages matched your search query.'
 										: 'You have not sent any inquiries to sellers yet.'}
@@ -262,7 +262,7 @@ export default function BuyerMessagesView({
 									>
 										<Avatar className='h-9 w-9 shrink-0 border mt-0.5'>
 											<AvatarImage src={c.store.logo} />
-											<AvatarFallback className='text-[10px] font-bold uppercase bg-primary/10 text-primary'>
+											<AvatarFallback className='text-xs font-bold uppercase bg-primary/10 text-primary'>
 												{c.store.name.slice(0, 2)}
 											</AvatarFallback>
 										</Avatar>
@@ -271,32 +271,32 @@ export default function BuyerMessagesView({
 												<span className='font-semibold text-xs text-foreground truncate'>
 													{c.store.name}
 												</span>
-												<span className='text-[10px] text-muted-foreground shrink-0'>
+												<span className='text-xs text-muted-foreground shrink-0'>
 													{new Date(c.lastMessageAt).toLocaleDateString([], {
 														month: 'numeric',
 														day: 'numeric',
 													})}
 												</span>
 											</div>
-											<p className='text-[11px] font-medium text-foreground/80 truncate'>
+											<p className='text-xs font-medium text-foreground/80 truncate'>
 												{c.subject || 'General Inquiry'}
 											</p>
 											<div className='flex items-center justify-between gap-1 pt-0.5'>
-												<p className='text-[11px] text-muted-foreground truncate flex-1'>
+												<p className='text-xs text-muted-foreground truncate flex-1'>
 													{formatMessageSnippet(c.lastMessageSnippet)}
 												</p>
 												{isSelected && isDetailLoading && (
 													<Loader2 className='w-3.5 h-3.5 animate-spin text-primary shrink-0' />
 												)}
 												{(!isSelected || !isDetailLoading) && c.unreadCount > 0 && (
-													<span className='w-4 h-4 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center shrink-0'>
+													<span className='w-4 h-4 rounded-full bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center shrink-0'>
 														{c.unreadCount}
 													</span>
 												)}
 												{(!isSelected || !isDetailLoading) && c.status === ConversationStatus.RESOLVED && (
 													<Badge
 														variant='outline'
-														className='text-[9px] py-0 h-3.5 px-1 bg-muted/60 text-muted-foreground'
+														className='text-xs py-0 h-3.5 px-1 bg-muted/60 text-muted-foreground'
 													>
 														Resolved
 													</Badge>
@@ -338,7 +338,7 @@ export default function BuyerMessagesView({
 								<div className='flex items-center gap-2.5 min-w-0'>
 									<Avatar className='h-8 w-8 shrink-0 border'>
 										<AvatarImage src={activeConv.store.logo} />
-										<AvatarFallback className='text-[10px] font-bold uppercase'>
+										<AvatarFallback className='text-xs font-bold uppercase'>
 											{activeConv.store.name.slice(0, 2)}
 										</AvatarFallback>
 									</Avatar>
@@ -356,7 +356,7 @@ export default function BuyerMessagesView({
 												<ExternalLink className='w-3 h-3' />
 											</Link>
 										</div>
-										<p className='text-[11px] text-muted-foreground truncate'>
+										<p className='text-xs text-muted-foreground truncate'>
 											{activeConv.subject || 'Direct Inquiry'}
 										</p>
 									</div>
@@ -366,7 +366,7 @@ export default function BuyerMessagesView({
 									{activeConv.status === ConversationStatus.RESOLVED ? (
 										<Badge
 											variant='outline'
-											className='gap-1 border-muted bg-muted text-muted-foreground text-[10px]'
+											className='gap-1 border-muted bg-muted text-muted-foreground text-xs'
 										>
 											<CheckCircle2 className='w-2.5 h-2.5' />
 											Resolved
@@ -374,7 +374,7 @@ export default function BuyerMessagesView({
 									) : (
 										<Badge
 											variant='outline'
-											className='gap-1 border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px]'
+											className='gap-1 border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs'
 										>
 											<Clock className='w-2.5 h-2.5' />
 											Open
@@ -426,7 +426,7 @@ export default function BuyerMessagesView({
 												<div className='flex items-center gap-1.5'>
 													<Badge
 														variant='outline'
-														className='text-[10px] py-0 h-4 px-1.5 font-medium border-primary/30 bg-primary/10 text-primary'
+														className='text-xs py-0 h-4 px-1.5 font-medium border-primary/30 bg-primary/10 text-primary'
 													>
 														Inquired Product
 													</Badge>
@@ -466,7 +466,7 @@ export default function BuyerMessagesView({
 													Order <strong>#{activeConv.order.id.slice(0, 8)}</strong>
 												</span>
 												<span>(${activeConv.order.total.toFixed(2)})</span>
-												<Badge variant='outline' className='text-[10px] py-0 h-4 px-1.5'>
+												<Badge variant='outline' className='text-xs py-0 h-4 px-1.5'>
 													{activeConv.order.orderStatus}
 												</Badge>
 											</div>
@@ -502,7 +502,7 @@ export default function BuyerMessagesView({
 											{!isBuyer && (
 												<Avatar className='h-7 w-7 shrink-0 border border-border/40 mt-1 shadow-xs'>
 													<AvatarImage src={activeConv.store.logo} />
-													<AvatarFallback className='text-[10px] font-bold uppercase bg-primary/10 text-primary'>
+													<AvatarFallback className='text-xs font-bold uppercase bg-primary/10 text-primary'>
 														{activeConv.store.name.slice(0, 2)}
 													</AvatarFallback>
 												</Avatar>
@@ -513,14 +513,14 @@ export default function BuyerMessagesView({
 													isBuyer ? 'items-end' : 'items-start'
 												} max-w-[85%] sm:max-w-[70%]`}
 											>
-												<div className='flex items-center gap-1.5 text-[10px] text-muted-foreground mb-1 px-1'>
+												<div className='flex items-center gap-1.5 text-xs text-muted-foreground mb-1 px-1'>
 													<span className='font-medium text-foreground/80'>
 														{isBuyer ? 'You' : activeConv.store.name}
 													</span>
 													{!isBuyer && (
 														<Badge
 															variant='outline'
-															className='text-[9px] py-0 h-3.5 px-1 bg-primary/10 text-primary border-primary/20'
+															className='text-xs py-0 h-3.5 px-1 bg-primary/10 text-primary border-primary/20'
 														>
 															Seller
 														</Badge>
@@ -585,7 +585,7 @@ export default function BuyerMessagesView({
 										)}
 									</Button>
 								</div>
-								<div className='flex justify-between items-center text-[10px] text-muted-foreground mt-1 px-1'>
+								<div className='flex justify-between items-center text-xs text-muted-foreground mt-1 px-1'>
 									<span>Shift + Enter for new line</span>
 									<span>{replyText.length}/2000</span>
 								</div>

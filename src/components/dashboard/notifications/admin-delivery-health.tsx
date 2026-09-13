@@ -269,7 +269,7 @@ export default function AdminDeliveryHealth({ initialData }: Props) {
 						<>
 							<div className='overflow-x-auto'>
 								<table className='w-full min-w-[750px] text-xs text-left'>
-									<thead className='border-b border-border bg-muted/30 text-muted-foreground uppercase text-[11px] font-semibold'>
+									<thead className='border-b border-border bg-muted/30 text-muted-foreground uppercase text-xs font-semibold'>
 										<tr>
 											<th className='p-2.5 w-10 text-center'>
 												<button
@@ -321,7 +321,7 @@ export default function AdminDeliveryHealth({ initialData }: Props) {
 															<Mail className='size-3.5 text-muted-foreground shrink-0' />
 															<span>{job.recipient.email?.trim() || job.recipientEmail?.trim() || 'No email address'}</span>
 														</div>
-														<div className='text-[11px] text-muted-foreground mt-0.5'>
+														<div className='text-xs text-muted-foreground mt-0.5'>
 															Template: {job.templateKey}
 														</div>
 													</td>
@@ -332,7 +332,7 @@ export default function AdminDeliveryHealth({ initialData }: Props) {
 													</td>
 													<td className='p-2.5 font-semibold'>{job.attemptCount}</td>
 													<td className='p-2.5 max-w-xs'>
-														<span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold ${
+														<span className={`inline-block px-2 py-0.5 rounded text-xs font-bold ${
 															job.status === 'FAILED'
 																? 'bg-destructive/10 text-destructive'
 																: 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
@@ -340,7 +340,7 @@ export default function AdminDeliveryHealth({ initialData }: Props) {
 															{job.status}
 														</span>
 														{job.lastError && (
-															<p className='text-[11px] text-muted-foreground truncate max-w-xs mt-0.5' title={job.lastError}>
+															<p className='text-xs text-muted-foreground truncate max-w-xs mt-0.5' title={job.lastError}>
 																{job.lastError}
 															</p>
 														)}
@@ -351,7 +351,7 @@ export default function AdminDeliveryHealth({ initialData }: Props) {
 															variant='outline'
 															disabled={retryingId === job.id || singleRetryMutation.isPending}
 															onClick={() => singleRetryMutation.mutate(job.id)}
-															className='h-7 text-[11px] px-2.5'
+															className='h-7 text-xs px-2.5'
 														>
 															{retryingId === job.id ? 'Retrying…' : 'Retry'}
 														</Button>
@@ -434,7 +434,7 @@ export default function AdminDeliveryHealth({ initialData }: Props) {
 					) : (
 						<div className='overflow-x-auto'>
 							<table className='w-full min-w-[700px] text-xs text-left'>
-								<thead className='border-b border-border bg-muted/30 text-muted-foreground uppercase text-[11px] font-semibold'>
+								<thead className='border-b border-border bg-muted/30 text-muted-foreground uppercase text-xs font-semibold'>
 									<tr>
 										<th className='p-2.5'>Recipient / Email</th>
 										<th className='p-2.5'>Template</th>
@@ -454,11 +454,11 @@ export default function AdminDeliveryHealth({ initialData }: Props) {
 													<Mail className='size-3.5 text-muted-foreground shrink-0' />
 													<span>{job.recipient.email?.trim() || job.recipientEmail?.trim() || 'No email address'}</span>
 												</div>
-												<div className='text-[11px] text-muted-foreground mt-0.5'>
+												<div className='text-xs text-muted-foreground mt-0.5'>
 													Template: {job.templateKey}
 												</div>
 											</td>
-											<td className='p-2.5 text-muted-foreground font-mono text-[11px]'>
+											<td className='p-2.5 text-muted-foreground font-mono text-xs'>
 												{job.templateKey}
 											</td>
 											<td className='p-2.5 capitalize text-foreground'>
@@ -468,7 +468,7 @@ export default function AdminDeliveryHealth({ initialData }: Props) {
 												{job.sentAt ? new Date(job.sentAt).toLocaleString() : job.updatedAt ? new Date(job.updatedAt).toLocaleString() : 'Delivered'}
 											</td>
 											<td className='p-2.5 text-right'>
-												<span className='inline-block bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded text-[10px] font-bold'>
+												<span className='inline-block bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded text-xs font-bold'>
 													SENT
 												</span>
 											</td>
@@ -498,7 +498,7 @@ export default function AdminDeliveryHealth({ initialData }: Props) {
 					) : (
 						<div className='overflow-x-auto'>
 							<table className='w-full min-w-[650px] text-xs text-left'>
-								<thead className='border-b border-border bg-muted/30 text-muted-foreground uppercase text-[11px] font-semibold'>
+								<thead className='border-b border-border bg-muted/30 text-muted-foreground uppercase text-xs font-semibold'>
 									<tr>
 										<th className='p-2.5'>Started At</th>
 										<th className='p-2.5'>Finished At</th>
@@ -516,7 +516,7 @@ export default function AdminDeliveryHealth({ initialData }: Props) {
 												{run.finishedAt ? new Date(run.finishedAt).toLocaleString() : 'In Progress'}
 											</td>
 											<td className='p-2.5'>
-												<span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+												<span className={`px-2 py-0.5 rounded text-xs font-bold ${
 													run.status === 'SUCCEEDED'
 														? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
 														: run.status === 'FAILED'

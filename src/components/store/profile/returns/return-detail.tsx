@@ -195,7 +195,7 @@ export default function ReturnDetail({
 												{new Date(event.createdAt).toLocaleString()}
 											</p>
 										</div>
-										<span className='rounded-full bg-muted px-2 py-1 text-[11px] font-medium capitalize text-muted-foreground'>
+										<span className='rounded-full bg-muted px-2 py-1 text-xs font-medium capitalize text-muted-foreground'>
 											{event.actorRole.toLowerCase()}
 										</span>
 									</div>

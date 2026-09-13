@@ -110,7 +110,7 @@ export default function OrderGroupTable({
 							title='Click to copy Package ID'
 						>
 							<Store className='w-3.5 h-3.5 text-primary' />
-							<span className='text-[10px] font-semibold uppercase tracking-wide text-muted-foreground'>
+							<span className='text-xs font-semibold uppercase tracking-wide text-muted-foreground'>
 								Package
 							</span>
 							<span className='text-xs font-bold text-foreground font-mono'>

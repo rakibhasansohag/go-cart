@@ -243,13 +243,13 @@ function OrdersTableContent({
 													{order.groups.slice(0, 2).map((group) => (
 														<span
 															key={group.id}
-															className='rounded-md border border-border/60 bg-muted/40 px-2 py-1 font-mono text-[10px] font-semibold text-muted-foreground'
+															className='rounded-md border border-border/60 bg-muted/40 px-2 py-1 font-mono text-xs font-semibold text-muted-foreground'
 														>
 															{formatPackageId(group.id)}
 														</span>
 													))}
 													{order.groups.length > 2 && (
-														<span className='rounded-md bg-muted px-2 py-1 text-[10px] font-semibold text-muted-foreground'>
+														<span className='rounded-md bg-muted px-2 py-1 text-xs font-semibold text-muted-foreground'>
 															+{order.groups.length - 2}
 														</span>
 													)}

@@ -54,7 +54,7 @@ const adminOrderColumns: ColumnDef<AdminOrder>[] = [
 				<p className='text-xs font-semibold'>
 					{row.original.store.user?.name || 'Seller'}
 				</p>
-				<p className='text-[10px] text-muted-foreground'>
+				<p className='text-xs text-muted-foreground'>
 					{row.original.store.user?.email || ''}
 				</p>
 			</div>
@@ -68,7 +68,7 @@ const adminOrderColumns: ColumnDef<AdminOrder>[] = [
 				<p className='text-xs font-semibold'>
 					{row.original.order?.user?.name || 'Customer'}
 				</p>
-				<p className='text-[10px] text-muted-foreground'>
+				<p className='text-xs text-muted-foreground'>
 					{row.original.order?.user?.email || ''}
 				</p>
 			</div>
@@ -95,7 +95,7 @@ const adminOrderColumns: ColumnDef<AdminOrder>[] = [
 						<p className='max-w-36 truncate text-xs font-semibold'>
 							{firstItem?.name || 'No products'}
 						</p>
-						<p className='text-[10px] text-muted-foreground'>
+						<p className='text-xs text-muted-foreground'>
 							{firstItem ? `SKU ${firstItem.sku}` : ''}
 							{items.length > 1 ? ` · +${items.length - 1} more` : ''}
 						</p>

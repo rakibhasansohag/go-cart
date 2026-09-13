@@ -44,7 +44,7 @@ export const SellerQuickReplies: FC<Props> = ({ onSelectReply }) => {
 					type='button'
 					variant='ghost'
 					size='sm'
-					className='h-7 px-2 text-[11px] gap-1 text-muted-foreground hover:text-foreground font-medium'
+					className='h-7 px-2 text-xs gap-1 text-muted-foreground hover:text-foreground font-medium'
 				>
 					<Zap className='w-3 h-3 text-amber-500' />
 					<span>Quick Replies</span>
@@ -56,7 +56,7 @@ export const SellerQuickReplies: FC<Props> = ({ onSelectReply }) => {
 				align='start'
 				className='w-80 p-2 space-y-1 text-xs'
 			>
-				<p className='text-[11px] font-semibold text-muted-foreground px-2 py-1'>
+				<p className='text-xs font-semibold text-muted-foreground px-2 py-1'>
 					Select a response template:
 				</p>
 				{TEMPLATES.map((item, idx) => (
@@ -67,7 +67,7 @@ export const SellerQuickReplies: FC<Props> = ({ onSelectReply }) => {
 						className='w-full text-left p-2 rounded-md hover:bg-muted transition-colors'
 					>
 						<p className='font-semibold text-foreground text-xs'>{item.label}</p>
-						<p className='text-[11px] text-muted-foreground line-clamp-1 mt-0.5'>
+						<p className='text-xs text-muted-foreground line-clamp-1 mt-0.5'>
 							{item.text}
 						</p>
 					</button>

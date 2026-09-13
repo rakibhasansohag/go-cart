@@ -23,7 +23,7 @@ export default function FeaturedCategories({
 					<div className='w-full border-t border-border/40 dark:border-border/60' />
 				</div>
 				<div className='relative flex justify-center'>
-					<h2 id='featured-categories-heading' className='px-4 bg-secondary z-10 text-foreground font-extrabold text-[24px]'>
+					<h2 id='featured-categories-heading' className='px-4 bg-secondary z-10 text-foreground font-extrabold text-2xl'>
 						{title || 'Featured Categories'}
 					</h2>
 				</div>

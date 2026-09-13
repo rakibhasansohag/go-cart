@@ -51,7 +51,7 @@ export default function PaypalPayment({ orderId }: { orderId: string }) {
 		<div className='space-y-2'>
 			<div>
 				<p className='text-xs font-semibold text-foreground'>Pay with PayPal</p>
-				<p className='mt-0.5 text-[11px] text-muted-foreground'>
+				<p className='mt-0.5 text-xs text-muted-foreground'>
 					You will approve the payment with PayPal before GoCart confirms
 					your order.
 				</p>

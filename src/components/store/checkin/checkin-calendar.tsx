@@ -137,7 +137,7 @@ export default function CheckInCalendar({
 								},
 							)}
 						>
-							<div className='w-full flex items-center justify-between text-[11px] font-extrabold'>
+							<div className='w-full flex items-center justify-between text-xs font-extrabold'>
 								<span className={cn({ 'text-orange-600 dark:text-orange-400 font-black': isToday })}>
 									Day {dayNum}
 								</span>
@@ -156,13 +156,13 @@ export default function CheckInCalendar({
 									<span>+{reward.coins}</span>
 								</div>
 								{reward.couponDiscount && (
-									<span className='text-[9px] font-black text-amber-700 dark:text-amber-300 bg-amber-500/15 px-1 py-0.2 rounded-full border border-amber-500/30 block leading-tight'>
+									<span className='text-xs font-black text-amber-700 dark:text-amber-300 bg-amber-500/15 px-1 py-0.2 rounded-full border border-amber-500/30 block leading-tight'>
 										{reward.couponDiscount}% OFF
 									</span>
 								)}
 							</div>
 
-							<div className='text-[9px] font-bold tracking-tight min-h-[12px] flex items-center'>
+							<div className='text-xs font-bold tracking-tight min-h-[12px] flex items-center'>
 								{isClaimed ? (
 									<span className='text-emerald-600 dark:text-emerald-400 font-extrabold'>Claimed</span>
 								) : isToday ? (
@@ -227,13 +227,13 @@ export default function CheckInCalendar({
 									<span>+{reward.coins}</span>
 								</div>
 								{reward.couponDiscount && (
-									<span className='text-[10px] sm:text-xs font-black text-amber-700 dark:text-amber-300 bg-amber-500/15 px-1.5 py-0.5 rounded-full border border-amber-500/30 block leading-tight'>
+									<span className='text-xs font-black text-amber-700 dark:text-amber-300 bg-amber-500/15 px-1.5 py-0.5 rounded-full border border-amber-500/30 block leading-tight'>
 										{reward.couponDiscount}% OFF
 									</span>
 								)}
 							</div>
 
-							<div className='text-[10px] font-bold tracking-tight min-h-[14px] flex items-center'>
+							<div className='text-xs font-bold tracking-tight min-h-[14px] flex items-center'>
 								{isClaimed ? (
 									<span className='text-emerald-600 dark:text-emerald-400 font-extrabold'>Claimed</span>
 								) : isToday ? (

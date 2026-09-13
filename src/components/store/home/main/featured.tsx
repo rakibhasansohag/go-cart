@@ -85,16 +85,16 @@ export default function Featured({
 							style={{ backgroundImage: 'url(/assets/images/ads/coupon.gif)' }}
 						>
 							{isCollected ? (
-								<div className='flex items-center gap-1 text-emerald-800 font-extrabold text-[12px] sm:text-[13px] leading-tight'>
+								<div className='flex items-center gap-1 text-emerald-800 font-extrabold text-xs sm:text-sm leading-tight'>
 									<Check className='w-4 h-4 stroke-[3] text-emerald-700' />
 									<span>COLLECTED</span>
 								</div>
 							) : (
 								<>
-									<span className='text-[14px] sm:text-[16px] font-extrabold leading-tight text-slate-900'>
+									<span className='text-sm sm:text-base font-extrabold leading-tight text-slate-900'>
 										use &#39;{couponCode.toLowerCase()}&#39;
 									</span>
-									<span className='text-[10px] sm:text-[11px] font-bold text-slate-800'>
+									<span className='text-xs font-bold text-slate-800'>
 										for {discount}% off
 									</span>
 								</>

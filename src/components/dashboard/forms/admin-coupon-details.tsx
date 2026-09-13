@@ -194,7 +194,7 @@ export const AdminCouponDetails: FC<AdminCouponDetailsProps> = ({ data }) => {
 													}}
 												/>
 											</FormControl>
-											<FormDescription className='text-[11px]'>0 = unlimited total uses</FormDescription>
+											<FormDescription className='text-xs'>0 = unlimited total uses</FormDescription>
 											<FormMessage />
 										</FormItem>
 									)}
@@ -218,7 +218,7 @@ export const AdminCouponDetails: FC<AdminCouponDetailsProps> = ({ data }) => {
 													}}
 												/>
 											</FormControl>
-											<FormDescription className='text-[11px]'>1 = single-use per customer</FormDescription>
+											<FormDescription className='text-xs'>1 = single-use per customer</FormDescription>
 											<FormMessage />
 										</FormItem>
 									)}

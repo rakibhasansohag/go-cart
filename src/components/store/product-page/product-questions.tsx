@@ -337,7 +337,7 @@ const ProductQuestions: FC<Props> = ({
 										{q.isPinned && (
 											<Badge
 												variant='outline'
-												className='gap-1 border-amber-500/30 bg-amber-500/10 text-amber-600 text-[11px]'
+												className='gap-1 border-amber-500/30 bg-amber-500/10 text-amber-600 text-xs'
 											>
 												<Pin className='h-3 w-3' />
 												Pinned
@@ -393,7 +393,7 @@ const ProductQuestions: FC<Props> = ({
 												{ans.isOfficialSeller && (
 													<Badge
 														variant='outline'
-														className='gap-1 border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 text-[10px] font-semibold py-0 h-4'
+														className='gap-1 border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 text-xs font-semibold py-0 h-4'
 													>
 														<CheckCircle2 className='h-2.5 w-2.5' />
 														Official Seller
@@ -402,7 +402,7 @@ const ProductQuestions: FC<Props> = ({
 												{ans.isVerifiedBuyer && (
 													<Badge
 														variant='outline'
-														className='gap-1 border-sky-500/30 bg-sky-500/10 text-sky-700 dark:text-sky-400 text-[10px] font-medium py-0 h-4'
+														className='gap-1 border-sky-500/30 bg-sky-500/10 text-sky-700 dark:text-sky-400 text-xs font-medium py-0 h-4'
 													>
 														<ShoppingBag className='h-2.5 w-2.5' />
 														Verified Buyer
@@ -450,7 +450,7 @@ const ProductQuestions: FC<Props> = ({
 										className='resize-none text-xs'
 									/>
 									<div className='flex items-center justify-between'>
-										<span className='text-[11px] text-muted-foreground'>
+										<span className='text-xs text-muted-foreground'>
 											{replyText.length}/1000
 										</span>
 										<div className='flex items-center gap-2'>

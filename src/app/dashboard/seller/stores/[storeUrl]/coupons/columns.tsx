@@ -178,11 +178,11 @@ const CouponTraceModal = ({ couponId, code }: { couponId: string; code: string }
 						>
 							<div className='space-y-0.5'>
 								<div className='font-bold text-foreground'>{item.customerName}</div>
-								<div className='text-muted-foreground text-[11px]'>{item.customerEmail}</div>
+								<div className='text-muted-foreground text-xs'>{item.customerEmail}</div>
 							</div>
 							<div className='text-right space-y-0.5 shrink-0'>
 								<div className='font-semibold text-primary'>${item.total.toFixed(2)}</div>
-								<div className='text-muted-foreground text-[10px]'>
+								<div className='text-muted-foreground text-xs'>
 									{new Date(item.createdAt).toLocaleString('en-US', {
 										month: 'short',
 										day: 'numeric',

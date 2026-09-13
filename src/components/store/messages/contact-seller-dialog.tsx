@@ -199,7 +199,7 @@ export const ContactSellerDialog: FC<Props> = ({
 							maxLength={2000}
 							className='resize-none text-xs leading-relaxed'
 						/>
-						<div className='flex justify-between items-center text-[11px] text-muted-foreground'>
+						<div className='flex justify-between items-center text-xs text-muted-foreground'>
 							<span>Min 2 characters</span>
 							<span>{message.length}/2000</span>
 						</div>

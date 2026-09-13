@@ -36,7 +36,7 @@ export default function UserInfo({ user }: { user: UserType | null }) {
 					{userName}
 				</p>
 				<p
-					className='text-[11px] text-muted-foreground truncate w-full block'
+					className='text-xs text-muted-foreground truncate w-full block'
 					title={email}
 				>
 					{email}
@@ -44,7 +44,7 @@ export default function UserInfo({ user }: { user: UserType | null }) {
 				<div className='pt-0.5'>
 					<Badge
 						variant='secondary'
-						className='capitalize text-[10px] px-2 py-0 h-4 font-medium inline-block truncate max-w-full'
+						className='capitalize text-xs px-2 py-0 h-4 font-medium inline-block truncate max-w-full'
 					>
 						{role?.toLowerCase() || 'user'} dashboard
 					</Badge>

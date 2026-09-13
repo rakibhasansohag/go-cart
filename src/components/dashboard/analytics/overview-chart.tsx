@@ -39,13 +39,13 @@ export default function OverviewChart({
 				<div className='relative h-[220px] w-full flex flex-col justify-between'>
 					{/* Background Grid lines */}
 					<div className='absolute inset-0 flex flex-col justify-between pointer-events-none border-b border-border/40 pb-6'>
-						<div className='border-b border-dashed border-border/40 w-full flex justify-between items-center text-[10px] text-muted-foreground px-1'>
+						<div className='border-b border-dashed border-border/40 w-full flex justify-between items-center text-xs text-muted-foreground px-1'>
 							<span>${maxRevenue.toLocaleString()}</span>
 						</div>
-						<div className='border-b border-dashed border-border/40 w-full flex justify-between items-center text-[10px] text-muted-foreground px-1'>
+						<div className='border-b border-dashed border-border/40 w-full flex justify-between items-center text-xs text-muted-foreground px-1'>
 							<span>${Math.round(maxRevenue / 2).toLocaleString()}</span>
 						</div>
-						<div className='border-b border-dashed border-border/40 w-full flex justify-between items-center text-[10px] text-muted-foreground px-1'>
+						<div className='border-b border-dashed border-border/40 w-full flex justify-between items-center text-xs text-muted-foreground px-1'>
 							<span>$0</span>
 						</div>
 					</div>
@@ -68,7 +68,7 @@ export default function OverviewChart({
 										<p className='font-bold text-primary'>
 											${item.revenue.toLocaleString()}
 										</p>
-										<p className='text-[10px] text-muted-foreground'>
+										<p className='text-xs text-muted-foreground'>
 											{item.orders} {item.orders === 1 ? 'order' : 'orders'} ({item.label ?? item.month})
 										</p>
 									</div>

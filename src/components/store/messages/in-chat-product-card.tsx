@@ -148,7 +148,7 @@ export const InChatProductCard: FC<Props> = ({ rawText, isOutgoing, onSendReply 
 					</div>
 					<Badge
 						variant='outline'
-						className='text-[10px] py-0 h-4 px-1.5 font-medium text-blue-600 dark:text-blue-400 border-blue-500/30 bg-blue-500/5'
+						className='text-xs py-0 h-4 px-1.5 font-medium text-blue-600 dark:text-blue-400 border-blue-500/30 bg-blue-500/5'
 					>
 						Direct Checkout
 					</Badge>
@@ -209,7 +209,7 @@ export const InChatProductCard: FC<Props> = ({ rawText, isOutgoing, onSendReply 
 												${Number(p.price).toFixed(2)}
 											</span>
 											{p.size && (
-												<span className='text-[10px] font-mono text-muted-foreground'>
+												<span className='text-xs font-mono text-muted-foreground'>
 													({p.size})
 												</span>
 											)}
@@ -282,7 +282,7 @@ export const InChatProductCard: FC<Props> = ({ rawText, isOutgoing, onSendReply 
 							size='sm'
 							disabled={selectedProducts.length === 0}
 							onClick={() => handleTellSellerChoice(selectedProducts)}
-							className='w-full h-7 text-[11px] gap-1.5 text-blue-600 dark:text-blue-400 hover:bg-blue-500/10'
+							className='w-full h-7 text-xs gap-1.5 text-blue-600 dark:text-blue-400 hover:bg-blue-500/10'
 						>
 							<MessageSquareShare className='w-3 h-3' />
 							<span>Tell Seller I chose these</span>
@@ -306,7 +306,7 @@ export const InChatProductCard: FC<Props> = ({ rawText, isOutgoing, onSendReply 
 					</div>
 					<Badge
 						variant='outline'
-						className='text-[10px] py-0 h-4 px-1.5 font-medium text-emerald-600 dark:text-emerald-400 border-emerald-500/30 bg-emerald-500/5'
+						className='text-xs py-0 h-4 px-1.5 font-medium text-emerald-600 dark:text-emerald-400 border-emerald-500/30 bg-emerald-500/5'
 					>
 						Available
 					</Badge>
@@ -338,7 +338,7 @@ export const InChatProductCard: FC<Props> = ({ rawText, isOutgoing, onSendReply 
 								${Number(p.price).toFixed(2)}
 							</span>
 							{p.size && (
-								<span className='text-[10px] font-mono text-muted-foreground'>
+								<span className='text-xs font-mono text-muted-foreground'>
 									Size: {p.size}
 								</span>
 							)}

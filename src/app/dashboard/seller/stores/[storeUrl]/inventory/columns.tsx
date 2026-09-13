@@ -235,7 +235,7 @@ export const columns: ColumnDef<InventoryItem>[] = [
 							Variant: {item.variantName}
 						</span>
 						{item.sku && (
-							<span className='text-[11px] text-muted-foreground font-mono mt-0.5'>
+							<span className='text-xs text-muted-foreground font-mono mt-0.5'>
 								SKU: {item.sku}
 							</span>
 						)}
@@ -263,7 +263,7 @@ export const columns: ColumnDef<InventoryItem>[] = [
 				<div className='flex flex-col text-xs'>
 					<span className='font-medium text-foreground'>${finalPrice.toFixed(2)}</span>
 					{item.discount > 0 && (
-						<span className='line-through text-muted-foreground text-[11px]'>
+						<span className='line-through text-muted-foreground text-xs'>
 							${item.price.toFixed(2)}
 						</span>
 					)}
@@ -279,20 +279,20 @@ export const columns: ColumnDef<InventoryItem>[] = [
 			const threshold = row.original.lowStockThreshold ?? 5;
 			if (qty === 0) {
 				return (
-					<Badge className='bg-destructive/15 text-destructive border-destructive/30 hover:bg-destructive/20 text-[11px] font-medium'>
+					<Badge className='bg-destructive/15 text-destructive border-destructive/30 hover:bg-destructive/20 text-xs font-medium'>
 						Out of Stock
 					</Badge>
 				);
 			}
 			if (qty <= threshold) {
 				return (
-					<Badge className='bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30 hover:bg-amber-500/20 text-[11px] font-medium'>
+					<Badge className='bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30 hover:bg-amber-500/20 text-xs font-medium'>
 						Low Stock ({qty})
 					</Badge>
 				);
 			}
 			return (
-				<Badge className='bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20 text-[11px] font-medium'>
+				<Badge className='bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20 text-xs font-medium'>
 					In Stock
 				</Badge>
 			);

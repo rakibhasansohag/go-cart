@@ -64,7 +64,7 @@ export default function TopProducts({
 										<span className='truncate'>{item.name}</span>
 										<ExternalLink className='w-3 h-3 shrink-0 opacity-50' />
 									</Link>
-										<span className='text-[11px] text-muted-foreground'>
+										<span className='text-xs text-muted-foreground'>
 											{item.unitsSold} units · ${item.netRevenue.toFixed(2)} seller net
 										</span>
 								</div>

@@ -177,7 +177,7 @@ export default function PackingSlipView({ data, storeUrl }: PackingSlipViewProps
 						<div className='py-6'>
 							<table className='w-full text-left text-xs border-collapse'>
 								<thead>
-									<tr className='border-b-2 border-neutral-300 text-neutral-500 uppercase tracking-wider text-[11px]'>
+									<tr className='border-b-2 border-neutral-300 text-neutral-500 uppercase tracking-wider text-xs'>
 										<th className='py-2.5 font-bold'>#</th>
 										<th className='py-2.5 font-bold'>SKU Breakdown & Item</th>
 										<th className='py-2.5 font-bold text-center'>Variant / Size</th>
@@ -192,7 +192,7 @@ export default function PackingSlipView({ data, storeUrl }: PackingSlipViewProps
 											<td className='py-3 text-neutral-400 font-mono'>{idx + 1}</td>
 											<td className='py-3 pr-4'>
 												<div className='font-bold text-black'>{item.name}</div>
-												<div className='font-mono text-[11px] text-neutral-500'>
+												<div className='font-mono text-xs text-neutral-500'>
 													SKU: {item.sku || 'N/A'}
 												</div>
 											</td>
@@ -235,7 +235,7 @@ export default function PackingSlipView({ data, storeUrl }: PackingSlipViewProps
 						{/* Bottom Scannable Barcode & Warehouse Footer */}
 						<div className='mt-10 pt-6 border-t-2 border-dashed border-neutral-300 flex flex-col items-center text-center'>
 							<PrintableBarcode value={orderGroup.id} height={45} />
-							<p className='text-[11px] text-neutral-500 mt-4 max-w-md'>
+							<p className='text-xs text-neutral-500 mt-4 max-w-md'>
 								Thank you for your order with <strong>{store.name}</strong> on GoCart. For returns or support, please check your GoCart account order history.
 							</p>
 						</div>
@@ -250,15 +250,15 @@ export default function PackingSlipView({ data, storeUrl }: PackingSlipViewProps
 								<span className='inline-block bg-black text-white px-2 py-0.5 text-xs font-black uppercase rounded-xs'>
 									STANDARD
 								</span>
-								<p className='text-[10px] font-mono text-neutral-600 mt-0.5'>
+								<p className='text-xs font-mono text-neutral-600 mt-0.5'>
 									{orderGroup.shippingService}
 								</p>
 							</div>
 						</div>
 
 						{/* Shipper (From) Block */}
-						<div className='border-b-2 border-black pb-3 mb-3 text-[11px]'>
-							<span className='font-bold uppercase text-[9px] text-neutral-500 block mb-0.5'>
+						<div className='border-b-2 border-black pb-3 mb-3 text-xs'>
+							<span className='font-bold uppercase text-xs text-neutral-500 block mb-0.5'>
 								SHIP FROM:
 							</span>
 							<p className='font-bold text-black'>{store.name}</p>
@@ -268,7 +268,7 @@ export default function PackingSlipView({ data, storeUrl }: PackingSlipViewProps
 
 						{/* Recipient (To) Block — High contrast, large format for scan/delivery */}
 						<div className='border-b-4 border-black pb-4 mb-4'>
-							<span className='font-bold uppercase text-[9px] text-neutral-500 block mb-1'>
+							<span className='font-bold uppercase text-xs text-neutral-500 block mb-1'>
 								SHIP TO:
 							</span>
 							<div className='pl-2'>
@@ -294,7 +294,7 @@ export default function PackingSlipView({ data, storeUrl }: PackingSlipViewProps
 								value={assignedShipment?.trackingNumber || orderGroup.id}
 								height={65}
 							/>
-							<div className='w-full grid grid-cols-2 gap-2 mt-4 text-[10px] font-mono border-t border-neutral-300 pt-2'>
+							<div className='w-full grid grid-cols-2 gap-2 mt-4 text-xs font-mono border-t border-neutral-300 pt-2'>
 								<div>
 									<span className='text-neutral-500 block'>PACKAGE REF:</span>
 									<span className='font-bold text-black'>{formatPackageId(orderGroup.id)}</span>

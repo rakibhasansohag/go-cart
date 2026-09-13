@@ -82,7 +82,7 @@ export default function OrderInfoCard({
 						Payment Status
 					</span>
 					<span
-						className={`font-semibold px-2.5 py-1 rounded-lg text-[11px] border ${
+						className={`font-semibold px-2.5 py-1 rounded-lg text-xs border ${
 							isPaid
 								? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
 								: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20'
@@ -111,7 +111,7 @@ export default function OrderInfoCard({
 						<Hash className='w-3.5 h-3.5 text-primary' />
 						Payment Ref
 					</span>
-					<div className='flex items-center gap-1 font-mono text-[11px] text-foreground max-w-[140px] truncate'>
+					<div className='flex items-center gap-1 font-mono text-xs text-foreground max-w-[140px] truncate'>
 						<span className='truncate'>{refId}</span>
 						{refId !== '-' && (
 							<button

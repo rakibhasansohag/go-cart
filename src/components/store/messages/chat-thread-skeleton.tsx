@@ -25,7 +25,7 @@ export function ChatThreadSkeleton({
 			</div>
 
 			{/* Centered Loading Indicator Bar */}
-			<div className='py-2 px-4 bg-muted/20 border-b border-border/40 flex items-center justify-center gap-2 text-[11px] text-muted-foreground'>
+			<div className='py-2 px-4 bg-muted/20 border-b border-border/40 flex items-center justify-center gap-2 text-xs text-muted-foreground'>
 				<Loader2 className='w-3.5 h-3.5 animate-spin text-primary' />
 				<span>{subtitle}</span>
 			</div>

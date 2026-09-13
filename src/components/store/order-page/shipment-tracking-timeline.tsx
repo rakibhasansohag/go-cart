@@ -76,7 +76,7 @@ function ShipmentTimelineCard({ shipment }: { shipment: TrackingShipment }) {
 				{MILESTONES.map((step, index) => {
 					const complete = currentRank >= 0 && index < currentRank;
 					const active = step.status === shipment.status;
-					return <div key={step.status} className='space-y-1'><div className={`mx-auto flex size-7 items-center justify-center rounded-full text-xs ${complete ? 'bg-emerald-600 text-white' : active ? 'bg-primary text-primary-foreground ring-2 ring-primary/30' : 'border border-border bg-muted text-muted-foreground'}`}>{complete ? <CheckCircle2 className='size-4' /> : active ? <Clock3 className='size-3.5' /> : '•'}</div><span className='block text-[10px] leading-tight text-muted-foreground'>{step.label}</span></div>;
+					return <div key={step.status} className='space-y-1'><div className={`mx-auto flex size-7 items-center justify-center rounded-full text-xs ${complete ? 'bg-emerald-600 text-white' : active ? 'bg-primary text-primary-foreground ring-2 ring-primary/30' : 'border border-border bg-muted text-muted-foreground'}`}>{complete ? <CheckCircle2 className='size-4' /> : active ? <Clock3 className='size-3.5' /> : '•'}</div><span className='block text-xs leading-tight text-muted-foreground'>{step.label}</span></div>;
 				})}
 			</div>
 

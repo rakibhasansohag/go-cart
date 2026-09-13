@@ -72,7 +72,7 @@ const StoreOrderSummary: FC<Props> = ({ group }) => {
 							</span>
 						</div>
 						<div className='flex items-center gap-2 rounded-lg border border-border/50 bg-muted/30 px-2 py-1'>
-							<span className='text-[10px] font-semibold uppercase tracking-wide text-muted-foreground'>
+							<span className='text-xs font-semibold uppercase tracking-wide text-muted-foreground'>
 								Order
 							</span>
 							<span className='font-mono text-xs font-semibold text-foreground'>
@@ -172,7 +172,7 @@ const StoreOrderSummary: FC<Props> = ({ group }) => {
 						</p>
 						<div className='grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs'>
 							<div>
-								<span className='text-muted-foreground block text-[11px]'>
+								<span className='text-muted-foreground block text-xs'>
 									Name
 								</span>
 								<span className='font-semibold text-foreground capitalize'>
@@ -180,7 +180,7 @@ const StoreOrderSummary: FC<Props> = ({ group }) => {
 								</span>
 							</div>
 							<div>
-								<span className='text-muted-foreground block text-[11px]'>
+								<span className='text-muted-foreground block text-xs'>
 									Email
 								</span>
 								<span
@@ -191,7 +191,7 @@ const StoreOrderSummary: FC<Props> = ({ group }) => {
 								</span>
 							</div>
 							<div>
-								<span className='text-muted-foreground block text-[11px]'>
+								<span className='text-muted-foreground block text-xs'>
 									Phone
 								</span>
 								<span className='font-semibold text-foreground'>
@@ -240,13 +240,13 @@ const StoreOrderSummary: FC<Props> = ({ group }) => {
 									<span>{product.name}</span>
 									<ExternalLink className='w-3 h-3 shrink-0 opacity-60' />
 								</Link>
-								<p className='text-muted-foreground text-[11px]'>
+								<p className='text-muted-foreground text-xs'>
 									SKU:{' '}
 									<span className='font-mono font-medium text-foreground'>
 										{product.sku}
 									</span>
 								</p>
-								<p className='text-muted-foreground text-[11px]'>
+								<p className='text-muted-foreground text-xs'>
 									Size:{' '}
 									<span className='font-medium text-foreground'>
 										{product.size}
@@ -256,7 +256,7 @@ const StoreOrderSummary: FC<Props> = ({ group }) => {
 										{product.quantity}
 									</span>
 								</p>
-								<p className='text-muted-foreground text-[11px]'>
+								<p className='text-muted-foreground text-xs'>
 									Price:{' '}
 									<span className='font-medium text-foreground'>
 										${product.price.toFixed(2)}

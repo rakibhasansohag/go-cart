@@ -62,7 +62,7 @@ export function PrintableBarcode({
 				{barElements}
 			</svg>
 			{showText && (
-				<span className='font-mono text-[11px] tracking-widest text-black mt-1 font-semibold uppercase'>
+				<span className='font-mono text-xs tracking-widest text-black mt-1 font-semibold uppercase'>
 					{sanitized}
 				</span>
 			)}

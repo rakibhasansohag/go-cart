@@ -30,7 +30,7 @@ export default function MoreToLoveSection({
 					<div className='w-full border-t border-border/40 dark:border-border/60' />
 				</div>
 				<div className='relative flex justify-center'>
-					<h2 id='more-to-love-heading' className='px-4 bg-secondary z-10 text-foreground font-extrabold text-[24px]'>
+					<h2 id='more-to-love-heading' className='px-4 bg-secondary z-10 text-foreground font-extrabold text-2xl'>
 						{title || 'More to love'}
 					</h2>
 				</div>

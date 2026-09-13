@@ -68,7 +68,7 @@ export default function StatusDistribution({
 							<div key={item.status} className='space-y-1.5'>
 								<div className='flex items-center justify-between text-xs font-medium'>
 									<span
-										className={`px-2 py-0.5 rounded-md uppercase font-semibold text-[11px] ${colors.bg} ${colors.text}`}
+										className={`px-2 py-0.5 rounded-md uppercase font-semibold text-xs ${colors.bg} ${colors.text}`}
 									>
 										{item.status}
 									</span>
