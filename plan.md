@@ -1539,17 +1539,17 @@ Goal: Automate seller balance payouts through Stripe Connect transfers once appr
 
 **Why**: The marketplace currently calculates net seller earnings, platform fees, and pending balances in the ledger, with manual approval workflows. Integrating Stripe Connect allows automated electronic transfers to seller bank accounts upon scheduled disbursement or admin approval, completing the financial loop.
 
-- [ ] **Seller Onboarding & Connect Accounts**:
-  - [ ] Store Stripe connected account ID in `Store` model
-  - [ ] Onboarding link generation endpoint (`/api/seller/stripe/onboard`) redirecting to Stripe Express onboarding
-  - [ ] Webhook handler for `account.updated` to record account capability status (`charges_enabled`, `payouts_enabled`)
-- [ ] **Disbursement Processing Engine**:
-  - [ ] Server action `processSellerDisbursement` to initiate Stripe Transfer from platform balance to connected seller
-  - [ ] Idempotency key tracking and ledger balance debiting upon successful Stripe transfer
-  - [ ] Handling transfer failure events with ledger reversal and notification alerts
-- [ ] **Verification**:
-  - [ ] Stripe test mode transfer execution and ledger integrity verification
-  - [ ] Unit tests for transfer validation and unauthorized disbursement protection
+- [x] **Seller Onboarding & Connect Accounts**:
+  - [x] Reusable seller-level Stripe connected account via `SellerPaymentAccount` (linked across stores)
+  - [x] Onboarding link generation endpoint (`/api/seller/stripe/onboard`) redirecting to Stripe Express onboarding
+  - [x] Webhook handler for `account.updated` to record account capability status (`charges_enabled`, `payouts_enabled`)
+- [x] **Disbursement Processing Engine**:
+  - [x] Server action `processSellerDisbursement` to initiate Stripe Transfer from platform balance to connected seller
+  - [x] Idempotency key tracking and ledger balance debiting upon successful Stripe transfer
+  - [x] Handling transfer failure events with ledger reversal and notification alerts
+- [x] **Verification**:
+  - [x] Stripe test mode transfer execution and ledger integrity verification
+  - [x] Unit tests for transfer validation and unauthorized disbursement protection
 
 ---
 

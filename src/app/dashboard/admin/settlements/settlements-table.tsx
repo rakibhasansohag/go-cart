@@ -84,7 +84,7 @@ export default function SettlementsTable({
 		setMessage('');
 		try {
 			const body: { action: string; batchId?: string; settlementId?: string } = { action };
-			if (action === 'retry') body.settlementId = id;
+			if (action === 'retry' || action === 'disburse') body.settlementId = id;
 			else if (id) body.batchId = id;
 			const response = await fetch('/api/admin/settlements', {
 				method: 'POST',
@@ -169,7 +169,17 @@ export default function SettlementsTable({
 						<td className='p-3 font-semibold'>{settlement.status}<div className='mt-1 text-xs font-normal text-muted-foreground'>{settlement.payoutBatch ? `Batch: ${settlement.payoutBatch.status}` : 'No batch attached'}</div></td>
 						<td className='p-3'>${(settlement.remainingPayableCents / 100).toFixed(2)} USD</td>
 						<td className='max-w-md p-3 text-xs text-muted-foreground'>{settlementCopy(settlement)}</td>
-						<td className='p-3 text-xs'>{['FAILED', 'BLOCKED'].includes(settlement.status) && settlement.payoutBatch ? <button disabled={Boolean(busyAction)} onClick={() => run('retry', settlement.id)} className='rounded border border-border px-2 py-1 disabled:opacity-50'>{busyAction === `retry:${settlement.id}` ? 'Retrying…' : 'Retry after correction'}</button> : settlement.status === 'BLOCKED' ? <span className='text-muted-foreground'>Complete delivery evidence first.</span> : <span className='text-muted-foreground'>No action needed.</span>}</td>
+						<td className='p-3 text-xs'>
+							{['FAILED', 'BLOCKED'].includes(settlement.status) && settlement.payoutBatch ? (
+								<button disabled={Boolean(busyAction)} onClick={() => run('retry', settlement.id)} className='rounded border border-border px-2 py-1 disabled:opacity-50'>{busyAction === `retry:${settlement.id}` ? 'Retrying…' : 'Retry after correction'}</button>
+							) : ['APPROVED', 'ELIGIBLE'].includes(settlement.status) && settlement.remainingPayableCents > 0 ? (
+								<button disabled={Boolean(busyAction)} onClick={() => run('disburse', settlement.id)} className='rounded bg-primary px-2 py-1 text-primary-foreground disabled:opacity-50'>{busyAction === `disburse:${settlement.id}` ? 'Disbursing…' : 'Disburse now'}</button>
+							) : settlement.status === 'BLOCKED' ? (
+								<span className='text-muted-foreground'>Complete delivery evidence first.</span>
+							) : (
+								<span className='text-muted-foreground'>No action needed.</span>
+							)}
+						</td>
 					</tr>)}
 					{initialSettlements.length === 0 && <tr><td colSpan={6} className='p-8 text-center text-muted-foreground'>No settlement entries yet. Paid order groups will appear here.</td></tr>}
 				</tbody></table>

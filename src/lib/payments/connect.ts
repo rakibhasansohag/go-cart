@@ -250,7 +250,14 @@ export async function reconcileStripeAccountUpdatedEvent(event: Stripe.Event) {
 					providerEventId: event.id,
 					providerAccountId,
 					eventType: event.type,
-					payload: { id: providerAccountId, country: account.country ?? null, detailsSubmitted: account.details_submitted ?? false, transfers: account.capabilities?.transfers ?? null },
+					payload: {
+						id: providerAccountId,
+						country: account.country ?? null,
+						detailsSubmitted: account.details_submitted ?? false,
+						transfers: account.capabilities?.transfers ?? null,
+						chargesEnabled: account.charges_enabled ?? false,
+						payoutsEnabled: account.payouts_enabled ?? false,
+					},
 				},
 			});
 			const capability = account.capabilities?.transfers ?? null;
