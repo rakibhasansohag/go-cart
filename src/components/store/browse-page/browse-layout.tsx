@@ -103,7 +103,7 @@ export default function BrowseLayoutClient({
 			{/* Main Content Area */}
 			<main id='main-content' className='flex-1 w-full min-w-0 lg:h-[calc(100vh-64px)] lg:overflow-y-auto scrollbar'>
 				{/* Top Actions Bar (Sticky) */}
-				<div className='sticky top-0 z-10 bg-background/90 backdrop-blur-md border-b border-border py-3 px-4 flex items-center justify-between gap-4'>
+				<div className='sticky top-0 z-30 bg-background/95 backdrop-blur-md border-b border-border py-3 px-4 md:px-6 flex items-center justify-between gap-4'>
 					<Button
 						variant='outline'
 						onClick={() => setIsSidebarOpen((prev) => !prev)}

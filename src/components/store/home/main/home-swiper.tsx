@@ -37,7 +37,7 @@ const images = [
 
 export default function HomeMainSwiper() {
 	return (
-		<div className='w-full overflow-hidden rounded-md'>
+		<div className='w-full min-w-0 overflow-hidden rounded-md'>
 			<Swiper
 				modules={[Autoplay, Pagination, EffectFade]}
 				effect='fade'
@@ -50,7 +50,7 @@ export default function HomeMainSwiper() {
 					clickable: true,
 				}}
 				loop={true}
-				className='w-full rounded-md'
+				className='w-full min-w-0 rounded-md'
 			>
 				{images.map((img, index) => (
 					<SwiperSlide key={img.id} className='rounded-md overflow-hidden'>

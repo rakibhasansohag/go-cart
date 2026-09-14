@@ -52,7 +52,13 @@ export default function FiltersHeader({
 	});
 
 	const handleClearQueries = () => {
-		replace(pathname);
+		const params = new URLSearchParams();
+		const sort = searchParams.get('sort');
+		if (sort) {
+			params.set('sort', sort);
+		}
+		const queryString = params.toString();
+		replace(queryString ? `${pathname}?${queryString}` : pathname);
 	};
 
 	const handleRemoveChip = (chipKey: string, chipValue: string) => {

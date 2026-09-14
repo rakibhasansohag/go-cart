@@ -49,7 +49,7 @@ export function HeroGridSection({
 	return (
 		<section
 			aria-label={title || 'Featured hero products and promotions'}
-			className='w-full grid gap-2 min-[1170px]:grid-cols-[1fr_350px] min-[1465px]:grid-cols-[200px_1fr_350px]'
+			className='w-full grid gap-2 min-[1170px]:grid-cols-[minmax(0,1fr)_350px] min-[1465px]:grid-cols-[200px_minmax(0,1fr)_350px]'
 		>
 			{/* Left Ad */}
 			{showSideAd && (
@@ -61,7 +61,7 @@ export function HeroGridSection({
 				/>
 			)}
 			{/* Middle Swiper & Featured */}
-			<div className='space-y-2 h-fit'>
+			<div className='space-y-2 h-fit min-w-0'>
 				<HomeMainSwiper />
 				<Featured
 					products={products_featured.filter(

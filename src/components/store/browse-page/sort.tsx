@@ -1,8 +1,13 @@
 'use client';
-import { cn } from '@/lib/utils';
-import { Check, ChevronDown } from 'lucide-react';
+
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useState } from 'react';
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from '@/components/ui/select';
 
 const sortArray = [
 	{
@@ -26,88 +31,53 @@ const sortArray = [
 		query: 'price-high-to-low',
 	},
 ];
+
 export default function ProductSort() {
 	const searchParams = useSearchParams();
-	const params = new URLSearchParams(searchParams);
 	const pathname = usePathname();
-
 	const { replace } = useRouter();
 
-	const sortQuery = params.get('sort') || 'most-popular';
+	const sortQuery = searchParams.get('sort') || 'most-popular';
 
-	const sort = sortQuery
-		? sortArray.find((s) => s.query === sortQuery)?.name
-		: 'Most Popular';
-
-	const handleSort = (sort: string) => {
-		params.set('sort', sort);
-		replace(`${pathname}?${params.toString()}`);
+	const handleSort = (newSort: string) => {
+		const params = new URLSearchParams(searchParams.toString());
+		if (newSort === 'most-popular') {
+			params.delete('sort');
+		} else {
+			params.set('sort', newSort);
+		}
+		const queryString = params.toString();
+		replace(queryString ? `${pathname}?${queryString}` : pathname);
 	};
 
-	const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
-
 	return (
-		<div
-			className='relative z-20'
-			onMouseEnter={() => setIsMenuOpen(true)}
-			onMouseLeave={() => setIsMenuOpen(false)}
-		>
-			<div className='h-9 w-[190px] md:w-[227px] relative'>
-				{/* Trigger */}
-				<div className='inline-flex relative w-full h-full'>
-					<div className='hidden relative md:block'>
-						<span className='w-[70px] h-full flex items-center justify-center absolute top-[1px] transition-all duration-[20ms]'>
-							<label className='text-xs font-semibold text-main-secondary cursor-pointer'>
-								Sort by
-							</label>
-						</span>
+		<div className='flex items-center gap-2'>
+			<Select value={sortQuery} onValueChange={handleSort}>
+				<SelectTrigger
+					className='w-[190px] sm:w-[220px] h-9 bg-background border-border text-xs font-semibold cursor-pointer shadow-none'
+					aria-label='Sort products'
+				>
+					<div className='flex items-center gap-1.5 truncate'>
+						<span className='text-muted-foreground font-normal text-xs'>Sort by:</span>
+						<SelectValue placeholder='Most Popular' />
 					</div>
-					<input
-						type='text'
-						disabled
-						value={sort}
-						className='md:pl-[70px] text-sm font-bold h-9 pr-10 bg-none border border-border rounded-md cursor-pointer px-3 bg-transparent text-main-primary w-full outline-0 align-bottom'
-					/>
-					<span
-						className='flex items-center justify-center box-border h-full w-10 absolute top-0 right-0 transition-transform duration-200 ease-in-out text-main-secondary pointer-events-none'
-						style={{
-							transform: isMenuOpen ? 'rotate(180deg)' : 'rotate(0deg)',
-						}}
-					>
-						<ChevronDown className='w-3.5' />
-					</span>
-				</div>
-
-				{/* Menu */}
-				<ul
-					className={cn(
-						'absolute bg-background dark:bg-slate-900 border border-border rounded-lg max-h-72 py-1.5 shadow-2xl overflow-auto w-full transition-all duration-300 ease-in-out transform top-full z-50 left-0 right-0',
-						{
-							'opacity-100 translate-y-0': isMenuOpen,
-							'opacity-0 -translate-y-2 pointer-events-none': !isMenuOpen,
-						}
-					)}
+				</SelectTrigger>
+				<SelectContent
+					align='end'
+					sideOffset={6}
+					className='z-[99999] min-w-[200px] bg-background dark:bg-slate-900 border border-border shadow-xl'
 				>
 					{sortArray.map((option) => (
-						<li
+						<SelectItem
 							key={option.query}
-							className='w-full flex items-center justify-between hover:bg-f5 dark:hover:bg-slate-800/60 text-main-primary cursor-pointer h-9 px-4 text-xs transition-colors duration-150'
-							onClick={() => handleSort(option.query)}
+							value={option.query}
+							className='text-xs cursor-pointer'
 						>
-							<span
-								className={cn({
-									'font-bold text-orange-primary': option.query === sortQuery,
-								})}
-							>
-								{option.name}
-							</span>
-							{option.query === sortQuery && (
-								<Check className='w-3.5 h-3.5 text-orange-primary' />
-							)}
-						</li>
+							{option.name}
+						</SelectItem>
 					))}
-				</ul>
-			</div>
+				</SelectContent>
+			</Select>
 		</div>
 	);
 }

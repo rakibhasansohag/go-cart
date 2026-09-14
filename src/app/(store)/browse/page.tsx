@@ -10,8 +10,7 @@ import { Suspense } from 'react';
 import { dehydrate, HydrationBoundary } from '@tanstack/react-query';
 import { getQueryClient } from '@/lib/get-query-client';
 import { queryKeys } from '@/lib/query-keys';
-import BrowseProductsList from '@/components/store/browse-page/products-list';
-import { ProductsGridSkeleton } from '@/components/store/skeletons/home-skeletons';
+import BrowseProductsList, { BrowseProductsSkeleton } from '@/components/store/browse-page/products-list';
 
 export default async function BrowsePage({
 	searchParams,
@@ -95,7 +94,7 @@ export default async function BrowsePage({
 					filters={<ProductFilters queries={resolvedParams} />}
 				>
 					{/* Product List */}
-					<Suspense fallback={<ProductsGridSkeleton />}>
+					<Suspense fallback={<BrowseProductsSkeleton />}>
 						<BrowseProductsList queries={resolvedParams} />
 					</Suspense>
 				</BrowseLayoutClient>

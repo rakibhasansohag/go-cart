@@ -55,7 +55,7 @@ export function AnimatedDealsSkeleton() {
 // Skeleton for Featured Section / Middle & Right columns
 export function HomeMainSkeleton() {
 	return (
-		<div className='w-full grid gap-2 min-[1170px]:grid-cols-[1fr_350px] min-[1465px]:grid-cols-[200px_1fr_350px] animate-pulse'>
+		<div className='w-full grid gap-2 min-[1170px]:grid-cols-[minmax(0,1fr)_350px] min-[1465px]:grid-cols-[200px_minmax(0,1fr)_350px] animate-pulse'>
 			{/* Left Column (Ad) */}
 			<div className='hidden min-[1465px]:block h-[420px] rounded-md bg-neutral-300 dark:bg-neutral-800' />
 			{/* Middle Column (Swiper & Featured Card) */}
