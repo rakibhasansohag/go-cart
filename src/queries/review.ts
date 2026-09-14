@@ -5,6 +5,11 @@ import { ReviewDetailsType } from '@/lib/types';
 import { OrderStatus } from '@prisma/client';
 import { currentUser } from '@clerk/nextjs/server';
 import { getRatingStatistics } from './product';
+import { enforceSharedRateLimit } from '@/lib/security/rate-limit';
+import {
+	sanitizeUserText,
+	validateSecureMediaUrl,
+} from '@/lib/security/content-safety';
 
 // Function: upsertReview
 // Description: Upserts a review into the database, updating if it exists or creating a new one if not.
@@ -28,6 +33,19 @@ export const upsertReview = async (
 		if (!productId) throw new Error('Product ID is required.');
 		if (!review) throw new Error('Please provide review data.');
 
+		// Enforce rate limiting on review creation/updating
+		await enforceSharedRateLimit({
+			key: `review:upsert:${user.id}`,
+			limit: 5,
+			windowMs: 10 * 60 * 1000,
+		});
+
+		// Sanitize review text and validate media URLs
+		const cleanReviewText = sanitizeUserText(review.review || '');
+		const validatedImages = (review.images || []).map((img) => ({
+			url: validateSecureMediaUrl(img.url),
+		}));
+
 		// check for existing review
 		const existingReview = await db.review.findFirst({
 			where: {
@@ -37,7 +55,11 @@ export const upsertReview = async (
 			},
 		});
 
-		let review_data: ReviewDetailsType = review;
+		let review_data: ReviewDetailsType = {
+			...review,
+			review: cleanReviewText,
+			images: validatedImages,
+		};
 		if (existingReview) {
 			review_data = { ...review_data, id: existingReview.id };
 		}

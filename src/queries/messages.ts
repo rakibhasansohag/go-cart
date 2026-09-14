@@ -14,6 +14,8 @@ import {
 	DOMAIN_EVENT_TYPES,
 } from '@/lib/notifications/domain-events';
 import { formatMessageSnippet } from '@/lib/utils';
+import { enforceSharedRateLimit } from '@/lib/security/rate-limit';
+import { sanitizeUserText } from '@/lib/security/content-safety';
 
 // Internal Zod Schemas (not exported to satisfy Next.js "use server" action requirements)
 const StartConversationSchema = z.object({
@@ -607,6 +609,28 @@ export async function startConversation(input: StartConversationInput): Promise<
 	const { storeId, subject, message, productId, orderId, orderGroupId } =
 		parsed.data;
 
+	try {
+		await enforceSharedRateLimit({
+			key: `msg:start:${user.id}`,
+			limit: 10,
+			windowMs: 10 * 60 * 1000,
+		});
+	} catch {
+		return {
+			success: false,
+			error: 'Too many inquiries sent. Please wait a few minutes.',
+		};
+	}
+
+	const cleanSubject = subject ? sanitizeUserText(subject) : null;
+	const cleanMessage = sanitizeUserText(message);
+	if (!cleanMessage || cleanMessage.length < 2) {
+		return {
+			success: false,
+			error: 'Message must contain valid text.',
+		};
+	}
+
 	const store = await db.store.findUnique({
 		where: { id: storeId },
 		select: { id: true, userId: true, name: true },
@@ -626,7 +650,7 @@ export async function startConversation(input: StartConversationInput): Promise<
 		data: {
 			storeId,
 			userId: user.id,
-			subject: subject || null,
+			subject: cleanSubject,
 			productId: productId || null,
 			orderId: orderId || null,
 			orderGroupId: orderGroupId || null,
@@ -637,7 +661,7 @@ export async function startConversation(input: StartConversationInput): Promise<
 				create: {
 					senderId: user.id,
 					senderRole: MessageSenderRole.BUYER,
-					body: message,
+					body: cleanMessage,
 					isRead: false,
 				},
 			},
@@ -668,8 +692,8 @@ export async function startConversation(input: StartConversationInput): Promise<
 					buyerName: user.firstName
 						? `${user.firstName} ${user.lastName || ''}`.trim()
 						: 'Customer',
-					subject: subject || undefined,
-					bodySnippet: formatMessageSnippet(message).slice(0, 150),
+					subject: cleanSubject || undefined,
+					bodySnippet: formatMessageSnippet(cleanMessage).slice(0, 150),
 				},
 			});
 		} catch (eventErr) {
@@ -702,6 +726,27 @@ export async function sendReplyMessage(input: SendReplyMessageInput): Promise<{
 	}
 
 	const { conversationId, message: body } = parsed.data;
+
+	try {
+		await enforceSharedRateLimit({
+			key: `msg:reply:${user.id}`,
+			limit: 30,
+			windowMs: 5 * 60 * 1000,
+		});
+	} catch {
+		return {
+			success: false,
+			error: 'Too many replies sent. Please wait a moment.',
+		};
+	}
+
+	const cleanBody = sanitizeUserText(body);
+	if (!cleanBody) {
+		return {
+			success: false,
+			error: 'Message cannot be empty.',
+		};
+	}
 
 	const conv = await db.conversation.findUnique({
 		where: { id: conversationId },
@@ -739,7 +784,7 @@ export async function sendReplyMessage(input: SendReplyMessageInput): Promise<{
 			conversationId,
 			senderId: user.id,
 			senderRole,
-			body,
+			body: cleanBody,
 			isRead: false,
 		},
 		include: {
@@ -779,7 +824,7 @@ export async function sendReplyMessage(input: SendReplyMessageInput): Promise<{
 					storeId: conv.storeId,
 					buyerName: dbUser?.name || 'Customer',
 					subject: conv.subject || undefined,
-					bodySnippet: formatMessageSnippet(body).slice(0, 150),
+					bodySnippet: formatMessageSnippet(cleanBody).slice(0, 150),
 				},
 			});
 		} else {
@@ -797,7 +842,7 @@ export async function sendReplyMessage(input: SendReplyMessageInput): Promise<{
 					storeId: conv.storeId,
 					storeName: conv.store.name,
 					buyerId: conv.userId,
-					bodySnippet: formatMessageSnippet(body).slice(0, 150),
+					bodySnippet: formatMessageSnippet(cleanBody).slice(0, 150),
 				},
 			});
 		}

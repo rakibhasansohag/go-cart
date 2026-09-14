@@ -85,6 +85,10 @@ vi.mock('@/lib/notifications/domain-events', () => ({
 	publishDomainEvent: publishDomainEventMock,
 }));
 
+vi.mock('@/lib/security/rate-limit', () => ({
+	enforceSharedRateLimit: vi.fn(),
+}));
+
 import {
 	getBuyerConversations,
 	getSellerConversations,
