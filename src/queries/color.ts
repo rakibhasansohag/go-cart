@@ -46,6 +46,7 @@ export const getFilteredColors = async (
 		select: {
 			name: true, // Assuming the color name is stored in the `name` field
 		},
+		distinct: ['name'],
 		take,
 	});
 
@@ -65,14 +66,9 @@ export const getFilteredColors = async (
 		},
 	});
 
-	// Remove duplicate colors
-	const uniqueColorsArray = Array.from(
-		new Set(colors.map((color) => color.name)),
-	);
-
 	// Return the unique colors in the desired format
 	return {
-		colors: uniqueColorsArray.map((color) => ({ name: color })),
+		colors: colors.map((color) => ({ name: color.name })),
 		count,
 	};
 };

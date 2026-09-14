@@ -51,6 +51,7 @@ export const getFilteredSizes = async (
 		select: {
 			size: true,
 		},
+		distinct: ['size'],
 		take,
 	});
 
@@ -69,8 +70,7 @@ export const getFilteredSizes = async (
 		},
 	});
 
-	// Remove duplicate sizes
-	const uniqueSizesArray = Array.from(new Set(sizes.map((size) => size.size)));
+	const uniqueSizesArray = sizes.map((size) => size.size);
 
 	// Define a custom order using a Map for fast lookups
 	const sizeOrderMap = new Map(

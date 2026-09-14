@@ -1,0 +1,3 @@
+## 2025-05-24 - Prisma findMany deduplication anti-pattern
+**Learning:** Found an anti-pattern in the codebase where Prisma `findMany` is used with a `take` limit *before* applying in-memory deduplication (e.g. `Array.from(new Set(...))`). This not only causes severe memory/CPU overhead by transferring redundant data over the network, but it also causes a subtle logic bug where fewer distinct items are returned than the requested `take` limit because duplicates consume the query limit before being filtered.
+**Action:** Always prefer pushing deduplication to the database using Prisma's `distinct` clause in `findMany` queries rather than processing it in JavaScript.
