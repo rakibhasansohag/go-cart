@@ -336,15 +336,26 @@ export enum ProductStatus {
 }
 
 export type FiltersQueryType = {
-	search: string;
-	category: string;
-	subCategory: string;
-	offer: string;
-	size: string;
-	sort: string;
-	minPrice: string;
-	maxPrice: string;
-	color: string;
+	search?: string;
+	category?: string;
+	subCategory?: string;
+	offer?: string;
+	size?: string | string[];
+	sort?: string;
+	minPrice?: string;
+	maxPrice?: string;
+	color?: string | string[];
+	brand?: string | string[];
+	rating?: string;
+};
+
+export type SearchFacetsType = {
+	brands: { name: string; count: number }[];
+	ratings: { rating: number; count: number }[];
+	priceRange: { min: number; max: number };
+	colors: { name: string; count: number }[];
+	sizes: { size: string; count: number }[];
+	totalCount: number;
 };
 
 export type CatgegoryWithSubsType = Category & {

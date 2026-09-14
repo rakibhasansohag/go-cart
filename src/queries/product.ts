@@ -703,6 +703,8 @@ export interface ProductFilterParams {
 	minPrice?: number;
 	maxPrice?: number;
 	color?: string[];
+	brand?: string[];
+	rating?: number;
 	[key: string]: unknown;
 }
 
@@ -847,6 +849,18 @@ export const getProducts = async (
 		});
 	}
 
+	if (filters.brand && filters.brand.length > 0) {
+		andConditions.push({
+			brand: { in: filters.brand },
+		});
+	}
+
+	if (filters.rating !== undefined && filters.rating > 0) {
+		andConditions.push({
+			rating: { gte: filters.rating },
+		});
+	}
+
 	const searchPattern = filters.search?.trim() || '';
 	let rankedSearch: Awaited<ReturnType<typeof getRankedProductCandidates>> | null = null;
 
@@ -886,6 +900,13 @@ export const getProducts = async (
 				JOIN "Color" color_filter ON color_filter."productVariantId" = pv_color.id
 				WHERE pv_color."productId" = p.id AND color_filter.name IN (${colors})
 			)`);
+		}
+		if (filters.brand?.length) {
+			const brands = Prisma.join(filters.brand.map((brand) => Prisma.sql`${brand}`));
+			searchFilters.push(Prisma.sql`p."brand" IN (${brands})`);
+		}
+		if (filters.rating !== undefined && filters.rating > 0) {
+			searchFilters.push(Prisma.sql`p."rating" >= ${filters.rating}`);
 		}
 
 		// Filter and paginate relevance candidates in PostgreSQL so a filter

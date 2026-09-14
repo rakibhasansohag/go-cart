@@ -1559,16 +1559,16 @@ Goal: Provide shoppers with multi-attribute filtering, price range sliders, bran
 
 **Why**: As product catalogs grow, keyword search alone is insufficient for product discovery. Customers need the ability to narrow down listings by attributes (color, size, material), star ratings (4+ stars), brand, and dynamic price ranges without full page reloads.
 
-- [ ] **Faceted Query Engine**:
-  - [ ] Dynamic aggregation query in `src/queries/search.ts` returning available facet counts for the current search term/category
-  - [ ] Support multi-select filter parameters in URL search params (`?brands=nike,adidas&rating=4&minPrice=20&maxPrice=100`)
-- [ ] **Faceted Sidebar & Filter Chips**:
-  - [ ] Collapsible filter sections (Price Slider, Star Rating, Brands, Variant Options)
-  - [ ] Active filter pill tags with 1-click removal and "Clear All" action
-  - [ ] Mobile-responsive filter drawer with live result counter
-- [ ] **Verification**:
-  - [ ] Unit tests verifying query aggregation logic and param serialization
-  - [ ] End-to-end verification of filter combinations and URL synchronization
+- [x] **Faceted Query Engine**:
+  - [x] Dynamic aggregation query in `src/queries/search.ts` returning available facet counts for the current search term/category
+  - [x] Support multi-select filter parameters in URL search params (`?brand=nike,adidas&rating=4&minPrice=20&maxPrice=100`)
+- [x] **Faceted Sidebar & Filter Chips**:
+  - [x] Collapsible filter sections (Price Slider, Star Rating, Brands, Variant Options)
+  - [x] Active filter pill tags with 1-click removal and "Clear All" action
+  - [x] Mobile-responsive filter drawer with live result counter
+- [x] **Verification**:
+  - [x] Unit tests verifying query aggregation logic and param serialization (59 test files, 331/331 passing)
+  - [x] End-to-end verification of filter combinations and URL synchronization via BrowserOS Neo
 
 ---
 

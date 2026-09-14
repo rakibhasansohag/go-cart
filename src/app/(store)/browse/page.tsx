@@ -5,6 +5,7 @@ import { FiltersQueryType } from '@/lib/types';
 import { getProducts } from '@/queries/product';
 import { getFilteredColors } from '@/queries/color';
 import { getFilteredSizes } from '@/queries/size';
+import { getSearchFacets } from '@/queries/search';
 import { Suspense } from 'react';
 import { dehydrate, HydrationBoundary } from '@tanstack/react-query';
 import { getQueryClient } from '@/lib/get-query-client';
@@ -29,7 +30,17 @@ export default async function BrowsePage({
 		maxPrice,
 		minPrice,
 		color,
+		brand,
+		rating,
 	} = resolvedParams;
+
+	const brandArray = Array.isArray(brand)
+		? brand
+		: typeof brand === 'string'
+			? brand.split(',').map((b) => b.trim()).filter(Boolean)
+			: undefined;
+
+	const ratingNumber = Number(rating) || undefined;
 
 	const queryClient = getQueryClient();
 
@@ -42,13 +53,26 @@ export default async function BrowsePage({
 		offer,
 		size: Array.isArray(size) ? size : size ? [size] : undefined,
 		color: Array.isArray(color) ? color : color ? [color] : undefined,
+		brand: brandArray,
+		rating: ratingNumber,
 	};
 
-	// Prefetch products and metadata filters on the server in parallel
+	const facetFilterScope = {
+		search,
+		category,
+		subCategory,
+		offer,
+	};
+
+	// Prefetch products, facets, and metadata filters on the server in parallel
 	await Promise.all([
 		queryClient.prefetchQuery({
 			queryKey: queryKeys.products.list(filterOptions, sort || '', null),
 			queryFn: () => getProducts(filterOptions, sort, null),
+		}),
+		queryClient.prefetchQuery({
+			queryKey: queryKeys.search.facets(facetFilterScope),
+			queryFn: () => getSearchFacets(facetFilterScope),
 		}),
 		queryClient.prefetchQuery({
 			queryKey: queryKeys.colors.filtered({ category, offer, subCategory }),
@@ -79,4 +103,3 @@ export default async function BrowsePage({
 		</div>
 	);
 }
-

@@ -59,6 +59,9 @@ export const queryKeys = {
 	realtime: {
 		sync: (params?: object) => ['realtime', 'sync', params] as const,
 	},
+	search: {
+		facets: (filters: object) => ['search', 'facets', filters] as const,
+	},
 	categories: {
 		all: () => ['categories'] as const,
 		withSubs: () => ['categories', 'withSubs'] as const,
