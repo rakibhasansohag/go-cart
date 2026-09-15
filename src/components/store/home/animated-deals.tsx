@@ -248,7 +248,7 @@ export default function AnimatedDeals({
 							1280: { slidesPerView: 5, spaceBetween: 16 },
 							1536: { slidesPerView: 6, spaceBetween: 16 },
 						}}
-						className="w-full !py-1"
+						className="w-full !px-8 sm:!px-11 !py-1"
 					>
 						{uniqueProducts.map((product, idx) => (
 							<SwiperSlide key={`${product.slug}-${product.variantSlug}-${idx}`} className="!h-auto">
@@ -343,6 +343,26 @@ export default function AnimatedDeals({
 							</SwiperSlide>
 						))}
 					</Swiper>
+
+					{/* Previous Navigation Button */}
+					<button
+						type="button"
+						aria-label="Previous deals"
+						onClick={handlePrev}
+						className="absolute left-0.5 sm:left-1 top-1/2 -translate-y-1/2 z-20 size-8 sm:size-9 rounded-full bg-card/95 backdrop-blur-md text-foreground border border-border/80 shadow-md flex items-center justify-center transition-all duration-200 ease-out hover:scale-115 hover:bg-primary hover:text-primary-foreground hover:border-primary hover:shadow-lg hover:ring-2 hover:ring-primary/30 active:scale-85 active:bg-primary/90 cursor-pointer group"
+					>
+						<ChevronLeft className="size-4 sm:size-5 transition-transform duration-200 group-hover:-translate-x-0.5 group-active:-translate-x-1" />
+					</button>
+
+					{/* Next Navigation Button */}
+					<button
+						type="button"
+						aria-label="Next deals"
+						onClick={handleNext}
+						className="absolute right-0.5 sm:right-1 top-1/2 -translate-y-1/2 z-20 size-8 sm:size-9 rounded-full bg-card/95 backdrop-blur-md text-foreground border border-border/80 shadow-md flex items-center justify-center transition-all duration-200 ease-out hover:scale-115 hover:bg-primary hover:text-primary-foreground hover:border-primary hover:shadow-lg hover:ring-2 hover:ring-primary/30 active:scale-85 active:bg-primary/90 cursor-pointer group"
+					>
+						<ChevronRight className="size-4 sm:size-5 transition-transform duration-200 group-hover:translate-x-0.5 group-active:translate-x-1" />
+					</button>
 				</div>
 			</div>
 		</section>

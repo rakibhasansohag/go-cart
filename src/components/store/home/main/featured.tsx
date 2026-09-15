@@ -104,7 +104,7 @@ export default function Featured({
 				</div>
 
 				{/* Product Swiper */}
-				<div className='flex-1 h-full max-w-full overflow-hidden flex items-center pr-2 sm:pr-4'>
+				<div className='flex-1 h-full max-w-full min-w-0 overflow-hidden flex items-center pr-2 sm:pr-4'>
 					<MainSwiper
 						products={products}
 						type='simple'
@@ -112,9 +112,10 @@ export default function Featured({
 						breakpoints={{
 							360: { slidesPerView: 2 },
 							540: { slidesPerView: 3 },
-							768: { slidesPerView: 4 },
-							1024: { slidesPerView: 5 },
-							1280: { slidesPerView: 6 },
+							768: { slidesPerView: 3 },
+							1024: { slidesPerView: 4 },
+							1280: { slidesPerView: 4 },
+							1536: { slidesPerView: 5 },
 						}}
 						spaceBetween={10}
 					/>
