@@ -255,22 +255,22 @@ export default function AnimatedDeals({
 								<div className="group/card relative w-full h-full rounded-xl border border-border/80 bg-card hover:border-primary/50 hover:shadow-lg p-3 flex flex-col justify-between transition-all duration-300">
 									{/* Top Part: Image + Badges + Rating + Title */}
 									<div className="w-full min-w-0 overflow-hidden">
-										{/* Uniform Image Container: fixed height with equal ratio */}
-										<div className="relative w-full h-36 sm:h-38 rounded-lg overflow-hidden bg-muted/40 dark:bg-muted/20 border border-border/40 flex items-center justify-center">
+										{/* Uniform Image Container: uses full space with aspect-square and object-cover */}
+										<div className="relative w-full aspect-square rounded-lg overflow-hidden bg-muted/40 dark:bg-muted/20 border border-border/40">
 											<Image
 												src={product.image}
 												alt={product.name}
 												fill
 												sizes="(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 220px"
-												className="object-contain p-2 group-hover/card:scale-105 transition-transform duration-300"
+												className="object-cover group-hover/card:scale-105 transition-transform duration-300"
 											/>
 											{/* Discount Tag */}
-											<span className="absolute top-1.5 left-1.5 bg-rose-600 text-white font-black text-xs px-1.5 py-0.5 rounded shadow-xs">
+											<span className="absolute top-1.5 left-1.5 bg-rose-600 text-white font-black text-xs px-1.5 py-0.5 rounded shadow-xs z-10">
 												-{product.discount}% OFF
 											</span>
 											{/* Top Deal Tag on First Card */}
 											{idx === 0 && (
-												<span className="absolute top-1.5 right-1.5 bg-amber-500 text-black font-bold text-xs px-1.5 py-0.5 rounded shadow-xs flex items-center gap-0.5">
+												<span className="absolute top-1.5 right-1.5 bg-amber-500 text-black font-bold text-xs px-1.5 py-0.5 rounded shadow-xs flex items-center gap-0.5 z-10">
 													<Flame className="size-2.5" />
 													Top Deal
 												</span>
