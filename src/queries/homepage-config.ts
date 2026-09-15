@@ -439,6 +439,13 @@ export async function getSuperDealsShowcaseProducts(
 			const imageUrl =
 				variant?.variantImage || variant?.images[0]?.url || '/assets/images/placeholder.webp';
 
+			const realSales = typeof p.sales === 'number' ? p.sales : 0;
+			const totalQuantity =
+				variant?.sizes.reduce((acc, s) => acc + (s.quantity || 0), 0) || primarySize?.quantity || 10;
+			const totalStock = totalQuantity + realSales;
+			const realClaimedPercent =
+				totalStock > 0 ? Math.min(95, Math.max(10, Math.round((realSales / totalStock) * 100))) : 40;
+
 			return {
 				id: p.id,
 				name: p.name,
@@ -449,11 +456,11 @@ export async function getSuperDealsShowcaseProducts(
 				price: discountedPrice,
 				originalPrice: rawPrice,
 				discount: Math.round(rawDiscount),
-				rating: p.rating || 4.8,
-				sales: p.sales || 25 + idx * 7,
-				numReviews: p.numReviews || 12 + idx * 3,
-				quantity: primarySize?.quantity || 50,
-				claimedPercent: Math.min(95, Math.max(45, 55 + ((idx * 8 + p.sales) % 35))),
+				rating: typeof p.rating === 'number' ? p.rating : 0,
+				sales: realSales,
+				numReviews: typeof p.numReviews === 'number' ? p.numReviews : 0,
+				quantity: primarySize?.quantity || 0,
+				claimedPercent: realClaimedPercent,
 				offerTag: p.offerTag?.name || null,
 			};
 		});

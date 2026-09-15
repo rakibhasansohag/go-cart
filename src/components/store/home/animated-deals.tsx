@@ -37,7 +37,7 @@ function normalizeDeal(
 		return item as DealProductItem;
 	}
 	const basePrice = item.price || 49.99;
-	const discount = 15 + ((index * 5) % 20);
+	const discount = 15;
 	const originalPrice = Math.round((basePrice / (1 - discount / 100)) * 100) / 100;
 	return {
 		id: item.slug || `deal-${index}`,
@@ -48,9 +48,9 @@ function normalizeDeal(
 		price: basePrice,
 		originalPrice,
 		discount,
-		rating: 4.8,
-		sales: 30 + index * 8,
-		claimedPercent: Math.min(95, Math.max(48, 55 + ((index * 7) % 35))),
+		rating: 'rating' in item && typeof item.rating === 'number' ? item.rating : 0,
+		sales: 'sales' in item && typeof item.sales === 'number' ? item.sales : 0,
+		claimedPercent: 50,
 	};
 }
 
