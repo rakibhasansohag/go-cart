@@ -5,6 +5,8 @@ import { db } from '@/lib/db';
 import { currentUser } from '@clerk/nextjs/server';
 import { v4 } from 'uuid';
 import { CouponFormSchema } from '@/lib/schemas';
+import { enforceSharedRateLimit } from '@/lib/security/rate-limit';
+import { sanitizeUserText } from '@/lib/security/content-safety';
 
 type SellerCouponInput = {
 	id?: string;
@@ -230,7 +232,18 @@ export const applyCoupon = async (
 	cartId: string,
 ): Promise<{ message: string; cart: CartWithCartItemsType }> => {
 	try {
-		const cleanCode = couponCode.trim().toUpperCase();
+		if (!cartId) throw new Error('Cart ID is required.');
+		if (!couponCode || !couponCode.trim()) {
+			throw new Error('Please enter a valid coupon code.');
+		}
+
+		await enforceSharedRateLimit({
+			key: `coupon:apply:${cartId}`,
+			limit: 15,
+			windowMs: 5 * 60 * 1000,
+		});
+
+		const cleanCode = sanitizeUserText(couponCode).trim().toUpperCase();
 
 		// Step 1: Fetch the coupon details
 		const coupon = await db.coupon.findFirst({
@@ -353,6 +366,15 @@ export const applyCouponToOrder = async (
 		if (!couponCode || !couponCode.trim()) {
 			throw new Error('Please enter a valid coupon code.');
 		}
+		if (!orderId) throw new Error('Order ID is required.');
+
+		await enforceSharedRateLimit({
+			key: `coupon:order:${user.id}:${orderId}`,
+			limit: 15,
+			windowMs: 5 * 60 * 1000,
+		});
+
+		const cleanCode = sanitizeUserText(couponCode).trim().toUpperCase();
 
 		// 1. Fetch Order with groups and items
 		const order = await db.order.findUnique({
