@@ -201,7 +201,7 @@ describe('GoCoins transactional operations', () => {
 
 	it('reconciles coins on refund: claws back earned and restores redeemed without negative balance', async () => {
 		const { reconcileCoinsForRefund } = await import('./coins');
-		let account = { id: 'acc-3', userId: 'user-3', balance: 50, lifetimeEarned: 200 };
+		const account = { id: 'acc-3', userId: 'user-3', balance: 50, lifetimeEarned: 200 };
 
 		const mockTx = {
 			order: {

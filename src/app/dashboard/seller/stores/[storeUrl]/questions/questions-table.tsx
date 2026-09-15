@@ -1,6 +1,6 @@
 'use client';
 
-import React, { FC, useState, useTransition } from 'react';
+import React, { useState, useTransition } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import {
@@ -16,7 +16,6 @@ import {
 	Send,
 	ExternalLink,
 	Loader2,
-	AlertCircle,
 	HelpCircle,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -355,7 +354,7 @@ export default function SellerQuestionsTable({ storeUrl, initialData }: Props) {
 														className='text-xs text-muted-foreground line-clamp-1 italic'
 														title={q.answers[0].answer}
 													>
-														"{q.answers[0].answer}"
+														&ldquo;{q.answers[0].answer}&rdquo;
 													</p>
 												)}
 											</div>
@@ -457,7 +456,7 @@ export default function SellerQuestionsTable({ storeUrl, initialData }: Props) {
 									<span>{new Date(selectedQuestion.createdAt).toLocaleDateString()}</span>
 								</div>
 								<p className='text-foreground font-medium text-sm leading-snug'>
-									"{selectedQuestion.question}"
+									&ldquo;{selectedQuestion.question}&rdquo;
 								</p>
 								<p className='text-xs text-muted-foreground'>
 									Product: <span className='font-medium text-foreground'>{selectedQuestion.product.name}</span>

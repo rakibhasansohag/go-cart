@@ -406,7 +406,7 @@ export async function getSuperDealsShowcaseProducts(
 		}
 
 		// 3. Fallback: If not enough unique discounted products, supplement with top products
-		let finalProducts = curatedProducts;
+		const finalProducts = curatedProducts;
 		if (finalProducts.length < 4) {
 			const extra = await db.product.findMany({
 				where: {
