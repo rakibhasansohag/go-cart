@@ -1,4 +1,5 @@
 import {
+	LoyaltyTxType,
 	PaymentMethod,
 	PrismaClient,
 	ReturnReason,
@@ -822,9 +823,16 @@ async function main() {
 		assert(account.balance >= 0, 'GoCoins balance cannot be negative');
 		assert(account.lifetimeEarned >= account.balance, 'GoCoins lifetime earned cannot be below balance');
 	}
-	const loyaltyTransactions = await db.loyaltyTransaction.findMany({ select: { idempotencyKey: true, points: true } });
+	const loyaltyTransactions = await db.loyaltyTransaction.findMany({ select: { idempotencyKey: true, points: true, type: true } });
 	assert(new Set(loyaltyTransactions.map((transaction) => transaction.idempotencyKey)).size === loyaltyTransactions.length, 'duplicate GoCoins idempotency keys detected');
-	assert(loyaltyTransactions.every((transaction) => transaction.points > 0), 'GoCoins transaction points must be positive');
+	for (const transaction of loyaltyTransactions) {
+		assert(transaction.points !== 0, 'GoCoins transaction points cannot be zero');
+		if (transaction.type === LoyaltyTxType.EARN || transaction.type === LoyaltyTxType.REFUND) {
+			assert(transaction.points > 0, `GoCoins ${transaction.type} transaction points must be positive`);
+		} else if (transaction.type === LoyaltyTxType.REDEEM || transaction.type === LoyaltyTxType.ADJUSTMENT) {
+			assert(transaction.points < 0, `GoCoins ${transaction.type} transaction points must be negative`);
+		}
+	}
 
 	const domainEvents = await db.domainEvent.findMany({ select: { eventKey: true } });
 	assert(new Set(domainEvents.map((event) => event.eventKey)).size === domainEvents.length, 'duplicate domain event keys detected');
