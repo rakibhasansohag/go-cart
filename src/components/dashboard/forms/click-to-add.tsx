@@ -130,7 +130,6 @@ const ClickToAddInputs = <T extends Detail>({
 		);
 	};
 
-	console.log('details', isAiGenerated);
 	return (
 		<div className='flex flex-col gap-y-4'>
 			{/* Header */}

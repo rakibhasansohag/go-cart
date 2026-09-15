@@ -23,8 +23,6 @@ export default async function CartPage() {
 		userCountry = JSON.parse(userCountryCookie.value) as Country;
 	}
 
-	// TODO: Update the black and light mode features
-
 	return (
 		<>
 			<Header />
@@ -32,4 +30,3 @@ export default async function CartPage() {
 		</>
 	);
 }
-         

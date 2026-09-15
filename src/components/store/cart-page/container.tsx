@@ -16,7 +16,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 function CartPageSkeleton() {
 	return (
 		<main
-			className='min-h-[calc(100vh-65px)] bg-f5 px-2'
+			className='min-h-[calc(100vh-65px)] bg-f5 dark:bg-background px-2'
 			aria-busy='true'
 			aria-label='Loading your cart'
 		>
@@ -88,8 +88,6 @@ export default function CartContainer({
 		};
 	}, [cartItems, setCart, storedCart, userCountry.code]);
 
-	// TODO: Update the black and light mode features
-
 	if (storedCart === undefined || !isInitialCartReady) {
 		return <CartPageSkeleton />;
 	}
@@ -98,7 +96,7 @@ export default function CartContainer({
 		<div>
 			{cartItems && cartItems.length > 0 ? (
 				<>
-					<div className='bg-f5 min-h-[calc(100vh-65px)] px-2'>
+					<div className='bg-f5 dark:bg-background min-h-[calc(100vh-65px)] px-2'>
 						<div className='max-w-[1200px] mx-auto py-4 flex flex-col gap-y-4 lg:flex-row'>
 							<div className='min-w-0 flex-1'>
 								{/* Cart header */}
@@ -132,10 +130,10 @@ export default function CartContainer({
 									selectedItems={selectedItems}
 									shippingFees={totalShipping}
 								/>
-								<div className='mt-2 p-4 bg-background px-6'>
+								<div className='mt-2 p-4 bg-background dark:bg-card px-6 rounded-xl border border-border/60'>
 									<FastDelivery />
 								</div>
-								<div className='mt-2 p-4 bg-background px-6'>
+								<div className='mt-2 p-4 bg-background dark:bg-card px-6 rounded-xl border border-border/60'>
 									<SecurityPrivacyCard />
 								</div>
 							</div>

@@ -4,7 +4,7 @@ import Link from "next/link";
 
 export default function EmptyCart() {
   return (
-    <div className="mx-auto w-full bg-f5 px-4 text-center text-main-primary">
+    <div className="mx-auto w-full bg-f5 dark:bg-background px-4 text-center text-main-primary">
       <div className="min-h-[calc(100vh-65px)] pb-14 flex flex-col justify-center items-center">
         <Image
           src="/assets/images/cart.avif"

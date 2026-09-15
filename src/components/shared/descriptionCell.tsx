@@ -1,4 +1,6 @@
+'use client';
 import React, { useState } from 'react';
+import DOMPurify from 'dompurify';
 import {
 	HoverCard,
 	HoverCardContent,
@@ -18,6 +20,7 @@ const DescriptionCell: React.FC<{ html?: string; title?: string }> = ({
 }) => {
 	const [open, setOpen] = useState(false);
 
+	const sanitizedHtml = DOMPurify.sanitize(html || '');
 	// plain-text preview
 	const textPreview = (html || '').replace(/<[^>]*>?/gm, '');
 
@@ -37,7 +40,7 @@ const DescriptionCell: React.FC<{ html?: string; title?: string }> = ({
 
 				<HoverCardContent className='max-w-[34rem]'>
 					<div className='text-sm leading-relaxed'>
-						<div dangerouslySetInnerHTML={{ __html: html || '' }} />
+						<div dangerouslySetInnerHTML={{ __html: sanitizedHtml }} />
 					</div>
 				</HoverCardContent>
 			</HoverCard>
@@ -51,7 +54,7 @@ const DescriptionCell: React.FC<{ html?: string; title?: string }> = ({
 					</DialogHeader>
 
 					<div className='mt-2 prose max-w-none'>
-						<div dangerouslySetInnerHTML={{ __html: html || '' }} />
+						<div dangerouslySetInnerHTML={{ __html: sanitizedHtml }} />
 					</div>
 
 					<div className='mt-4 flex justify-end'>
