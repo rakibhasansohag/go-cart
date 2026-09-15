@@ -63,8 +63,6 @@ export default function AnimatedDeals({
 }: AnimatedDealsProps) {
 	const { formatPrice } = useCurrency();
 	const [swiper, setSwiper] = useState<SwiperType | null>(null);
-	const [isBeginning, setIsBeginning] = useState(true);
-	const [isEnd, setIsEnd] = useState(false);
 
 	const resolvedTargetDate = useMemo(() => {
 		if (targetDate) return targetDate;
@@ -148,10 +146,6 @@ export default function AnimatedDeals({
 			aria-label="Super Deals"
 			className="relative w-full rounded-2xl border border-border/80 bg-card text-card-foreground p-4 sm:p-5 shadow-xs overflow-hidden"
 		>
-			{/* Ambient background glows */}
-			<div className="absolute -top-20 -left-20 w-64 h-64 bg-amber-500/10 dark:bg-amber-500/15 rounded-full blur-3xl pointer-events-none" />
-			<div className="absolute -bottom-20 -right-20 w-64 h-64 bg-rose-500/10 dark:bg-rose-500/15 rounded-full blur-3xl pointer-events-none" />
-
 			{/* Header Bar */}
 			<div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-3.5 pb-3.5 border-b border-border/70">
 				<div className="flex items-center gap-2.5">
@@ -209,7 +203,7 @@ export default function AnimatedDeals({
 					</div>
 
 					{/* Header Navigation Arrows */}
-					<div className="hidden sm:flex items-center gap-1">
+					<div className="flex items-center gap-1">
 						<button
 							type="button"
 							aria-label="Previous deal"
@@ -244,12 +238,6 @@ export default function AnimatedDeals({
 					<Swiper
 						onSwiper={(s) => {
 							setSwiper(s);
-							setIsBeginning(s.isBeginning);
-							setIsEnd(s.isEnd);
-						}}
-						onSlideChange={(s) => {
-							setIsBeginning(s.isBeginning);
-							setIsEnd(s.isEnd);
 						}}
 						spaceBetween={14}
 						slidesPerView={1}
@@ -260,7 +248,7 @@ export default function AnimatedDeals({
 							1280: { slidesPerView: 5, spaceBetween: 16 },
 							1536: { slidesPerView: 6, spaceBetween: 16 },
 						}}
-						className="w-full !px-8 sm:!px-11 !py-1"
+						className="w-full !py-1"
 					>
 						{uniqueProducts.map((product, idx) => (
 							<SwiperSlide key={`${product.slug}-${product.variantSlug}-${idx}`} className="!h-auto">
@@ -355,26 +343,6 @@ export default function AnimatedDeals({
 							</SwiperSlide>
 						))}
 					</Swiper>
-
-					{/* Previous Navigation Button */}
-					<button
-						type="button"
-						aria-label="Previous deals"
-						onClick={handlePrev}
-						className="absolute left-0.5 sm:left-1 top-1/2 -translate-y-1/2 z-20 size-8 sm:size-9 rounded-full bg-card/95 backdrop-blur-md text-foreground border border-border/80 shadow-md flex items-center justify-center transition-all duration-200 ease-out hover:scale-115 hover:bg-primary hover:text-primary-foreground hover:border-primary hover:shadow-lg hover:ring-2 hover:ring-primary/30 active:scale-85 active:bg-primary/90 cursor-pointer group"
-					>
-						<ChevronLeft className="size-4 sm:size-5 transition-transform duration-200 group-hover:-translate-x-0.5 group-active:-translate-x-1" />
-					</button>
-
-					{/* Next Navigation Button */}
-					<button
-						type="button"
-						aria-label="Next deals"
-						onClick={handleNext}
-						className="absolute right-0.5 sm:right-1 top-1/2 -translate-y-1/2 z-20 size-8 sm:size-9 rounded-full bg-card/95 backdrop-blur-md text-foreground border border-border/80 shadow-md flex items-center justify-center transition-all duration-200 ease-out hover:scale-115 hover:bg-primary hover:text-primary-foreground hover:border-primary hover:shadow-lg hover:ring-2 hover:ring-primary/30 active:scale-85 active:bg-primary/90 cursor-pointer group"
-					>
-						<ChevronRight className="size-4 sm:size-5 transition-transform duration-200 group-hover:translate-x-0.5 group-active:translate-x-1" />
-					</button>
 				</div>
 			</div>
 		</section>
