@@ -401,7 +401,7 @@ export const applyCouponToOrder = async (
 		// 2. Fetch & Validate Coupon
 		const coupon = await db.coupon.findUnique({
 			where: {
-				code: couponCode.trim().toUpperCase(),
+				code: cleanCode,
 			},
 			include: {
 				store: true,

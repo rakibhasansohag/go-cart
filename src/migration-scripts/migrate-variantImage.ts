@@ -12,18 +12,18 @@ export async function updateVariantImage() {
 		});
 
 		// Update each variant with the first image URL
-		for (const variant of variants) {
-			if (variant.images.length > 0) {
-				const firstImage = variant.images[0];
-				await db.productVariant.update({
+		const updates = variants
+			.filter((variant) => variant.images.length > 0)
+			.map((variant) =>
+				db.productVariant.update({
 					where: { id: variant.id },
 					data: {
-						variantImage: firstImage.url,
+						variantImage: variant.images[0].url,
 					},
-				});
-			}
-		}
+				}),
+			);
+		await Promise.all(updates);
 	} catch (error) {
 		console.error('Error updating variant images:', error);
-	} 
+	}
 }

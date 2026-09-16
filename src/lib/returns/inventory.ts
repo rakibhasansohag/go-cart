@@ -78,20 +78,22 @@ export async function reconcileReturnInventoryForAdmin(
 			);
 		}
 		await Promise.all(returnItemUpdates);
-		for (const delta of deltas) {
-			const existingSize = await tx.size.findUnique({
-				where: { id: delta.sizeId },
-				select: { quantity: true },
-			});
-			if (existingSize) {
-				await adjustSizeInventory(tx, {
-					sizeId: delta.sizeId,
-					newQuantity: existingSize.quantity + delta.quantity,
-					actorUserId: adminUserId,
-					reason: 'Return item restock',
+		await Promise.all(
+			deltas.map(async (delta) => {
+				const existingSize = await tx.size.findUnique({
+					where: { id: delta.sizeId },
+					select: { quantity: true },
 				});
-			}
-		}
+				if (existingSize) {
+					await adjustSizeInventory(tx, {
+						sizeId: delta.sizeId,
+						newQuantity: existingSize.quantity + delta.quantity,
+						actorUserId: adminUserId,
+						reason: 'Return item restock',
+					});
+				}
+			}),
+		);
 		if (request.status === 'REFUNDED' || request.status === 'EXCHANGED') {
 			const settledLines = await tx.returnItem.findMany({
 				where: {
@@ -101,12 +103,16 @@ export async function reconcileReturnInventoryForAdmin(
 				select: { orderItemId: true, quantity: true, returnRequest: { select: { status: true, resolution: true } } },
 			});
 			const lines = settledLines.map((line) => ({ orderItemId: line.orderItemId, quantity: line.quantity, status: line.returnRequest.status, resolution: line.returnRequest.resolution }));
+			const orderItemUpdates: Promise<unknown>[] = [];
 			for (const item of request.items) {
 				const settledQuantity = settledQuantityForOrderItem(lines, item.orderItem.id);
 				const terminalStatus = terminalStatusForSettledLine({ originalQuantity: item.orderItem.quantity, settledQuantity, lines, orderItemId: item.orderItem.id });
 				if (!terminalStatus) continue;
-				await tx.orderItem.update({ where: { id: item.orderItem.id }, data: { status: terminalStatus } });
+				orderItemUpdates.push(
+					tx.orderItem.update({ where: { id: item.orderItem.id }, data: { status: terminalStatus } }),
+				);
 			}
+			await Promise.all(orderItemUpdates);
 		}
 		const group = await tx.orderGroup.findUnique({
 			where: { id: request.orderGroupId },
