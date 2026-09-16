@@ -285,11 +285,99 @@ describe('Inventory Service & Queries', () => {
 		});
 	});
 
+	describe('updateSizeQuantity', () => {
+		it('throws when unauthenticated', async () => {
+			currentUserMock.mockResolvedValueOnce(null);
+			await expect(updateSizeQuantity('size-1', 10)).rejects.toThrow('Unauthenticated.');
+		});
+
+		it('throws when user is not found in database', async () => {
+			currentUserMock.mockResolvedValueOnce({ id: 'clerk-user-1' });
+			findUniqueUserMock.mockResolvedValueOnce(null);
+
+			await expect(updateSizeQuantity('size-1', 10)).rejects.toThrow('User not found.');
+		});
+
+		it('throws when quantity is negative', async () => {
+			currentUserMock.mockResolvedValueOnce({ id: 'clerk-user-1' });
+			findUniqueUserMock.mockResolvedValueOnce({ id: 'user-1', role: Role.SELLER });
+
+			await expect(updateSizeQuantity('size-1', -5)).rejects.toThrow(
+				'Quantity must be a non-negative integer.'
+			);
+		});
+
+		it('throws when quantity is a non-integer float', async () => {
+			currentUserMock.mockResolvedValueOnce({ id: 'clerk-user-1' });
+			findUniqueUserMock.mockResolvedValueOnce({ id: 'user-1', role: Role.SELLER });
+
+			await expect(updateSizeQuantity('size-1', 4.5)).rejects.toThrow(
+				'Quantity must be a non-negative integer.'
+			);
+		});
+
+		it('throws when size record is not found', async () => {
+			currentUserMock.mockResolvedValueOnce({ id: 'clerk-seller-1' });
+			findUniqueUserMock.mockResolvedValueOnce({ id: 'user-1', role: Role.SELLER });
+			findUniqueSizeMock.mockResolvedValueOnce(null);
+
+			await expect(updateSizeQuantity('non-existent-size', 10)).rejects.toThrow(
+				'Size record not found.'
+			);
+		});
+
+		it('throws when unauthorized seller tries to update another store inventory', async () => {
+			currentUserMock.mockResolvedValueOnce({ id: 'clerk-intruder' });
+			findUniqueUserMock.mockResolvedValueOnce({ id: 'intruder-id', role: Role.SELLER });
+			findUniqueSizeMock.mockResolvedValueOnce({
+				productVariant: {
+					product: {
+						store: {
+							userId: 'legitimate-seller-id',
+						},
+					},
+				},
+			});
+
+			await expect(updateSizeQuantity('size-1', 15)).rejects.toThrow(
+				'Unauthorized to modify this inventory item.'
+			);
+		});
+
+		it('successfully updates inventory for verified store owner', async () => {
+			currentUserMock.mockResolvedValueOnce({ id: 'clerk-seller-1' });
+			findUniqueUserMock.mockResolvedValueOnce({ id: 'user-1', role: Role.SELLER });
+			findUniqueSizeMock.mockResolvedValue({
+				id: 'size-1',
+				quantity: 5,
+				lowStockThreshold: 5,
+				productVariant: {
+					id: 'var-1',
+					variantName: 'Default',
+					product: {
+						id: 'prod-1',
+						name: 'Test Product',
+						slug: 'test-product',
+						store: {
+							id: 'store-1',
+							userId: 'user-1',
+						},
+					},
+				},
+			});
+			updateSizeMock.mockResolvedValue({ id: 'size-1', quantity: 20 });
+
+			const result = await updateSizeQuantity('size-1', 20);
+
+			expect(result).toEqual({ id: 'size-1', quantity: 20 });
+		});
+	});
+
 	describe('updateSizeThreshold', () => {
 		it('updates threshold for verified store owner', async () => {
 			currentUserMock.mockResolvedValueOnce({ id: 'clerk-seller-1' });
 			findUniqueUserMock.mockResolvedValueOnce({ id: 'user-1', role: Role.SELLER });
-			findUniqueSizeMock.mockResolvedValueOnce({
+			findUniqueSizeMock.mockResolvedValue({
 				productVariant: {
 					product: {
 						store: {
@@ -298,7 +386,7 @@ describe('Inventory Service & Queries', () => {
 					},
 				},
 			});
-			updateSizeMock.mockResolvedValueOnce({ id: 'size-1', lowStockThreshold: 12 });
+			updateSizeMock.mockResolvedValue({ id: 'size-1', lowStockThreshold: 12 });
 
 			const result = await updateSizeThreshold('size-1', 12);
 			expect(result.lowStockThreshold).toBe(12);

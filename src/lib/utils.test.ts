@@ -1,5 +1,19 @@
-import { describe, expect, it } from 'vitest';
-import { getShippingDatesRange, getTimeUntil, isProductValidToAdd } from './utils';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+const harness = vi.hoisted(() => ({
+	db: {
+		product: {
+			findFirst: vi.fn(),
+		},
+		category: {
+			findFirst: vi.fn(),
+		},
+	},
+}));
+
+vi.mock('./db', () => ({ db: harness.db }));
+
+import { generateUniqueSlug, getShippingDatesRange, getTimeUntil, isProductValidToAdd, updateProductHistory } from './utils';
 import { CartProductType } from './types';
 
 describe('isProductValidToAdd', () => {
@@ -94,7 +108,6 @@ describe('getTimeUntil', () => {
 	});
 
 	it('calculates days and hours for future dates accurately', () => {
-		// Mock a target 2 days and 6 hours into the future
 		const futureDate = new Date(Date.now() + (2 * 24 + 6) * 60 * 60 * 1000 + 1000).toISOString();
 		const result = getTimeUntil(futureDate);
 		expect(result.days).toBe(2);
@@ -104,7 +117,7 @@ describe('getTimeUntil', () => {
 
 describe('getShippingDatesRange', () => {
 	it('calculates min and max date strings correctly for standard ranges', () => {
-		const baseDate = new Date(2026, 5, 10); // June 10, 2026
+		const baseDate = new Date(2026, 5, 10);
 		const result = getShippingDatesRange(3, 7, baseDate);
 
 		expect(result.minDate).toBe(new Date(2026, 5, 13).toDateString());
@@ -112,33 +125,31 @@ describe('getShippingDatesRange', () => {
 	});
 
 	it('handles month transition rollovers', () => {
-		const baseDate = new Date(2026, 0, 30); // January 30, 2026
+		const baseDate = new Date(2026, 0, 30);
 		const result = getShippingDatesRange(3, 6, baseDate);
 
-		expect(result.minDate).toBe(new Date(2026, 1, 2).toDateString()); // Feb 2
-		expect(result.maxDate).toBe(new Date(2026, 1, 5).toDateString()); // Feb 5
+		expect(result.minDate).toBe(new Date(2026, 1, 2).toDateString());
+		expect(result.maxDate).toBe(new Date(2026, 1, 5).toDateString());
 	});
 
 	it('handles leap year transitions in February', () => {
-		// 2024 is a leap year (February has 29 days)
-		const leapYearDate = new Date(2024, 1, 28); // Feb 28, 2024
+		const leapYearDate = new Date(2024, 1, 28);
 		const leapResult = getShippingDatesRange(1, 2, leapYearDate);
-		expect(leapResult.minDate).toBe(new Date(2024, 1, 29).toDateString()); // Feb 29
-		expect(leapResult.maxDate).toBe(new Date(2024, 2, 1).toDateString()); // Mar 1
+		expect(leapResult.minDate).toBe(new Date(2024, 1, 29).toDateString());
+		expect(leapResult.maxDate).toBe(new Date(2024, 2, 1).toDateString());
 
-		// 2025 is not a leap year (February has 28 days)
-		const nonLeapYearDate = new Date(2025, 1, 28); // Feb 28, 2025
+		const nonLeapYearDate = new Date(2025, 1, 28);
 		const nonLeapResult = getShippingDatesRange(1, 2, nonLeapYearDate);
-		expect(nonLeapResult.minDate).toBe(new Date(2025, 2, 1).toDateString()); // Mar 1
-		expect(nonLeapResult.maxDate).toBe(new Date(2025, 2, 2).toDateString()); // Mar 2
+		expect(nonLeapResult.minDate).toBe(new Date(2025, 2, 1).toDateString());
+		expect(nonLeapResult.maxDate).toBe(new Date(2025, 2, 2).toDateString());
 	});
 
 	it('handles year-end rollovers', () => {
-		const endOfYearDate = new Date(2025, 11, 30); // Dec 30, 2025
+		const endOfYearDate = new Date(2025, 11, 30);
 		const result = getShippingDatesRange(3, 7, endOfYearDate);
 
-		expect(result.minDate).toBe(new Date(2026, 0, 2).toDateString()); // Jan 2, 2026
-		expect(result.maxDate).toBe(new Date(2026, 0, 6).toDateString()); // Jan 6, 2026
+		expect(result.minDate).toBe(new Date(2026, 0, 2).toDateString());
+		expect(result.maxDate).toBe(new Date(2026, 0, 6).toDateString());
 	});
 
 	it('works with default date when date parameter is omitted', () => {
@@ -147,5 +158,109 @@ describe('getShippingDatesRange', () => {
 		expect(typeof result.maxDate).toBe('string');
 		expect(result.minDate.length).toBeGreaterThan(0);
 		expect(result.maxDate.length).toBeGreaterThan(0);
+	});
+});
+
+describe('generateUniqueSlug', () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+	});
+
+	it('returns the base slug when no matching record exists', async () => {
+		harness.db.product.findFirst.mockResolvedValue(null);
+
+		const slug = await generateUniqueSlug('gaming-laptop', 'product');
+
+		expect(slug).toBe('gaming-laptop');
+		expect(harness.db.product.findFirst).toHaveBeenCalledWith({
+			where: { slug: 'gaming-laptop' },
+		});
+	});
+
+	it('appends suffix -1 upon single collision', async () => {
+		harness.db.product.findFirst
+			.mockResolvedValueOnce({ id: 'existing-1', slug: 'gaming-laptop' })
+			.mockResolvedValueOnce(null);
+
+		const slug = await generateUniqueSlug('gaming-laptop', 'product');
+
+		expect(slug).toBe('gaming-laptop-1');
+		expect(harness.db.product.findFirst).toHaveBeenCalledTimes(2);
+	});
+
+	it('increments suffix upon multiple collisions', async () => {
+		harness.db.product.findFirst
+			.mockResolvedValueOnce({ id: 'existing-1', slug: 'gaming-laptop' })
+			.mockResolvedValueOnce({ id: 'existing-2', slug: 'gaming-laptop-1' })
+			.mockResolvedValueOnce({ id: 'existing-3', slug: 'gaming-laptop-1-2' })
+			.mockResolvedValueOnce(null);
+
+		const slug = await generateUniqueSlug('gaming-laptop', 'product');
+
+		expect(slug).toBe('gaming-laptop-1-2-3');
+		expect(harness.db.product.findFirst).toHaveBeenCalledTimes(4);
+	});
+
+	it('supports custom field and custom separator', async () => {
+		harness.db.category.findFirst
+			.mockResolvedValueOnce({ id: 'cat-1', name: 'tech' })
+			.mockResolvedValueOnce(null);
+
+		const slug = await generateUniqueSlug('tech', 'category', 'name', '_');
+
+		expect(slug).toBe('tech_1');
+		expect(harness.db.category.findFirst).toHaveBeenCalledWith({
+			where: { name: 'tech' },
+		});
+	});
+});
+
+describe('updateProductHistory', () => {
+	let mockStorage: Record<string, string> = {};
+
+	beforeEach(() => {
+		mockStorage = {};
+		vi.stubGlobal('localStorage', {
+			getItem: vi.fn((key: string) => mockStorage[key] || null),
+			setItem: vi.fn((key: string, value: string) => {
+				mockStorage[key] = value;
+			}),
+		});
+	});
+
+	it('adds a new product to an empty history', () => {
+		updateProductHistory('var-1');
+
+		expect(JSON.parse(mockStorage['productHistory'])).toEqual(['var-1']);
+	});
+
+	it('moves existing product to the front without duplicates', () => {
+		mockStorage['productHistory'] = JSON.stringify(['var-1', 'var-2', 'var-3']);
+
+		updateProductHistory('var-2');
+
+		expect(JSON.parse(mockStorage['productHistory'])).toEqual(['var-2', 'var-1', 'var-3']);
+	});
+
+	it('enforces maximum limit of 100 products by popping the oldest', () => {
+		// Populate 100 products: var-1 to var-100
+		const initial100 = Array.from({ length: 100 }, (_, i) => `var-${i + 1}`);
+		mockStorage['productHistory'] = JSON.stringify(initial100);
+
+		updateProductHistory('var-new');
+
+		const updated = JSON.parse(mockStorage['productHistory']);
+		expect(updated).toHaveLength(100);
+		expect(updated[0]).toBe('var-new');
+		expect(updated[1]).toBe('var-1');
+		expect(updated).not.toContain('var-100'); // Oldest dropped
+	});
+
+	it('handles corrupt JSON in localStorage gracefully', () => {
+		mockStorage['productHistory'] = 'INVALID_JSON{{{';
+
+		updateProductHistory('var-fallback');
+
+		expect(JSON.parse(mockStorage['productHistory'])).toEqual(['var-fallback']);
 	});
 });
