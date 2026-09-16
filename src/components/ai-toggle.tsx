@@ -30,6 +30,7 @@ const AIToggle: FC<AIToggleProps> = ({
 				<button
 					onClick={onToggle}
 					aria-expanded={open}
+					aria-label={open ? 'Close AI Assistant' : 'Open AI Assistant'}
 					className='bg-blue-600 text-white p-3 rounded-full shadow-lg hover:scale-105 transition-transform'
 				>
 					<motion.span
