@@ -51,6 +51,7 @@ export async function reconcileReturnInventoryForAdmin(
 
 		const decisions = new Map(input.items.map((item) => [item.returnItemId, item]));
 		const deltas: Array<{ returnItemId: string; sizeId: string; quantity: number; disposition: ReturnItemDisposition }> = [];
+		const returnItemUpdates: Promise<unknown>[] = [];
 		for (const item of request.items) {
 			const decision = decisions.get(item.id);
 			if (!decision) continue;
@@ -65,15 +66,18 @@ export async function reconcileReturnInventoryForAdmin(
 			const delta = target - item.restockedQuantity;
 			if (delta < 0) throw new Error('Restocked quantities cannot be reduced.');
 			if (delta > 0) deltas.push({ returnItemId: item.id, sizeId: item.orderItem.sizeId, quantity: delta, disposition });
-			await tx.returnItem.update({
-				where: { id: item.id },
-				data: {
-					restockable: isRestockable,
-					receivedQuantity: received,
-					restockedQuantity: item.restockedQuantity + delta,
-				},
-			});
+			returnItemUpdates.push(
+				tx.returnItem.update({
+					where: { id: item.id },
+					data: {
+						restockable: isRestockable,
+						receivedQuantity: received,
+						restockedQuantity: item.restockedQuantity + delta,
+					},
+				}),
+			);
 		}
+		await Promise.all(returnItemUpdates);
 		for (const delta of deltas) {
 			const existingSize = await tx.size.findUnique({
 				where: { id: delta.sizeId },

@@ -1342,33 +1342,35 @@ export const placeOrder = async (
 					],
 				});
 
-				for (const item of items) {
-					const orderItem = await tx.orderItem.create({
-						data: {
-							orderGroupId: orderGroup.id,
-							productId: item.productId,
-							variantId: item.variantId,
-							sizeId: item.sizeId,
-							productSlug: item.productSlug,
-							variantSlug: item.variantSlug,
-							sku: item.sku,
-							name: item.name,
-							image: item.image,
-							size: item.size,
-							quantity: item.quantity,
-							price: item.price,
-							shippingFee: item.shippingFee,
-							totalPrice: item.totalPrice,
-						},
-					});
-					await tx.shipmentItem.create({
-						data: {
-							shipmentId: shipment.id,
-							orderItemId: orderItem.id,
-							quantity: orderItem.quantity,
-						},
-					});
-				}
+				await Promise.all(
+					items.map(async (item) => {
+						const orderItem = await tx.orderItem.create({
+							data: {
+								orderGroupId: orderGroup.id,
+								productId: item.productId,
+								variantId: item.variantId,
+								sizeId: item.sizeId,
+								productSlug: item.productSlug,
+								variantSlug: item.variantSlug,
+								sku: item.sku,
+								name: item.name,
+								image: item.image,
+								size: item.size,
+								quantity: item.quantity,
+								price: item.price,
+								shippingFee: item.shippingFee,
+								totalPrice: item.totalPrice,
+							},
+						});
+						return tx.shipmentItem.create({
+							data: {
+								shipmentId: shipment.id,
+								orderItemId: orderItem.id,
+								quantity: orderItem.quantity,
+							},
+						});
+					}),
+				);
 
 				orderTotalPrice += totalAfterDiscount;
 				orderShippingFee += groupShippingFees;

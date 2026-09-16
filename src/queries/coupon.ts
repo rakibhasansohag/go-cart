@@ -451,19 +451,22 @@ export const applyCouponToOrder = async (
 			}
 		}
 
-		for (const matchingGroup of targetGroups) {
-			const storeSubTotal = matchingGroup.subTotal + matchingGroup.shippingFees;
-			const discountedAmount = (storeSubTotal * coupon.discount) / 100;
-			const newGroupTotal = Math.max(0, storeSubTotal - discountedAmount);
+		await Promise.all(
+			targetGroups.map((matchingGroup) => {
+				const storeSubTotal =
+					matchingGroup.subTotal + matchingGroup.shippingFees;
+				const discountedAmount = (storeSubTotal * coupon.discount) / 100;
+				const newGroupTotal = Math.max(0, storeSubTotal - discountedAmount);
 
-			await db.orderGroup.update({
-				where: { id: matchingGroup.id },
-				data: {
-					couponId: coupon.id,
-					total: newGroupTotal,
-				},
-			});
-		}
+				return db.orderGroup.update({
+					where: { id: matchingGroup.id },
+					data: {
+						couponId: coupon.id,
+						total: newGroupTotal,
+					},
+				});
+			}),
+		);
 
 		// 5. Recalculate main Order total
 		const allGroups = await db.orderGroup.findMany({

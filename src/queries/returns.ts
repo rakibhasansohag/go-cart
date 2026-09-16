@@ -459,23 +459,23 @@ export async function getAdminReturns(
 	const where: Prisma.ReturnRequestWhereInput = {
 		...(status === 'DISPUTED'
 			? {
-					status: { in: ['REQUESTED', 'UNDER_REVIEW', 'REFUND_PENDING', 'EXCHANGE_PENDING'] },
-			  }
+				status: { in: ['REQUESTED', 'UNDER_REVIEW', 'REFUND_PENDING', 'EXCHANGE_PENDING'] },
+			}
 			: status === 'ALL' || !Object.values(ReturnRequestStatus).includes(status as ReturnRequestStatus)
-			? {}
-			: { status }),
+				? {}
+				: { status }),
 		...(term
 			? {
-					OR: [
-						{ id: { contains: term, mode: 'insensitive' } },
-						{ order: { id: { contains: term, mode: 'insensitive' } } },
-						{ orderGroup: { id: { contains: term, mode: 'insensitive' } } },
-						{ store: { name: { contains: term, mode: 'insensitive' } } },
-						{ customer: { email: { contains: term, mode: 'insensitive' } } },
-						{ customer: { name: { contains: term, mode: 'insensitive' } } },
-						{ items: { some: { orderItem: { name: { contains: term, mode: 'insensitive' } } } } },
-					],
-			  }
+				OR: [
+					{ id: { contains: term, mode: 'insensitive' } },
+					{ order: { id: { contains: term, mode: 'insensitive' } } },
+					{ orderGroup: { id: { contains: term, mode: 'insensitive' } } },
+					{ store: { name: { contains: term, mode: 'insensitive' } } },
+					{ customer: { email: { contains: term, mode: 'insensitive' } } },
+					{ customer: { name: { contains: term, mode: 'insensitive' } } },
+					{ items: { some: { orderItem: { name: { contains: term, mode: 'insensitive' } } } } },
+				],
+			}
 			: {}),
 	};
 	const [requests, totalCount] = await Promise.all([
@@ -784,12 +784,14 @@ export async function transitionReturnRequest(
 			data.approvedAmount = request.requestedAmount;
 		}
 		if (input.toStatus === 'RECEIVED') {
-			for (const item of request.items) {
-				await tx.returnItem.update({
-					where: { id: item.id },
-					data: { receivedQuantity: item.quantity },
-				});
-			}
+			await Promise.all(
+				request.items.map((item) =>
+					tx.returnItem.update({
+						where: { id: item.id },
+						data: { receivedQuantity: item.quantity },
+					}),
+				),
+			);
 		}
 		if (input.toStatus === 'ESCALATED') data.escalatedAt = now;
 		if (

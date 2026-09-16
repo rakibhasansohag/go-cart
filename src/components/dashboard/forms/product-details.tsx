@@ -96,7 +96,6 @@ import AIToggle from '../../ai-toggle';
 import ImagePromptSection from '../../image-prompt-section';
 import { cn } from '@/lib/utils';
 import { useModal } from '@/providers/modal-provider';
-// import { getAllCategoriesForCategory } from '@/queries/category';
 
 
 
@@ -248,19 +247,11 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 
 	// helper handlers to add/remove images (no field.onChange here)
 	const handleAddImage = (url: string) => {
-		setImages((prev) => {
-			const next = [...prev, { url }];
-			console.log('[handleAddImage] new length', next.length, next);
-			return next;
-		});
+		setImages((prev) => [...prev, { url }]);
 	};
 
 	const handleRemoveImage = (url: string) => {
-		setImages((prev) => {
-			const next = prev.filter((i) => i.url !== url);
-			console.log('[handleRemoveImage] new length', next.length, next);
-			return next;
-		});
+		setImages((prev) => prev.filter((i) => i.url !== url));
 	};
 
 	// State for sizes
