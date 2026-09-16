@@ -6,6 +6,7 @@ import React, {
 	useState,
 	useEffect,
 	useCallback,
+	useMemo,
 	ReactNode,
 } from 'react';
 import {
@@ -144,19 +145,33 @@ export function CurrencyProvider({
 		? 'Charged in USD'
 		: `Charged in USD. Estimated in ${currency}.`;
 
+	// Performance optimization: Memoize context value to prevent unnecessary re-renders
+	// in all downstream components consuming `useCurrency()` whenever `CurrencyProvider` re-renders.
+	const contextValue = useMemo(
+		() => ({
+			currency,
+			rates,
+			isBaseCurrency,
+			setCurrency,
+			formatPrice,
+			formatDual,
+			convertPrice,
+			disclosure,
+		}),
+		[
+			currency,
+			rates,
+			isBaseCurrency,
+			setCurrency,
+			formatPrice,
+			formatDual,
+			convertPrice,
+			disclosure,
+		],
+	);
+
 	return (
-		<CurrencyContext.Provider
-			value={{
-				currency,
-				rates,
-				isBaseCurrency,
-				setCurrency,
-				formatPrice,
-				formatDual,
-				convertPrice,
-				disclosure,
-			}}
-		>
+		<CurrencyContext.Provider value={contextValue}>
 			{children}
 		</CurrencyContext.Provider>
 	);
