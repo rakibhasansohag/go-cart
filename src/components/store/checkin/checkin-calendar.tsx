@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CHECKIN_REWARDS } from '@/lib/checkin-constants';
 import { claimDailyCheckIn } from '@/queries/checkin';
-import { Check, Gift, Coins, Sparkles, AlertCircle, Loader2, Star, Lock, Zap } from 'lucide-react';
+import { Check, Gift, Coins, Sparkles, AlertCircle, Loader2, Star, Lock, Zap, Flame, Target, Trophy } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn, getFriendlyErrorMessage } from '@/lib/utils';
 import { Button } from '@/components/store/ui/button';
@@ -88,45 +88,170 @@ export default function CheckInCalendar({
 	};
 
 	const daysArray = Array.from({ length: daysInMonth }, (_, i) => i + 1);
-	const progressPercent = Math.round((countState / daysInMonth) * 100);
+	const progressPercent = Math.min(100, Math.round((countState / daysInMonth) * 100));
+
+	const milestones = MILESTONE_DAYS.filter((d) => d <= daysInMonth);
+	const nextMilestoneDay = milestones.find((d) => d > countState) ?? null;
+	const daysUntilNextMilestone = nextMilestoneDay ? nextMilestoneDay - countState : 0;
+	const nextMilestoneReward = nextMilestoneDay ? CHECKIN_REWARDS[nextMilestoneDay] : null;
+	const totalCoinsEarned = claimedRecords.reduce((acc: number, c: CheckInRecord) => acc + (c.coinsEarned || 0), 0);
 
 	return (
 		<div className='w-full space-y-5'>
-			{/* Progress Bar Section */}
-			<div className='space-y-2'>
-				<div className='flex items-center justify-between text-xs'>
-					<span className='text-muted-foreground font-medium'>Monthly Progress</span>
-					<span className='font-bold text-main-primary'>
-						{countState}/{daysInMonth} days &mdash; {progressPercent}%
-					</span>
-				</div>
-				<div className='relative h-2.5 w-full overflow-hidden rounded-full bg-muted/40'>
-					<motion.div
-						className='h-full rounded-full bg-gradient-to-r from-amber-500 via-orange-500 to-red-500'
-						initial={{ width: 0 }}
-						animate={{ width: `${progressPercent}%` }}
-						transition={{ duration: 0.8, ease: 'easeOut' }}
-					/>
-					{/* Milestone markers on the bar */}
-					{MILESTONE_DAYS.filter((d) => d <= daysInMonth).map((d) => (
-						<div
-							key={d}
-							className='absolute top-1/2 -translate-y-1/2 w-1 h-4 rounded-full bg-amber-300/70'
-							style={{ left: `${(d / daysInMonth) * 100}%`, transform: 'translate(-50%, -50%)' }}
-						/>
-					))}
-				</div>
-				{/* Milestone labels */}
-				<div className='relative h-4'>
-					{MILESTONE_DAYS.filter((d) => d <= daysInMonth).map((d) => (
-						<span
-							key={d}
-							className='absolute text-[10px] font-bold text-amber-600 dark:text-amber-400 -translate-x-1/2'
-							style={{ left: `${(d / daysInMonth) * 100}%` }}
-						>
-							Day {d}
+			{/* Milestone Streak & Progress Criteria Section */}
+			<div className='rounded-2xl border border-border/40 bg-muted/20 dark:bg-slate-900/40 p-3.5 sm:p-4 space-y-3.5 shadow-sm'>
+				{/* Top Status & Criteria Row */}
+				<div className='flex flex-wrap items-center justify-between gap-2 text-xs'>
+					<div className='flex items-center gap-2'>
+						<span className='flex h-7 w-7 items-center justify-center rounded-lg bg-orange-500/10 text-orange-500 dark:bg-orange-500/20'>
+							<Flame className='h-4 w-4' />
 						</span>
-					))}
+						<div>
+							<div className='font-bold text-foreground text-xs sm:text-sm flex items-center gap-1.5'>
+								<span>Check-in Streak</span>
+								<span className='rounded-full bg-main-primary/10 px-2 py-0.5 text-[10px] font-black text-main-primary'>
+									{countState}/{daysInMonth} Days ({progressPercent}%)
+								</span>
+							</div>
+							<p className='text-[10px] sm:text-xs text-muted-foreground'>
+								{totalCoinsEarned > 0 ? (
+									<span>+{totalCoinsEarned} GoCoins collected this month</span>
+								) : (
+									<span>Check in daily to build your streak & rewards</span>
+								)}
+							</p>
+						</div>
+					</div>
+
+					{/* Next Milestone Criteria Badge */}
+					{nextMilestoneReward ? (
+						<div className='flex items-center gap-1.5 rounded-full border border-orange-500/30 bg-orange-500/10 px-2.5 py-1 text-[10px] sm:text-xs font-bold text-orange-500 dark:text-orange-400'>
+							<Target className='h-3.5 w-3.5' />
+							<span>
+								Next Goal: Day {nextMilestoneDay} &mdash;{' '}
+								<span className='underline font-black'>
+									{daysUntilNextMilestone === 1 ? '1 day away!' : `${daysUntilNextMilestone} days left`}
+								</span>
+							</span>
+						</div>
+					) : (
+						<div className='flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-[10px] sm:text-xs font-bold text-emerald-500'>
+							<Trophy className='h-3.5 w-3.5' />
+							<span>All Milestones Achieved!</span>
+						</div>
+					)}
+				</div>
+
+				{/* Visual Track with Checkpoint Pin Nodes */}
+				<div className='relative py-2.5 px-2'>
+					<div className='relative h-3 w-full rounded-full bg-slate-200 dark:bg-slate-800/90 border border-slate-300/60 dark:border-slate-700 shadow-inner'>
+						{/* Active Fill Bar */}
+						<motion.div
+							className='h-full rounded-full bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 shadow-[0_0_12px_rgba(249,115,22,0.45)]'
+							initial={{ width: 0 }}
+							animate={{ width: `${progressPercent}%` }}
+							transition={{ duration: 0.8, ease: 'easeOut' }}
+						/>
+
+						{/* Milestone Pin Nodes along the track */}
+						{milestones.map((d) => {
+							const isReached = countState >= d;
+							const isTarget = d === nextMilestoneDay;
+							const leftPercent = (d / daysInMonth) * 100;
+							const r = CHECKIN_REWARDS[d] || CHECKIN_REWARDS[31];
+
+							return (
+								<div
+									key={d}
+									className='absolute top-1/2 -translate-y-1/2 -translate-x-1/2 z-10'
+									style={{ left: `${leftPercent}%` }}
+								>
+									<div
+										className={cn(
+											'flex h-6 w-6 sm:h-7 sm:w-7 items-center justify-center rounded-full text-[10px] font-black transition-all shadow-md',
+											isReached
+												? 'bg-emerald-500 text-white border-2 border-background shadow-[0_0_10px_rgba(16,185,129,0.6)]'
+												: isTarget
+													? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white border-2 border-background ring-2 ring-orange-500/70 shadow-[0_0_12px_rgba(249,115,22,0.7)] animate-pulse'
+													: 'bg-slate-300 dark:bg-slate-700 text-slate-600 dark:text-slate-300 border-2 border-background',
+										)}
+										title={`Day ${d}: ${r.couponDiscount}% OFF + ${r.coins} Coins`}
+									>
+										{isReached ? (
+											<Check className='w-3.5 h-3.5 stroke-[3]' />
+										) : isTarget ? (
+											<Star className='w-3 h-3 fill-white text-white' />
+										) : (
+											<Gift className='w-3 h-3' />
+										)}
+									</div>
+								</div>
+							);
+						})}
+					</div>
+				</div>
+
+				{/* 4 Step Milestone Criteria Cards */}
+				<div className='grid grid-cols-2 sm:grid-cols-4 gap-2 pt-0.5'>
+					{milestones.map((d) => {
+						const isReached = countState >= d;
+						const isTarget = d === nextMilestoneDay;
+						const reward = CHECKIN_REWARDS[d] || CHECKIN_REWARDS[31];
+						const diff = d - countState;
+
+						return (
+							<div
+								key={d}
+								className={cn(
+									'relative flex flex-col justify-between rounded-xl border p-2.5 transition-all text-xs',
+									isReached
+										? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400'
+										: isTarget
+											? 'bg-gradient-to-b from-orange-500/15 via-orange-500/5 to-transparent border-orange-500/40 text-orange-600 dark:text-orange-400 ring-1 ring-orange-500/30 shadow-sm'
+											: 'bg-background/60 dark:bg-slate-900/30 border-border/40 text-muted-foreground opacity-80',
+								)}
+							>
+								<div className='flex items-center justify-between gap-1 mb-1'>
+									<span className='font-black text-xs text-foreground'>Day {d}</span>
+									{isReached ? (
+										<span className='inline-flex items-center gap-0.5 rounded-full bg-emerald-500/20 px-1.5 py-0.5 text-[9px] font-black text-emerald-500'>
+											<Check className='w-2.5 h-2.5 stroke-[3]' /> Unlocked
+										</span>
+									) : isTarget ? (
+										<span className='inline-flex items-center gap-0.5 rounded-full bg-orange-500/20 px-1.5 py-0.5 text-[9px] font-black text-orange-500 animate-pulse'>
+											<Target className='w-2.5 h-2.5' /> Current Goal
+										</span>
+									) : (
+										<span className='inline-flex items-center gap-0.5 rounded-full bg-muted/60 px-1.5 py-0.5 text-[9px] font-semibold text-muted-foreground'>
+											<Lock className='w-2.5 h-2.5' /> Locked
+										</span>
+									)}
+								</div>
+
+								<div className='space-y-0.5 my-1'>
+									<div className='font-black text-foreground text-xs sm:text-sm flex items-center gap-1'>
+										<span className='text-amber-500 font-black'>{reward.couponDiscount}% OFF</span>
+										<span className='text-[10px] text-muted-foreground font-semibold'>+{reward.coins}🪙</span>
+									</div>
+									<div className='text-[10px] font-medium line-clamp-1 text-muted-foreground'>
+										{reward.title}
+									</div>
+								</div>
+
+								<div className='text-[10px] pt-1 border-t border-border/20 font-semibold'>
+									{isReached ? (
+										<span className='text-emerald-500 font-bold'>Reward Claimed</span>
+									) : isTarget ? (
+										<span className='text-orange-500 font-bold'>
+											{diff === 1 ? '1 check-in to go!' : `${diff} check-ins to go`}
+										</span>
+									) : (
+										<span className='text-muted-foreground'>Requires {d} days</span>
+									)}
+								</div>
+							</div>
+						);
+					})}
 				</div>
 			</div>
 
