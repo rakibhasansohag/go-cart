@@ -453,85 +453,85 @@ export const getStoreOrders = async (
 				: {}),
 			...(textSearch
 				? {
-						OR: [
-							{
+					OR: [
+						{
+							id: {
+								contains: referenceSearch,
+								mode: 'insensitive' as const,
+							},
+						},
+						{
+							order: {
 								id: {
 									contains: referenceSearch,
 									mode: 'insensitive' as const,
 								},
 							},
-							{
-								order: {
-									id: {
-										contains: referenceSearch,
-										mode: 'insensitive' as const,
-									},
-								},
-							},
-							{
-								order: {
-									shippingAddress: {
-										user: {
-											OR: [
-												{
-													email: {
-														contains: textSearch,
-														mode: 'insensitive' as const,
-													},
-												},
-												{
-													name: {
-														contains: textSearch,
-														mode: 'insensitive' as const,
-													},
-												},
-											],
-										},
-									},
-								},
-							},
-							{
-								order: {
-									shippingAddress: {
+						},
+						{
+							order: {
+								shippingAddress: {
+									user: {
 										OR: [
 											{
-												firstName: {
+												email: {
 													contains: textSearch,
 													mode: 'insensitive' as const,
 												},
 											},
-											{
-												lastName: {
-													contains: textSearch,
-													mode: 'insensitive' as const,
-												},
-											},
-										],
-									},
-								},
-							},
-							{
-								items: {
-									some: {
-										OR: [
 											{
 												name: {
 													contains: textSearch,
 													mode: 'insensitive' as const,
 												},
 											},
-											{
-												sku: {
-													contains: textSearch,
-													mode: 'insensitive' as const,
-												},
-											},
 										],
 									},
 								},
 							},
-						],
-				  }
+						},
+						{
+							order: {
+								shippingAddress: {
+									OR: [
+										{
+											firstName: {
+												contains: textSearch,
+												mode: 'insensitive' as const,
+											},
+										},
+										{
+											lastName: {
+												contains: textSearch,
+												mode: 'insensitive' as const,
+											},
+										},
+									],
+								},
+							},
+						},
+						{
+							items: {
+								some: {
+									OR: [
+										{
+											name: {
+												contains: textSearch,
+												mode: 'insensitive' as const,
+											},
+										},
+										{
+											sku: {
+												contains: textSearch,
+												mode: 'insensitive' as const,
+											},
+										},
+									],
+								},
+							},
+						},
+					],
+				}
 				: {}),
 		};
 
@@ -686,12 +686,12 @@ export const getAllStores = async ({
 
 		const where = search.trim()
 			? {
-					OR: [
-						{ name: { contains: search.trim(), mode: 'insensitive' as const } },
-						{ url: { contains: search.trim(), mode: 'insensitive' as const } },
-						{ email: { contains: search.trim(), mode: 'insensitive' as const } },
-					],
-			  }
+				OR: [
+					{ name: { contains: search.trim(), mode: 'insensitive' as const } },
+					{ url: { contains: search.trim(), mode: 'insensitive' as const } },
+					{ email: { contains: search.trim(), mode: 'insensitive' as const } },
+				],
+			}
 			: {};
 
 		// Fetch stores and count in parallel
@@ -823,6 +823,9 @@ export const getStorePageDetails = async (storeUrl: string) => {
 		select: {
 			id: true,
 			name: true,
+			url: true,
+			email: true,
+			phone: true,
 			description: true,
 			logo: true,
 			cover: true,

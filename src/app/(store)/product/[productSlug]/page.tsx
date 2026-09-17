@@ -23,10 +23,90 @@ import { getQueryClient } from '@/lib/get-query-client';
 import { queryKeys } from '@/lib/query-keys';
 import ProductPageRelatedSkeletonLoader from '@/components/store/skeletons/product-page/related';
 import ProductPageStoreProductsSkeletonLoader from '@/components/store/skeletons/product-page/store-products';
-
+import type { Metadata } from 'next';
+import { generateProductJsonLd, generateBreadcrumbJsonLd } from '@/lib/seo/schema';
 
 type ProductParams = { productSlug: string };
 type SearchParams = Record<string, string | string[] | undefined> | undefined;
+
+export async function generateMetadata({
+	params,
+}: {
+	params: Promise<ProductParams>;
+}): Promise<Metadata> {
+	const awaitedParams = await params;
+	const productSlug = awaitedParams?.productSlug;
+	if (!productSlug) {
+		return {
+			title: 'Product',
+			description: 'Discover quality products on GoCart Multi-Vendor Marketplace.',
+		};
+	}
+
+	try {
+		const product = await retrieveProductDetailsOptimized(productSlug);
+		if (!product) {
+			return {
+				title: 'Product Not Found',
+				description: 'The requested product could not be found on GoCart.',
+			};
+		}
+
+		const images: string[] = [];
+		if (product.variants && product.variants.length > 0) {
+			for (const v of product.variants) {
+				if (v.images && v.images.length > 0) {
+					for (const img of v.images) {
+						if (img.url) images.push(img.url);
+					}
+				} else if (v.variantImage) {
+					images.push(v.variantImage);
+				}
+			}
+		}
+
+		const firstPrice = product.variants?.[0]?.sizes?.[0]?.price;
+		const formattedPrice = typeof firstPrice === 'number' ? ` - $${firstPrice.toFixed(2)}` : '';
+		const title = `${product.name}${formattedPrice}`;
+		const description = product.description
+			? product.description.slice(0, 160)
+			: `Shop ${product.name} on GoCart. High-quality products from trusted marketplace stores.`;
+
+		const baseUrl =
+			process.env.NEXT_PUBLIC_APP_URL ||
+			(process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
+		const canonicalUrl = `${baseUrl}/product/${product.slug}`;
+
+		return {
+			title,
+			description,
+			alternates: {
+				canonical: canonicalUrl,
+			},
+			openGraph: {
+				title: `${product.name} | GoCart`,
+				description,
+				url: canonicalUrl,
+				images:
+					images.length > 0
+						? images.map((img) => ({ url: img, alt: product.name }))
+						: [{ url: '/og-image.png', alt: product.name }],
+				type: 'website',
+			},
+			twitter: {
+				card: 'summary_large_image',
+				title: `${product.name} | GoCart`,
+				description,
+				images: images.length > 0 ? [images[0]] : ['/og-image.png'],
+			},
+		};
+	} catch {
+		return {
+			title: 'Product',
+			description: 'Shop products on GoCart.',
+		};
+	}
+}
 
 export default async function ProductPage({
 	params,
@@ -124,11 +204,61 @@ export default async function ProductPage({
 		isUserFollowingStore: false,
 	};
 
+	const productImages: string[] = [];
+	if (data.variants && data.variants.length > 0) {
+		for (const v of data.variants) {
+			if (v.images && v.images.length > 0) {
+				for (const img of v.images) {
+					if (img.url) productImages.push(img.url);
+				}
+			} else if (v.variantImage) {
+				productImages.push(v.variantImage);
+			}
+		}
+	}
+
+	const activePrice = variant?.sizes?.[0]?.price ?? data.variants?.[0]?.sizes?.[0]?.price ?? 0;
+	const inStock = (variant?.sizes?.some((s) => s.quantity > 0) ?? data.variants?.some((v) => v.sizes?.some((s) => s.quantity > 0))) ?? true;
+
+	const productJsonLd = generateProductJsonLd({
+		name: data.name,
+		description: data.description,
+		slug: data.slug,
+		images: productImages,
+		sku: variant?.sku || data.variants?.[0]?.sku,
+		brand: data.brand,
+		categoryName: data.category?.name,
+		rating: data.rating,
+		numReviews: data._count.reviews,
+		price: activePrice,
+		inStock,
+		storeName: data.store.name,
+		storeUrl: data.store.url,
+	});
+
+	const breadcrumbJsonLd = generateBreadcrumbJsonLd([
+		{ name: 'Home', url: '/' },
+		{ name: data.category?.name || 'Browse', url: data.category?.url ? `/browse?category=${data.category.url}` : '/browse' },
+		{ name: data.name, url: `/product/${data.slug}` },
+	]);
+
 	return (
 		<div>
 			<Header />
 			<CategoriesHeader />
 			<div className='p-4 2xl:px-28 overflow-x-hidden mx-auto'>
+				<script
+					type='application/ld+json'
+					dangerouslySetInnerHTML={{
+						__html: JSON.stringify(productJsonLd),
+					}}
+				/>
+				<script
+					type='application/ld+json'
+					dangerouslySetInnerHTML={{
+						__html: JSON.stringify(breadcrumbJsonLd),
+					}}
+				/>
 				<HydrationBoundary state={dehydrate(queryClient)}>
 					<ProductPageContainer
 						productData={data}

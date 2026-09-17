@@ -11,6 +11,62 @@ import { dehydrate, HydrationBoundary } from '@tanstack/react-query';
 import { getQueryClient } from '@/lib/get-query-client';
 import { queryKeys } from '@/lib/query-keys';
 import BrowseProductsList, { BrowseProductsSkeleton } from '@/components/store/browse-page/products-list';
+import type { Metadata } from 'next';
+
+export async function generateMetadata({
+	searchParams,
+}: {
+	searchParams: Promise<FiltersQueryType>;
+}): Promise<Metadata> {
+	const resolvedParams = await searchParams;
+	const { category, subCategory, offer, search } = resolvedParams;
+
+	let title = 'Browse Products';
+	let description = 'Browse thousands of products from trusted marketplace stores on GoCart.';
+
+	if (search) {
+		title = `Search results for "${search}"`;
+		description = `Browse matching products for "${search}" on GoCart.`;
+	} else if (subCategory) {
+		const formattedSubCategory = subCategory.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+		title = `${formattedSubCategory} Products`;
+		description = `Shop ${formattedSubCategory} items and collections on GoCart.`;
+	} else if (category) {
+		const formattedCategory = category.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+		title = `${formattedCategory} Collection`;
+		description = `Shop ${formattedCategory} products from top vendors on GoCart.`;
+	} else if (offer) {
+		const formattedOffer = offer.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+		title = `${formattedOffer} Deals & Discounts`;
+		description = `Explore special offers, deals, and discounts on GoCart.`;
+	}
+
+	const baseUrl =
+		process.env.NEXT_PUBLIC_APP_URL ||
+		(process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
+	const canonicalUrl = `${baseUrl}/browse`;
+
+	return {
+		title,
+		description,
+		alternates: {
+			canonical: canonicalUrl,
+		},
+		openGraph: {
+			title: `${title} | GoCart`,
+			description,
+			url: canonicalUrl,
+			type: 'website',
+			images: [{ url: '/og-image.png', alt: title }],
+		},
+		twitter: {
+			card: 'summary_large_image',
+			title: `${title} | GoCart`,
+			description,
+			images: ['/og-image.png'],
+		},
+	};
+}
 
 export default async function BrowsePage({
 	searchParams,

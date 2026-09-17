@@ -29,8 +29,16 @@ export const retrieveProductDetailsOptimized = async (productSlug: string) => {
 			rating: true,
 			numReviews: true,
 			description: true,
+			brand: true,
 			specs: true,
 			questions: true,
+			category: {
+				select: {
+					id: true,
+					name: true,
+					url: true,
+				},
+			},
 			categoryId: true,
 			subCategoryId: true,
 			shippingFeeMethod: true,

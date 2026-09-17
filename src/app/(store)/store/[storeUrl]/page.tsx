@@ -14,6 +14,72 @@ import { getProducts } from '@/queries/product';
 import { getFilteredColors } from '@/queries/color';
 import { getFilteredSizes } from '@/queries/size';
 import { ProductsGridSkeleton } from '@/components/store/skeletons/home-skeletons';
+import type { Metadata } from 'next';
+import { generateStoreJsonLd } from '@/lib/seo/schema';
+
+export async function generateMetadata({
+	params,
+}: {
+	params: Promise<{ storeUrl: string }>;
+}): Promise<Metadata> {
+	const { storeUrl } = await params;
+	if (!storeUrl) {
+		return {
+			title: 'Store',
+			description: 'Discover storefronts on GoCart Multi-Vendor Marketplace.',
+		};
+	}
+
+	try {
+		const store = await getStorePageDetails(storeUrl);
+		if (!store) {
+			return {
+				title: 'Store Not Found',
+				description: 'The requested store could not be found on GoCart.',
+			};
+		}
+
+		const title = `${store.name} - Official Store`;
+		const description = store.description
+			? store.description.slice(0, 160)
+			: `Shop products from ${store.name} on GoCart.`;
+
+		const baseUrl =
+			process.env.NEXT_PUBLIC_APP_URL ||
+			(process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
+		const canonicalUrl = `${baseUrl}/store/${store.url}`;
+
+		return {
+			title,
+			description,
+			alternates: {
+				canonical: canonicalUrl,
+			},
+			openGraph: {
+				title: `${store.name} | GoCart`,
+				description,
+				url: canonicalUrl,
+				images: store.cover
+					? [{ url: store.cover, alt: store.name }]
+					: store.logo
+					? [{ url: store.logo, alt: store.name }]
+					: [{ url: '/og-image.png', alt: store.name }],
+				type: 'website',
+			},
+			twitter: {
+				card: 'summary_large_image',
+				title: `${store.name} | GoCart`,
+				description,
+				images: store.cover ? [store.cover] : store.logo ? [store.logo] : ['/og-image.png'],
+			},
+		};
+	} catch {
+		return {
+			title: 'Store',
+			description: 'Shop products on GoCart.',
+		};
+	}
+}
 
 export default async function StorePage({
 	params,
@@ -68,11 +134,31 @@ export default async function StorePage({
 		}),
 	]);
 
+	const storeJsonLd = store
+		? generateStoreJsonLd({
+				name: store.name,
+				description: store.description,
+				url: store.url,
+				logo: store.logo,
+				coverImage: store.cover,
+				email: store.email,
+				phone: store.phone,
+		  })
+		: null;
+
 	return (
 		<>
 			<Header />
 			<CategoriesHeader />
 			<div className='max-w-[1600px] mx-auto px-4 '>
+				{storeJsonLd ? (
+					<script
+						type='application/ld+json'
+						dangerouslySetInnerHTML={{
+							__html: JSON.stringify(storeJsonLd),
+						}}
+					/>
+				) : null}
 				<StoreDetails details={store} />
 				<HydrationBoundary state={dehydrate(queryClient)}>
 					<StoreLayoutClient

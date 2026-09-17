@@ -13,6 +13,8 @@ import 'swiper/css/pagination';
 // Clerk
 import { ClerkProvider } from '@clerk/nextjs';
 
+import { generateWebsiteJsonLd } from '@/lib/seo/schema';
+
 // Theme Provider
 import ClientProviders from '@/components/ClientProviders';
 
@@ -33,12 +35,17 @@ const barlowFont = Barlow({
 	weight: ['100', '200', '300', '400', '500', '600', '700', '800', '900'],
 });
 
+const siteUrl = process.env.NEXT_PUBLIC_APP_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
+
 // Metadata
 export const metadata: Metadata = {
-	title: 'GoCart | Multi-Vendor E-commerce Platform',
+	title: {
+		default: 'GoCart | Multi-Vendor E-commerce Platform',
+		template: '%s | GoCart',
+	},
 	description:
 		'GoCart is a modern multi-vendor e-commerce platform where sellers can manage products and buyers can shop seamlessly. Built with Next.js and PostgreSQL.',
-	metadataBase: new URL('http://localhost:3000'),
+	metadataBase: new URL(siteUrl),
 	keywords: [
 		'GoCart',
 		'Multi Vendor Ecommerce',
@@ -56,11 +63,11 @@ export const metadata: Metadata = {
 		title: 'GoCart | Multi-Vendor E-commerce',
 		description:
 			'A full-featured marketplace built with Next.js and PostgreSQL. Shop or sell with ease on GoCart.',
-		url: 'http://localhost:3000',
+		url: siteUrl,
 		siteName: 'GoCart',
 		images: [
 			{
-				url: 'http://localhost:3000/og-image.png',
+				url: '/og-image.png',
 				width: 1200,
 				height: 630,
 				alt: 'GoCart Multi-Vendor Platform',
@@ -68,7 +75,16 @@ export const metadata: Metadata = {
 		],
 		type: 'website',
 	},
-	// themeColor: '#10b981',
+	twitter: {
+		card: 'summary_large_image',
+		title: 'GoCart | Multi-Vendor E-commerce',
+		description: 'A full-featured marketplace built with Next.js and PostgreSQL.',
+		images: ['/og-image.png'],
+	},
+	icons: {
+		icon: '/goCart.svg',
+		apple: '/goCart.svg',
+	},
 };
 
 export default function RootLayout({
@@ -77,11 +93,16 @@ export default function RootLayout({
 	children: React.ReactNode;
 }>) {
 	const publishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+	const websiteJsonLd = generateWebsiteJsonLd();
 
 	const content = (
 		<html lang='en' suppressHydrationWarning>
 			<head>
 				<link rel='icon' type='image/svg+xml' href='/goCart.svg' />
+				<script
+					type='application/ld+json'
+					dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
+				/>
 			</head>
 			<body
 				className={`${geistSans.variable} ${geistMono.variable} ${barlowFont.variable} antialiased scroll-smooth`}
