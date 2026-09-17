@@ -5,7 +5,7 @@ import HistoryImg from '@/public/assets/images/sideline/history.png';
 import ShareImg from '@/public/assets/images/sideline/share.png';
 import FeedbackImg from '@/public/assets/images/sideline/feedback.png';
 import SidelineItem from './item';
-import SocialShare from '../../shared/social-share';
+import SidelineShare from './sideline-share';
 
 export default function Sideline() {
 	return (
@@ -36,16 +36,8 @@ export default function Sideline() {
 					</SidelineItem>
 				</div>
 				<div className='fixed top-[60%] -translate-y-1/2 text-left'>
-					<SidelineItem
-						link='/'
-						image={ShareImg}
-						className='-bottom-9'
-						arrowClassName='mt-28'
-						w_fit
-					>
-						<SocialShare url='http://localhost:3000' quote='' isCol />
-					</SidelineItem>
-					<SidelineItem link='/feedback' image={FeedbackImg}>
+					<SidelineShare />
+					<SidelineItem link='/contact' image={FeedbackImg}>
 						Feedback
 					</SidelineItem>
 				</div>
