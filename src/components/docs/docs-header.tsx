@@ -14,38 +14,41 @@ interface DocsHeaderProps {
 export function DocsHeader({ onOpenSearch, onToggleMobileSidebar }: DocsHeaderProps) {
 	return (
 		<header className='sticky top-0 z-40 w-full border-b border-border/80 bg-background/95 backdrop-blur-md'>
-			<div className='max-w-[1600px] mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4'>
+			<div className='max-w-[1600px] mx-auto px-3 sm:px-6 h-16 flex items-center justify-between gap-2 sm:gap-4'>
 				{/* Brand & Back Button */}
-				<div className='flex items-center gap-3 sm:gap-6 min-w-0'>
+				<div className='flex items-center gap-1.5 sm:gap-4 min-w-0 shrink-0'>
 					<button
 						type='button'
 						onClick={onToggleMobileSidebar}
-						className='p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted lg:hidden'
+						className='p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted lg:hidden shrink-0'
 						aria-label='Toggle documentation navigation'
 					>
 						<Menu className='w-5 h-5' />
 					</button>
 
-					<Link href='/documentation/introduction' className='flex items-center gap-2.5 shrink-0'>
+					<Link href='/documentation/introduction' className='flex items-center gap-2 shrink-0'>
 						<Image
 							src='/goCart.svg'
 							alt='GoCart Logo'
-							width={28}
-							height={28}
-							className='w-7 h-7'
+							width={26}
+							height={26}
+							className='w-6 h-6 sm:w-7 sm:h-7'
 						/>
-						<div className='flex items-center gap-2'>
-							<span className='font-bold text-base tracking-tight text-foreground'>
-								GoCart <span className='text-emerald-500 font-semibold text-xs ml-0.5 px-1.5 py-0.5 rounded bg-emerald-500/10'>Docs</span>
+						<div className='flex items-center gap-1.5'>
+							<span className='font-bold text-sm sm:text-base tracking-tight text-foreground'>
+								GoCart
+							</span>
+							<span className='hidden xs:inline-flex text-emerald-500 font-semibold text-[10px] sm:text-xs px-1.5 py-0.5 rounded bg-emerald-500/10'>
+								Docs
 							</span>
 						</div>
 					</Link>
 
-					<div className='h-4 w-px bg-border/80 hidden sm:block' />
+					<div className='h-4 w-px bg-border/80 hidden md:block' />
 
 					<Link
 						href='/'
-						className='hidden sm:inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors group'
+						className='hidden md:inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors group'
 					>
 						<ArrowLeft className='w-3.5 h-3.5 group-hover:-translate-x-0.5 transition-transform' />
 						<span>Back to Store</span>
@@ -53,16 +56,17 @@ export function DocsHeader({ onOpenSearch, onToggleMobileSidebar }: DocsHeaderPr
 				</div>
 
 				{/* Search Field & Actions */}
-				<div className='flex items-center gap-3'>
+				<div className='flex items-center gap-2 sm:gap-3 shrink-0'>
 					{/* Search Button */}
 					<button
 						type='button'
 						onClick={onOpenSearch}
-						className='flex items-center gap-2 px-3 py-1.5 text-xs text-muted-foreground bg-muted/60 hover:bg-muted border border-border/80 rounded-xl transition-all duration-150 w-36 sm:w-64 md:w-80 justify-between'
+						className='flex items-center gap-2 px-2.5 sm:px-3 py-1.5 text-xs text-muted-foreground bg-muted/60 hover:bg-muted border border-border/80 rounded-xl transition-all duration-150 h-9 w-9 sm:w-56 md:w-80 justify-center sm:justify-between shrink-0'
+						title='Search documentation (Ctrl + K)'
 					>
 						<div className='flex items-center gap-2 truncate'>
 							<Search className='w-3.5 h-3.5 shrink-0 text-muted-foreground' />
-							<span className='truncate'>Search docs...</span>
+							<span className='hidden sm:inline truncate'>Search docs...</span>
 						</div>
 						<kbd className='hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-semibold text-muted-foreground bg-background border border-border/80 rounded shadow-2xs'>
 							Ctrl K
@@ -70,7 +74,7 @@ export function DocsHeader({ onOpenSearch, onToggleMobileSidebar }: DocsHeaderPr
 					</button>
 
 					{/* Version Badge */}
-					<span className='hidden md:inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-muted text-muted-foreground border border-border/60'>
+					<span className='hidden lg:inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-muted text-muted-foreground border border-border/60'>
 						v1.0.0
 					</span>
 

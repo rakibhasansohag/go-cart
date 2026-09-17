@@ -110,14 +110,22 @@ export function DocsSearchModal({ isOpen, onClose }: DocsSearchModalProps) {
 	};
 
 	return (
-		<div className='fixed inset-0 z-50 flex items-start justify-center pt-20 sm:pt-28 px-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200'>
+		<div
+			className='fixed inset-0 z-50 flex items-start justify-center pt-16 sm:pt-28 px-3 sm:px-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200'
+			onClick={(e) => {
+				if (e.target === e.currentTarget) {
+					onClose();
+				}
+			}}
+		>
 			<div
-				className='w-full max-w-2xl overflow-hidden rounded-2xl border border-border bg-card shadow-2xl animate-in zoom-in-95 duration-200'
+				className='w-full max-w-2xl overflow-hidden rounded-2xl border border-border bg-card shadow-2xl animate-in zoom-in-95 duration-200 flex flex-col max-h-[85vh]'
 				role='dialog'
 				aria-modal='true'
+				onClick={(e) => e.stopPropagation()}
 			>
 				{/* Search Field Header */}
-				<div className='relative flex items-center px-4 py-3.5 border-b border-border bg-muted/40'>
+				<div className='relative flex items-center px-4 py-3.5 border-b border-border bg-muted/40 shrink-0'>
 					<Search className='w-5 h-5 text-muted-foreground mr-3 shrink-0' />
 					<input
 						type='text'
@@ -132,10 +140,20 @@ export function DocsSearchModal({ isOpen, onClose }: DocsSearchModalProps) {
 							type='button'
 							onClick={() => setQuery('')}
 							className='p-1 text-muted-foreground hover:text-foreground mr-2 rounded-md hover:bg-muted'
+							title='Clear query'
 						>
 							<X className='w-4 h-4' />
 						</button>
 					)}
+					<button
+						type='button'
+						onClick={onClose}
+						className='p-1.5 text-muted-foreground hover:text-foreground rounded-lg hover:bg-muted ml-1 sm:hidden shrink-0'
+						aria-label='Close search modal'
+						title='Close'
+					>
+						<X className='w-4 h-4' />
+					</button>
 					<kbd className='hidden sm:inline-flex items-center px-2 py-0.5 text-[10px] font-semibold text-muted-foreground bg-background border border-border rounded shadow-xs'>
 						ESC
 					</kbd>

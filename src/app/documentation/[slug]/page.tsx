@@ -73,7 +73,7 @@ function renderFormattedText(text: string): React.ReactNode {
 			return (
 				<code
 					key={index}
-					className='px-1.5 py-0.5 rounded bg-muted font-mono text-xs text-emerald-600 dark:text-emerald-400 border border-border/60'
+					className='px-1.5 py-0.5 mx-0.5 rounded bg-muted/90 font-mono text-xs text-emerald-600 dark:text-emerald-400 border border-border/60 break-words inline-block max-w-full align-middle'
 				>
 					{part.slice(1, -1)}
 				</code>
@@ -108,6 +108,29 @@ function renderFormattedText(text: string): React.ReactNode {
 		}
 		return part;
 	});
+}
+
+function renderDocParagraph(paragraph: string, pIdx: number): React.ReactNode {
+	if (paragraph.startsWith('### ')) {
+		return (
+			<h3 key={pIdx} className='text-base sm:text-lg font-bold text-foreground mt-6 mb-3'>
+				{renderFormattedText(paragraph.slice(4))}
+			</h3>
+		);
+	}
+	if (paragraph.startsWith('- ') || paragraph.startsWith('* ')) {
+		return (
+			<div key={pIdx} className='flex items-start gap-2.5 text-sm sm:text-base leading-relaxed text-muted-foreground my-1.5 pl-1'>
+				<span className='w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0 mt-2 sm:mt-2.5' />
+				<span className='flex-1 break-words'>{renderFormattedText(paragraph.slice(2))}</span>
+			</div>
+		);
+	}
+	return (
+		<p key={pIdx} className='whitespace-pre-line leading-relaxed break-words'>
+			{renderFormattedText(paragraph)}
+		</p>
+	);
 }
 
 export default async function DocumentationArticlePage({
@@ -174,7 +197,7 @@ export default async function DocumentationArticlePage({
 	];
 
 	return (
-		<div className='flex-1 flex justify-between gap-8 px-4 sm:px-8 lg:px-12 py-8 max-w-full'>
+		<div className='flex-1 flex justify-between gap-8 px-4 sm:px-8 lg:px-12 py-6 sm:py-8 max-w-full overflow-x-hidden'>
 			<script
 				type='application/ld+json'
 				dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
@@ -193,7 +216,7 @@ export default async function DocumentationArticlePage({
 							{article.category}
 						</span>
 						<span>›</span>
-						<span className='text-foreground truncate max-w-[200px] sm:max-w-none'>
+						<span className='text-foreground truncate max-w-[180px] sm:max-w-none'>
 							{article.title}
 						</span>
 					</div>
@@ -212,7 +235,7 @@ export default async function DocumentationArticlePage({
 
 				{/* Title & Lead Paragraph */}
 				<header className='mb-8 border-b border-border/80 pb-6'>
-					<h1 className='text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground mb-4 leading-tight'>
+					<h1 className='text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight text-foreground mb-4 leading-tight break-words'>
 						{article.title}
 					</h1>
 					<p className='text-base sm:text-lg text-muted-foreground leading-relaxed'>
@@ -227,16 +250,12 @@ export default async function DocumentationArticlePage({
 				<div className='space-y-10'>
 					{article.sections.map((section) => (
 						<section key={section.id} id={section.id} className='scroll-mt-24'>
-							<h2 className='text-xl sm:text-2xl font-bold tracking-tight text-foreground mb-4 border-b border-border/40 pb-2'>
+							<h2 className='text-lg sm:text-xl md:text-2xl font-bold tracking-tight text-foreground mb-4 border-b border-border/40 pb-2 break-words'>
 								{section.title}
 							</h2>
 
-							<div className='space-y-4 text-sm sm:text-base leading-relaxed text-muted-foreground'>
-								{section.content.map((paragraph, pIdx) => (
-									<p key={pIdx} className='whitespace-pre-line'>
-										{renderFormattedText(paragraph)}
-									</p>
-								))}
+							<div className='space-y-3 sm:space-y-4 text-sm sm:text-base leading-relaxed text-muted-foreground'>
+								{section.content.map((paragraph, pIdx) => renderDocParagraph(paragraph, pIdx))}
 							</div>
 
 							{/* Callout */}
@@ -272,9 +291,7 @@ export default async function DocumentationArticlePage({
 										{sub.title}
 									</h3>
 									<div className='space-y-3 text-sm text-muted-foreground'>
-										{sub.content.map((subP, subIdx) => (
-											<p key={subIdx}>{renderFormattedText(subP)}</p>
-										))}
+										{sub.content.map((subP, subIdx) => renderDocParagraph(subP, subIdx))}
 									</div>
 									{sub.codeBlock && (
 										<div className='my-4 rounded-xl overflow-hidden border border-border/80 bg-zinc-950 text-zinc-100'>
