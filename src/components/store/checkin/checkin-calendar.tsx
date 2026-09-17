@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CHECKIN_REWARDS } from '@/lib/checkin-constants';
 import { claimDailyCheckIn } from '@/queries/checkin';
-import { Check, Gift, Coins, Sparkles, AlertCircle, Loader2 } from 'lucide-react';
+import { Check, Gift, Coins, Sparkles, AlertCircle, Loader2, Star, Lock, Zap } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn, getFriendlyErrorMessage } from '@/lib/utils';
 import { Button } from '@/components/store/ui/button';
@@ -28,6 +28,8 @@ interface Props {
 	onClose?: () => void;
 }
 
+const MILESTONE_DAYS = [7, 14, 21, 28];
+
 export default function CheckInCalendar({
 	hasClaimedToday,
 	claimedDaysCount,
@@ -41,6 +43,7 @@ export default function CheckInCalendar({
 	const [claimedState, setClaimedState] = useState(hasClaimedToday);
 	const [countState, setCountState] = useState(claimedDaysCount);
 	const [claimedRecords, setClaimedRecords] = useState<CheckInRecord[]>(checkIns);
+	const [justClaimed, setJustClaimed] = useState(false);
 
 	React.useEffect(() => {
 		setClaimedState(hasClaimedToday);
@@ -48,7 +51,6 @@ export default function CheckInCalendar({
 		setClaimedRecords(checkIns);
 	}, [hasClaimedToday, claimedDaysCount, checkIns]);
 
-	// Today's claimable day index is current claimed count + 1 (if not claimed today)
 	const todayDayIndex = claimedState ? countState : Math.min(daysInMonth, countState + 1);
 
 	const handleClaim = async () => {
@@ -59,6 +61,7 @@ export default function CheckInCalendar({
 			const res = await claimDailyCheckIn();
 			setClaimedState(true);
 			setCountState((prev) => prev + 1);
+			setJustClaimed(true);
 			setClaimedRecords((prev) => [
 				...prev,
 				{
@@ -84,93 +87,172 @@ export default function CheckInCalendar({
 		}
 	};
 
-	// Generate dynamic days array matching active month (28, 29, 30, or 31)
 	const daysArray = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+	const progressPercent = Math.round((countState / daysInMonth) * 100);
 
 	return (
-		<div className='w-full bg-background/95 backdrop-blur-xl border border-border/20 rounded-3xl p-6 shadow-2xl space-y-6'>
-			{/* Header Header */}
-			<div className='flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-border/10 pb-4'>
-				<div>
-					<div className='flex items-center gap-x-2'>
-						<Sparkles className='w-5 h-5 text-amber-500 animate-pulse' />
-						<h2 className='text-xl font-bold text-main-primary'>Monthly Check-In Rewards</h2>
-					</div>
-					<p className='text-xs text-muted-foreground mt-1'>
-						Check in daily to earn GoCoins and unlock exclusive personal coupons!
-					</p>
-				</div>
-				<div className='flex items-center gap-x-2 bg-amber-500/10 px-3.5 py-1.5 rounded-full border border-amber-500/20'>
-					<Coins className='w-4 h-4 text-amber-500' />
-					<span className='text-xs font-semibold text-amber-600 dark:text-amber-400'>
-						{countState} / {daysInMonth} Days Checked In
+		<div className='w-full space-y-5'>
+			{/* Progress Bar Section */}
+			<div className='space-y-2'>
+				<div className='flex items-center justify-between text-xs'>
+					<span className='text-muted-foreground font-medium'>Monthly Progress</span>
+					<span className='font-bold text-main-primary'>
+						{countState}/{daysInMonth} days &mdash; {progressPercent}%
 					</span>
 				</div>
+				<div className='relative h-2.5 w-full overflow-hidden rounded-full bg-muted/40'>
+					<motion.div
+						className='h-full rounded-full bg-gradient-to-r from-amber-500 via-orange-500 to-red-500'
+						initial={{ width: 0 }}
+						animate={{ width: `${progressPercent}%` }}
+						transition={{ duration: 0.8, ease: 'easeOut' }}
+					/>
+					{/* Milestone markers on the bar */}
+					{MILESTONE_DAYS.filter((d) => d <= daysInMonth).map((d) => (
+						<div
+							key={d}
+							className='absolute top-1/2 -translate-y-1/2 w-1 h-4 rounded-full bg-amber-300/70'
+							style={{ left: `${(d / daysInMonth) * 100}%`, transform: 'translate(-50%, -50%)' }}
+						/>
+					))}
+				</div>
+				{/* Milestone labels */}
+				<div className='relative h-4'>
+					{MILESTONE_DAYS.filter((d) => d <= daysInMonth).map((d) => (
+						<span
+							key={d}
+							className='absolute text-[10px] font-bold text-amber-600 dark:text-amber-400 -translate-x-1/2'
+							style={{ left: `${(d / daysInMonth) * 100}%` }}
+						>
+							Day {d}
+						</span>
+					))}
+				</div>
 			</div>
 
-			{/* Mobile View: Smooth Horizontal Swipe Carousel (only 1 row high!) */}
-			<div className='sm:hidden flex overflow-x-auto gap-2 py-2 px-1 snap-x scrollbar-none -mx-1'>
+			{/* Day Cards Grid */}
+			<div className='grid grid-cols-4 sm:grid-cols-7 gap-1.5 sm:gap-2'>
 				{daysArray.map((dayNum) => {
 					const isClaimed = claimedRecords.some((c) => c.dayIndex === dayNum);
 					const isToday = !claimedState && dayNum === todayDayIndex;
+					const isFuture = dayNum > todayDayIndex;
 					const reward = CHECKIN_REWARDS[dayNum] || CHECKIN_REWARDS[31];
 					const isMilestone = Boolean(reward.couponDiscount);
+					const isJustClaimedDay = justClaimed && isClaimed && dayNum === countState;
 
 					return (
 						<motion.div
 							key={dayNum}
-							whileTap={{ scale: 0.95 }}
+							initial={isJustClaimedDay ? { scale: 1.2, opacity: 0 } : false}
+							animate={isJustClaimedDay ? { scale: 1, opacity: 1 } : {}}
+							whileHover={!isFuture && !isClaimed ? { scale: 1.06, y: -2 } : {}}
+							whileTap={isToday ? { scale: 0.95 } : {}}
+							transition={{ type: 'spring', stiffness: 300, damping: 20 }}
 							className={cn(
-								'w-[76px] shrink-0 snap-start flex flex-col items-center justify-between p-2 rounded-2xl border transition-all duration-300 min-h-[90px]',
+								'relative flex flex-col items-center justify-between rounded-xl border p-1.5 sm:p-2 transition-colors duration-200 overflow-hidden',
+								'min-h-[72px] sm:min-h-[82px]',
 								{
-									// Claimed state
-									'bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400': isClaimed,
-									// Today claimable state
-									'bg-gradient-to-br from-amber-500/25 to-orange-500/25 border-orange-500 shadow-md shadow-orange-500/20 ring-2 ring-orange-500/50 animate-pulse':
+									// Claimed — clean green
+									'bg-emerald-500/10 border-emerald-400/40': isClaimed,
+									// Today — vivid highlight
+									'border-orange-500 shadow-[0_0_12px_2px_rgba(249,115,22,0.35)] bg-gradient-to-b from-orange-500/20 to-amber-500/10':
 										isToday,
-									// Milestone upcoming state
-									'bg-gradient-to-br from-amber-500/15 via-orange-500/10 to-amber-500/5 border-amber-500/40 text-amber-700 dark:text-amber-300':
+									// Milestone upcoming
+									'bg-gradient-to-b from-amber-500/15 to-transparent border-amber-500/50':
 										!isClaimed && !isToday && isMilestone,
-									// Normal upcoming state
-									'bg-muted/30 border-border/10 text-muted-foreground hover:bg-muted/50':
-										!isClaimed && !isToday && !isMilestone,
+									// Future normal
+									'bg-muted/20 border-border/10 opacity-60': isFuture && !isMilestone,
+									// Past normal
+									'bg-muted/30 border-border/15': !isClaimed && !isToday && !isFuture && !isMilestone,
 								},
 							)}
 						>
-							<div className='w-full flex items-center justify-between text-xs font-extrabold'>
-								<span className={cn({ 'text-orange-600 dark:text-orange-400 font-black': isToday })}>
-									Day {dayNum}
+							{/* Milestone shimmer overlay */}
+							{isMilestone && !isClaimed && (
+								<div className='absolute inset-0 pointer-events-none overflow-hidden rounded-xl'>
+									<div className='absolute -inset-1 bg-gradient-to-r from-transparent via-amber-400/10 to-transparent animate-[shimmer_2s_infinite]' />
+								</div>
+							)}
+
+							{/* Top row: day label + status icon */}
+							<div className='w-full flex items-center justify-between'>
+								<span
+									className={cn('text-[10px] sm:text-xs font-bold leading-none', {
+										'text-orange-500 dark:text-orange-400': isToday,
+										'text-emerald-600 dark:text-emerald-400': isClaimed,
+										'text-amber-600 dark:text-amber-400': !isClaimed && !isToday && isMilestone,
+										'text-muted-foreground/60': isFuture && !isMilestone,
+										'text-muted-foreground': !isClaimed && !isToday && !isFuture,
+									})}
+								>
+									{dayNum}
 								</span>
-								{isClaimed ? (
-									<div className='w-3.5 h-3.5 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-sm'>
-										<Check className='w-2.5 h-2.5 stroke-[3]' />
-									</div>
-								) : isMilestone ? (
-									<Gift className='w-3.5 h-3.5 text-amber-500 animate-bounce' />
-								) : null}
+								<span className='shrink-0'>
+									{isClaimed ? (
+										<span className='flex items-center justify-center w-4 h-4 rounded-full bg-emerald-500 shadow-sm shadow-emerald-500/40'>
+											<Check className='w-2.5 h-2.5 text-white stroke-[3]' />
+										</span>
+									) : isToday ? (
+										<Zap className='w-3.5 h-3.5 text-orange-500 animate-pulse' />
+									) : isMilestone ? (
+										<Star className='w-3 h-3 text-amber-500 fill-amber-500/30' />
+									) : isFuture ? (
+										<Lock className='w-2.5 h-2.5 text-muted-foreground/40' />
+									) : null}
+								</span>
 							</div>
 
-							<div className='my-0.5 text-center flex flex-col items-center justify-center gap-y-0.5'>
-								<div className='flex items-center justify-center gap-x-1 text-sm font-black text-main-primary'>
-									<Coins className='w-3.5 h-3.5 text-amber-500 shrink-0' />
+							{/* Center: coin amount */}
+							<div className='flex flex-col items-center gap-y-0.5 my-0.5'>
+								<div
+									className={cn('flex items-center gap-x-0.5 font-black', {
+										'text-sm sm:text-base': isMilestone,
+										'text-xs sm:text-sm': !isMilestone,
+										'text-orange-500': isToday,
+										'text-emerald-600 dark:text-emerald-400': isClaimed,
+										'text-amber-600 dark:text-amber-500': !isClaimed && !isToday && isMilestone,
+										'text-muted-foreground/70': isFuture && !isMilestone,
+										'text-main-primary': !isClaimed && !isToday && !isFuture,
+									})}
+								>
+									<Coins
+										className={cn('shrink-0', {
+											'w-3.5 h-3.5 text-amber-500': isMilestone,
+											'w-3 h-3 text-amber-400': !isMilestone,
+										})}
+									/>
 									<span>+{reward.coins}</span>
 								</div>
+
 								{reward.couponDiscount && (
-									<span className='text-xs font-black text-amber-700 dark:text-amber-300 bg-amber-500/15 px-1 py-0.2 rounded-full border border-amber-500/30 block leading-tight'>
-										{reward.couponDiscount}% OFF
-									</span>
+									<AnimatePresence>
+										<motion.span
+											initial={{ opacity: 0, scale: 0.8 }}
+											animate={{ opacity: 1, scale: 1 }}
+											className={cn(
+												'text-[9px] sm:text-[10px] font-black px-1 py-px rounded-full border leading-tight',
+												isClaimed
+													? 'text-emerald-600 border-emerald-500/30 bg-emerald-500/10'
+													: 'text-amber-700 dark:text-amber-300 border-amber-500/40 bg-amber-500/15',
+											)}
+										>
+											{reward.couponDiscount}% OFF
+										</motion.span>
+									</AnimatePresence>
 								)}
 							</div>
 
-							<div className='text-xs font-bold tracking-tight min-h-[12px] flex items-center'>
+							{/* Bottom: state label */}
+							<div className='text-[9px] sm:text-[10px] font-bold text-center leading-none min-h-[10px]'>
 								{isClaimed ? (
-									<span className='text-emerald-600 dark:text-emerald-400 font-extrabold'>Claimed</span>
+									<span className='text-emerald-500'>✓ Done</span>
 								) : isToday ? (
-									<span className='text-orange-600 dark:text-orange-300 font-black uppercase tracking-wider animate-pulse'>
-										Today
-									</span>
+									<span className='text-orange-500 uppercase tracking-wider font-black'>Today!</span>
 								) : isMilestone ? (
-									<span className='text-amber-700 dark:text-amber-300 font-bold'>Perk</span>
+									<span className='text-amber-600 dark:text-amber-400'>
+										<Gift className='inline w-2.5 h-2.5 mr-px' />
+										Perk
+									</span>
 								) : null}
 							</div>
 						</motion.div>
@@ -178,79 +260,26 @@ export default function CheckInCalendar({
 				})}
 			</div>
 
-			{/* Desktop & Tablet View: Adaptable Grid (4 cols on tablet, 7 cols on laptop) */}
-			<div className='hidden sm:grid sm:grid-cols-4 md:grid-cols-7 gap-2 sm:gap-3'>
-				{daysArray.map((dayNum) => {
-					const isClaimed = claimedRecords.some((c) => c.dayIndex === dayNum);
-					const isToday = !claimedState && dayNum === todayDayIndex;
-					const reward = CHECKIN_REWARDS[dayNum] || CHECKIN_REWARDS[31];
-					const isMilestone = Boolean(reward.couponDiscount);
-
-					return (
-						<motion.div
-							key={dayNum}
-							whileHover={{ scale: 1.04 }}
-							whileTap={{ scale: 0.98 }}
-							className={cn(
-								'relative flex flex-col items-center justify-between p-2 sm:p-2.5 rounded-2xl border transition-all duration-300 min-h-[84px] sm:min-h-[90px]',
-								{
-									// Claimed state
-									'bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400': isClaimed,
-									// Today claimable state
-									'bg-gradient-to-br from-amber-500/25 to-orange-500/25 border-orange-500 shadow-lg shadow-orange-500/20 ring-2 ring-orange-500/50 animate-pulse':
-										isToday,
-									// Milestone upcoming state
-									'bg-gradient-to-br from-amber-500/15 via-orange-500/10 to-amber-500/5 border-amber-500/40 text-amber-700 dark:text-amber-300':
-										!isClaimed && !isToday && isMilestone,
-									// Normal upcoming state
-									'bg-muted/30 border-border/10 text-muted-foreground hover:bg-muted/50':
-										!isClaimed && !isToday && !isMilestone,
-								},
-							)}
-						>
-							<div className='w-full flex items-center justify-between text-xs font-extrabold'>
-								<span className={cn({ 'text-orange-600 dark:text-orange-400 font-black': isToday })}>
-									Day {dayNum}
-								</span>
-								{isClaimed ? (
-									<div className='w-4 h-4 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-sm'>
-										<Check className='w-3 h-3 stroke-[3]' />
-									</div>
-								) : isMilestone ? (
-									<Gift className='w-4 h-4 text-amber-500 animate-bounce' />
-								) : null}
-							</div>
-
-							<div className='my-0.5 text-center flex flex-col items-center justify-center gap-y-0.5'>
-								<div className='flex items-center justify-center gap-x-1 text-sm sm:text-base font-black text-main-primary'>
-									<Coins className='w-4 h-4 text-amber-500 shrink-0' />
-									<span>+{reward.coins}</span>
-								</div>
-								{reward.couponDiscount && (
-									<span className='text-xs font-black text-amber-700 dark:text-amber-300 bg-amber-500/15 px-1.5 py-0.5 rounded-full border border-amber-500/30 block leading-tight'>
-										{reward.couponDiscount}% OFF
-									</span>
-								)}
-							</div>
-
-							<div className='text-xs font-bold tracking-tight min-h-[14px] flex items-center'>
-								{isClaimed ? (
-									<span className='text-emerald-600 dark:text-emerald-400 font-extrabold'>Claimed</span>
-								) : isToday ? (
-									<span className='text-orange-600 dark:text-orange-300 font-black uppercase tracking-wider animate-pulse'>
-										Today
-									</span>
-								) : isMilestone ? (
-									<span className='text-amber-700 dark:text-amber-300 font-bold'>Special Perk</span>
-								) : null}
-							</div>
-						</motion.div>
-					);
-				})}
+			{/* Milestone legend */}
+			<div className='flex flex-wrap items-center gap-x-4 gap-y-2 pt-1'>
+				<div className='flex items-center gap-x-1.5 text-xs text-muted-foreground'>
+					<span className='w-3 h-3 rounded-full bg-emerald-500 flex items-center justify-center shrink-0'>
+						<Check className='w-2 h-2 text-white stroke-[3]' />
+					</span>
+					Claimed
+				</div>
+				<div className='flex items-center gap-x-1.5 text-xs text-muted-foreground'>
+					<Zap className='w-3 h-3 text-orange-500 shrink-0' />
+					Today
+				</div>
+				<div className='flex items-center gap-x-1.5 text-xs text-muted-foreground'>
+					<Star className='w-3 h-3 text-amber-500 fill-amber-500/30 shrink-0' />
+					Milestone (Coin + Coupon)
+				</div>
 			</div>
 
 			{/* Bottom Action Footer */}
-			<div className='pt-3 flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-border/10'>
+			<div className='pt-1 flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-border/10'>
 				<div className='text-xs sm:text-sm text-muted-foreground flex items-center gap-x-2 shrink'>
 					<AlertCircle className='w-4 h-4 text-amber-500 shrink-0' />
 					<span>Progress does not reset when you skip a day. Every check-in counts!</span>

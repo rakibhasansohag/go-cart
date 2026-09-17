@@ -4,24 +4,50 @@ import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { getDailyCheckInStatus } from "@/queries/checkin";
 import CheckInCalendar from "./checkin-calendar";
-import { X, Sparkles, Trophy } from "lucide-react";
+import { X, Sparkles, Trophy, Loader2 } from "lucide-react";
 import { useUser } from "@clerk/nextjs";
 import { ScrollArea } from "@/components/ui/scroll-area";
-
+import { Button } from "@/components/store/ui/button";
+import Link from "next/link";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+
+export const CHECKIN_OPEN_EVENT = "gocart:open-checkin-modal";
+
+export function openDailyCheckIn() {
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent(CHECKIN_OPEN_EVENT));
+  }
+}
 
 export default function CheckInModal() {
   const { isLoaded, isSignedIn } = useUser();
   const [isOpen, setIsOpen] = useState(false);
   const queryClient = useQueryClient();
 
-  const { data: statusData } = useQuery({
+  const { data: statusData, isLoading } = useQuery({
     queryKey: ["daily-checkin-status"],
     queryFn: () => getDailyCheckInStatus(),
     enabled: Boolean(isLoaded && isSignedIn),
     staleTime: 1000 * 60 * 60 * 4, // 4 hours cache
     gcTime: 1000 * 60 * 60 * 24,
   });
+
+  useEffect(() => {
+    const handleOpen = () => {
+      setIsOpen(true);
+    };
+
+    window.addEventListener(CHECKIN_OPEN_EVENT, handleOpen);
+
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("checkin") === "true" || window.location.hash === "#checkin") {
+        setIsOpen(true);
+      }
+    }
+
+    return () => window.removeEventListener(CHECKIN_OPEN_EVENT, handleOpen);
+  }, []);
 
   useEffect(() => {
     if (!statusData) return;
@@ -45,7 +71,7 @@ export default function CheckInModal() {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, statusData]);
+  }, [isOpen]);
 
   const handleClose = () => {
     try {
@@ -85,8 +111,6 @@ export default function CheckInModal() {
 
     return () => clearTimeout(timer);
   };
-
-  if (!isSignedIn || !statusData) return null;
 
   return (
     <AnimatePresence>
@@ -137,23 +161,55 @@ export default function CheckInModal() {
               </div>
             </div>
 
-            <ScrollArea
-              className="min-h-0 flex-1 bg-background"
-              scrollBarClassName="w-3 border-l-0 bg-slate-950/5 p-1.5 hover:bg-slate-950/10"
-              thumbClassName="bg-slate-400/70 hover:bg-slate-500 active:bg-slate-600"
-            >
-              <div className="p-3 sm:p-5">
-                <CheckInCalendar
-                  hasClaimedToday={statusData.hasClaimedToday}
-                  claimedDaysCount={statusData.claimedDaysCount}
-                  daysInMonth={statusData.daysInMonth}
-                  todayDateStr={statusData.todayDateStr}
-                  checkIns={statusData.checkIns}
-                  onClaimSuccess={handleClaimSuccess}
-                  onClose={handleClose}
-                />
+            {/* Modal Body */}
+            {!isLoaded || (isSignedIn && isLoading) ? (
+              <div className="flex flex-1 flex-col items-center justify-center gap-3 bg-background p-16">
+                <Loader2 className="w-8 h-8 animate-spin text-orange-500" />
+                <p className="text-xs text-muted-foreground font-medium">
+                  Loading check-in calendar...
+                </p>
               </div>
-            </ScrollArea>
+            ) : !isSignedIn ? (
+              <div className="flex flex-1 flex-col items-center justify-center gap-4 bg-background p-8 text-center min-h-[280px]">
+                <div className="w-16 h-16 rounded-full bg-orange-100 dark:bg-orange-950/40 flex items-center justify-center text-orange-500">
+                  <Sparkles className="w-8 h-8" />
+                </div>
+                <div className="space-y-1.5 max-w-sm">
+                  <h2 className="font-bold text-base sm:text-lg">
+                    Sign In to Claim Rewards
+                  </h2>
+                  <p className="text-xs text-muted-foreground">
+                    Sign in to your GoCart account to collect daily GoCoins, earn milestone coupons, and build your check-in streak!
+                  </p>
+                </div>
+                <Link href="/sign-in" onClick={() => setIsOpen(false)}>
+                  <Button
+                    variant="orange-gradient"
+                    className="rounded-full px-6 text-xs font-bold text-white cursor-pointer"
+                  >
+                    Sign In Now
+                  </Button>
+                </Link>
+              </div>
+            ) : statusData ? (
+              <ScrollArea
+                className="min-h-0 flex-1 bg-background"
+                scrollBarClassName="w-3 border-l-0 bg-slate-950/5 p-1.5 hover:bg-slate-950/10"
+                thumbClassName="bg-slate-400/70 hover:bg-slate-500 active:bg-slate-600"
+              >
+                <div className="p-3 sm:p-5">
+                  <CheckInCalendar
+                    hasClaimedToday={statusData.hasClaimedToday}
+                    claimedDaysCount={statusData.claimedDaysCount}
+                    daysInMonth={statusData.daysInMonth}
+                    todayDateStr={statusData.todayDateStr}
+                    checkIns={statusData.checkIns}
+                    onClaimSuccess={handleClaimSuccess}
+                    onClose={handleClose}
+                  />
+                </div>
+              </ScrollArea>
+            ) : null}
           </motion.div>
         </div>
       )}
