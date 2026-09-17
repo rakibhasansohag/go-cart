@@ -45,18 +45,23 @@ export const getHomeDataDynamic = async (
 		return propertyMapping[property];
 	};
 
-	// GetCheapestSize
+	// Performance optimization: Find the cheapest size in a single O(N) pass
+	// avoiding map array allocation, object copying, and sorting O(N log N) overhead.
 	const getCheapestSize = (
 		sizes: ProductSize[],
 	): { discountedPrice: number } => {
-		const sizesWithDiscount = sizes.map((size) => ({
-			...size,
-			discountedPrice: size.price * (1 - size.discount / 100),
-		}));
-
-		return sizesWithDiscount.sort(
-			(a, b) => a.discountedPrice - b.discountedPrice,
-		)[0];
+		if (!sizes || sizes.length === 0) {
+			return { discountedPrice: 0 };
+		}
+		let minDiscountedPrice = Infinity;
+		for (let i = 0; i < sizes.length; i++) {
+			const size = sizes[i];
+			const discountedPrice = size.price * (1 - size.discount / 100);
+			if (discountedPrice < minDiscountedPrice) {
+				minDiscountedPrice = discountedPrice;
+			}
+		}
+		return { discountedPrice: minDiscountedPrice };
 	};
 
 	const formatProductData = (
@@ -166,7 +171,9 @@ export const getHomeDataDynamic = async (
 		}),
 	);
 
-	return results.reduce((acc, result) => ({ ...acc, ...result }), {});
+	// Performance optimization: Combine result objects using Object.assign into a single target
+	// to avoid O(N²) intermediate object creation and memory allocations caused by object spread in reduce.
+	return results.reduce((acc, result) => Object.assign(acc, result), {});
 };
 
 export const getHomeFeaturedCategories = async () => {
