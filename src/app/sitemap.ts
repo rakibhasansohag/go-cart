@@ -1,5 +1,6 @@
 import type { MetadataRoute } from 'next';
 import { db } from '@/lib/db';
+import { getAllDocSlugs } from '@/lib/docs/docs-data';
 
 const getBaseUrl = (): string => {
 	if (process.env.NEXT_PUBLIC_APP_URL) {
@@ -15,12 +16,26 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 	const baseUrl = getBaseUrl();
 	const now = new Date();
 
+	const docSlugs = getAllDocSlugs();
+	const docRoutes: MetadataRoute.Sitemap = docSlugs.map((slug) => ({
+		url: `${baseUrl}/documentation/${slug}`,
+		lastModified: now,
+		changeFrequency: 'weekly',
+		priority: 0.8,
+	}));
+
 	const staticRoutes: MetadataRoute.Sitemap = [
 		{
 			url: baseUrl,
 			lastModified: now,
 			changeFrequency: 'daily',
 			priority: 1.0,
+		},
+		{
+			url: `${baseUrl}/documentation`,
+			lastModified: now,
+			changeFrequency: 'weekly',
+			priority: 0.9,
 		},
 		{
 			url: `${baseUrl}/browse`,
@@ -46,6 +61,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 			changeFrequency: 'monthly',
 			priority: 0.3,
 		},
+		...docRoutes,
 	];
 
 	try {

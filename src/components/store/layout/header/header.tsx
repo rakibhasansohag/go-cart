@@ -10,6 +10,7 @@ import Cart from './cart';
 import { DEFAULT_COUNTRY } from '@/lib/utils';
 import ThemeToggle from '@/components/shared/theme-toggle';
 import NotificationBell from '@/components/shared/notification-bell';
+import { BookOpen } from 'lucide-react';
 
 export default async function Header() {
 	// Get cookies from the store
@@ -32,6 +33,14 @@ export default async function Header() {
 							<h1 className='font-extrabold text-3xl font-mono'>GoCart</h1>
 						</Link>
 						<div className='flex items-center gap-2 lg:hidden'>
+							<Link
+								href='/documentation'
+								className='flex items-center gap-1 px-2 py-1 text-xs font-semibold rounded-lg bg-white/10 hover:bg-white/20 text-white'
+								title='Documentation'
+							>
+								<BookOpen className='w-3.5 h-3.5' />
+								<span>Docs</span>
+							</Link>
 							<ThemeToggle />
 							<NotificationBell />
 							<UserMenu />
@@ -41,6 +50,13 @@ export default async function Header() {
 					<Search />
 				</div>
 				<div className='hidden lg:flex w-full lg:w-fit lg:mt-2 justify-end mt-1.5 pl-6 items-center gap-2'>
+					<Link
+						href='/documentation'
+						className='flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-white/10 hover:bg-white/20 transition-colors text-white'
+					>
+						<BookOpen className='w-3.5 h-3.5' />
+						<span>Docs</span>
+					</Link>
 					<div className='lg:flex'>
 						<DownloadApp />
 					</div>
