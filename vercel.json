@@ -1,20 +1,8 @@
 {
 	"crons": [
 		{
-			"path": "/api/cron/email-outbox",
-			"schedule": "15 8 * * *"
-		},
-		{
-			"path": "/api/cron/abandoned-checkouts",
-			"schedule": "30 8 * * *"
-		},
-		{
-			"path": "/api/cron/demo-fulfillment",
-			"schedule": "45 8 * * *"
-		},
-		{
-			"path": "/api/cron/payout-review",
-			"schedule": "0 3 * * 1"
+			"path": "/api/cron/dispatch",
+			"schedule": "0 8 * * *"
 		}
 	]
 }

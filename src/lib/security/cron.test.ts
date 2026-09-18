@@ -23,4 +23,11 @@ describe("cron request guard", () => {
     expect(isAuthorizedCronRequest(new Request("https://gocart.example/api/cron/test", { headers: { authorization: "Bearer wrong" } }))).toBe(false);
     expect(isAuthorizedCronRequest(new Request("https://gocart.example/api/cron/test", { headers: { authorization: "Bearer test-cron-secret" } }))).toBe(true);
   });
+
+  it("authenticates using URL key or token query param for UptimeRobot", () => {
+    process.env.CRON_SECRET = "test-cron-secret";
+    expect(isAuthorizedCronRequest(new Request("https://gocart.example/api/cron/test?key=wrong"))).toBe(false);
+    expect(isAuthorizedCronRequest(new Request("https://gocart.example/api/cron/test?key=test-cron-secret"))).toBe(true);
+    expect(isAuthorizedCronRequest(new Request("https://gocart.example/api/cron/test?token=test-cron-secret"))).toBe(true);
+  });
 });

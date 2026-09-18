@@ -1595,6 +1595,72 @@ Goal: Conduct a comprehensive security inspection across API routes, server acti
 - [x] **Webhook & Financial Transaction Security**:
   - [x] Verify Stripe / PayPal / Carrier webhook cryptographic signature validation and replay attack prevention (`webhook-replay.test.ts`)
   - [x] Verify ledger transaction idempotency to eliminate any potential double-credit or double-debit vulnerabilities (`service.test.ts`, `payout-review.test.ts`)
-- [x] **Verification**:
-  - [x] Security test suite executing unauthorized query attempts (expecting 401/403)
   - [x] Security test coverage across all 63 test files and 365/365 passing tests
+
+---
+
+### Phase 24 — Production Catalogue Seeding, UI Polish & Automation Audit
+
+**Goal**: Populate the production database with a realistic, diverse product catalogue, ensure the storefront looks presentable with real content, and audit automation logic for order processing, stock alerts, and email notifications.
+
+**Why**: The marketplace was shipping with placeholder/test products and a single "Demo" category. A credible multi-category catalogue is required for any real showcase or soft-launch. Without real products and reviews the homepage, category pages, and search results are empty — making the platform impossible to evaluate meaningfully.
+
+---
+
+- [x] **Storefront Static Pages — Design Overhaul**:
+  - [x] About Us, Contact Us, Privacy Policy, Terms, Feedback rebuilt to use `bg-background`/`text-foreground` semantic tokens — eliminates translucent-white wash on dark mode
+  - [x] ContactForm with ticket-ID generation, FAQ accordion, support channel cards
+  - [x] All pages use consistent site-wide design language
+
+- [x] **Feedback System — Multi-Image Upload**:
+  - [x] `FeedbackImage` model, Zod validation (max 5 images × 5 MB), Cloudinary `feedback/` folder
+  - [x] Admin dashboard image viewer; mobile-responsive uploader in public form
+
+- [x] **Global CSS — Dark Mode Token Fix**:
+  - [x] Semantic color variables re-registered in the Tailwind v4 `@theme` block so `bg-background`, `text-foreground`, etc. generate correctly in both modes
+
+- [x] **Production Catalogue Seed** (`prisma/seed-products.ts`):
+  - [x] **52 products**, **82 variants**, **254 reviews** seeded to production (`srank` store)
+  - [x] **8 categories / 25 subcategories** created: Electronics, Fashion & Apparel, Home & Living, Sports & Outdoors, Health & Beauty, Books & Media, Baby & Kids, Automotive
+  - [x] Realistic stock levels (5–200 units/SKU), `lowStockThreshold: 5` on all sizes
+  - [x] Reviews carry verified-purchase flags and roll up to `product.rating` + `product.numReviews`
+  - [x] Safe to re-run (upsert on unique slugs). Registered as `bun run db:seed:products`
+
+- [x] **Automation Audit**:
+  - [x] `adjustSizeInventory()` emits `INVENTORY_LOW_STOCK` / `INVENTORY_RESTOCKED` domain events on threshold crossings — seller notified in-app and via email (when `EMAIL_NOTIFICATIONS_ENABLED=true`)
+  - [x] Order status progression (Pending → Confirmed → Processing → Delivered) driven by seller fulfillment actions — no gaps found
+  - [ ] **Gap identified**: No 24 h stock-out auto-replenishment cron exists yet (see Phase 25)
+
+---
+
+### Phase 25 — Centralized Free Cron, Production Cleanup & Cloudinary Product Hub
+
+**Goal**: Wipe faulty test products and obsolete categories from the production database, centralize background scheduled tasks into a single endpoint compatible with free UptimeRobot pings, and rebuild the catalog with at least 5 Cloudinary-hosted, semantically connected images per product.
+
+---
+
+- [x] **Centralized Free Cron Dispatcher** (`/api/cron/dispatch`):
+  - [x] Extended `isAuthorizedCronRequest` in `src/lib/security/cron.ts` to support both `Authorization: Bearer <CRON_SECRET>` and query tokens (`?key=<CRON_SECRET>` / `?token=<CRON_SECRET>`) using timing-safe comparison.
+  - [x] Created `src/app/api/cron/dispatch/route.ts` executing:
+    1. Email outbox processing and retry batch
+    2. Abandoned checkout recovery reminders
+    3. Demo fulfillment progression (orders shipped/delivered)
+    4. Notification delivery log retention cleanup
+    5. Weekly seller payout review
+    6. Out-of-stock monitor (checks items with 0 stock for >24 hours and dispatches restock reminder domain events)
+  - [x] Consolidated `vercel.json` crons to single `/api/cron/dispatch` entry. Compatible with free 5-minute UptimeRobot pings.
+
+- [x] **Product Card Swiper Resilience** (`src/components/store/cards/product/swiper.tsx`):
+  - [x] Added `img.complete` check via ref callback on mount so cached images immediately render without getting stuck in pulse skeleton.
+  - [x] Added `onError` fallback handling so network failures never freeze the card.
+
+- [x] **Production Database Cleanup** (`prisma/cleanup-production.ts`):
+  - [x] Permanently deleted all 90 legacy test products, including "rasdfsdfdsfds asfdsf", "sdfsdfdsfsdfd", and outdated demo items.
+  - [x] Deleted 7 obsolete test categories (`pant`, `shirt`, `man-shirt`, `gocart-demo-category`, `books-media`, `baby-kids`, `automotive`).
+  - [x] Cleaned up unused legacy categories so only 6 modern categories remain.
+
+- [x] **Cloudinary-Hosted Product Hub** (`prisma/seed-centralized-catalog.ts`):
+  - [x] Rebuilt 6 clean modern categories: Electronics & Gadgets, Fashion & Apparel, Home & Living, Sports & Fitness, Beauty & Personal Care, Watches & Accessories.
+  - [x] Seeded 24 products with multiple variants, realistic specs, sizes, and customer reviews.
+  - [x] Uploaded 120 semantically connected high-definition images (at least 5 per product) directly into Cloudinary (`res.cloudinary.com/rakibhasan/image/upload/...`).
+  - [x] Registered shortcuts in `package.json`: `bun run db:clean:prod` and `bun run db:seed:centralized`.

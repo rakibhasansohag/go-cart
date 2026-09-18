@@ -79,9 +79,9 @@ export default function ProductCardImageSwiper({
 			)}
 
 			{/* Dot indicators */}
-				{safeImages.length > 1 && (
+			{safeImages.length > 1 && (
 				<div className='absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1 z-20'>
-						{safeImages.map((_, i) => (
+					{safeImages.map((_, i) => (
 						<span
 							key={i}
 							className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${
@@ -98,17 +98,20 @@ export default function ProductCardImageSwiper({
 					key={currentUrl || index}
 					src={currentUrl}
 					alt=''
+					ref={(node) => {
+						if (node && node.complete && node.naturalWidth > 0) {
+							handleImageLoad();
+						}
+					}}
 					onLoad={handleImageLoad}
-					initial={{ opacity: 0, x: '50%' }}
-					animate={{ opacity: isLoaded ? 1 : 0, x: 0 }}
-					exit={{ opacity: 0, x: '-50%' }}
+					onError={() => setIsLoaded(true)}
+					loading='lazy'
+					decoding='async'
+					initial={{ opacity: 0 }}
+					animate={{ opacity: isLoaded ? 1 : 0 }}
+					exit={{ opacity: 0 }}
 					transition={{
-						x: {
-							type: 'tween',
-							duration: 0.35,
-							ease: [0.25, 0.46, 0.45, 0.94],
-						},
-						opacity: { duration: 0.2 },
+						opacity: { duration: 0.25 },
 					}}
 					className='absolute inset-0 w-full h-full object-cover block'
 				/>

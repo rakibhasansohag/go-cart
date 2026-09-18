@@ -7,11 +7,25 @@ import { timingSafeEqual } from "node:crypto";
  */
 export function isAuthorizedCronRequest(request: Request): boolean {
   const expected = process.env.CRON_SECRET;
+  if (!expected) return false;
+
+  let suppliedToken: string | null = null;
+
   const authorization = request.headers.get("authorization");
+  if (authorization?.startsWith("Bearer ")) {
+    suppliedToken = authorization.slice("Bearer ".length);
+  } else {
+    try {
+      const url = new URL(request.url);
+      suppliedToken = url.searchParams.get("key") || url.searchParams.get("token");
+    } catch {
+      suppliedToken = null;
+    }
+  }
 
-  if (!expected || !authorization?.startsWith("Bearer ")) return false;
+  if (!suppliedToken) return false;
 
-  const suppliedBuffer = Buffer.from(authorization.slice("Bearer ".length));
+  const suppliedBuffer = Buffer.from(suppliedToken);
   const expectedBuffer = Buffer.from(expected);
   return (
     suppliedBuffer.length === expectedBuffer.length &&

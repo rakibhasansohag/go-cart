@@ -11,6 +11,10 @@
 		"db:anonymize-staging": "bun prisma/anonymize-staging.ts",
 		"db:sync-e2e-users": "bun prisma/sync-e2e-users.ts",
 		"db:seed:demo": "bun prisma/seed-demo.ts",
+		"db:seed:products": "bun prisma/seed-products.ts",
+		"db:seed:centralized": "bun prisma/seed-centralized-catalog.ts",
+		"db:clean:prod": "bun prisma/cleanup-production.ts",
+
 		"db:e2e:up": "bun --no-env-file scripts/e2e-local.ts up",
 		"db:e2e:prepare": "bun --no-env-file scripts/e2e-local.ts prepare",
 		"db:e2e:sync-users": "bun --no-env-file scripts/e2e-local.ts sync-users",
