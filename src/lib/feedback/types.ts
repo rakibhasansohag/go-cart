@@ -24,6 +24,7 @@ export interface FeedbackSubmissionPayload {
 	rating?: number;
 	subject: string;
 	message: string;
+	images?: string[];
 	deviceInfo?: DeviceTelemetry;
 	botHoneypot?: string;
 }

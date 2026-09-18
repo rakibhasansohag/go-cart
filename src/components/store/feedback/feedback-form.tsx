@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
+import { CldUploadWidget } from 'next-cloudinary';
 import {
 	FeedbackCategory,
 	FeedbackUserRole,
@@ -27,6 +29,9 @@ import {
 	RefreshCw,
 	ChevronDown,
 	ChevronUp,
+	ImagePlus,
+	Trash2,
+	X,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
@@ -106,6 +111,7 @@ export default function FeedbackForm({ initialUser }: FeedbackFormProps) {
 	const [rating, setRating] = useState<number>(5);
 	const [subject, setSubject] = useState('');
 	const [message, setMessage] = useState('');
+	const [images, setImages] = useState<string[]>([]);
 	const [botHoneypot, setBotHoneypot] = useState('');
 
 	const [telemetry, setTelemetry] = useState<DeviceTelemetry>({});
@@ -161,6 +167,25 @@ export default function FeedbackForm({ initialUser }: FeedbackFormProps) {
 		}
 	};
 
+	const handleUploadSuccess = (result: { info?: { secure_url?: string } | string }) => {
+		if (typeof result.info === 'object' && result.info?.secure_url) {
+			const newUrl = result.info.secure_url;
+			setImages((prev) => {
+				if (prev.length >= 5) {
+					toast.error('Maximum 5 images allowed');
+					return prev;
+				}
+				if (prev.includes(newUrl)) return prev;
+				return [...prev, newUrl];
+			});
+			toast.success('Screenshot uploaded');
+		}
+	};
+
+	const handleRemoveImage = (indexToRemove: number) => {
+		setImages((prev) => prev.filter((_, idx) => idx !== indexToRemove));
+	};
+
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
 
@@ -195,6 +220,7 @@ export default function FeedbackForm({ initialUser }: FeedbackFormProps) {
 				rating,
 				subject: subject.trim(),
 				message: message.trim(),
+				images,
 				deviceInfo: telemetry,
 				botHoneypot,
 			});
@@ -224,6 +250,7 @@ export default function FeedbackForm({ initialUser }: FeedbackFormProps) {
 		setTicketCode(null);
 		setSubject('');
 		setMessage('');
+		setImages([]);
 		setRating(5);
 		if (!initialUser) {
 			setName('');
@@ -558,7 +585,94 @@ export default function FeedbackForm({ initialUser }: FeedbackFormProps) {
 					</div>
 				</div>
 
-				{/* 6. Diagnostics Telemetry Disclosure */}
+				{/* 6. Image Attachments (Up to 5 images, max 5MB each, saved to 'feedback' folder in Cloudinary) */}
+				<div className='space-y-3 pt-2 border-t border-border/40'>
+					<div className='flex items-center justify-between'>
+						<label className='block text-sm font-semibold text-foreground'>
+							6. Attach Screenshots or Images <span className='text-xs font-normal text-muted-foreground'>(Optional)</span>
+						</label>
+						<span className='text-xs font-semibold px-2 py-0.5 rounded-md bg-muted text-muted-foreground'>
+							{images.length}/5 uploaded
+						</span>
+					</div>
+
+					<p className='text-xs text-muted-foreground'>
+						Attach screenshots, UI mockups, or error photos (PNG, JPG, WEBP, up to 5MB each).
+					</p>
+
+					<div className='grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 pt-1'>
+						{images.map((imgUrl, idx) => (
+							<div
+								key={imgUrl}
+								className='group relative aspect-square rounded-2xl overflow-hidden border border-border/80 bg-muted/30 shadow-xs'
+							>
+								<Image
+									src={imgUrl}
+									alt={`Attachment ${idx + 1}`}
+									fill
+									sizes='(max-width: 768px) 50vw, 20vw'
+									className='object-cover transition-transform group-hover:scale-105'
+								/>
+								<button
+									type='button'
+									onClick={() => handleRemoveImage(idx)}
+									className='absolute top-1.5 right-1.5 w-7 h-7 rounded-full bg-black/70 hover:bg-red-600 text-white flex items-center justify-center transition-colors cursor-pointer shadow-sm z-10'
+									title='Remove image'
+									aria-label={`Remove image ${idx + 1}`}
+								>
+									<Trash2 className='w-3.5 h-3.5' />
+								</button>
+								<div className='absolute bottom-1.5 left-1.5 px-1.5 py-0.5 rounded-md bg-black/60 text-[10px] text-white font-mono z-10'>
+									#{idx + 1}
+								</div>
+							</div>
+						))}
+
+						{images.length < 5 && (
+							<CldUploadWidget
+								uploadPreset={
+									process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_PRESET ||
+									'go-cart-ecommerce'
+								}
+								onSuccess={handleUploadSuccess}
+								onClose={() => {
+									if (typeof document !== 'undefined') {
+										document.body.style.pointerEvents = 'auto';
+										document.body.style.overflow = 'auto';
+									}
+								}}
+								options={{
+									multiple: true,
+									maxFiles: 5 - images.length,
+									maxFileSize: 5 * 1024 * 1024,
+									folder: 'feedback',
+									resourceType: 'image',
+									clientAllowedFormats: ['png', 'jpg', 'jpeg', 'webp', 'gif'],
+								}}
+							>
+								{({ open }) => (
+									<button
+										type='button'
+										onClick={() => open()}
+										className='group aspect-square rounded-2xl border-2 border-dashed border-border hover:border-primary/60 bg-muted/10 hover:bg-primary/5 flex flex-col items-center justify-center gap-2 text-muted-foreground hover:text-primary transition-all cursor-pointer p-3 text-center'
+									>
+										<div className='w-9 h-9 rounded-xl bg-muted group-hover:bg-primary/10 flex items-center justify-center text-muted-foreground group-hover:text-primary transition-colors'>
+											<ImagePlus className='w-5 h-5' />
+										</div>
+										<span className='text-xs font-semibold'>
+											Upload Image
+										</span>
+										<span className='text-[10px] text-muted-foreground/80 leading-tight'>
+											Max 5MB
+										</span>
+									</button>
+								)}
+							</CldUploadWidget>
+						)}
+					</div>
+				</div>
+
+				{/* 7. Diagnostics Telemetry Disclosure */}
 				<div className='rounded-2xl border border-border/60 bg-muted/20 p-4 space-y-3'>
 					<button
 						type='button'

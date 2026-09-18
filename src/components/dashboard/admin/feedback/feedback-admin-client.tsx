@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useTransition } from 'react';
+import Image from 'next/image';
 import {
 	Feedback,
 	FeedbackCategory,
@@ -38,8 +39,12 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 
+export type AdminFeedbackItem = Feedback & {
+	images?: string[];
+};
+
 interface Props {
-	initialFeedbacks: Feedback[];
+	initialFeedbacks: AdminFeedbackItem[];
 	metrics: FeedbackAdminMetrics;
 }
 
@@ -86,7 +91,7 @@ export default function FeedbackAdminClient({
 	initialFeedbacks,
 	metrics: initialMetrics,
 }: Props) {
-	const [feedbacks, setFeedbacks] = useState<Feedback[]>(initialFeedbacks);
+	const [feedbacks, setFeedbacks] = useState<AdminFeedbackItem[]>(initialFeedbacks);
 	const [metrics, setMetrics] = useState<FeedbackAdminMetrics>(initialMetrics);
 
 	const [searchQuery, setSearchQuery] = useState('');
@@ -94,7 +99,7 @@ export default function FeedbackAdminClient({
 	const [categoryFilter, setCategoryFilter] = useState<string>('ALL');
 	const [roleFilter, setRoleFilter] = useState<string>('ALL');
 
-	const [selectedFeedback, setSelectedFeedback] = useState<Feedback | null>(null);
+	const [selectedFeedback, setSelectedFeedback] = useState<AdminFeedbackItem | null>(null);
 	const [adminNotes, setAdminNotes] = useState('');
 	const [isPending, startTransition] = useTransition();
 
@@ -114,13 +119,13 @@ export default function FeedbackAdminClient({
 		return true;
 	});
 
-	const handleOpenDetail = (item: Feedback) => {
+	const handleOpenDetail = (item: AdminFeedbackItem) => {
 		setSelectedFeedback(item);
 		setAdminNotes(item.adminNotes || '');
 	};
 
 	const handleStatusChange = async (
-		item: Feedback,
+		item: AdminFeedbackItem,
 		newStatus: FeedbackStatus,
 		notes?: string,
 	) => {
@@ -535,6 +540,43 @@ export default function FeedbackAdminClient({
 									{selectedFeedback.message}
 								</div>
 							</div>
+
+							{/* Attached Screenshots / Images */}
+							{selectedFeedback.images && selectedFeedback.images.length > 0 && (
+								<div className='space-y-2'>
+									<div className='flex items-center justify-between'>
+										<h4 className='text-xs font-semibold text-muted-foreground uppercase tracking-wider'>
+											Attached Screenshots ({selectedFeedback.images.length})
+										</h4>
+										<span className='text-[10px] text-muted-foreground'>
+											Click image to view in new tab
+										</span>
+									</div>
+									<div className='grid grid-cols-2 sm:grid-cols-5 gap-3'>
+										{selectedFeedback.images.map((imgUrl, idx) => (
+											<a
+												key={imgUrl}
+												href={imgUrl}
+												target='_blank'
+												rel='noopener noreferrer'
+												className='group relative aspect-square rounded-2xl overflow-hidden border border-border/80 bg-muted/30 shadow-xs hover:ring-2 hover:ring-primary/50 transition-all cursor-pointer'
+												title='Open image in new tab'
+											>
+												<Image
+													src={imgUrl}
+													alt={`Feedback attachment ${idx + 1}`}
+													fill
+													sizes='(max-width: 768px) 50vw, 20vw'
+													className='object-cover transition-transform group-hover:scale-105'
+												/>
+												<div className='absolute bottom-1.5 left-1.5 px-1.5 py-0.5 rounded-md bg-black/60 text-[10px] text-white font-mono'>
+													#{idx + 1}
+												</div>
+											</a>
+										))}
+									</div>
+								</div>
+							)}
 
 							{/* Diagnostics Telemetry */}
 							{selectedFeedback.deviceInfo && (

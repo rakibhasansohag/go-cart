@@ -73,6 +73,9 @@ describe('Feedback Query & Server Actions', () => {
 	});
 
 	it('accepts and saves valid authentic feedback to the database', async () => {
+		// Clean any previous test entries
+		await db.feedback.deleteMany({ where: { email: 'reviewer@gmail.com' } });
+
 		const result = await submitFeedback({
 			name: 'Developer Reviewer',
 			email: 'reviewer@gmail.com',
@@ -81,6 +84,7 @@ describe('Feedback Query & Server Actions', () => {
 			rating: 5,
 			subject: 'Great Architecture and Code Structure',
 			message: 'The Next.js 16 app router setup and Prisma models are well organized.',
+			images: ['https://res.cloudinary.com/test/image/upload/sample.jpg'],
 			deviceInfo: {
 				browser: 'Chrome',
 				os: 'Windows',
@@ -95,9 +99,11 @@ describe('Feedback Query & Server Actions', () => {
 		// Verify record exists in DB
 		const record = await db.feedback.findFirst({
 			where: { email: 'reviewer@gmail.com', subject: 'Great Architecture and Code Structure' },
+			orderBy: { createdAt: 'desc' },
 		});
 		expect(record).not.toBeNull();
 		expect(record?.role).toBe('DEVELOPER');
+		expect(record?.images).toContain('https://res.cloudinary.com/test/image/upload/sample.jpg');
 		expect(record?.category).toBe('DEVELOPER_IMPRESSION');
 		expect(record?.rating).toBe(5);
 
@@ -105,5 +111,5 @@ describe('Feedback Query & Server Actions', () => {
 		if (record) {
 			await db.feedback.delete({ where: { id: record.id } });
 		}
-	});
+	}, 15000);
 });

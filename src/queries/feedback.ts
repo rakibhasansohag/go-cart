@@ -46,6 +46,7 @@ export async function submitFeedback(
 		rating: payload.rating,
 		subject: payload.subject,
 		message: payload.message,
+		images: payload.images,
 		botHoneypot: payload.botHoneypot,
 	});
 
@@ -109,6 +110,7 @@ export async function submitFeedback(
 			rating: data.rating,
 			subject: data.subject,
 			message: data.message,
+			images: data.images || [],
 			deviceInfo: payload.deviceInfo
 				? (payload.deviceInfo as unknown as Prisma.InputJsonValue)
 				: Prisma.JsonNull,

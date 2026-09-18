@@ -31,6 +31,11 @@ export const FeedbackFormSchema = z.object({
 		.min(10, 'Feedback message must be at least 10 characters')
 		.max(3000, 'Feedback message must be under 3000 characters')
 		.trim(),
+	images: z
+		.array(z.string().url('Invalid image URL'))
+		.max(5, 'You can upload up to 5 images')
+		.optional()
+		.default([]),
 	botHoneypot: z.string().optional(),
 });
 
