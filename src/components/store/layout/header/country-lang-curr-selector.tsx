@@ -118,29 +118,41 @@ export default function CountryLanguageCurrencySelector({
 								}
 							/>
 							<div>
-								<div className='mt-4 leading-6 text-xl font-bold text-foreground'>
-									Language
+								<div className='mt-4 flex items-center justify-between'>
+									<span className='leading-6 text-xl font-bold text-foreground'>
+										Language
+									</span>
+									<span className='text-[10px] uppercase font-semibold tracking-wider px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30'>
+										Coming Soon
+									</span>
 								</div>
-								<div className='relative mt-2.5 h-10 border-[1px] border-black/20 dark:border-white/20 rounded-lg flex items-center cursor-pointer text-foreground bg-transparent'>
+								<div className='relative mt-2.5 h-10 border-[1px] border-black/20 dark:border-white/20 rounded-lg flex items-center text-foreground bg-slate-50/50 dark:bg-slate-800/30'>
 									<select
 										value={language}
-										onChange={(e) => setLanguage(e.target.value)}
-										className='w-full h-full bg-transparent px-3 outline-none cursor-pointer appearance-none text-sm text-foreground pr-8'
+										onChange={(e) => {
+											if (e.target.value === 'en') {
+												setLanguage(e.target.value);
+											}
+										}}
+										className='w-full h-full bg-transparent px-3 outline-none appearance-none text-sm text-foreground pr-8'
 									>
 										<option value='en' className='bg-white dark:bg-slate-900 text-foreground'>
-											English
+											English (Default)
 										</option>
-										<option value='es' className='bg-white dark:bg-slate-900 text-foreground'>
-											Español
+										<option value='es' disabled className='bg-white dark:bg-slate-900 text-muted-foreground'>
+											Español (Coming Soon)
 										</option>
-										<option value='fr' className='bg-white dark:bg-slate-900 text-foreground'>
-											Français
+										<option value='fr' disabled className='bg-white dark:bg-slate-900 text-muted-foreground'>
+											Français (Coming Soon)
 										</option>
 									</select>
 									<span className='absolute right-2 pointer-events-none'>
 										<ChevronDown className='text-foreground scale-75' />
 									</span>
 								</div>
+								<p className='mt-1.5 text-xs text-muted-foreground'>
+									Multi-language support is coming soon.
+								</p>
 							</div>
 							<div>
 								<div className='mt-4 leading-6 text-xl font-bold text-foreground'>

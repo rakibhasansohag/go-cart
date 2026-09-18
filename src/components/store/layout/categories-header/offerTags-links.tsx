@@ -41,12 +41,7 @@ export default function OfferTagsLinks({
 	return (
 		<div className='relative w-fit'>
 			<div
-				className={cn(
-					'flex items-center flex-wrap xl:-translate-x-6 transition-all duration-100 ease-in-out',
-					{
-						'!translate-x-0': open,
-					},
-				)}
+				className='flex items-center flex-wrap transition-all duration-300 ease-out'
 			>
 				{offerTags.slice(0, splitPoint).map((tag, i) => (
 					<Link

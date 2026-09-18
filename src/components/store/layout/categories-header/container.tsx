@@ -14,7 +14,7 @@ export default function CategoriesHeaderContainer({
 	const [open, setOpen] = useState<boolean>(false);
 
 	return (
-		<div className='w-full px-4 flex items-center gap-x-1'>
+		<div className='w-full px-4 flex items-center gap-x-2'>
 			{/* Category menu */}
 			<CategoriesMenu categories={categories} open={open} setOpen={setOpen} />
 			{/* Offer tags links */}

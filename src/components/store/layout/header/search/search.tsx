@@ -7,6 +7,7 @@ import { ChangeEvent, useState, useEffect, useRef, KeyboardEvent } from 'react';
 import SearchSuggestions from './suggestions';
 import { Button } from '@/components/store/ui/button';
 import { cn } from '@/lib/utils';
+import { AnimatePresence } from 'framer-motion';
 
 export default function Search() {
 	const searchParams = useSearchParams();
@@ -170,16 +171,18 @@ export default function Search() {
 						selectedIndex >= 0 ? `suggestion-item-${selectedIndex}` : undefined
 					}
 				/>
-				{isOpen && (
-					<SearchSuggestions
-						suggestions={suggestions}
-						query={searchQuery}
-						selectedIndex={selectedIndex}
-						isLoading={isLoading}
-						hasError={hasError}
-						onSelect={() => setIsOpen(false)}
-					/>
-				)}
+				<AnimatePresence>
+					{isOpen && (
+						<SearchSuggestions
+							suggestions={suggestions}
+							query={searchQuery}
+							selectedIndex={selectedIndex}
+							isLoading={isLoading}
+							hasError={hasError}
+							onSelect={() => setIsOpen(false)}
+						/>
+					)}
+				</AnimatePresence>
 				<Button
 					type='submit'
 					variant='unstyled'

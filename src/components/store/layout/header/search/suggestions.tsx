@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { FC } from 'react';
 import { cn } from '@/lib/utils';
 import { ChevronRight } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 interface Props {
 	suggestions: SearchResult[];
@@ -60,10 +61,14 @@ const SearchSuggestions: FC<Props> = ({
 	};
 
 	return (
-		<div
+		<motion.div
 			id='search-suggestions-list'
 			role='listbox'
-			className='absolute top-11 w-full rounded-2xl bg-card dark:bg-slate-900 text-card-foreground shadow-2xl !z-[99] overflow-hidden border border-border/40 backdrop-blur-md'
+			initial={{ opacity: 0, y: -8, scale: 0.98 }}
+			animate={{ opacity: 1, y: 0, scale: 1 }}
+			exit={{ opacity: 0, y: -8, scale: 0.98 }}
+			transition={{ duration: 0.18, ease: 'easeOut' }}
+			className='absolute top-11 w-full rounded-2xl bg-card dark:bg-slate-900 text-card-foreground shadow-2xl !z-[99] overflow-hidden border border-border/40 backdrop-blur-md origin-top'
 		>
 			<div className='py-2 max-h-96 overflow-y-auto'>
 				{hasError ? (
@@ -123,7 +128,7 @@ const SearchSuggestions: FC<Props> = ({
 					</ul>
 				)}
 			</div>
-		</div>
+		</motion.div>
 	);
 };
 
