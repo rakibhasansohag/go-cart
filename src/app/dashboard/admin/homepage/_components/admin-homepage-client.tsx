@@ -810,6 +810,7 @@ export default function AdminHomepageClient({
 													disabled={index === 0 || isPending}
 													onClick={() => handleMove(index, 'up')}
 													title="Move block up"
+													aria-label="Move block up"
 												>
 													<ChevronUp className="size-3.5" />
 												</Button>
@@ -821,6 +822,7 @@ export default function AdminHomepageClient({
 													disabled={index === sections.length - 1 || isPending}
 													onClick={() => handleMove(index, 'down')}
 													title="Move block down"
+													aria-label="Move block down"
 												>
 													<ChevronDown className="size-3.5" />
 												</Button>
@@ -1442,6 +1444,8 @@ export default function AdminHomepageClient({
 														className="size-6 rounded border-border bg-background hover:bg-muted text-foreground"
 														onClick={() => setDraftItemsLimit((prev) => Math.max(2, prev - 2))}
 														disabled={draftItemsLimit <= 2}
+														aria-label="Decrease showcase limit"
+														title="Decrease showcase limit"
 													>
 														<Minus className="size-3" />
 													</Button>
@@ -1455,6 +1459,8 @@ export default function AdminHomepageClient({
 														className="size-6 rounded border-border bg-background hover:bg-muted text-foreground"
 														onClick={() => setDraftItemsLimit((prev) => Math.min(30, prev + 2))}
 														disabled={draftItemsLimit >= 30}
+														aria-label="Increase showcase limit"
+														title="Increase showcase limit"
 													>
 														<Plus className="size-3" />
 													</Button>

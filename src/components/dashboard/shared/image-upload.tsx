@@ -267,6 +267,8 @@ const ImageUpload = ({
                     variant="destructive"
                     size="icon"
                     className="rounded-full"
+                    aria-label="Remove image"
+                    title="Remove image"
                   >
                     <Trash className="w-4 h-4" />
                   </Button>
