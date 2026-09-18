@@ -18,6 +18,9 @@ import { generateWebsiteJsonLd } from '@/lib/seo/schema';
 // Theme Provider
 import ClientProviders from '@/components/ClientProviders';
 
+// Vercel Analytics
+import { Analytics } from '@vercel/analytics/next';
+
 // Fonts
 const geistSans = Geist({
 	variable: '--font-geist-sans',
@@ -108,6 +111,7 @@ export default function RootLayout({
 				className={`${geistSans.variable} ${geistMono.variable} ${barlowFont.variable} antialiased scroll-smooth`}
 			>
 				<ClientProviders>{children}</ClientProviders>
+				<Analytics />
 			</body>
 		</html>
 	);
