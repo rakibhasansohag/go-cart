@@ -24,6 +24,7 @@ import {
 	Star,
 	UserRound,
 	WalletCards,
+	MessageSquareText,
 } from 'lucide-react';
 
 export const icons = [
@@ -141,5 +142,10 @@ export const icons = [
 		label: 'Reviews',
 		value: 'reviews',
 		path: Star,
+	},
+	{
+		label: 'Feedback',
+		value: 'feedback',
+		path: MessageSquareText,
 	},
 ];

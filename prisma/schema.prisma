@@ -60,6 +60,7 @@ model User {
   buyerConversations         Conversation[]              @relation("UserBuyerConversations")
   sentMessages               Message[]                   @relation("UserSentMessages")
   reviewVotes                ReviewVote[]                @relation("UserReviewVotes")
+  feedbacks                  Feedback[]                  @relation("UserFeedback")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1898,4 +1899,52 @@ model HomepageSection {
 
   @@index([order])
   @@index([isActive])
+}
+
+enum FeedbackCategory {
+  BUG
+  FEATURE_REQUEST
+  UI_UX
+  DEVELOPER_IMPRESSION
+  GENERAL
+}
+
+enum FeedbackStatus {
+  NEW
+  IN_REVIEW
+  PLANNED
+  RESOLVED
+  ARCHIVED
+}
+
+enum FeedbackUserRole {
+  GUEST
+  CUSTOMER
+  SELLER
+  DEVELOPER
+}
+
+model Feedback {
+  id              String           @id @default(uuid())
+  name            String
+  email           String
+  role            FeedbackUserRole @default(GUEST)
+  userId          String?
+  category        FeedbackCategory @default(GENERAL)
+  rating          Int?
+  subject         String
+  message         String           @db.Text
+  deviceInfo      Json?
+  status          FeedbackStatus   @default(NEW)
+  adminNotes      String?          @db.Text
+  isEmailVerified Boolean          @default(false)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  user User? @relation("UserFeedback", fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([status])
+  @@index([category])
+  @@index([createdAt])
+  @@index([email])
 }

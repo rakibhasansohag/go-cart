@@ -37,7 +37,7 @@ export default function Sideline() {
 				</div>
 				<div className='fixed top-[60%] -translate-y-1/2 text-left'>
 					<SidelineShare />
-					<SidelineItem link='/contact' image={FeedbackImg}>
+					<SidelineItem link='/feedback' image={FeedbackImg}>
 						Feedback
 					</SidelineItem>
 				</div>
