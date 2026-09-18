@@ -15,9 +15,9 @@ export default function TermsOfServicePage() {
 	return (
 		<>
 			<Header />
-			<div className='min-h-screen bg-slate-50/60 dark:bg-background text-foreground'>
+			<div className='min-h-screen bg-background text-foreground'>
 				{/* Breadcrumb Navigation Bar */}
-				<div className='border-b border-border/60 bg-background/80 backdrop-blur-xs'>
+				<div className='border-b border-border bg-card/60 backdrop-blur-xs'>
 					<div className='max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between text-xs'>
 						<nav aria-label='Breadcrumb' className='flex items-center gap-1.5 text-muted-foreground'>
 							<Link href='/' className='inline-flex items-center gap-1 hover:text-foreground transition-colors'>

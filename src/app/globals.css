@@ -24,6 +24,24 @@
   --color-green-500: #10b981;
   --color-blue-500: #3b82f6;
 
+  /* Semantic tokens mapped for Tailwind v4 utility generation */
+  --color-background: var(--color-background);
+  --color-foreground: var(--color-foreground);
+  --color-card: var(--color-card);
+  --color-card-foreground: var(--color-card-foreground);
+  --color-secondary: var(--color-secondary);
+  --color-secondary-foreground: var(--color-secondary-foreground);
+  --color-muted: var(--color-muted);
+  --color-muted-foreground: var(--color-muted-foreground);
+  --color-accent: var(--color-accent);
+  --color-accent-foreground: var(--color-accent-foreground);
+  --color-border: var(--color-border);
+  --color-input: var(--color-input);
+  --color-ring: var(--color-ring);
+  --color-main-primary: var(--color-main-primary);
+  --color-main-secondary: var(--color-main-secondary);
+  --color-orange-background: var(--color-orange-background);
+
   /* Base tokens */
   --radius: 0.625rem;
   --font-sans: var(--font-geist-sans);
