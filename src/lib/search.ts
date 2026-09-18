@@ -76,26 +76,73 @@ function decodeSearchCursor(cursor: string | null | undefined): SearchCursor | n
 	}
 }
 
-function searchScoreExpression(): Prisma.Sql {
-	return Prisma.sql`GREATEST(
-		COALESCE(ts_rank(p."searchVector", si.ts_query), 0),
-		similarity(immutable_unaccent(COALESCE(p."name", '')), si.query),
-		similarity(immutable_unaccent(COALESCE(p."brand", '')), si.query),
-		similarity(immutable_unaccent(COALESCE(p."description", '')), si.query),
-		similarity(immutable_unaccent(COALESCE(pv."variantName", '')), si.query),
-		similarity(immutable_unaccent(COALESCE(pv."variantDescription", '')), si.query),
-		similarity(immutable_unaccent(COALESCE(pv."sku", '')), si.query),
-		similarity(immutable_unaccent(COALESCE(pv."keywords", '')), si.query)
+function searchScoreExpression(patterns: string[]): Prisma.Sql {
+	const docText = Prisma.sql`immutable_unaccent(
+		COALESCE(p."name", '') || ' ' ||
+		COALESCE(p."brand", '') || ' ' ||
+		COALESCE(pv."variantName", '') || ' ' ||
+		COALESCE(pv."keywords", '') || ' ' ||
+		COALESCE(pv."sku", '')
+	)`;
+
+	const multiMatchAll = Prisma.sql`(${docText} ILIKE ALL (${patterns}))`;
+	const multiMatchAny = Prisma.sql`(${docText} ILIKE ANY (${patterns}))`;
+
+	return Prisma.sql`(
+		CASE
+			WHEN immutable_unaccent(p."name") ILIKE si.query || '%' THEN 30.0
+			WHEN immutable_unaccent(pv."variantName") ILIKE si.query || '%' THEN 24.0
+			WHEN immutable_unaccent(p."name") ILIKE '% ' || si.query || '%' THEN 20.0
+			WHEN immutable_unaccent(pv."variantName") ILIKE '% ' || si.query || '%' THEN 18.0
+			WHEN immutable_unaccent(p."name") ILIKE '%' || si.query || '%' THEN 15.0
+			WHEN immutable_unaccent(pv."variantName") ILIKE '%' || si.query || '%' THEN 12.0
+			WHEN ${multiMatchAll} THEN 14.0
+			WHEN ${multiMatchAny} THEN 4.0
+			WHEN immutable_unaccent(COALESCE(p."brand", '')) ILIKE '%' || si.query || '%' THEN 8.0
+			WHEN immutable_unaccent(COALESCE(pv."keywords", '')) ILIKE '%' || si.query || '%' THEN 6.0
+			WHEN immutable_unaccent(COALESCE(pv."sku", '')) ILIKE '%' || si.query || '%' THEN 6.0
+			ELSE 0.0
+		END
+		+ (COALESCE(ts_rank(p."searchVector", si.ts_query), 0) * 10.0)
+		+ (word_similarity(si.query, immutable_unaccent(COALESCE(p."name", ''))) * 6.0)
+		+ (word_similarity(si.query, immutable_unaccent(COALESCE(pv."variantName", ''))) * 4.0)
+		+ (word_similarity(si.query, immutable_unaccent(COALESCE(p."brand", ''))) * 3.0)
+		+ (word_similarity(si.query, immutable_unaccent(COALESCE(pv."keywords", ''))) * 3.0)
+		+ (similarity(immutable_unaccent(COALESCE(p."name", '')), si.query) * 2.0)
+		+ (similarity(immutable_unaccent(COALESCE(pv."variantName", '')), si.query) * 2.0)
+		+ similarity(immutable_unaccent(COALESCE(p."brand", '')), si.query)
+		+ similarity(immutable_unaccent(COALESCE(pv."sku", '')), si.query)
 	)`;
 }
 
-function searchMatchExpression(minSimilarity: number): Prisma.Sql {
-	const score = searchScoreExpression();
+function searchMatchExpression(patterns: string[], minSimilarity: number): Prisma.Sql {
+	const docText = Prisma.sql`immutable_unaccent(
+		COALESCE(p."name", '') || ' ' ||
+		COALESCE(p."brand", '') || ' ' ||
+		COALESCE(pv."variantName", '') || ' ' ||
+		COALESCE(pv."keywords", '') || ' ' ||
+		COALESCE(pv."sku", '')
+	)`;
+
+	const multiMatchAll = Prisma.sql`(${docText} ILIKE ALL (${patterns}))`;
+
 	return Prisma.sql`(
 		p."searchVector" @@ si.ts_query
-		OR LEFT(immutable_unaccent(p."name"), LENGTH(si.query)) = si.query
-		OR LEFT(immutable_unaccent(pv."variantName"), LENGTH(si.query)) = si.query
-		OR ${score} >= ${minSimilarity}
+		OR ${multiMatchAll}
+		OR immutable_unaccent(p."name") ILIKE '%' || si.query || '%'
+		OR immutable_unaccent(pv."variantName") ILIKE '%' || si.query || '%'
+		OR immutable_unaccent(COALESCE(p."brand", '')) ILIKE '%' || si.query || '%'
+		OR immutable_unaccent(COALESCE(pv."keywords", '')) ILIKE '%' || si.query || '%'
+		OR immutable_unaccent(COALESCE(pv."sku", '')) ILIKE '%' || si.query || '%'
+		OR (LENGTH(si.query) >= 4 AND (
+			word_similarity(si.query, immutable_unaccent(COALESCE(p."name", ''))) >= 0.5
+			OR word_similarity(si.query, immutable_unaccent(COALESCE(pv."variantName", ''))) >= 0.5
+			OR word_similarity(si.query, immutable_unaccent(COALESCE(p."brand", ''))) >= 0.5
+			OR similarity(immutable_unaccent(COALESCE(p."name", '')), si.query) >= ${minSimilarity}
+			OR similarity(immutable_unaccent(COALESCE(p."brand", '')), si.query) >= ${minSimilarity}
+			OR similarity(immutable_unaccent(COALESCE(pv."variantName", '')), si.query) >= ${minSimilarity}
+			OR similarity(immutable_unaccent(COALESCE(pv."sku", '')), si.query) >= ${minSimilarity}
+		))
 	)`;
 }
 
@@ -128,6 +175,8 @@ export async function getRankedProductCandidates(
 
 	const safeLimit = Math.max(Math.trunc(limit), 1);
 	const minSimilarity = getSearchMinSimilarity();
+	const terms = trimmed.split(/\s+/).filter(Boolean);
+	const patterns = terms.map((t) => `%${t}%`);
 	const filterSql = filters.length
 		? Prisma.sql`AND ${Prisma.join(filters, ' AND ')}`
 		: Prisma.empty;
@@ -138,8 +187,8 @@ export async function getRankedProductCandidates(
 			OR (rp.relevance = ${decodedCursor.relevance} AND rp.product_id > ${decodedCursor.productId})
 		)`
 		: Prisma.empty;
-	const score = searchScoreExpression();
-	const match = searchMatchExpression(minSimilarity);
+	const score = searchScoreExpression(patterns);
+	const match = searchMatchExpression(patterns, minSimilarity);
 
 	const rows = await db.$queryRaw<RankedProductRow[]>(Prisma.sql`
 		WITH ranked_products AS (
@@ -191,8 +240,10 @@ export async function searchProducts(
 	try {
 		const safeLimit = boundedLimit(limit);
 		const minSimilarity = getSearchMinSimilarity();
-		const score = searchScoreExpression();
-		const match = searchMatchExpression(minSimilarity);
+		const terms = trimmed.split(/\s+/).filter(Boolean);
+		const patterns = terms.map((t) => `%${t}%`);
+		const score = searchScoreExpression(patterns);
+		const match = searchMatchExpression(patterns, minSimilarity);
 		const rawResults = await db.$queryRaw<SearchRow[]>(Prisma.sql`
 			SELECT
 				p.id AS product_id,

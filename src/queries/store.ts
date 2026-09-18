@@ -809,7 +809,7 @@ export const deleteStore = async (storeId: string) => {
 	} catch (error) {
 		throw error;
 	}
-};
+}
 
 export const getStorePageDetails = async (storeUrl: string) => {
 	const user = await currentUser();

@@ -24,12 +24,26 @@ const SearchSuggestions: FC<Props> = ({
 	const router = useRouter();
 
 	const highlightText = (text: string, query: string) => {
-		if (!query.trim()) return text;
-		const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+		const terms = query
+			.trim()
+			.split(/\s+/)
+			.filter(Boolean)
+			.map((term) => term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+
+		if (terms.length === 0) return text;
+
+		const regex = new RegExp(`(${terms.join('|')})`, 'gi');
 		const parts = text.split(regex);
+		const lowerTerms = new Set(
+			query
+				.trim()
+				.split(/\s+/)
+				.filter(Boolean)
+				.map((term) => term.toLowerCase()),
+		);
 
 		return parts.map((part, index) =>
-			part.toLowerCase() === query.toLowerCase() ? (
+			lowerTerms.has(part.toLowerCase()) ? (
 				<strong key={index} className='text-orange-background font-semibold'>
 					{part}
 				</strong>
