@@ -17,6 +17,18 @@ async function handle(request: Request) {
 	}
 }
 
-export const GET = handle;
-export const POST = handle;
-export const HEAD = handle;
+export async function GET(request: Request) {
+	return handle(request);
+}
+
+export async function POST(request: Request) {
+	return handle(request);
+}
+
+export async function HEAD(request: Request) {
+	const res = await handle(request);
+	return new Response(null, {
+		status: res.status,
+		headers: res.headers,
+	});
+}

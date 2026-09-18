@@ -13,6 +13,18 @@ async function handle(request: Request) {
 	catch (error) { return NextResponse.json({ ok: false, error: error instanceof Error ? error.message : 'Automation failed.' }, { status: 500 }); }
 }
 
-export const GET = handle;
-export const POST = handle;
-export const HEAD = handle;
+export async function GET(request: Request) {
+	return handle(request);
+}
+
+export async function POST(request: Request) {
+	return handle(request);
+}
+
+export async function HEAD(request: Request) {
+	const res = await handle(request);
+	return new Response(null, {
+		status: res.status,
+		headers: res.headers,
+	});
+}
