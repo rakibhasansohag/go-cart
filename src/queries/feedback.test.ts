@@ -2,6 +2,67 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { submitFeedback } from './feedback';
 import { db } from '@/lib/db';
 
+const {
+	deleteManyFeedbackMock,
+	createFeedbackMock,
+	findFirstFeedbackMock,
+	deleteFeedbackMock,
+	findUniqueUserMock,
+} = vi.hoisted(() => {
+	const deleteManyFeedbackMock = vi.fn().mockResolvedValue({ count: 0 });
+	const createFeedbackMock = vi.fn().mockImplementation(
+		async ({ data }: { data: Record<string, unknown> }) => ({
+			id: 'feedback-12345678',
+			ticketCode: 'FB-FEEDBACK',
+			...data,
+			status: 'NEW',
+			isEmailVerified: true,
+			createdAt: new Date(),
+			updatedAt: new Date(),
+		}),
+	);
+	const findFirstFeedbackMock = vi.fn().mockResolvedValue({
+		id: 'feedback-12345678',
+		ticketCode: 'FB-FEEDBACK',
+		name: 'Developer Reviewer',
+		email: 'reviewer@gmail.com',
+		role: 'DEVELOPER',
+		category: 'DEVELOPER_IMPRESSION',
+		rating: 5,
+		subject: 'Great Architecture and Code Structure',
+		message: 'The Next.js 16 app router setup and Prisma models are well organized.',
+		images: ['https://res.cloudinary.com/test/image/upload/sample.jpg'],
+		status: 'NEW',
+		isEmailVerified: true,
+		createdAt: new Date(),
+		updatedAt: new Date(),
+	});
+	const deleteFeedbackMock = vi.fn().mockResolvedValue({ id: 'feedback-12345678' });
+	const findUniqueUserMock = vi.fn().mockResolvedValue(null);
+
+	return {
+		deleteManyFeedbackMock,
+		createFeedbackMock,
+		findFirstFeedbackMock,
+		deleteFeedbackMock,
+		findUniqueUserMock,
+	};
+});
+
+vi.mock('@/lib/db', () => ({
+	db: {
+		user: {
+			findUnique: findUniqueUserMock,
+		},
+		feedback: {
+			deleteMany: deleteManyFeedbackMock,
+			create: createFeedbackMock,
+			findFirst: findFirstFeedbackMock,
+			delete: deleteFeedbackMock,
+		},
+	},
+}));
+
 // Mock Clerk auth currentUser to simulate a guest by default
 vi.mock('@clerk/nextjs/server', () => ({
 	currentUser: vi.fn().mockResolvedValue(null),
