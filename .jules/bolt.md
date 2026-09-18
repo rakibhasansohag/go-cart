@@ -1,0 +1,3 @@
+## 2025-05-18 - Concurrent Facet Query Aggregation in PostgreSQL / Prisma
+**Learning:** Sequential database queries for facets (brand groupBy, rating counts, price aggregation, color groupBy, size groupBy) create cumulative round-trip latency. In Prisma/Node.js, batching independent read queries with `Promise.all` allows PostgreSQL and Prisma connection pools to handle them concurrently, cutting latency significantly without database schema changes.
+**Action:** When computing multi-faceted search or dashboard aggregations, bundle independent `db.*` queries in `Promise.all` batches instead of `await`ing each query sequentially.
