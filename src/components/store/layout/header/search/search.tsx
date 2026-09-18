@@ -6,6 +6,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { ChangeEvent, useState, useEffect, useRef, KeyboardEvent } from 'react';
 import SearchSuggestions from './suggestions';
 import { Button } from '@/components/store/ui/button';
+import { cn } from '@/lib/utils';
 
 export default function Search() {
 	const searchParams = useSearchParams();
@@ -144,7 +145,7 @@ export default function Search() {
 	};
 
 	return (
-		<div ref={containerRef} className='relative lg:w-full flex-1'>
+		<div ref={containerRef} className={cn('relative lg:w-full flex-1', isOpen ? 'z-50' : 'z-20')}>
 			<form
 				onSubmit={handleSubmit}
 				className='h-10 rounded-3xl bg-background relative border-none flex'

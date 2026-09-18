@@ -3,6 +3,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { FC } from 'react';
 import { cn } from '@/lib/utils';
+import { ChevronRight } from 'lucide-react';
 
 interface Props {
 	suggestions: SearchResult[];
@@ -62,7 +63,7 @@ const SearchSuggestions: FC<Props> = ({
 		<div
 			id='search-suggestions-list'
 			role='listbox'
-			className='absolute top-11 w-full rounded-2xl bg-secondary text-main-primary shadow-2xl !z-[99] overflow-hidden border border-border/20'
+			className='absolute top-11 w-full rounded-2xl bg-card dark:bg-slate-900 text-card-foreground shadow-2xl !z-[99] overflow-hidden border border-border/40 backdrop-blur-md'
 		>
 			<div className='py-2 max-h-96 overflow-y-auto'>
 				{hasError ? (
@@ -88,29 +89,34 @@ const SearchSuggestions: FC<Props> = ({
 									role='option'
 									aria-selected={isSelected}
 									className={cn(
-										'w-full h-16 px-4 cursor-pointer flex items-center gap-x-3 transition-colors duration-150',
-										isSelected ? 'bg-f5 font-medium' : 'hover:bg-f5',
+										'group w-full h-16 px-4 cursor-pointer flex items-center gap-x-3.5 transition-all duration-200 ease-out border-b border-border/10 last:border-b-0',
+										isSelected
+											? 'bg-slate-100 dark:bg-slate-800/90 translate-x-1 font-medium'
+											: 'hover:bg-slate-100/90 dark:hover:bg-slate-800/80 hover:translate-x-1',
 									)}
 									onClick={() => handlePush(sugg.link)}
 								>
 									{sugg.image ? (
-										<Image
-											src={sugg.image}
-											alt=''
-											width={48}
-											height={48}
-											className='w-12 h-12 rounded-md object-cover flex-shrink-0'
-										/>
+										<div className='relative w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 bg-muted/40 ring-1 ring-border/20'>
+											<Image
+												src={sugg.image}
+												alt=''
+												width={48}
+												height={48}
+												className='w-12 h-12 rounded-lg object-cover transition-transform duration-200 ease-out group-hover:scale-105'
+											/>
+										</div>
 									) : (
-										<div className='w-12 h-12 rounded-md bg-muted flex items-center justify-center flex-shrink-0 text-xs text-muted-foreground'>
+										<div className='w-12 h-12 rounded-lg bg-muted flex items-center justify-center flex-shrink-0 text-xs text-muted-foreground ring-1 ring-border/20'>
 											No image
 										</div>
 									)}
 									<div className='flex-1 min-w-0'>
-										<span className='text-sm leading-5 block truncate'>
+										<span className='text-sm leading-5 block truncate text-foreground/90 group-hover:text-foreground transition-colors duration-150'>
 											{highlightText(sugg.name, query)}
 										</span>
 									</div>
+									<ChevronRight className='w-4 h-4 text-muted-foreground/40 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200 ease-out shrink-0 ml-auto' />
 								</li>
 							);
 						})}
