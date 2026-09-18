@@ -167,9 +167,9 @@ export default async function ProductPage({
 		}),
 	]);
 
-	const variant = data.variants.find(
-		(v: { slug: string }) => v.slug === variantSlug,
-	);
+	const variant =
+		data.variants.find((v: { slug: string }) => v.slug === variantSlug) ||
+		data.variants[0];
 
 	const specs = {
 		product: data?.specs,
