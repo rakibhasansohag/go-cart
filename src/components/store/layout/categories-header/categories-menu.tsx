@@ -1,6 +1,6 @@
 import { cn } from '@/lib/utils';
 import { Category } from '@prisma/client';
-import { ChevronDown, ChevronRight, Menu } from 'lucide-react';
+import { ChevronDown, ChevronRight, Menu, Layers } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Dispatch, SetStateAction, useState, useRef } from 'react';
@@ -101,13 +101,17 @@ export default function CategoriesMenu({
 									)}
 								>
 									<div className='flex items-center flex-1 min-w-0 transition-transform duration-200 ease-out group-hover:translate-x-1.5'>
-										<Image
-											src={category.image}
-											alt={category.name}
-											width={18}
-											height={18}
-											className='w-[18px] h-[18px] object-contain transition-transform duration-200 ease-out group-hover:scale-110 shrink-0'
-										/>
+										{category.image ? (
+											<Image
+												src={category.image}
+												alt={category.name}
+												width={18}
+												height={18}
+												className='w-[18px] h-[18px] object-contain transition-transform duration-200 ease-out group-hover:scale-110 shrink-0'
+											/>
+										) : (
+											<Layers className='w-[18px] h-[18px] text-muted-foreground/70 transition-transform duration-200 ease-out group-hover:scale-110 shrink-0' />
+										)}
 										<span className='text-sm font-medium ml-2.5 overflow-hidden line-clamp-2 break-words text-main-primary group-hover:text-primary transition-colors duration-150'>
 											{category.name}
 										</span>
