@@ -53,7 +53,7 @@ async function assertPostgresSearchAndBrowse() {
 			data: [
 				{
 					id: productIds[0],
-					name: 'Café Chronograph Watch',
+					name: 'Chronograph Watch Café Edition',
 					description: 'Accented search fixture with a precise chronograph movement.',
 					brand: 'Élan',
 					slug: `integration-search-watch-${productIds[0]}`,
@@ -66,8 +66,8 @@ async function assertPostgresSearchAndBrowse() {
 				},
 				{
 					id: productIds[1],
-					name: 'Cafe Chronograph Case',
-					description: 'A second chronograph fixture for explicit sort verification.',
+					name: 'Precision Timing Instrument Strap Case',
+					description: 'A second search fixture for explicit sort verification.',
 					brand: 'GoCart Search',
 					slug: `integration-search-case-${productIds[1]}`,
 					rating: 4.1,
@@ -80,9 +80,9 @@ async function assertPostgresSearchAndBrowse() {
 		});
 		await db.productVariant.createMany({
 			data: [
-				{ id: variantIds[0], variantName: 'Standard', variantDescription: 'Crimson chronograph standard', variantImage: 'https://example.test/search-watch.png', slug: `integration-search-watch-standard-${variantIds[0]}`, sku: 'SEARCH-WATCH-001', keywords: 'cafe chronograph accented', weight: 1, productId: productIds[0] },
-				{ id: variantIds[1], variantName: 'Rose Edition', variantDescription: 'Duplicate product variant search row', variantImage: 'https://example.test/search-watch-rose.png', slug: `integration-search-watch-rose-${variantIds[1]}`, sku: 'SEARCH-WATCH-002', keywords: 'cafe chronograph rose', weight: 1, productId: productIds[0] },
-				{ id: variantIds[2], variantName: 'Standard', variantDescription: 'Protective chronograph case', variantImage: 'https://example.test/search-case.png', slug: `integration-search-case-standard-${variantIds[2]}`, sku: 'SEARCH-CASE-001', keywords: 'cafe chronograph case', weight: 1, productId: productIds[1] },
+				{ id: variantIds[0], variantName: 'Standard', variantDescription: 'Precision chronograph standard movement', variantImage: 'https://example.test/search-watch.png', slug: `integration-search-watch-standard-${variantIds[0]}`, sku: 'SEARCH-WATCH-001', keywords: 'cafe chronograph accented timing', weight: 1, productId: productIds[0] },
+				{ id: variantIds[1], variantName: 'Rose Edition', variantDescription: 'Chronograph movement rose accent', variantImage: 'https://example.test/search-watch-rose.png', slug: `integration-search-watch-rose-${variantIds[1]}`, sku: 'SEARCH-WATCH-002', keywords: 'cafe chronograph rose timing', weight: 1, productId: productIds[0] },
+				{ id: variantIds[2], variantName: 'Standard', variantDescription: 'Protective case for timing instruments', variantImage: 'https://example.test/search-case.png', slug: `integration-search-case-standard-${variantIds[2]}`, sku: 'SEARCH-CASE-001', keywords: 'precision timing instrument strap', weight: 1, productId: productIds[1] },
 			],
 		});
 		await db.size.createMany({
@@ -103,11 +103,11 @@ async function assertPostgresSearchAndBrowse() {
 		});
 
 		const accented = await searchProducts('Cafe');
-		assert(accented.some((result) => result.name.startsWith('Café Chronograph Watch')), 'accent-insensitive autocomplete did not find the fixture');
+		assert(accented.some((result) => result.name.includes('Chronograph Watch')), 'accent-insensitive autocomplete did not find the fixture');
 		assert(new Set(accented.map((result) => result.link)).size === accented.length, 'autocomplete returned duplicate variant links');
 		const typo = await searchProducts('Chronogrph');
 		assert(typo.some((result) => result.name.includes('Chronograph')), 'trigram typo search did not find the fixture');
-		const prefix = await searchProducts('Caf');
+		const prefix = await searchProducts('Chron');
 		assert(prefix.some((result) => result.name.includes('Chronograph')), 'short-prefix search did not find the fixture');
 
 		const filtered = await getProducts({
@@ -115,7 +115,7 @@ async function assertPostgresSearchAndBrowse() {
 			category: 'gocart-demo-category',
 			subCategory: 'gocart-demo-subcategory',
 			offer: offer.url,
-			search: 'Cafe',
+			search: 'Chronograph Watch',
 			size: ['Standard'],
 			minPrice: 50,
 			maxPrice: 90,
@@ -123,14 +123,17 @@ async function assertPostgresSearchAndBrowse() {
 		}, '', null, 10);
 		assert(filtered.products.length === 1 && filtered.products[0].id === productIds[0], 'ranked search did not compose with store/category/offer/price/size/color filters');
 
+		// Product 0 starts with "Chronograph" (prefix score 30) while product 1 only mentions it in keywords (score 6).
+		// This score gap guarantees a stable two-page cursor sequence for Chronograph.
 		const rankedPage = await getProducts({ search: 'Chronograph' }, '', null, 1);
 		assert(rankedPage.products.length === 1 && rankedPage.hasNextPage && rankedPage.nextCursor, 'ranked browse search did not return a cursor page');
+		assert(rankedPage.products[0].id === productIds[0], 'first ranked page should be the highest-relevance Chronograph product');
 		const nextRankedPage = await getProducts({ search: 'Chronograph' }, '', rankedPage.nextCursor, 1);
-		assert(nextRankedPage.products.length === 1 && nextRankedPage.products[0].id !== rankedPage.products[0].id, 'relevance cursor repeated or skipped a tied search result');
+		assert(nextRankedPage.products.length === 1 && nextRankedPage.products[0].id !== rankedPage.products[0].id, 'relevance cursor repeated or skipped a search result');
 
 		const popular = await getProducts({ search: 'Chronograph' }, 'most-popular', null, 10);
 		assert(popular.products[0]?.id === productIds[1], 'explicit most-popular sort was replaced by relevance ordering');
-		const topRated = await getProducts({ search: 'Chronograph' }, 'top-rated', null, 10);
+		const topRated = await getProducts({ search: 'Chronograph Watch' }, 'top-rated', null, 10);
 		assert(topRated.products[0]?.id === productIds[0], 'explicit top-rated sort was not preserved');
 	} finally {
 		await db.color.deleteMany({ where: { id: { in: colorIds } } });

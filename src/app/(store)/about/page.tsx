@@ -1,6 +1,9 @@
 import React from 'react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
+
+export const dynamic = 'force-dynamic';
+
 import Header from '@/components/store/layout/header/header';
 import Footer from '@/components/store/layout/footer/footer';
 import {
