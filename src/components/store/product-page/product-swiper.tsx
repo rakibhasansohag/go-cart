@@ -63,14 +63,19 @@ export default function ProductSwiper({
 			<div className='relative xl:w-[25vw] swiper1700width'>
 				<div className='relative w-full flex flex-col-reverse 2xl:flex-row gap-3'>
 					{/* Thumbnails */}
-					<div className='flex flex-wrap 2xl:flex-col gap-2.5 shrink-0'>
-						{images.map((img) => {
+					<div className='flex flex-wrap 2xl:flex-col gap-2.5 shrink-0' role="tablist" aria-orientation="vertical">
+						{images.map((img, idx) => {
 							const isSelected = currentImg.url === img.url;
 							return (
-								<div
+								<button
 									key={img.url}
+									type="button"
+									role="tab"
+									aria-selected={isSelected}
+									aria-controls="main-product-image"
+									aria-label={`View product image ${idx + 1}`}
 									className={cn(
-										'w-16 h-16 rounded-xl overflow-hidden border-2 cursor-pointer transition-all duration-150 relative bg-muted/30',
+										'w-16 h-16 rounded-xl overflow-hidden border-2 cursor-pointer transition-all duration-150 relative bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
 										isSelected
 											? 'border-primary ring-2 ring-primary/20 shadow-xs scale-105'
 											: 'border-border/60 hover:border-foreground/40 opacity-70 hover:opacity-100',
@@ -80,12 +85,12 @@ export default function ProductSwiper({
 								>
 									<Image
 										src={img.url}
-										alt='Thumbnail'
+										alt={`Thumbnail ${idx + 1}`}
 										fill
 										sizes='64px'
 										className='object-cover'
 									/>
-								</div>
+								</button>
 							);
 						})}
 					</div>
@@ -114,11 +119,13 @@ export default function ProductSwiper({
 
 						{/* Expand / Gallery Modal Button */}
 						<button
+							type="button"
+							aria-label="Expand image gallery"
 							onClick={(e) => {
 								e.stopPropagation();
 								openModal();
 							}}
-							className='absolute top-3 right-3 z-20 w-9 h-9 rounded-xl bg-background/80 backdrop-blur-md border border-border/60 shadow-sm flex items-center justify-center text-foreground hover:bg-background hover:scale-110 transition-all cursor-pointer opacity-80 group-hover:opacity-100'
+							className='absolute top-3 right-3 z-20 w-9 h-9 rounded-xl bg-background/80 backdrop-blur-md border border-border/60 shadow-sm flex items-center justify-center text-foreground hover:bg-background hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary transition-all cursor-pointer opacity-80 group-hover:opacity-100'
 							title='Expand image gallery modal'
 						>
 							<Maximize2 className='w-4 h-4' />
@@ -133,30 +140,38 @@ export default function ProductSwiper({
 					{/* Modal Controls Toolbar */}
 					<div className='absolute top-4 right-4 z-50 flex items-center gap-2 bg-black/60 border border-white/20 rounded-2xl p-1.5 backdrop-blur-md'>
 						<button
+							type="button"
+							aria-label="Zoom in"
 							onClick={() => setModalZoomScale((s) => Math.min(s + 0.5, 3.5))}
-							className='p-2 rounded-xl text-white hover:bg-white/20 transition-all cursor-pointer'
+							className='p-2 rounded-xl text-white hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white transition-all cursor-pointer'
 							title='Zoom In'
 						>
 							<ZoomIn className='w-5 h-5' />
 						</button>
 						<button
+							type="button"
+							aria-label="Zoom out"
 							onClick={() => setModalZoomScale((s) => Math.max(s - 0.5, 1))}
-							className='p-2 rounded-xl text-white hover:bg-white/20 transition-all cursor-pointer'
+							className='p-2 rounded-xl text-white hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white transition-all cursor-pointer'
 							title='Zoom Out'
 						>
 							<ZoomOut className='w-5 h-5' />
 						</button>
 						<button
+							type="button"
+							aria-label="Reset zoom"
 							onClick={() => setModalZoomScale(1)}
-							className='p-2 rounded-xl text-white hover:bg-white/20 transition-all cursor-pointer'
+							className='p-2 rounded-xl text-white hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white transition-all cursor-pointer'
 							title='Reset Zoom'
 						>
 							<RotateCcw className='w-5 h-5' />
 						</button>
 						<div className='w-px h-5 bg-white/20 my-auto' />
 						<button
+							type="button"
+							aria-label="Close image gallery"
 							onClick={() => setIsZoomModalOpen(false)}
-							className='p-2 rounded-xl text-white hover:bg-red-500/80 transition-all cursor-pointer'
+							className='p-2 rounded-xl text-white hover:bg-red-500/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white transition-all cursor-pointer'
 							title='Close Gallery'
 						>
 							<X className='w-5 h-5' />
@@ -166,8 +181,10 @@ export default function ProductSwiper({
 					{/* Navigation Prev */}
 					{images.length > 1 && (
 						<button
+							type="button"
+							aria-label="Previous image"
 							onClick={handlePrev}
-							className='absolute left-4 top-1/2 -translate-y-1/2 z-50 p-3 rounded-full bg-black/60 border border-white/20 text-white hover:bg-white/20 transition-all cursor-pointer'
+							className='absolute left-4 top-1/2 -translate-y-1/2 z-50 p-3 rounded-full bg-black/60 border border-white/20 text-white hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white transition-all cursor-pointer'
 							title='Previous image'
 						>
 							<ChevronLeft className='w-6 h-6' />
@@ -193,8 +210,10 @@ export default function ProductSwiper({
 					{/* Navigation Next */}
 					{images.length > 1 && (
 						<button
+							type="button"
+							aria-label="Next image"
 							onClick={handleNext}
-							className='absolute right-4 top-1/2 -translate-y-1/2 z-50 p-3 rounded-full bg-black/60 border border-white/20 text-white hover:bg-white/20 transition-all cursor-pointer'
+							className='absolute right-4 top-1/2 -translate-y-1/2 z-50 p-3 rounded-full bg-black/60 border border-white/20 text-white hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white transition-all cursor-pointer'
 							title='Next image'
 						>
 							<ChevronRight className='w-6 h-6' />
@@ -204,20 +223,23 @@ export default function ProductSwiper({
 					{/* Bottom Thumbnail Strip in Modal */}
 					{images.length > 1 && (
 						<div className='absolute bottom-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 bg-black/60 border border-white/20 px-3 py-2 rounded-2xl backdrop-blur-md max-w-full overflow-x-auto'>
-							{images.map((img) => {
+							{images.map((img, idx) => {
 								const isSel = currentImg.url === img.url;
 								return (
 									<button
 										key={img.url}
+										type="button"
+										aria-label={`View gallery image ${idx + 1}`}
+										aria-current={isSel ? 'true' : 'false'}
 										onClick={() => setActiveImage(img)}
 										className={cn(
-											'w-12 h-12 rounded-xl overflow-hidden border-2 transition-all cursor-pointer relative shrink-0',
+											'w-12 h-12 rounded-xl overflow-hidden border-2 transition-all cursor-pointer relative shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white',
 											isSel ? 'border-primary scale-110' : 'border-transparent opacity-60 hover:opacity-100',
 										)}
 									>
 										<Image
 											src={img.url}
-											alt='Modal thumbnail'
+											alt={`Modal thumbnail ${idx + 1}`}
 											fill
 											className='object-cover'
 										/>
