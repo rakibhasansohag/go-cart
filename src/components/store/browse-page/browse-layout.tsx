@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { SlidersHorizontal, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import ProductSort from './sort';
+import PageSizeSelector from './page-size-selector';
 
 interface BrowseLayoutClientProps {
 	filters: React.ReactNode;
@@ -103,18 +104,21 @@ export default function BrowseLayoutClient({
 			{/* Main Content Area */}
 			<main id='main-content' className='flex-1 w-full min-w-0 lg:h-[calc(100vh-64px)] lg:overflow-y-auto scrollbar'>
 				{/* Top Actions Bar (Sticky) */}
-				<div className='sticky top-0 z-30 bg-background/95 backdrop-blur-md border-b border-border py-3 px-4 md:px-6 flex items-center justify-between gap-4'>
+				<div className='sticky top-0 z-30 bg-background/95 backdrop-blur-md border-b border-border py-3 px-4 md:px-6 flex items-center justify-between gap-3'>
 					<Button
 						variant='outline'
 						onClick={() => setIsSidebarOpen((prev) => !prev)}
-						className='flex items-center gap-x-2 !h-9 px-4 rounded-md border-border text-main-primary bg-background font-medium hover:bg-secondary cursor-pointer'
+						className='flex items-center gap-x-2 !h-9 px-3 sm:px-4 rounded-md border-border text-main-primary bg-background font-medium hover:bg-secondary cursor-pointer flex-none'
 					>
 						<SlidersHorizontal className='w-4 h-4 text-main-secondary' />
 						<span className='text-xs'>
 							{isSidebarOpen ? 'Hide Filters' : 'Show Filters'}
 						</span>
 					</Button>
-					<ProductSort />
+					<div className='flex items-center gap-2 sm:gap-3 flex-wrap justify-end'>
+						<PageSizeSelector />
+						<ProductSort />
+					</div>
 				</div>
 
 				{/* Children Content (Product List) */}

@@ -166,6 +166,18 @@ async function handle(request: Request) {
 	// 6. Stock Depleted & Restock Reminders
 	results.depletedStockCheck = await runRestockAndStockOutCheck();
 
+	// 7. Daily Offer Rotation & Flash Deals Countdown
+	try {
+		const { rotateDailyOffers } = await import('@/lib/offers/rotation');
+		const offerRotation = await rotateDailyOffers();
+		results.offerRotation = { status: 'success', details: offerRotation };
+	} catch (error) {
+		results.offerRotation = {
+			status: 'failed',
+			error: error instanceof Error ? error.message : 'Offer rotation failed.',
+		};
+	}
+
 	const totalDurationMs = Date.now() - startTime;
 	const allSucceeded = Object.values(results).every(
 		(r) => r.status === 'success' || r.status === 'skipped',

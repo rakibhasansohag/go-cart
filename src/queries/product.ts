@@ -705,6 +705,7 @@ export interface ProductFilterParams {
 	color?: string[];
 	brand?: string[];
 	rating?: number;
+	page?: number;
 	[key: string]: unknown;
 }
 
@@ -714,16 +715,22 @@ export interface ProductFilterParams {
 // Parameters:
 //   - filters: Filters to apply to the products query (store, category, subCategory, offer, size...).
 //   - sortBy: Sort the filtered results (Most popular, New Arivals, Top Rated...).
-//   - page: The current page number for pagination (default = 1).
-//   - pageSize: The number of products per page (default = 10).
+//   - cursor: Optional cursor for cursor-based infinite pagination.
+//   - pageSize: The number of products per page (default = 24).
+//   - page: Optional 1-based page number for offset pagination.
 // Returns: An object containing paginated products, filtered variants, and pagination metadata (totalPages, currentPage, pageSize, totalCount).
 export const getProducts = async (
 	filters: ProductFilterParams = {},
 	sortBy = '',
 	cursor?: string | null,
-	pageSize: number = 10,
+	pageSize: number = 24,
+	page?: number,
 ) => {
 	const limit = pageSize;
+	const currentPage = Math.max(
+		1,
+		page ?? (typeof filters.page === 'number' ? filters.page : 1),
+	);
 	let storeId: string | undefined;
 	let categoryId: string | undefined;
 	let subCategoryId: string | undefined;
@@ -938,32 +945,39 @@ export const getProducts = async (
 			orderBy = [{ views: 'desc' }, { id: 'asc' }];
 	}
 
-	// Get all filtered, sorted products using cursor-based pagination
+	// Get all filtered, sorted products using cursor-based or offset pagination
 	const useRankedSearchOrder = Boolean(searchPattern && !sortBy && rankedSearch);
-	const rawProducts = await db.product.findMany({
-		where: wherClause,
-		orderBy: useRankedSearchOrder ? [{ id: 'asc' }] : orderBy,
-		take: useRankedSearchOrder ? rankedSearch!.candidates.length : limit + 1,
-		...(cursor && !useRankedSearchOrder
-			? {
-				cursor: { id: cursor },
-				skip: 1,
-			}
-			: {}),
-		include: {
-			variants: {
-				include: {
-					sizes: true,
-					images: {
-						orderBy: {
-							order: 'asc',
+	const [totalCount, rawProducts] = await Promise.all([
+		db.product.count({ where: wherClause }),
+		db.product.findMany({
+			where: wherClause,
+			orderBy: useRankedSearchOrder ? [{ id: 'asc' }] : orderBy,
+			take: useRankedSearchOrder ? rankedSearch!.candidates.length : limit + 1,
+			...(cursor && !useRankedSearchOrder
+				? {
+					cursor: { id: cursor },
+					skip: 1,
+				}
+				: !cursor && currentPage > 1
+				? {
+					skip: (currentPage - 1) * limit,
+				}
+				: {}),
+			include: {
+				variants: {
+					include: {
+						sizes: true,
+						images: {
+							orderBy: {
+								order: 'asc',
+							},
 						},
+						colors: true,
 					},
-					colors: true,
 				},
 			},
-		},
-	});
+		}),
+	]);
 
 	if (useRankedSearchOrder && rankedSearch) {
 		const relevanceOrder = new Map(
@@ -1056,15 +1070,17 @@ export const getProducts = async (
 		};
 	});
 
-	const totalCount = productsWithFilteredVariants.length;
+	const totalPages = Math.max(1, Math.ceil(totalCount / limit));
 
 	// Return the paginated data along with metadata
 	return {
 		products: productsWithFilteredVariants,
 		nextCursor,
-		hasNextPage,
+		hasNextPage: hasNextPage || currentPage < totalPages,
 		pageSize: limit,
 		totalCount,
+		totalPages,
+		currentPage,
 	};
 };
 

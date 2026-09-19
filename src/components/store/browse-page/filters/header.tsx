@@ -17,7 +17,14 @@ export default function FiltersHeader({
 	const chips: { key: string; value: string; label: string }[] = [];
 
 	searchParams.forEach((val, key) => {
-		if (!val || key === 'sort' || (key === 'search' && val === '')) return;
+		if (
+			!val ||
+			key === 'sort' ||
+			key === 'page' ||
+			key === 'limit' ||
+			(key === 'search' && val === '')
+		)
+			return;
 
 		if (key === 'brand' || key === 'color' || key === 'size') {
 			const items = val.split(',').map((s) => s.trim()).filter(Boolean);
@@ -56,6 +63,10 @@ export default function FiltersHeader({
 		const sort = searchParams.get('sort');
 		if (sort) {
 			params.set('sort', sort);
+		}
+		const limit = searchParams.get('limit');
+		if (limit) {
+			params.set('limit', limit);
 		}
 		const queryString = params.toString();
 		replace(queryString ? `${pathname}?${queryString}` : pathname);

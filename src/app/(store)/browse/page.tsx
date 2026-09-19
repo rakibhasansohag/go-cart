@@ -87,6 +87,8 @@ export default async function BrowsePage({
 		color,
 		brand,
 		rating,
+		page,
+		limit,
 	} = resolvedParams;
 
 	const brandArray = Array.isArray(brand)
@@ -96,6 +98,8 @@ export default async function BrowsePage({
 			: undefined;
 
 	const ratingNumber = Number(rating) || undefined;
+	const pageNumber = Math.max(1, Number(page) || 1);
+	const pageSize = Math.min(48, Math.max(12, Number(limit) || 24));
 
 	const queryClient = getQueryClient();
 
@@ -110,6 +114,7 @@ export default async function BrowsePage({
 		color: Array.isArray(color) ? color : color ? [color] : undefined,
 		brand: brandArray,
 		rating: ratingNumber,
+		page: pageNumber,
 	};
 
 	const facetFilterScope = {
@@ -123,7 +128,7 @@ export default async function BrowsePage({
 	await Promise.all([
 		queryClient.prefetchQuery({
 			queryKey: queryKeys.products.list(filterOptions, sort || '', null),
-			queryFn: () => getProducts(filterOptions, sort, null),
+			queryFn: () => getProducts(filterOptions, sort, null, pageSize, pageNumber),
 		}),
 		queryClient.prefetchQuery({
 			queryKey: queryKeys.search.facets(facetFilterScope),

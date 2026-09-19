@@ -347,6 +347,8 @@ export type FiltersQueryType = {
 	color?: string | string[];
 	brand?: string | string[];
 	rating?: string;
+	page?: string;
+	limit?: string;
 };
 
 export type SearchFacetsType = {
