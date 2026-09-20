@@ -115,7 +115,7 @@ export default function ProfileSidebar() {
 										'relative flex h-10 items-center text-sm px-4 cursor-pointer transition-all duration-200 select-none overflow-hidden rounded-md mx-2 my-1',
 										isActive
 											? 'text-[#fd384f] font-bold bg-[#fd384f]/10'
-											: 'text-main-secondary hover:text-main-primary hover:bg-white/[0.04]',
+											: 'text-main-secondary hover:text-main-primary hover:bg-black/[0.05] dark:hover:bg-white/[0.04]',
 									)}
 									whileTap={{ scale: 0.97, x: 3 }}
 								>
@@ -158,7 +158,7 @@ export default function ProfileSidebar() {
 										'px-4 py-2 text-xs rounded-full font-medium transition-all duration-200 select-none whitespace-nowrap cursor-pointer',
 										isActive
 											? 'bg-[#fd384f] text-white shadow-sm font-semibold'
-											: 'bg-secondary text-main-secondary hover:text-main-primary hover:bg-white/[0.02]',
+											: 'bg-secondary text-main-secondary hover:text-main-primary hover:bg-black/[0.05] dark:hover:bg-white/[0.02]',
 									)}
 									whileTap={{ scale: 0.95 }}
 								>

@@ -545,9 +545,9 @@ export const getUserCartCoupon = async () => {
  */
 export const updateCartWithLatest = async (
 	cartProducts: CartProductType[],
-): Promise<CartProductType[]> => {
+): Promise<{ items: CartProductType[]; prunedCount: number }> => {
 	// Fetch product, variant, and size data from the database for validation
-	const validatedCartItems = await Promise.all(
+	const results = await Promise.all(
 		cartProducts.map(async (cartProduct) => {
 			const { productId, variantId, sizeId, quantity } = cartProduct;
 
@@ -579,14 +579,13 @@ export const updateCartWithLatest = async (
 				},
 			});
 
+			// Skip stale items (product/variant/size removed) instead of throwing
 			if (
 				!product ||
 				product.variants.length === 0 ||
 				product.variants[0].sizes.length === 0
 			) {
-				throw new Error(
-					`Invalid product, variant, or size combination for productId ${productId}, variantId ${variantId}, sizeId ${sizeId}`,
-				);
+				return null;
 			}
 
 			const variant = product.variants[0];
@@ -631,7 +630,6 @@ export const updateCartWithLatest = async (
 				productSlug: product.slug,
 				variantSlug: variant.slug,
 				sizeId,
-				sku: variant.sku,
 				name: product.name,
 				variantName: variant.variantName,
 				image: variant.images[0].url,
@@ -648,10 +646,11 @@ export const updateCartWithLatest = async (
 				deliveryTimeMin: details.deliveryTimeMin,
 				deliveryTimeMax: details.deliveryTimeMax,
 				isFreeShipping: details.isFreeShipping,
-			};
+			} satisfies CartProductType;
 		}),
 	);
-	return validatedCartItems;
+	const items = results.filter(Boolean) as CartProductType[];
+	return { items, prunedCount: cartProducts.length - items.length };
 };
 
 // Function: getUserShippingAddresses

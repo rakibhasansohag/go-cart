@@ -220,7 +220,7 @@ const StoreDefaultShippingDetails: FC<StoreDefaultShippingDetailsProps> = ({
 									name='defaultShippingFeeFixed'
 									render={({ field }) => (
 										<FormItem className='flex-1'>
-											<FormLabel>Fixed Shippig fee</FormLabel>
+											<FormLabel>Fixed Shipping fee</FormLabel>
 											<FormControl>
 												<NumberInput
 													defaultValue={field.value}

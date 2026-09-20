@@ -12,6 +12,7 @@ import EmptyCart from './empty-cart';
 import { updateCartWithLatest } from '@/queries/user';
 import CountryNote from '../shared/country-note';
 import { Skeleton } from '@/components/ui/skeleton';
+import { toast } from 'sonner';
 
 function CartPageSkeleton() {
 	return (
@@ -73,8 +74,15 @@ export default function CartContainer({
 		let cancelled = false;
 		const loadAndSyncCart = async () => {
 			try {
-				const updatedCart = await updateCartWithLatest(cartItems);
-				if (!cancelled) setCart(updatedCart);
+				const { items, prunedCount } = await updateCartWithLatest(cartItems);
+				if (!cancelled) {
+					setCart(items);
+					if (prunedCount > 0) {
+						toast.warning(
+							`${prunedCount} item${prunedCount > 1 ? 's were' : ' was'} removed from your cart because ${prunedCount > 1 ? "they're" : "it's"} no longer available.`,
+						);
+					}
+				}
 			} catch {
 				lastSyncedCartKey.current = '';
 			} finally {

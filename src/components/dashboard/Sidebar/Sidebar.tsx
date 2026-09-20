@@ -26,7 +26,12 @@ interface SidebarProps {
 }
 
 const Sidebar: FC<SidebarProps> = async ({ isAdmin, stores }) => {
-	const user = await currentUser();
+	let user = null;
+	try {
+		user = await currentUser();
+	} catch {
+		// Clerk BAPI unavailable — render sidebar without user info
+	}
 	return (
 		<aside className='hidden lg:flex w-[300px] border-r border-border/60 h-screen p-4 flex-col fixed top-0 left-0 bottom-0 bg-background z-30 overflow-y-auto scrollbar-none'>
 			<Link href='/' replace className='shrink-0'>

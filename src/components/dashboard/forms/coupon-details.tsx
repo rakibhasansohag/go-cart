@@ -44,7 +44,7 @@ import { useFormDirtyGuard } from '@/hooks/use-form-dirty-guard';
 import { v4 } from 'uuid';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
-import { format } from 'date-fns';
+import { format, addDays } from 'date-fns';
 
 // Date time picker
 import DateTimePicker from 'react-datetime-picker';
@@ -73,7 +73,7 @@ const CouponDetails: FC<CouponDetailsProps> = ({ data, storeUrl }) => {
 			maxUses: data?.maxUses ?? 0,
 			maxUsesPerUser: data?.maxUsesPerUser ?? 1,
 			startDate: data?.startDate || format(new Date(), "yyyy-MM-dd'T'HH:mm:ss"),
-			endDate: data?.endDate || format(new Date(), "yyyy-MM-dd'T'HH:mm:ss"),
+			endDate: data?.endDate || format(addDays(new Date(), 7), "yyyy-MM-dd'T'HH:mm:ss"),
 		},
 	});
 
