@@ -22,6 +22,7 @@ export function DocsShell({ children }: DocsShellProps) {
 			<DocsSearchModal
 				isOpen={isSearchOpen}
 				onClose={() => setIsSearchOpen(false)}
+				onOpen={() => setIsSearchOpen(true)}
 			/>
 			<div className='flex-1 flex max-w-[1600px] w-full mx-auto'>
 				<DocsSidebar

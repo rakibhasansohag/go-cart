@@ -8,6 +8,7 @@ import { Search, X, FileText, ArrowRight } from 'lucide-react';
 interface DocsSearchModalProps {
 	isOpen: boolean;
 	onClose: () => void;
+	onOpen?: () => void;
 }
 
 interface SearchResult {
@@ -18,7 +19,7 @@ interface SearchResult {
 	matchedHeading?: string;
 }
 
-export function DocsSearchModal({ isOpen, onClose }: DocsSearchModalProps) {
+export function DocsSearchModal({ isOpen, onClose, onOpen }: DocsSearchModalProps) {
 	const router = useRouter();
 	const [query, setQuery] = useState('');
 	const [results, setResults] = useState<SearchResult[]>([]);
@@ -32,7 +33,7 @@ export function DocsSearchModal({ isOpen, onClose }: DocsSearchModalProps) {
 					onClose();
 				} else {
 					setQuery('');
-					// Handled by parent opening
+					onOpen?.();
 				}
 			}
 			if (e.key === 'Escape' && isOpen) {
@@ -42,7 +43,7 @@ export function DocsSearchModal({ isOpen, onClose }: DocsSearchModalProps) {
 
 		window.addEventListener('keydown', handleKeyDown);
 		return () => window.removeEventListener('keydown', handleKeyDown);
-	}, [isOpen, onClose]);
+	}, [isOpen, onClose, onOpen]);
 
 	useEffect(() => {
 		if (!query.trim()) {
