@@ -108,7 +108,7 @@ export default function ProfileSidebar() {
 							(pathname.startsWith(item.link) && item.link !== '/profile')
 						);
 						return (
-							<Link key={item.link} href={item.link} prefetch={false}>
+							<Link key={item.link} href={item.link} prefetch={false} className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#fd384f] rounded-md block">
 								<motion.div
 									onMouseEnter={() => prefetchRouteData(item.link)}
 									className={cn(
@@ -151,7 +151,7 @@ export default function ProfileSidebar() {
 							(pathname.startsWith(item.link) && item.link !== '/profile')
 						);
 						return (
-							<Link key={item.link} href={item.link} prefetch={false} className="shrink-0">
+							<Link key={item.link} href={item.link} prefetch={false} className="shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#fd384f] rounded-full">
 								<motion.div
 									onMouseEnter={() => prefetchRouteData(item.link)}
 									className={cn(

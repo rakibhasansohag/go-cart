@@ -166,7 +166,7 @@ export default function SidebarNavSeller({
 										if (onNavigate) onNavigate();
 									}}
 									className={cn(
-										'relative z-10 flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-colors duration-200 select-none group',
+										'relative z-10 flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-colors duration-200 select-none group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
 										isActive
 											? 'bg-primary/10 text-primary font-semibold'
 											: 'text-muted-foreground hover:text-foreground hover:bg-muted/70'

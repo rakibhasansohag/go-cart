@@ -237,6 +237,23 @@
     cursor: not-allowed;
   }
 
+  /* Accessible focus indicators for keyboard navigation across all interactive elements */
+  :where(
+    a[href],
+    button:not(:disabled),
+    select:not(:disabled),
+    input:not(:disabled),
+    textarea:not(:disabled),
+    summary,
+    [role="button"]:not([aria-disabled="true"]),
+    [role="tab"]:not([aria-disabled="true"]),
+    [role="menuitem"]:not([aria-disabled="true"]),
+    [tabindex]:not([tabindex="-1"])
+  ):focus-visible {
+    outline: 2px solid var(--color-ring, #3b82f6);
+    outline-offset: 2px;
+  }
+
   /* One obvious hover contract for every data table, including direct HTML
      tables that predate the shared Table / DataTable components. The colour
      is intentionally blue (rather than muted) so it remains visible in both
