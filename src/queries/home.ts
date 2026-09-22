@@ -45,18 +45,24 @@ export const getHomeDataDynamic = async (
 		return propertyMapping[property];
 	};
 
-	// GetCheapestSize
+	// GetCheapestSize finds the size with the minimum discounted price in a single O(N) pass without array allocation or sorting.
 	const getCheapestSize = (
 		sizes: ProductSize[],
-	): { discountedPrice: number } => {
-		const sizesWithDiscount = sizes.map((size) => ({
-			...size,
-			discountedPrice: size.price * (1 - size.discount / 100),
-		}));
-
-		return sizesWithDiscount.sort(
-			(a, b) => a.discountedPrice - b.discountedPrice,
-		)[0];
+	): ProductSize & { discountedPrice: number } => {
+		let cheapestPrice = Infinity;
+		let cheapestSizeIndex = 0;
+		for (let i = 0; i < sizes.length; i++) {
+			const discountedPrice = sizes[i].price * (1 - sizes[i].discount / 100);
+			if (discountedPrice < cheapestPrice) {
+				cheapestPrice = discountedPrice;
+				cheapestSizeIndex = i;
+			}
+		}
+		const chosen = sizes[cheapestSizeIndex];
+		return {
+			...chosen,
+			discountedPrice: cheapestPrice,
+		};
 	};
 
 	const formatProductData = (
