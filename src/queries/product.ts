@@ -1003,35 +1003,33 @@ export const getProducts = async (
 
 	type VariantWithSizes = ProductVariant & { sizes: Size[] };
 
-	// Product price sorting
-	products.sort((a, b) => {
-		// Helper function to get the minimum price from a product's variants
-		const getMinPrice = (product: { variants: VariantWithSizes[] }) =>
-			Math.min(
-				...product.variants.flatMap((variant: VariantWithSizes) =>
-					variant.sizes.map((size) => {
-						const discount = size.discount;
-						const discountedPrice = size.price * (1 - discount / 100);
-						return discountedPrice;
-					}),
-				),
-				Infinity, // Default to Infinity if no sizes exist
-			);
-
-		// Get minimum prices for both products
-		const minPriceA = getMinPrice(a);
-		const minPriceB = getMinPrice(b);
-
-		// Explicitly check for price sorting conditions
-		if (sortBy === 'price-low-to-high') {
-			return minPriceA - minPriceB; // Ascending order
-		} else if (sortBy === 'price-high-to-low') {
-			return minPriceB - minPriceA; // Descending order
+	// Product price sorting: only compute min prices and sort if explicitly requested by price sort option.
+	// Precomputing min prices in an O(N) pass avoids O(N log N) redundant calculations and array allocations during sort comparisons.
+	if (sortBy === 'price-low-to-high' || sortBy === 'price-high-to-low') {
+		const priceMap = new Map<string, number>();
+		for (const product of products) {
+			let minPrice = Infinity;
+			for (const variant of product.variants as VariantWithSizes[]) {
+				for (const size of variant.sizes) {
+					const discountedPrice = size.price * (1 - size.discount / 100);
+					if (discountedPrice < minPrice) {
+						minPrice = discountedPrice;
+					}
+				}
+			}
+			priceMap.set(product.id, minPrice);
 		}
 
-		// If no price sort option is provided, return 0 (no sorting by price)
-		return 0;
-	});
+		if (sortBy === 'price-low-to-high') {
+			products.sort(
+				(a, b) => (priceMap.get(a.id) ?? Infinity) - (priceMap.get(b.id) ?? Infinity),
+			);
+		} else {
+			products.sort(
+				(a, b) => (priceMap.get(b.id) ?? Infinity) - (priceMap.get(a.id) ?? Infinity),
+			);
+		}
+	}
 
 	// Transform the products with filtered variants into ProductCardType structure
 	const productsWithFilteredVariants = products.map((product) => {
