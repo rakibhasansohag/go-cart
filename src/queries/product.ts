@@ -1003,35 +1003,39 @@ export const getProducts = async (
 
 	type VariantWithSizes = ProductVariant & { sizes: Size[] };
 
-	// Product price sorting
-	products.sort((a, b) => {
-		// Helper function to get the minimum price from a product's variants
-		const getMinPrice = (product: { variants: VariantWithSizes[] }) =>
-			Math.min(
-				...product.variants.flatMap((variant: VariantWithSizes) =>
-					variant.sizes.map((size) => {
-						const discount = size.discount;
-						const discountedPrice = size.price * (1 - discount / 100);
-						return discountedPrice;
-					}),
-				),
-				Infinity, // Default to Infinity if no sizes exist
-			);
+	// Helper function to calculate minimum discounted price in O(V * S) without array allocations
+	const getMinPrice = (product: { variants: VariantWithSizes[] }): number => {
+		let minPrice = Infinity;
+		for (const variant of product.variants) {
+			for (const size of variant.sizes) {
+				const discountedPrice = size.price * (1 - size.discount / 100);
+				if (discountedPrice < minPrice) {
+					minPrice = discountedPrice;
+				}
+			}
+		}
+		return minPrice;
+	};
 
-		// Get minimum prices for both products
-		const minPriceA = getMinPrice(a);
-		const minPriceB = getMinPrice(b);
-
-		// Explicitly check for price sorting conditions
-		if (sortBy === 'price-low-to-high') {
-			return minPriceA - minPriceB; // Ascending order
-		} else if (sortBy === 'price-high-to-low') {
-			return minPriceB - minPriceA; // Descending order
+	// Performance Optimization: Only sort products in JS when requested by price.
+	// Bypasses redundant sort execution for non-price sort criteria (default, most-popular,
+	// new-arrivals, top-rated), preserving database sort order and skipping redundant computations.
+	// When sorting by price, pre-computes min prices in O(N) pass to avoid O(N log N) recalculations
+	// and intermediate array allocations in comparator.
+	if (sortBy === 'price-low-to-high' || sortBy === 'price-high-to-low') {
+		const priceMap = new Map<string, number>();
+		for (const product of products) {
+			priceMap.set(product.id, getMinPrice(product));
 		}
 
-		// If no price sort option is provided, return 0 (no sorting by price)
-		return 0;
-	});
+		products.sort((a, b) => {
+			const minPriceA = priceMap.get(a.id) ?? Infinity;
+			const minPriceB = priceMap.get(b.id) ?? Infinity;
+			return sortBy === 'price-low-to-high'
+				? minPriceA - minPriceB
+				: minPriceB - minPriceA;
+		});
+	}
 
 	// Transform the products with filtered variants into ProductCardType structure
 	const productsWithFilteredVariants = products.map((product) => {
