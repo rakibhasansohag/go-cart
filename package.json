@@ -131,7 +131,7 @@
 		"social-logos": "^3.3.19",
 		"sonner": "^2.0.8",
 		"stripe": "^19.3.0",
-		"svix": "^1.98.0",
+		"svix": "^2.5.0",
 		"swiper": "^11.2.10",
 		"tailwind-merge": "^3.7.0",
 		"uuid": "^11.1.1",
