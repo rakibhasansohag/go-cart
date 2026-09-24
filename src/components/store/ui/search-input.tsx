@@ -37,10 +37,12 @@ const SearchInput: FC<Props> = ({
 				placeholder={placeholder}
 				value={value}
 				onChange={(e) => onChange(e.target.value)}
+				aria-label={placeholder || 'Search input'}
 				className='flex-1 h-full bg-transparent px-3 text-sm text-main-primary outline-none placeholder:text-neutral-500 min-w-0'
 			/>
 			<button
 				type='submit'
+				aria-label='Submit search'
 				className='h-full px-4 text-white bg-gradient-to-r from-orange-500 to-red-500 flex items-center justify-center cursor-pointer select-none hover:opacity-90 transition-opacity outline-none'
 			>
 				<Search className='w-4 h-4' />
