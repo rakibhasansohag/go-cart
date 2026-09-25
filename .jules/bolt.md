@@ -1,0 +1,3 @@
+## 2026-03-30 - Single-pass Minimum Scan and Object Aggregation in Server Queries
+**Learning:** In homepage and dynamic data fetch queries (`getHomeDataDynamic`), calling `sizes.map(...).sort(...)` creates unnecessary array allocations and runtime overhead (sorting O(N log N) vs linear scan O(N)). Furthermore, combining result objects via `results.reduce((acc, result) => ({ ...acc, ...result }), {})` allocates intermediate objects at O(K^2) memory complexity.
+**Action:** Use a single-pass `for` loop to compute minimum/cheapest properties without map/sort, and use `Object.assign({}, ...results)` to aggregate query result objects in O(K) time.
