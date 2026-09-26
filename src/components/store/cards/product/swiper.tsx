@@ -58,8 +58,8 @@ export default function ProductCardImageSwiper({
 
 	if (!safeImages.length) {
 		return (
-			<div className='relative w-full h-[240px] overflow-hidden rounded-2xl mb-2 bg-muted/40 dark:bg-slate-800/40 border border-border/50 flex flex-col items-center justify-center gap-2 text-muted-foreground'>
-				<ImageIcon className='w-10 h-10 opacity-45' aria-hidden='true' />
+			<div className='relative w-full aspect-square overflow-hidden rounded-xl sm:rounded-2xl mb-1.5 sm:mb-2 bg-muted/40 dark:bg-slate-800/40 border border-border/50 flex flex-col items-center justify-center gap-2 text-muted-foreground'>
+				<ImageIcon className='w-8 h-8 sm:w-10 sm:h-10 opacity-45' aria-hidden='true' />
 				<span className='text-xs'>Image unavailable</span>
 			</div>
 		);
@@ -69,7 +69,7 @@ export default function ProductCardImageSwiper({
 		<div
 			onMouseEnter={startCycle}
 			onMouseLeave={stopCycle}
-			className='relative w-full h-[240px] overflow-hidden rounded-2xl mb-2 bg-muted/40 dark:bg-slate-800/40 cursor-pointer select-none'
+			className='relative w-full aspect-square overflow-hidden rounded-xl sm:rounded-2xl mb-1.5 sm:mb-2 bg-muted/40 dark:bg-slate-800/40 cursor-pointer select-none'
 		>
 			{/* Skeleton loader overlay while image is loading */}
 			{!isLoaded && (

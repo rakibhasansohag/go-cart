@@ -5,11 +5,11 @@ export function ProductsGridSkeleton() {
 	return (
 		<div className='w-full'>
 			{/* Grid matching MoreToLoveSection responsive grid */}
-			<div className='mt-7 bg-background p-4 pb-16 rounded-md w-full grid grid-cols-1 min-[576px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4 animate-pulse'>
+			<div className='mt-5 sm:mt-7 bg-background p-2.5 sm:p-4 pb-16 rounded-xl sm:rounded-md w-full grid grid-cols-2 min-[576px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-2.5 sm:gap-4 animate-pulse'>
 				{Array.from({ length: 12 }).map((_, i) => (
 					<div
 						key={i}
-						className='w-full bg-secondary/50 rounded-3xl p-4 space-y-4'
+						className='w-full bg-secondary/50 rounded-2xl sm:rounded-3xl p-2.5 sm:p-4 space-y-3 sm:space-y-4'
 					>
 						{/* Image placeholder */}
 						<div className='w-full aspect-square rounded-2xl bg-neutral-300 dark:bg-neutral-800' />

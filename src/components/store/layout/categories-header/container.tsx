@@ -14,7 +14,7 @@ export default function CategoriesHeaderContainer({
 	const [open, setOpen] = useState<boolean>(false);
 
 	return (
-		<div className='w-full max-w-full px-2 sm:px-4 flex items-center gap-x-2 overflow-x-auto no-scrollbar'>
+		<div className='w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-12 flex items-center gap-x-2 overflow-x-auto no-scrollbar'>
 			{/* Category menu */}
 			<div className='shrink-0'>
 				<CategoriesMenu categories={categories} open={open} setOpen={setOpen} />

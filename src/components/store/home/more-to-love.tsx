@@ -35,8 +35,8 @@ export default function MoreToLoveSection({
 					</h2>
 				</div>
 			</div>
-			{/* Products grid (1 column < 576px, 2 columns >= 576px) */}
-			<div className='mt-7 bg-background p-4 pb-16 rounded-md w-full grid grid-cols-1 min-[576px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4'>
+			{/* Products grid (2 columns on mobile, scaling up to 6 on 2xl) */}
+			<div className='mt-5 sm:mt-7 bg-background p-2.5 sm:p-4 pb-16 rounded-xl sm:rounded-md w-full grid grid-cols-2 min-[576px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-2.5 sm:gap-4'>
 				{topPopularProducts.map((product) => (
 					<ProductCard key={product.id + product.slug} product={product} className='w-full' />
 				))}

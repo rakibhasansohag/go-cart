@@ -66,21 +66,21 @@ export default function ProductCard({
 		>
 			<div
 				className={cn(
-					'group w-full relative transition-all duration-300 bg-secondary ease-in-out p-4 border border-transparent',
+					'group w-full relative transition-all duration-300 bg-secondary ease-in-out p-2.5 sm:p-4 border border-transparent',
 					isHovered
-						? 'rounded-t-3xl shadow-xl border-border'
-						: 'rounded-3xl',
+						? 'rounded-t-2xl sm:rounded-t-3xl shadow-xl border-border'
+						: 'rounded-2xl sm:rounded-3xl',
 				)}
 			>
 				{/* Top-Right Floating Wishlist Toggle Button */}
 				<button
 					type='button'
 					onClick={handleWishlistToggle}
-					className='absolute top-3 right-3 z-20 w-8 h-8 rounded-full bg-background/80 backdrop-blur-xs border border-border/60 shadow-xs flex items-center justify-center hover:scale-110 transition-all cursor-pointer'
+					className='absolute top-2 right-2 sm:top-3 sm:right-3 z-20 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-background/80 backdrop-blur-xs border border-border/60 shadow-xs flex items-center justify-center hover:scale-110 transition-all cursor-pointer'
 					title={isInWishlist ? 'Remove from wishlist' : 'Add to wishlist'}
 				>
 					<Heart
-						className={cn('w-4 h-4 transition-colors', {
+						className={cn('w-3.5 h-3.5 sm:w-4 sm:h-4 transition-colors', {
 							'fill-red-500 stroke-red-500': isInWishlist,
 							'text-muted-foreground hover:text-foreground': !isInWishlist,
 						})}
@@ -95,22 +95,22 @@ export default function ProductCard({
 						{/* Images Swiper */}
 						<ProductCardImageSwiper images={images} />
 						{/* Title */}
-						<div className='text-sm text-main-primary h-[18px] overflow-hidden overflow-ellipsis line-clamp-1'>
+						<div className='text-xs sm:text-sm text-main-primary font-medium leading-snug line-clamp-2 h-8 sm:h-9 overflow-hidden overflow-ellipsis'>
 							{name} · {variantName}
 						</div>
 						{/* Rating - Sales */}
 						{product.rating > 0 && product.sales > 0 && (
-							<div className='flex items-center gap-x-1 h-5'>
+							<div className='flex items-center gap-x-1 h-4 sm:h-5 mt-0.5 sm:mt-1'>
 								<StarRating
 									count={5}
-									size={14}
+									size={12}
 									color='#F5F5F5'
 									activeColor='#FFD804'
 									value={rating}
 									isHalf
 									edit={false}
 								/>
-								<div className='text-xs text-main-secondary'>{sales} sold</div>
+								<div className='text-[10px] sm:text-xs text-main-secondary'>{sales} sold</div>
 							</div>
 						)}
 						{/* Price */}

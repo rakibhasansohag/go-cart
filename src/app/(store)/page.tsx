@@ -85,7 +85,7 @@ export default async function HomePage() {
 					<h1 className='sr-only'>
 						GoCart - Discover Exclusive Deals, Top Categories & Trending Products
 					</h1>
-					<div className='max-w-[1600px] mx-auto min-h-screen p-4 space-y-10'>
+					<div className='max-w-[1600px] mx-auto min-h-screen px-4 sm:px-6 lg:px-12 py-4 space-y-10'>
 						<HydrationBoundary state={dehydrate(queryClient)}>
 							{layoutSections.map((section) => {
 								if (!section.isActive) return null;
