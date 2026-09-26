@@ -27,7 +27,7 @@ export default async function Header() {
 
 	return (
 		<div className='bg-gradient-to-r from-slate-500 to-slate-800 sticky top-0 z-50'>
-			<div className='h-full w-full max-w-[1600px] mx-auto overflow-hidden lg:overflow-visible lg:flex text-white px-4 sm:px-6 lg:px-12'>
+			<div className='h-full w-full max-w-[1600px] mx-auto overflow-visible lg:flex text-white px-4 sm:px-6 lg:px-12'>
 				<div className='flex lg:w-full lg:flex-1 flex-col lg:flex-row gap-2.5 sm:gap-3 py-2.5 sm:py-3 min-w-0'>
 					<div className='flex items-center justify-between gap-1 sm:gap-2 min-w-0'>
 						<Link href='/' className='shrink-0'>
@@ -43,6 +43,7 @@ export default async function Header() {
 								<BookOpen className='w-3.5 h-3.5' />
 								<span className='hidden sm:inline'>Docs</span>
 							</Link>
+							<CountryLanguageCurrencySelector userCountry={userCountry} variant='mobile' />
 							<ThemeToggle />
 							<NotificationBell />
 							<UserMenu />
