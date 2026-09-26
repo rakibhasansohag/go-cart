@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { ChevronDown, UserIcon } from 'lucide-react';
@@ -84,21 +84,40 @@ const extraLinks = [
 
 export default function UserMenuClient({ user, roleLink }: UserMenuClientProps) {
 	const [isOpen, setIsOpen] = useState(false);
+	const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+	const clearHoverTimeout = () => {
+		if (timeoutRef.current) {
+			clearTimeout(timeoutRef.current);
+			timeoutRef.current = null;
+		}
+	};
 
 	const handleMouseEnter = () => {
 		if (typeof window !== 'undefined' && window.matchMedia('(hover: hover)').matches) {
+			clearHoverTimeout();
 			setIsOpen(true);
 		}
 	};
 
 	const handleMouseLeave = () => {
 		if (typeof window !== 'undefined' && window.matchMedia('(hover: hover)').matches) {
-			setIsOpen(false);
+			clearHoverTimeout();
+			timeoutRef.current = setTimeout(() => {
+				setIsOpen(false);
+			}, 250);
 		}
 	};
 
+	useEffect(() => {
+		return () => {
+			clearHoverTimeout();
+		};
+	}, []);
+
 	const handleTriggerClick = (e: React.MouseEvent) => {
-		e.stopPropagation();
+		e.preventDefault();
+		clearHoverTimeout();
 		setIsOpen((prev) => !prev);
 	};
 
@@ -108,7 +127,13 @@ export default function UserMenuClient({ user, roleLink }: UserMenuClientProps) 
 			onMouseEnter={handleMouseEnter}
 			onMouseLeave={handleMouseLeave}
 		>
-			<Popover open={isOpen} onOpenChange={setIsOpen}>
+			<Popover
+				open={isOpen}
+				onOpenChange={(open) => {
+					clearHoverTimeout();
+					setIsOpen(open);
+				}}
+			>
 				<PopoverTrigger asChild>
 					<button
 						type='button'
@@ -152,15 +177,26 @@ export default function UserMenuClient({ user, roleLink }: UserMenuClientProps) 
 				</PopoverTrigger>
 
 				<PopoverContent
-					align='end'
+					align='center'
 					sideOffset={8}
+					collisionPadding={16}
 					className='w-auto p-0 border-none bg-transparent shadow-none z-50 focus:outline-none'
 				>
+					{/* Invisible hover bridge to prevent cursor gap drop */}
+					<div
+						className='absolute -top-3 left-0 right-0 h-4 bg-transparent'
+						onMouseEnter={handleMouseEnter}
+					/>
 					<div
 						onMouseEnter={handleMouseEnter}
 						onMouseLeave={handleMouseLeave}
-						className='rounded-2xl backdrop-blur-md bg-white/95 dark:bg-slate-900/95 shadow-2xl border border-slate-200/80 dark:border-slate-700/60 w-[305px] max-w-[calc(100vw-24px)] overflow-hidden transition-all'
+						className='relative'
 					>
+						{/* Indicator arrow pointing directly to user button */}
+						<div className='w-3 h-3 absolute -top-1.5 left-1/2 -translate-x-1/2 rotate-45 bg-white/95 dark:bg-slate-900/95 border-t border-l border-slate-200/80 dark:border-slate-700/60 z-50 pointer-events-none' />
+
+						<div className='relative rounded-2xl backdrop-blur-md bg-white/95 dark:bg-slate-900/95 shadow-2xl border border-slate-200/80 dark:border-slate-700/60 w-[305px] max-w-[calc(100vw-32px)] overflow-hidden transition-all'>
+
 						{/* User Status / Auth Actions */}
 						<div className='pt-5 px-6 pb-0'>
 							{user ? (
@@ -251,7 +287,8 @@ export default function UserMenuClient({ user, roleLink }: UserMenuClientProps) 
 							</ul>
 						</div>
 					</div>
-				</PopoverContent>
+				</div>
+			</PopoverContent>
 			</Popover>
 		</div>
 	);

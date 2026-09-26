@@ -9,6 +9,7 @@ export interface CountrySelectorProps {
 	open: boolean;
 	disabled?: boolean;
 	onToggle: () => void;
+	onClose?: () => void;
 	onChange: (value: SelectMenuOption['name']) => void;
 	selectedValue: SelectMenuOption;
 }
@@ -18,6 +19,7 @@ export default function CountrySelector({
 	open,
 	disabled = false,
 	onToggle,
+	onClose,
 	onChange,
 	selectedValue,
 }: CountrySelectorProps) {
@@ -25,7 +27,11 @@ export default function CountrySelector({
 
 	useOnClickOutside(ref, () => {
 		if (open) {
-			onToggle();
+			if (onClose) {
+				onClose();
+			} else {
+				onToggle();
+			}
 			setQuery('');
 		}
 	});
@@ -125,7 +131,11 @@ export default function CountrySelector({
 												onClick={() => {
 													onChange(value.name);
 													setQuery('');
-													onToggle();
+													if (onClose) {
+														onClose();
+													} else {
+														onToggle();
+													}
 												}}
 											>
 												<img
