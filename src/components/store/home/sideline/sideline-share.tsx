@@ -1,11 +1,11 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import Image from 'next/image';
-import ShareImg from '@/public/assets/images/sideline/share.png';
+import { Share2 } from 'lucide-react';
 import SocialShare from '../../shared/social-share';
 import { cn } from '@/lib/utils';
 import { AnimatePresence, motion } from 'framer-motion';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 export default function SidelineShare() {
 	const [isOpen, setIsOpen] = useState(false);
@@ -26,7 +26,7 @@ export default function SidelineShare() {
 		}
 		closeTimeoutRef.current = setTimeout(() => {
 			setIsOpen(false);
-		}, 300); // 300ms grace period so mouse movement never drops hover
+		}, 300);
 	};
 
 	const handleClick = (e: React.MouseEvent) => {
@@ -35,7 +35,6 @@ export default function SidelineShare() {
 		setIsOpen((prev) => !prev);
 	};
 
-	// Close on Escape or click outside
 	useEffect(() => {
 		if (!isOpen) return;
 
@@ -65,31 +64,31 @@ export default function SidelineShare() {
 	return (
 		<div
 			ref={containerRef}
-			className='relative mt-4'
+			className='relative'
 			onMouseEnter={handleMouseEnter}
 			onMouseLeave={handleMouseLeave}
 		>
-			{/* Trigger Button on the right dock */}
-			<button
-				type='button'
-				onClick={handleClick}
-				aria-label='Share this page'
-				title='Share on Social Media'
-				className={cn(
-					'relative w-10 h-10 flex items-center justify-center transition-colors cursor-pointer',
-					isOpen ? 'bg-red-600' : 'hover:bg-red-500',
-				)}
-			>
-				<Image
-					src={ShareImg}
-					width={28}
-					height={28}
-					alt='Share'
-					style={{ width: 28, height: 28 }}
-				/>
-			</button>
+			<Tooltip open={isOpen ? false : undefined}>
+				<TooltipTrigger asChild>
+					<button
+						type='button'
+						onClick={handleClick}
+						aria-label='Share this page'
+						className={cn(
+							'relative flex items-center justify-center size-9 rounded-xl transition-all duration-200 active:scale-95 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer',
+							isOpen
+								? 'bg-primary text-primary-foreground shadow-sm'
+								: 'text-muted-foreground hover:text-foreground hover:bg-accent/80',
+						)}
+					>
+						<Share2 className='size-4.5 transition-transform duration-200 group-hover:scale-110' />
+					</button>
+				</TooltipTrigger>
+				<TooltipContent side='left' sideOffset={10} className='font-medium text-xs'>
+					Share Page
+				</TooltipContent>
+			</Tooltip>
 
-			{/* Flyout Popup */}
 			<AnimatePresence>
 				{isOpen && (
 					<motion.div
@@ -101,15 +100,10 @@ export default function SidelineShare() {
 						onMouseEnter={handleMouseEnter}
 						onMouseLeave={handleMouseLeave}
 					>
-						{/* Invisible hover bridge to eliminate the dead zone between the dock button and popup */}
 						<div className='absolute -right-3 inset-y-0 w-4 pointer-events-auto' />
-
-						{/* Content Card matching the dock flyout styling */}
-						<div className='relative flex flex-col items-center gap-2 rounded-xl bg-neutral-800/95 dark:bg-slate-900/95 p-2.5 shadow-2xl border border-white/10 backdrop-blur-md'>
-							<SocialShare isCol showCopy iconSize={32} />
-
-							{/* Right-pointing arrow caret */}
-							<div className='absolute top-1/2 -translate-y-1/2 -right-2 w-0 h-0 border-y-[6px] border-y-transparent border-l-[8px] border-l-neutral-800 dark:border-l-slate-900 pointer-events-none' />
+						<div className='relative flex flex-col items-center gap-2 rounded-xl bg-card/95 dark:bg-slate-900/95 p-3 shadow-xl border border-border backdrop-blur-md'>
+							<SocialShare isCol showCopy iconSize={28} />
+							<div className='absolute top-1/2 -translate-y-1/2 -right-2 w-0 h-0 border-y-[6px] border-y-transparent border-l-[8px] border-l-border pointer-events-none' />
 						</div>
 					</motion.div>
 				)}

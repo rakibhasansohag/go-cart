@@ -30,7 +30,7 @@ export default async function UserMenu() {
 				: { title: 'Become a Seller', link: '/seller/apply' };
 
 	return (
-		<div className='relative group px-2 '>
+		<div className='relative group px-1 sm:px-2'>
 			{/* Trigger */}
 			<div>
 				{userId && user ? (
@@ -39,18 +39,18 @@ export default async function UserMenu() {
 						alt={user.name || 'User'}
 						width={40}
 						height={40}
-						className='w-10 h-10 object-cover rounded-full'
+						className='w-9 h-9 sm:w-10 sm:h-10 object-cover rounded-full'
 					/>
 				) : (
-					<div className='flex h-11 items-center py-0 mx-2 cursor-pointer'>
+					<div className='flex h-11 items-center py-0 mx-0.5 sm:mx-2 cursor-pointer'>
 						<span className='text-2xl'>
 							<UserIcon />
 						</span>
-						<div className='ml-1'>
+						<div className='ml-1 hidden md:block'>
 							<span className='block text-xs text-white leading-3'>
 								Welcome
 							</span>
-							<b className='font-bold text-xs text-white leading-4'>
+							<b className='font-bold text-xs text-white leading-4 whitespace-nowrap'>
 								<span>Sign in / Register</span>
 								<span className='text-white scale-[60%] align-middle inline-block'>
 									<ChevronDown />

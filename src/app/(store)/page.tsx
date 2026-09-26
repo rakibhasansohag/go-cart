@@ -81,7 +81,7 @@ export default async function HomePage() {
 			<CategoriesHeader />
 			<div className='relative w-full'>
 				<Sideline />
-				<main id='main-content' className='relative w-[calc(100%-40px)] h-full bg-secondary'>
+				<main id='main-content' className='relative w-full max-w-full overflow-x-clip h-full bg-secondary'>
 					<h1 className='sr-only'>
 						GoCart - Discover Exclusive Deals, Top Categories & Trending Products
 					</h1>

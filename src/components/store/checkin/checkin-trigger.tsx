@@ -69,12 +69,12 @@ export default function CheckInTrigger({
         aria-label="Daily Check-In"
         title="Daily Check-In"
         className={cn(
-          "relative flex items-center gap-1 px-2 py-1 text-xs font-semibold rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer",
+          "relative flex items-center gap-1 px-1.5 sm:px-2 py-1 text-xs font-semibold rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer shrink-0",
           className
         )}
       >
         <Calendar className="w-3.5 h-3.5 text-amber-300" />
-        <span>Check-in</span>
+        <span className="hidden sm:inline">Check-in</span>
         {hasUnclaimed && (
           <span className="absolute -top-0.5 -right-0.5 flex h-2 w-2">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75" />

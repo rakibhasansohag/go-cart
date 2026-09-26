@@ -1,47 +1,133 @@
-import Link from 'next/link';
-import CouponImg from '@/public/assets/images/sideline/couponn.png';
-import WishlistImg from '@/public/assets/images/sideline/wishlist.png';
-import HistoryImg from '@/public/assets/images/sideline/history.png';
-import ShareImg from '@/public/assets/images/sideline/share.png';
-import FeedbackImg from '@/public/assets/images/sideline/feedback.png';
+'use client';
+
+import React, { useState, useEffect } from 'react';
+import {
+	Gift,
+	Ticket,
+	Heart,
+	Clock,
+	MessageSquareText,
+	ChevronRight,
+	ChevronLeft,
+} from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
 import SidelineItem from './item';
 import SidelineShare from './sideline-share';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 export default function Sideline() {
+	const [isCollapsed, setIsCollapsed] = useState(false);
+
+	useEffect(() => {
+		try {
+			const saved = localStorage.getItem('gocart_sideline_collapsed');
+			if (saved !== null) {
+				setIsCollapsed(saved === 'true');
+			} else if (window.innerWidth < 768) {
+				setIsCollapsed(true);
+			}
+		} catch {
+			// ignore local storage error in restricted environments
+		}
+	}, []);
+
+	const handleToggleCollapse = (collapsed: boolean) => {
+		setIsCollapsed(collapsed);
+		try {
+			localStorage.setItem('gocart_sideline_collapsed', String(collapsed));
+		} catch {
+			// ignore
+		}
+	};
+
 	return (
-		<div>
-			<div className='z-30 w-10 h-screen fixed top-0 right-0 bg-gradient-to-t from-slate-500 to-slate-800 text-sm duration-100'>
-				<div className='fixed top-[35%] -translate-y-1/2 text-center'>
-					<Link
-						href='/profile'
-						className="group relative block w-[35px] h-[35px] transition-all duration-100 ease-linear 
-            bg-[url('/assets/images/sideline/gift.avif')] hover:bg-[url('/assets/images/sideline/gift-opened.avif')] bg-cover"
+		<aside aria-label='Quick actions menu'>
+			<AnimatePresence mode='wait'>
+				{isCollapsed ? (
+					<motion.div
+						key='collapsed-trigger'
+						initial={{ opacity: 0, x: 20 }}
+						animate={{ opacity: 1, x: 0 }}
+						exit={{ opacity: 0, x: 20 }}
+						transition={{ duration: 0.2, ease: 'easeOut' }}
+						className='fixed right-0 top-1/2 -translate-y-1/2 z-40 flex'
 					>
-						<span
-							className='hidden group-hover:block absolute -left-[160px] top-0.5 bg-neutral-700 text-white px-4
-             py-[0.8rem] rounded-sm transition-all duration-500 ease-linear'
-						>
-							Check your profile
-						</span>
-						<div className='hidden group-hover:block w-0 h-0 border-[12px] border-transparent border-l-neutral-700 border-r-0 absolute left-[-15px] top-[38%] transition-all duration-500 ease-in-out' />
-					</Link>
-					<SidelineItem link='/profile' image={CouponImg}>
-						Coupons
-					</SidelineItem>
-					<SidelineItem link='/profile/wishlist' image={WishlistImg}>
-						Wishlist
-					</SidelineItem>
-					<SidelineItem link='/profile/history' image={HistoryImg}>
-						History
-					</SidelineItem>
-				</div>
-				<div className='fixed top-[60%] -translate-y-1/2 text-left'>
-					<SidelineShare />
-					<SidelineItem link='/feedback' image={FeedbackImg}>
-						Feedback
-					</SidelineItem>
-				</div>
-			</div>
-		</div>
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<button
+									type='button'
+									onClick={() => handleToggleCollapse(false)}
+									aria-label='Open quick shortcuts'
+									className='flex items-center justify-center py-3.5 px-1.5 rounded-l-xl bg-card/90 dark:bg-card/95 backdrop-blur-md border-l border-y border-border/80 shadow-md text-muted-foreground hover:text-foreground hover:bg-accent/80 transition-all cursor-pointer group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
+								>
+									<ChevronLeft className='size-4 transition-transform duration-200 group-hover:-translate-x-0.5' />
+								</button>
+							</TooltipTrigger>
+							<TooltipContent side='left' sideOffset={10} className='font-medium text-xs'>
+								Quick shortcuts
+							</TooltipContent>
+						</Tooltip>
+					</motion.div>
+				) : (
+					<motion.div
+						key='floating-pill'
+						initial={{ opacity: 0, x: 20 }}
+						animate={{ opacity: 1, x: 0 }}
+						exit={{ opacity: 0, x: 20 }}
+						transition={{ duration: 0.2, ease: 'easeOut' }}
+						className='fixed right-0 top-1/2 -translate-y-1/2 z-40 flex flex-col items-center gap-1.5 p-1.5 rounded-l-2xl border-l border-y border-r-0 bg-card/90 dark:bg-card/95 backdrop-blur-md border-border/80 shadow-xl ring-1 ring-black/5 dark:ring-white/10'
+					>
+						<SidelineItem
+							link='/profile'
+							label='Check Profile & Rewards'
+							icon={Gift}
+						/>
+						<SidelineItem
+							link='/profile'
+							label='Coupons & Discounts'
+							icon={Ticket}
+						/>
+						<SidelineItem
+							link='/profile/wishlist'
+							label='My Wishlist'
+							icon={Heart}
+						/>
+						<SidelineItem
+							link='/profile/history'
+							label='Browsing History'
+							icon={Clock}
+						/>
+
+						<div className='w-5 h-px bg-border/60 my-0.5' />
+
+						<SidelineShare />
+
+						<SidelineItem
+							link='/feedback'
+							label='Send Feedback'
+							icon={MessageSquareText}
+						/>
+
+						<div className='w-5 h-px bg-border/60 my-0.5' />
+
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<button
+									type='button'
+									onClick={() => handleToggleCollapse(true)}
+									aria-label='Collapse quick menu'
+									className='relative flex items-center justify-center size-9 rounded-xl text-muted-foreground/70 hover:text-foreground hover:bg-accent/70 transition-all duration-200 active:scale-95 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
+								>
+									<ChevronRight className='size-4' />
+								</button>
+							</TooltipTrigger>
+							<TooltipContent side='left' sideOffset={10} className='font-medium text-xs'>
+								Collapse dock
+							</TooltipContent>
+						</Tooltip>
+					</motion.div>
+				)}
+			</AnimatePresence>
+		</aside>
 	);
 }

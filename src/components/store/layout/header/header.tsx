@@ -27,21 +27,21 @@ export default async function Header() {
 
 	return (
 		<div className='bg-gradient-to-r from-slate-500 to-slate-800 sticky top-0 z-50 shadow-sm'>
-			<div className='h-full w-full lg:flex text-white px-4 lg:px-12'>
-				<div className='flex lg:w-full lg:flex-1 flex-col lg:flex-row gap-3 py-3'>
-					<div className='flex items-center justify-between'>
-						<Link href='/'>
-							<h1 className='font-extrabold text-3xl font-mono'>GoCart</h1>
+			<div className='h-full w-full max-w-full overflow-hidden lg:overflow-visible lg:flex text-white px-2.5 sm:px-4 lg:px-12'>
+				<div className='flex lg:w-full lg:flex-1 flex-col lg:flex-row gap-2.5 sm:gap-3 py-2.5 sm:py-3 min-w-0'>
+					<div className='flex items-center justify-between gap-1 sm:gap-2 min-w-0'>
+						<Link href='/' className='shrink-0'>
+							<h1 className='font-extrabold text-2xl sm:text-3xl font-mono tracking-tight'>GoCart</h1>
 						</Link>
-						<div className='flex items-center gap-2 lg:hidden'>
+						<div className='flex items-center gap-1 sm:gap-1.5 md:gap-2 lg:hidden shrink-0'>
 							<CheckInTrigger variant='mobile' />
 							<Link
 								href='/documentation'
-								className='flex items-center gap-1 px-2 py-1 text-xs font-semibold rounded-lg bg-white/10 hover:bg-white/20 text-white'
+								className='flex items-center gap-1 px-1.5 sm:px-2 py-1 text-xs font-semibold rounded-lg bg-white/10 hover:bg-white/20 text-white shrink-0'
 								title='Documentation'
 							>
 								<BookOpen className='w-3.5 h-3.5' />
-								<span>Docs</span>
+								<span className='hidden sm:inline'>Docs</span>
 							</Link>
 							<ThemeToggle />
 							<NotificationBell />
