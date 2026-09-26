@@ -51,16 +51,16 @@ export default async function Header() {
 					</div>
 					<Search />
 				</div>
-				<div className='hidden lg:flex w-full lg:w-fit lg:mt-2 justify-end mt-1.5 pl-6 items-center gap-2'>
+				<div className='hidden lg:flex w-full lg:w-fit lg:mt-2 justify-end mt-1.5 pl-4 xl:pl-6 items-center gap-1.5 xl:gap-2 shrink-0'>
 					<CheckInTrigger variant='header' />
 					<Link
 						href='/documentation'
-						className='flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-white/10 hover:bg-white/20 transition-colors text-white'
+						className='flex items-center gap-1.5 px-2.5 xl:px-3 py-1.5 text-xs font-semibold rounded-lg bg-white/10 hover:bg-white/20 transition-colors text-white shrink-0'
 					>
 						<BookOpen className='w-3.5 h-3.5' />
-						<span>Docs</span>
+						<span className='hidden xl:inline'>Docs</span>
 					</Link>
-					<div className='lg:flex'>
+					<div className='hidden xl:flex'>
 						<DownloadApp />
 					</div>
 					<CountryLanguageCurrencySelector userCountry={userCountry} />

@@ -39,16 +39,14 @@ export default function OfferTagsLinks({
 	const splitPoint = useBreakpoints();
 
 	return (
-		<div className='relative w-fit'>
-			<div
-				className='flex items-center flex-wrap transition-all duration-300 ease-out'
-			>
+		<div className='relative w-fit shrink-0'>
+			<div className='flex items-center flex-nowrap shrink-0 whitespace-nowrap transition-all duration-300 ease-out gap-1'>
 				{offerTags.slice(0, splitPoint).map((tag, i) => (
 					<Link
 						key={tag.id}
 						href={`/browse?offer=${tag.url}`}
 						className={cn(
-							'font-bold text-center text-white px-4 leading-10 rounded-[20px] hover:bg-white/20',
+							'font-bold text-center text-white px-3 sm:px-4 leading-9 sm:leading-10 rounded-[20px] hover:bg-white/20 whitespace-nowrap shrink-0 text-sm sm:text-base transition-colors',
 							{
 								'text-orange-background': i === 0,
 							},

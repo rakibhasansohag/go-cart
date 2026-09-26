@@ -14,13 +14,13 @@ export default function CategoriesHeaderContainer({
 	const [open, setOpen] = useState<boolean>(false);
 
 	return (
-		<div className='w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-12 flex items-center gap-x-2 overflow-x-auto no-scrollbar'>
+		<div className='w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-12 flex items-center gap-x-2 sm:gap-x-3'>
 			{/* Category menu */}
-			<div className='shrink-0'>
+			<div className='shrink-0 relative'>
 				<CategoriesMenu categories={categories} open={open} setOpen={setOpen} />
 			</div>
 			{/* Offer tags links */}
-			<div className='shrink-0 min-w-0'>
+			<div className='min-w-0 flex-1 overflow-x-auto no-scrollbar py-0.5'>
 				<OfferTagsLinks offerTags={offerTags} open={open} />
 			</div>
 		</div>

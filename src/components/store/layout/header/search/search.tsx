@@ -146,7 +146,13 @@ export default function Search() {
 	};
 
 	return (
-		<div ref={containerRef} className={cn('relative lg:w-full flex-1', isOpen ? 'z-50' : 'z-20')}>
+		<div
+			ref={containerRef}
+			className={cn(
+				'relative w-full lg:min-w-[220px] xl:min-w-[280px] flex-1',
+				isOpen ? 'z-50' : 'z-20',
+			)}
+		>
 			<form
 				onSubmit={handleSubmit}
 				className='h-10 rounded-3xl bg-background relative border-none flex'
