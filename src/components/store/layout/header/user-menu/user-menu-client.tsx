@@ -10,7 +10,7 @@ import { Role } from '@prisma/client';
 import { MessageIcon, OrderIcon, WishlistIcon } from '@/components/store/icons';
 import { Button } from '@/components/store/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Popover, PopoverContent, PopoverTrigger, PopoverArrow } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 
 export interface UserMenuProfile {
@@ -180,22 +180,27 @@ export default function UserMenuClient({ user, roleLink }: UserMenuClientProps) 
 					align='center'
 					sideOffset={8}
 					collisionPadding={16}
+					arrowPadding={16}
 					className='w-auto p-0 border-none bg-transparent shadow-none z-50 focus:outline-none'
 				>
+					{/* Radix dynamic indicator arrow: accurately follows trigger across desktop, tablet, and mobile */}
+					<PopoverArrow
+						className='fill-white dark:fill-slate-900 drop-shadow-[0_-1px_1px_rgba(0,0,0,0.12)] z-50'
+						width={14}
+						height={7}
+					/>
+
 					{/* Invisible hover bridge to prevent cursor gap drop */}
 					<div
 						className='absolute -top-3 left-0 right-0 h-4 bg-transparent'
 						onMouseEnter={handleMouseEnter}
 					/>
+
 					<div
 						onMouseEnter={handleMouseEnter}
 						onMouseLeave={handleMouseLeave}
-						className='relative'
+						className='relative rounded-2xl backdrop-blur-md bg-white/95 dark:bg-slate-900/95 shadow-2xl border border-slate-200/80 dark:border-slate-700/60 w-[305px] max-w-[calc(100vw-32px)] overflow-hidden transition-all'
 					>
-						{/* Indicator arrow pointing directly to user button */}
-						<div className='w-3 h-3 absolute -top-1.5 left-1/2 -translate-x-1/2 rotate-45 bg-white/95 dark:bg-slate-900/95 border-t border-l border-slate-200/80 dark:border-slate-700/60 z-50 pointer-events-none' />
-
-						<div className='relative rounded-2xl backdrop-blur-md bg-white/95 dark:bg-slate-900/95 shadow-2xl border border-slate-200/80 dark:border-slate-700/60 w-[305px] max-w-[calc(100vw-32px)] overflow-hidden transition-all'>
 
 						{/* User Status / Auth Actions */}
 						<div className='pt-5 px-6 pb-0'>
@@ -287,8 +292,7 @@ export default function UserMenuClient({ user, roleLink }: UserMenuClientProps) 
 							</ul>
 						</div>
 					</div>
-				</div>
-			</PopoverContent>
+				</PopoverContent>
 			</Popover>
 		</div>
 	);
