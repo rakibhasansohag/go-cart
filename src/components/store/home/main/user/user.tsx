@@ -1,6 +1,7 @@
 import { SimpleProduct } from '@/lib/types';
 import Image from 'next/image';
 import Link from 'next/link';
+import { ChevronRight } from 'lucide-react';
 import { Button } from '../../../ui/button';
 import UserCardProducts from './products';
 
@@ -19,7 +20,7 @@ export default function HomeUserCard({
 	return (
 		<div className='h-full hidden min-[1170px]:block relative bg-background rounded-md shadow-sm overflow-hidden'>
 			<div
-				className='h-full rounded-md bg-no-repeat pb-9'
+				className='h-full rounded-md bg-no-repeat pb-3 flex flex-col justify-between'
 				style={{
 					backgroundImage: 'url(/assets/images/user-card-bg.avif)',
 					backgroundSize: '100% 101px',
@@ -109,22 +110,22 @@ export default function HomeUserCard({
 						</div>
 					)}
 				</div>
-				{/* Ad swiper */}
-				<div className='w-full h-full flex-1 px-2 max-h-[420px] pb-[102px] mt-2'>
+				{/* Ad section */}
+				<div className='w-full flex-1 px-2 min-h-0 flex flex-col mt-2'>
 					<div
-						className='w-full h-full px-2.5 bg-f5 bg-cover rounded-md overflow-hidden'
+						className='w-full h-full min-h-[200px] p-2.5 bg-f5 bg-cover rounded-xl relative flex flex-col justify-between overflow-hidden shadow-sm'
 						style={{
 							backgroundImage: 'url(/assets/images/ads/user-card-ad.png)',
+							backgroundPosition: 'center',
 						}}
 					>
-						<Link href='/browse'>
-							<div className='h-24'>
-								<div className='mt-2.5 text-main-primary leading-[18px] text-sm overflow-hidden'>
-									Your favorite store
-								</div>
-								<div className='leading-5 font-bold mt-2.5 text-main-primary'>
-									Check out the latest new deals
-								</div>
+						<Link href='/browse' className='group/deals block'>
+							<div className='mt-1 text-slate-700 dark:text-slate-200 leading-[18px] text-xs font-semibold tracking-wide uppercase'>
+								Your favorite store
+							</div>
+							<div className='leading-5 font-bold mt-1 text-slate-900 dark:text-white group-hover/deals:text-orange-500 transition-colors flex items-center gap-1 text-sm'>
+								Check out the latest new deals
+								<ChevronRight className='size-3.5 transition-transform group-hover/deals:translate-x-0.5' />
 							</div>
 						</Link>
 						<UserCardProducts products={products} />

@@ -20,7 +20,7 @@ export default function ProductCardSimple({
 					className='min-h-[125px] max-h-[125px] object-cover rounded-md align-middle shadow-lg'
 				/>
 				<div className='absolute bottom-6 mt-2 space-y-2'>
-					<div className='py-1.5 px-2 bg-red-500 text-white font-bold text-sm rounded-lg'>
+					<div className='py-1 px-2.5 bg-red-500 text-white font-bold text-xs sm:text-sm rounded-lg whitespace-nowrap shadow-sm'>
 						{formatPrice(product.price || 0)}
 					</div>
 				</div>
