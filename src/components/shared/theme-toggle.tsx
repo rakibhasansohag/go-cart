@@ -19,6 +19,7 @@ function ThemeToggle() {
 			<Button
 				variant='outline'
 				size='icon'
+			aria-label='Toggle theme'
 				className='w-9 h-9 rounded-full bg-background/80 border border-border/60'
 			>
 				<div className='w-[1.2rem] h-[1.2rem]' />
@@ -35,6 +36,7 @@ function ThemeToggle() {
 		<Button
 			variant='outline'
 			size='icon'
+			aria-label='Toggle theme'
 			className='w-9 h-9 rounded-full relative overflow-hidden flex items-center justify-center bg-background/90 hover:bg-background border border-border/60 shadow-xs cursor-pointer transition-all shrink-0'
 			onClick={handleToggle}
 			title={`Current theme: ${theme} (click to switch)`}

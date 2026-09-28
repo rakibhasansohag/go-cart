@@ -1,0 +1,3 @@
+## 2024-03-24 - Missing ARIA Labels on Icon Buttons
+**Learning:** Found multiple instances where `<Button size="icon">` from the design system lacked corresponding `aria-label`s, making them inaccessible to screen readers since they only contained icons (like `<Trash />` or `<SunIcon />`). This pattern is common in image uploaders and theme toggles.
+**Action:** Always ensure that icon-only interactive elements receive descriptive `aria-label`s. When auditing a codebase, searching for `<Button size="icon">` (or similar components) and checking for `aria-label` is a quick way to catch these accessibility gaps.
