@@ -62,14 +62,32 @@ export default function ProductCard({
 		<div
 			onMouseEnter={handleMouseEnter}
 			onMouseLeave={() => setIsHovered(false)}
-			className={cn(className || 'w-[190px] min-[480px]:w-[225px] min-[1530px]:w-full', 'relative group')}
+			className={cn(
+				className || 'w-[190px] min-[480px]:w-[225px] min-[1530px]:w-full',
+				'relative group',
+				isHovered ? 'z-30' : 'z-10',
+			)}
 		>
+			{/* Grid geometry spacer to preserve exact cell height without layout shifts */}
+			<div
+				className='invisible pointer-events-none select-none p-2.5 sm:p-4 rounded-2xl sm:rounded-3xl border border-transparent'
+				aria-hidden='true'
+			>
+				<div className='relative w-full aspect-square mb-1.5 sm:mb-2' />
+				<div className='h-8 sm:h-9' />
+				{product.rating > 0 && product.sales > 0 && (
+					<div className='h-4 sm:h-5 mt-0.5 sm:mt-1' />
+				)}
+				<div className='h-7' />
+			</div>
+
+			{/* Actual interactive card: seamlessly preserves smooth rounded corners throughout hover states */}
 			<div
 				className={cn(
-					'group w-full relative transition-all duration-300 bg-secondary ease-in-out p-2.5 sm:p-4 border border-transparent',
+					'group w-full absolute top-0 left-0 bg-secondary p-2.5 sm:p-4 rounded-2xl sm:rounded-3xl transition-shadow duration-300 ease-in-out border',
 					isHovered
-						? 'rounded-t-2xl sm:rounded-t-3xl shadow-xl border-border'
-						: 'rounded-2xl sm:rounded-3xl',
+						? 'border-border shadow-2xl'
+						: 'border-transparent shadow-none',
 				)}
 			>
 				{/* Top-Right Floating Wishlist Toggle Button */}
@@ -87,10 +105,10 @@ export default function ProductCard({
 					/>
 				</button>
 
-				<div className='relative w-full h-full'>
+				<div className='relative w-full'>
 					<Link
 						href={`/product/${slug}?variant=${variantSlug}`}
-						className='w-full relative inline-block overflow-hidden'
+						className='w-full relative block overflow-hidden'
 					>
 						{/* Images Swiper */}
 						<ProductCardImageSwiper images={images} />
@@ -117,14 +135,16 @@ export default function ProductCard({
 						<ProductPrice sizes={sizes} isCard handleChange={() => {}} />
 					</Link>
 				</div>
+
+				{/* Smooth hover drawer inside unified card container */}
 				<AnimatePresence>
 					{isHovered && (
 						<motion.div
 							initial={{ height: 0, opacity: 0 }}
 							animate={{ height: 'auto', opacity: 1 }}
 							exit={{ height: 0, opacity: 0 }}
-							transition={{ duration: 0.2, ease: 'easeInOut' }}
-							className='absolute -left-[1px] bg-secondary border-border border-x border-b w-[calc(100%+2px)] px-4 pb-4 rounded-b-3xl shadow-xl z-30 space-y-2 overflow-hidden'
+							transition={{ duration: 0.22, ease: 'easeInOut' }}
+							className='space-y-2 overflow-hidden pt-2.5'
 						>
 							{/* Variant switcher */}
 							<VariantSwitcher
@@ -137,7 +157,7 @@ export default function ProductCard({
 							<div className='flex items-center w-full'>
 								<Button asChild className='w-full'>
 									<Link
-										className='text-main-primary w-full text-center'
+										className='text-white w-full text-center'
 										href={`/product/${slug}?variant=${variantSlug}`}
 									>
 										Add to cart
