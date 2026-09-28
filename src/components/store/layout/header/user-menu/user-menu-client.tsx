@@ -140,7 +140,7 @@ export default function UserMenuClient({ user, roleLink }: UserMenuClientProps) 
 						onClick={handleTriggerClick}
 						aria-label={user ? (user.name || 'User Account') : 'User Account'}
 						aria-expanded={isOpen}
-						className='flex h-11 items-center py-0 px-1 sm:px-1.5 cursor-pointer text-white border-none outline-none focus-visible:ring-2 focus-visible:ring-white/40 rounded-lg select-none transition-opacity hover:opacity-90'
+						className='group flex h-11 items-center py-0 px-1 sm:px-1.5 cursor-pointer text-white border-none outline-none focus-visible:ring-2 focus-visible:ring-white/40 rounded-lg select-none transition-all duration-200 hover:scale-105 active:scale-95'
 					>
 						{user ? (
 							<Image
@@ -148,11 +148,11 @@ export default function UserMenuClient({ user, roleLink }: UserMenuClientProps) 
 								alt={user.name || 'User'}
 								width={40}
 								height={40}
-								className='w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 object-cover rounded-full ring-2 ring-white/20'
+								className='w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 object-cover rounded-full ring-2 ring-white/20 group-hover:ring-white/60 transition-all duration-200'
 							/>
 						) : (
 							<div className='flex items-center'>
-								<span className='text-2xl flex items-center justify-center shrink-0'>
+								<span className='text-2xl flex items-center justify-center shrink-0 transition-transform duration-200 group-hover:scale-110'>
 									<UserIcon className='w-6 h-6' />
 								</span>
 								<div className='ml-1 hidden md:block text-left'>

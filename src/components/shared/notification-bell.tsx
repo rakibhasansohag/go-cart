@@ -122,13 +122,12 @@ export default function NotificationBell() {
 			}}
 		>
 			<PopoverTrigger asChild>
-				<Button
-					variant="ghost"
-					size="icon"
+				<button
+					type="button"
 					onMouseEnter={() => {
 						if (!data) void loadRecent();
 					}}
-					className="relative rounded-full text-current hover:bg-current/10"
+					className="group relative size-9 rounded-full bg-white/10 hover:bg-white/20 text-white hover:text-white flex items-center justify-center transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-white/40"
 					aria-label={
 						unreadCount > 0
 							? `Notifications, ${unreadCount} unread`
@@ -136,16 +135,16 @@ export default function NotificationBell() {
 					}
 					title="Notifications"
 				>
-					<Bell className="size-5" />
+					<Bell className="size-5 text-white transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110" />
 					{unreadCount > 0 && (
 						<span
-							className="absolute -right-0.5 -top-0.5 min-w-4 rounded-full bg-destructive px-1 text-xs font-bold leading-none text-destructive-foreground"
+							className="absolute -right-0.5 -top-0.5 min-w-4 rounded-full bg-red-600 px-1 text-xs font-bold leading-none text-white shadow-xs"
 							aria-hidden="true"
 						>
 							{unreadCount > 99 ? '99+' : unreadCount}
 						</span>
 					)}
-				</Button>
+				</button>
 			</PopoverTrigger>
 			<PopoverContent
 				align="end"
