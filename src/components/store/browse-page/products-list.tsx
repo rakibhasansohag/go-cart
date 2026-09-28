@@ -115,7 +115,7 @@ export default function BrowseProductsList({
 			</div>
 
 			{/* Product Cards Grid */}
-			<div className='w-full grid grid-cols-1 min-[380px]:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4'>
+			<div className='w-full grid grid-cols-1 min-[380px]:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 pb-8 sm:pb-12'>
 				{products.map((product) => (
 					<ProductCard key={product.id + product.slug} product={product} className='w-full' />
 				))}

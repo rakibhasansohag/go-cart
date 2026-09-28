@@ -36,7 +36,7 @@ export default function StoreProducts({
 	const { products } = productsData;
 
 	return (
-		<div className='bg-background w-full grid grid-cols-1 min-[380px]:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 p-4 pb-16 rounded-xl border border-border/10 shadow-sm'>
+		<div className='bg-background w-full grid grid-cols-1 min-[380px]:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 p-4 pb-16 sm:pb-20 rounded-xl border border-border/10 shadow-sm'>
 			{products.map((product) => (
 				<ProductCard key={product.id + product.slug} product={product} className='w-full' />
 			))}
