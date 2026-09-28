@@ -264,6 +264,12 @@ export default function OverviewChart({
 								const ratio = maxRevenue > 0 ? Math.min(Math.max(item.revenue / maxRevenue, 0), 1) : 0;
 								const heightPx = ratio * plotRange;
 								const isHovered = hoveredIndex === index;
+								const maxBarWidth =
+									count <= 7
+										? 'max-w-[32px] sm:max-w-[44px]'
+										: count <= 14
+										? 'max-w-[18px] sm:max-w-[26px]'
+										: 'max-w-[8px] sm:max-w-[14px]';
 
 								return (
 									<div
@@ -278,7 +284,7 @@ export default function OverviewChart({
 												style={{
 													height: item.revenue > 0 ? `${Math.max(heightPx, 6)}px` : '3px',
 												}}
-												className={`w-full max-w-[32px] sm:max-w-[44px] transition-all duration-300 rounded-t-md ${
+												className={`w-full ${maxBarWidth} transition-all duration-300 rounded-t-md ${
 													item.revenue > 0
 														? isHovered
 															? 'bg-gradient-to-t from-blue-700 via-indigo-600 to-indigo-500 dark:from-blue-500 dark:via-cyan-500 dark:to-cyan-300 shadow-md scale-y-[1.02] origin-bottom'
@@ -298,23 +304,31 @@ export default function OverviewChart({
 						{data.map((item, index) => {
 							const isHovered = hoveredIndex === index;
 							const monthName = (item.label ?? item.month ?? '').split(' ')[0];
+							const showLabel =
+								isHovered ||
+								count <= 7 ||
+								(count <= 14 ? index % 2 === 0 || index === count - 1 : index % 5 === 0 || index === count - 1);
 
 							return (
 								<div
 									key={index}
 									onMouseEnter={() => setHoveredIndex(index)}
 									onMouseLeave={() => setHoveredIndex(null)}
-									className='flex-1 text-center cursor-pointer'
+									className='flex-1 text-center cursor-pointer flex items-center justify-center min-h-[16px]'
 								>
-									<span
-										className={`text-xs transition-colors duration-150 ${
-											isHovered
-												? 'text-foreground font-semibold'
-												: 'text-muted-foreground font-medium'
-										}`}
-									>
-										{monthName}
-									</span>
+									{showLabel ? (
+										<span
+											className={`text-xs transition-colors duration-150 truncate ${
+												isHovered
+													? 'text-foreground font-semibold'
+													: 'text-muted-foreground font-medium'
+											}`}
+										>
+											{monthName}
+										</span>
+									) : (
+										<span className='w-1 h-1 rounded-full bg-gray-300 dark:bg-gray-700 inline-block' />
+									)}
 								</div>
 							);
 						})}

@@ -8,6 +8,7 @@ import { getAdminAnalyticsData } from '@/queries/analytics';
 import { queryKeys } from '@/lib/query-keys';
 import StatCard from '@/components/dashboard/analytics/stat-card';
 import OverviewChart from '@/components/dashboard/analytics/overview-chart';
+import CategoryDistribution from '@/components/dashboard/analytics/category-distribution';
 import RecentTransactions from '@/components/dashboard/analytics/recent-transactions';
 import OverviewSkeleton from '@/components/dashboard/shared/overview-skeleton';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -75,39 +76,26 @@ export default function AdminOverview() {
 				</Card>
 			</section>
 
-			<section className='grid gap-6 xl:grid-cols-2'>
-				<Card className='border-border/60 shadow-sm'>
-					<CardHeader>
-						<CardTitle className='text-lg'>Monthly platform performance</CardTitle>
-						<CardDescription>UTC month buckets; active-store history is not retained, so the summary above reports its current state only.</CardDescription>
-					</CardHeader>
-					<CardContent>
-						<div className='overflow-x-auto rounded-lg border border-border'>
-							<Table className='min-w-[620px]'>
-								<TableHeader className='bg-muted/50'><TableRow className='hover:bg-muted/50'><TableHead>Month</TableHead><TableHead className='text-right'>GMV</TableHead><TableHead className='text-right'>Platform revenue</TableHead><TableHead className='text-right'>Paid groups</TableHead></TableRow></TableHeader>
-								<TableBody>{data.monthlyPerformance.map((row) => <TableRow key={row.month} className='border-border/60 transition-colors duration-150 hover:bg-accent/60 dark:hover:bg-accent/20'><TableCell className='font-medium'>{row.month}</TableCell><TableCell className='text-right'>{money(row.gmv)}</TableCell><TableCell className='text-right'>{money(row.platformRevenue)}</TableCell><TableCell className='text-right'>{row.paidOrders}</TableCell></TableRow>)}{data.monthlyPerformance.length === 0 && <TableRow className='hover:bg-transparent'><TableCell colSpan={4} className='py-8 text-center text-muted-foreground'>No paid platform activity is recorded for this period.</TableCell></TableRow>}</TableBody>
-							</Table>
-						</div>
-					</CardContent>
-				</Card>
-
-				<Card className='border-border/60 shadow-sm'>
-					<CardHeader>
-						<CardTitle className='text-lg'>Operational health</CardTitle>
-						<CardDescription>Database-backed delivery, webhook, automation, and PostgreSQL-search catalog signals.</CardDescription>
-					</CardHeader>
-					<CardContent className='grid gap-3 text-sm sm:grid-cols-2'>
-						<HealthMetric label='Pending email jobs' value={operationalHealth.pendingEmails} icon={<Mail className='size-4' />} />
-						<HealthMetric label='Failed email jobs' value={operationalHealth.failedEmails} icon={<Mail className='size-4' />} />
-						<HealthMetric label='Webhook events (24h)' value={operationalHealth.paymentWebhookEventsLast24Hours} icon={<Webhook className='size-4' />} />
-						<HealthMetric label='Failed automation runs' value={operationalHealth.failedAutomationRuns} icon={<AlertTriangle className='size-4' />} />
-						<HealthMetric label='Searchable products' value={operationalHealth.searchableProducts} icon={<PackageSearch className='size-4' />} />
-						<div className='rounded-lg bg-muted/50 p-3'><p className='text-xs text-muted-foreground'>Oldest queued email</p><p className='mt-1 font-medium'>{dateTime(operationalHealth.oldestPendingEmailAt)}</p></div>
-						<div className='rounded-lg bg-muted/50 p-3'><p className='text-xs text-muted-foreground'>Latest automation run</p><p className='mt-1 font-medium'>{dateTime(operationalHealth.latestAutomationRunAt)}</p><p className='mt-1 text-xs text-muted-foreground'>{operationalHealth.latestAutomationRunStatus ?? 'No status'}</p></div>
-						<div className='rounded-lg bg-muted/50 p-3'><p className='text-xs text-muted-foreground'>Latest catalog update</p><p className='mt-1 font-medium'>{dateTime(operationalHealth.latestCatalogUpdateAt)}</p></div>
-						<Link href='/dashboard/admin/delivery-health' className='flex items-center rounded-lg border border-border px-3 py-2 text-xs font-semibold text-primary hover:bg-muted'>Open delivery health and retry tools</Link>
-					</CardContent>
-				</Card>
+			<section className='grid gap-6 xl:grid-cols-3'>
+				<div className='xl:col-span-2'>
+					<Card className='border-border/60 shadow-sm'>
+						<CardHeader>
+							<CardTitle className='text-lg'>Monthly platform performance</CardTitle>
+							<CardDescription>UTC month buckets; active-store history is not retained, so the summary above reports its current state only.</CardDescription>
+						</CardHeader>
+						<CardContent>
+							<div className='overflow-x-auto rounded-lg border border-border'>
+								<Table className='min-w-[620px]'>
+									<TableHeader className='bg-muted/50'><TableRow className='hover:bg-muted/50'><TableHead>Month</TableHead><TableHead className='text-right'>GMV</TableHead><TableHead className='text-right'>Platform revenue</TableHead><TableHead className='text-right'>Paid groups</TableHead></TableRow></TableHeader>
+									<TableBody>{data.monthlyPerformance.map((row) => <TableRow key={row.month} className='border-border/60 transition-colors duration-150 hover:bg-accent/60 dark:hover:bg-accent/20'><TableCell className='font-medium'>{row.month}</TableCell><TableCell className='text-right'>{money(row.gmv)}</TableCell><TableCell className='text-right'>{money(row.platformRevenue)}</TableCell><TableCell className='text-right'>{row.paidOrders}</TableCell></TableRow>)}{data.monthlyPerformance.length === 0 && <TableRow className='hover:bg-transparent'><TableCell colSpan={4} className='py-8 text-center text-muted-foreground'>No paid platform activity is recorded for this period.</TableCell></TableRow>}</TableBody>
+								</Table>
+							</div>
+						</CardContent>
+					</Card>
+				</div>
+				<div className='xl:col-span-1'>
+					<CategoryDistribution data={data.categoryBreakdown} />
+				</div>
 			</section>
 
 			<section className='grid gap-6 xl:grid-cols-3'>
@@ -115,7 +103,27 @@ export default function AdminOverview() {
 					<CardHeader><CardTitle className='text-lg'>Top stores</CardTitle><CardDescription>Ranked by all-time paid GMV, with payout and dispute context.</CardDescription></CardHeader>
 					<CardContent><div className='overflow-x-auto rounded-lg border border-border'><Table className='min-w-[820px]'><TableHeader className='bg-muted/50'><TableRow className='hover:bg-muted/50'><TableHead>Store</TableHead><TableHead className='text-right'>GMV</TableHead><TableHead className='text-right'>Revenue</TableHead><TableHead className='text-right'>Orders</TableHead><TableHead className='text-right'>Refunds / returns</TableHead><TableHead className='text-right'>At-risk payable</TableHead></TableRow></TableHeader><TableBody>{data.topStores.map((store) => <TableRow key={store.storeId} className='border-border/60 transition-colors duration-150 hover:bg-accent/60 dark:hover:bg-accent/20'><TableCell><Link href={`/dashboard/admin/stores/${store.storeId}`} className='font-medium text-primary hover:underline'>{store.name}</Link><p className='text-xs text-muted-foreground'>/{store.url} · {store.chargebacks} chargeback{store.chargebacks === 1 ? '' : 's'}</p></TableCell><TableCell className='text-right'>{money(store.gmv)}</TableCell><TableCell className='text-right'>{money(store.platformRevenue)}</TableCell><TableCell className='text-right'>{store.paidOrders}</TableCell><TableCell className='text-right'>{store.refundedOrders} / {store.completedReturns}</TableCell><TableCell className='text-right'>{store.settlementRiskCount > 0 ? money(store.settlementRiskCents / 100) : 'Clear'}</TableCell></TableRow>)}{data.topStores.length === 0 && <TableRow className='hover:bg-transparent'><TableCell colSpan={6} className='py-8 text-center text-muted-foreground'>No stores are available for ranking.</TableCell></TableRow>}</TableBody></Table></div></CardContent>
 				</Card>
-				<div className='xl:col-span-1'><RecentTransactions orders={data.recentOrders} title='Recent paid transactions' description='Latest platform order groups' /></div>
+				<div className='xl:col-span-1'>
+					<Card className='border-border/60 shadow-sm'>
+						<CardHeader>
+							<CardTitle className='text-lg'>Operational health</CardTitle>
+							<CardDescription>Database-backed delivery, webhook, automation, and PostgreSQL-search catalog signals.</CardDescription>
+						</CardHeader>
+						<CardContent className='grid gap-3 text-sm sm:grid-cols-2'>
+							<HealthMetric label='Pending email jobs' value={operationalHealth.pendingEmails} icon={<Mail className='size-4' />} />
+							<HealthMetric label='Failed email jobs' value={operationalHealth.failedEmails} icon={<Mail className='size-4' />} />
+							<HealthMetric label='Webhook events (24h)' value={operationalHealth.paymentWebhookEventsLast24Hours} icon={<Webhook className='size-4' />} />
+							<HealthMetric label='Failed automation runs' value={operationalHealth.failedAutomationRuns} icon={<AlertTriangle className='size-4' />} />
+							<HealthMetric label='Searchable products' value={operationalHealth.searchableProducts} icon={<PackageSearch className='size-4' />} />
+							<div className='rounded-lg bg-muted/50 p-3 sm:col-span-2'><p className='text-xs text-muted-foreground'>Latest automation run</p><p className='mt-1 font-medium'>{dateTime(operationalHealth.latestAutomationRunAt)} ({operationalHealth.latestAutomationRunStatus ?? 'No status'})</p></div>
+							<Link href='/dashboard/admin/delivery-health' className='flex items-center rounded-lg border border-border px-3 py-2 text-xs font-semibold text-primary hover:bg-muted sm:col-span-2'>Open delivery health and retry tools</Link>
+						</CardContent>
+					</Card>
+				</div>
+			</section>
+
+			<section>
+				<RecentTransactions orders={data.recentOrders} title='Recent paid transactions' description='Latest platform order groups' />
 			</section>
 		</div>
 	);
