@@ -14,7 +14,6 @@
 		"db:seed:products": "bun prisma/seed-products.ts",
 		"db:seed:centralized": "bun prisma/seed-centralized-catalog.ts",
 		"db:clean:prod": "bun prisma/cleanup-production.ts",
-
 		"db:e2e:up": "bun --no-env-file scripts/e2e-local.ts up",
 		"db:e2e:prepare": "bun --no-env-file scripts/e2e-local.ts prepare",
 		"db:e2e:sync-users": "bun --no-env-file scripts/e2e-local.ts sync-users",
@@ -89,6 +88,7 @@
 		"@types/react-tag-input": "^6.6.6",
 		"@vercel/analytics": "^1.5.0",
 		"@vercel/functions": "^2.2.13",
+		"@vercel/speed-insights": "^2.0.0",
 		"class-variance-authority": "^0.7.1",
 		"clsx": "^2.1.1",
 		"cmdk": "^1.1.1",

@@ -1,3 +1,4 @@
+import { getSiteUrl } from '@/lib/seo/site-url';
 import ProductFilters from '@/components/store/browse-page/filters';
 import BrowseLayoutClient from '@/components/store/browse-page/browse-layout';
 import Header from '@/components/store/layout/header/header';
@@ -42,8 +43,7 @@ export async function generateMetadata({
 	}
 
 	const baseUrl =
-		process.env.NEXT_PUBLIC_APP_URL ||
-		(process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
+		getSiteUrl();
 	const canonicalUrl = `${baseUrl}/browse`;
 
 	return {
@@ -57,13 +57,13 @@ export async function generateMetadata({
 			description,
 			url: canonicalUrl,
 			type: 'website',
-			images: [{ url: '/og-image.png', alt: title }],
+			images: [{ url: '/opengraph-image', alt: title }],
 		},
 		twitter: {
 			card: 'summary_large_image',
 			title: `${title} | GoCart`,
 			description,
-			images: ['/og-image.png'],
+			images: ['/opengraph-image'],
 		},
 	};
 }

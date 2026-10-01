@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import { dehydrate, HydrationBoundary } from '@tanstack/react-query';
 import { getQueryClient } from '@/lib/get-query-client';
@@ -21,6 +22,8 @@ import {
 	FeaturedCategoriesSkeleton,
 	ProductsGridSkeleton,
 } from '@/components/store/skeletons/home-skeletons';
+
+export const metadata: Metadata = { alternates: { canonical: '/' } };
 
 export default async function HomePage() {
 	const queryClient = getQueryClient();

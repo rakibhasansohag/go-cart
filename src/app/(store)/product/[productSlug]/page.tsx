@@ -1,3 +1,5 @@
+import { sanitizeUserText } from '@/lib/security/content-safety';
+import { getSiteUrl } from '@/lib/seo/site-url';
 import StoreCard from '@/components/store/cards/store-card';
 import CategoriesHeader from '@/components/store/layout/categories-header/categories-header';
 import Header from '@/components/store/layout/header/header';
@@ -69,12 +71,11 @@ export async function generateMetadata({
 		const formattedPrice = typeof firstPrice === 'number' ? ` - $${firstPrice.toFixed(2)}` : '';
 		const title = `${product.name}${formattedPrice}`;
 		const description = product.description
-			? product.description.slice(0, 160)
+			? sanitizeUserText(product.description).replace(/\s+/g, ' ').slice(0, 160)
 			: `Shop ${product.name} on GoCart. High-quality products from trusted marketplace stores.`;
 
 		const baseUrl =
-			process.env.NEXT_PUBLIC_APP_URL ||
-			(process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
+			getSiteUrl();
 		const canonicalUrl = `${baseUrl}/product/${product.slug}`;
 
 		return {
@@ -90,14 +91,14 @@ export async function generateMetadata({
 				images:
 					images.length > 0
 						? images.map((img) => ({ url: img, alt: product.name }))
-						: [{ url: '/og-image.png', alt: product.name }],
+						: [{ url: '/opengraph-image', alt: product.name }],
 				type: 'website',
 			},
 			twitter: {
 				card: 'summary_large_image',
 				title: `${product.name} | GoCart`,
 				description,
-				images: images.length > 0 ? [images[0]] : ['/og-image.png'],
+				images: images.length > 0 ? [images[0]] : ['/opengraph-image'],
 			},
 		};
 	} catch {

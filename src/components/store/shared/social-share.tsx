@@ -1,5 +1,5 @@
 'use client';
-import { FC, useEffect, useState } from 'react';
+import { FC, Suspense, useEffect, useState } from 'react';
 import {
 	FacebookShareButton,
 	FacebookIcon,
@@ -13,6 +13,7 @@ import {
 import { cn } from '@/lib/utils';
 import { Link2, Check } from 'lucide-react';
 import { toast } from 'sonner';
+import { usePathname, useSearchParams } from 'next/navigation';
 
 interface Props {
 	url?: string;
@@ -33,6 +34,8 @@ const SocialShare: FC<Props> = ({
 	iconSize = 32,
 	className,
 }) => {
+	const pathname = usePathname();
+	const searchParams = useSearchParams();
 	const [shareUrl, setShareUrl] = useState(url || '');
 	const [shareQuote, setShareQuote] = useState(quote || '');
 	const [shareMedia, setShareMedia] = useState(media || '');
@@ -47,29 +50,33 @@ const SocialShare: FC<Props> = ({
 					.querySelector('meta[property="og:image"]')
 					?.getAttribute('content');
 				setShareMedia(
-					ogImage || `${window.location.origin}/assets/images/logo.png`,
+					ogImage || `${window.location.origin}/opengraph-image`,
 				);
 			} else {
 				setShareMedia(media);
 			}
 		}
-	}, [url, quote, media]);
+	}, [url, quote, media, pathname, searchParams]);
 
-	const handleCopy = (e: React.MouseEvent<HTMLButtonElement>) => {
+	const handleCopy = async (e: React.MouseEvent<HTMLButtonElement>) => {
 		e.preventDefault();
 		e.stopPropagation();
 		const currentUrl =
 			shareUrl || (typeof window !== 'undefined' ? window.location.href : '');
 
-		if (navigator.clipboard) {
-			navigator.clipboard.writeText(currentUrl);
+		try {
+			if (!navigator.clipboard) throw new Error('Clipboard unavailable');
+			await navigator.clipboard.writeText(currentUrl);
 			setCopied(true);
 			toast.success('Link copied to clipboard!');
 			setTimeout(() => setCopied(false), 2000);
+		} catch {
+			toast.error('Could not copy the link. Please copy it from the address bar.');
 		}
 	};
 
-	const effectiveUrl = shareUrl || 'https://gocart.com';
+	if (!shareUrl) return null;
+	const effectiveUrl = shareUrl;
 
 	return (
 		<div
@@ -139,4 +146,6 @@ const SocialShare: FC<Props> = ({
 	);
 };
 
-export default SocialShare;
+export default function SocialShareWithSuspense(props: Props) {
+	return <Suspense fallback={null}><SocialShare {...props} /></Suspense>;
+}

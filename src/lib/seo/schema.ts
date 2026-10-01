@@ -1,3 +1,4 @@
+import { getSiteUrl } from '@/lib/seo/site-url';
 export interface ProductJsonLdInput {
 	name: string;
 	description?: string | null;
@@ -36,23 +37,14 @@ export interface BreadcrumbItem {
 	url: string;
 }
 
-const getBaseUrl = (): string => {
-	if (process.env.NEXT_PUBLIC_APP_URL) {
-		return process.env.NEXT_PUBLIC_APP_URL.replace(/\/$/, '');
-	}
-	if (process.env.VERCEL_URL) {
-		return `https://${process.env.VERCEL_URL}`;
-	}
-	return 'http://localhost:3000';
-};
 
 /**
  * Generates Schema.org Product structured JSON-LD data.
  */
 export const generateProductJsonLd = (input: ProductJsonLdInput): Record<string, unknown> => {
-	const baseUrl = getBaseUrl();
+	const baseUrl = getSiteUrl();
 	const productUrl = `${baseUrl}/product/${input.slug}`;
-	const images = input.images && input.images.length > 0 ? input.images : [`${baseUrl}/og-image.png`];
+	const images = input.images && input.images.length > 0 ? input.images : [`${baseUrl}/opengraph-image`];
 
 	const schema: Record<string, unknown> = {
 		'@context': 'https://schema.org',
@@ -132,7 +124,7 @@ export const generateProductJsonLd = (input: ProductJsonLdInput): Record<string,
  * Generates Schema.org Store / OnlineBusiness structured JSON-LD data.
  */
 export const generateStoreJsonLd = (input: StoreJsonLdInput): Record<string, unknown> => {
-	const baseUrl = getBaseUrl();
+	const baseUrl = getSiteUrl();
 	const storeFullUrl = `${baseUrl}/store/${input.url}`;
 
 	const schema: Record<string, unknown> = {
@@ -165,7 +157,7 @@ export const generateStoreJsonLd = (input: StoreJsonLdInput): Record<string, unk
  * Generates Schema.org BreadcrumbList structured JSON-LD data.
  */
 export const generateBreadcrumbJsonLd = (items: BreadcrumbItem[]): Record<string, unknown> => {
-	const baseUrl = getBaseUrl();
+	const baseUrl = getSiteUrl();
 
 	return {
 		'@context': 'https://schema.org',
@@ -183,7 +175,7 @@ export const generateBreadcrumbJsonLd = (items: BreadcrumbItem[]): Record<string
  * Generates Schema.org WebSite & Organization structured JSON-LD data for the root platform.
  */
 export const generateWebsiteJsonLd = (): Record<string, unknown>[] => {
-	const baseUrl = getBaseUrl();
+	const baseUrl = getSiteUrl();
 
 	const websiteSchema: Record<string, unknown> = {
 		'@context': 'https://schema.org',

@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 		title: 'GoCart Documentation Hub',
 		description: 'Complete guides and technical documentation for GoCart.',
 		type: 'website',
-		images: ['/og-image.png'],
+		images: ['/opengraph-image'],
 	},
 };
 

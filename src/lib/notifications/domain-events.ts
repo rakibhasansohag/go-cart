@@ -11,6 +11,7 @@ import {
   demoFulfillmentStepHours,
 } from "@/lib/orders/demo-config";
 import { validateDomainEventPayload } from "./contracts";
+import { publishToQueue, QUEUE_TOPICS } from "@/lib/queue";
 
 type NotificationDbClient = Prisma.TransactionClient | PrismaClient;
 
@@ -810,6 +811,7 @@ export async function publishDomainEvent(
       row.enabled,
     ]),
   );
+  let hasQueuedEmail = false;
   for (const recipient of recipients) {
     const content = notificationFor(input, recipient);
     const inAppEnabled =
@@ -858,12 +860,51 @@ export async function publishDomainEvent(
         actionUrl: content.actionUrl,
       },
     });
+    hasQueuedEmail = true;
     await ensureDeliveryAudit(tx, {
       sourceEventId: event.id,
       recipientId: recipient.id,
       recipientEmail: recipient.email,
       channel: NotificationChannel.EMAIL,
       status: "QUEUED",
+    });
+  }
+
+  if (hasQueuedEmail) {
+    void publishToQueue({
+      topic: QUEUE_TOPICS.EMAIL_OUTBOX,
+      eventKey: `queue:email:${event.id}`,
+      eventType: input.eventType,
+      aggregateType: input.aggregateType,
+      aggregateId: event.id,
+      actorUserId: input.actorUserId,
+      payload: {
+        sourceEventId: event.id,
+        eventType: input.eventType,
+      },
+    }).catch((queueError: unknown) => {
+      console.warn("[queue] Non-fatal error publishing to email.outbox:", queueError);
+    });
+  }
+
+  if (
+    input.eventType === DOMAIN_EVENT_TYPES.INVENTORY_LOW_STOCK ||
+    input.eventType === DOMAIN_EVENT_TYPES.INVENTORY_RESTOCKED
+  ) {
+    void publishToQueue({
+      topic: QUEUE_TOPICS.INVENTORY_EVENTS,
+      eventKey: `queue:inventory:${event.id}`,
+      eventType: input.eventType,
+      aggregateType: input.aggregateType,
+      aggregateId: event.id,
+      actorUserId: input.actorUserId,
+      payload: {
+        sourceEventId: event.id,
+        eventType: input.eventType,
+        ...input.payload,
+      },
+    }).catch((queueError: unknown) => {
+      console.warn("[queue] Non-fatal error publishing to inventory.events:", queueError);
     });
   }
 

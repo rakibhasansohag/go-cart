@@ -1,3 +1,4 @@
+import { getSiteUrl } from '@/lib/seo/site-url';
 import ProductFilters from '@/components/store/browse-page/filters';
 import CategoriesHeader from '@/components/store/layout/categories-header/categories-header';
 import Header from '@/components/store/layout/header/header';
@@ -45,8 +46,7 @@ export async function generateMetadata({
 			: `Shop products from ${store.name} on GoCart.`;
 
 		const baseUrl =
-			process.env.NEXT_PUBLIC_APP_URL ||
-			(process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
+			getSiteUrl();
 		const canonicalUrl = `${baseUrl}/store/${store.url}`;
 
 		return {
@@ -63,14 +63,14 @@ export async function generateMetadata({
 					? [{ url: store.cover, alt: store.name }]
 					: store.logo
 					? [{ url: store.logo, alt: store.name }]
-					: [{ url: '/og-image.png', alt: store.name }],
+					: [{ url: '/opengraph-image', alt: store.name }],
 				type: 'website',
 			},
 			twitter: {
 				card: 'summary_large_image',
 				title: `${store.name} | GoCart`,
 				description,
-				images: store.cover ? [store.cover] : store.logo ? [store.logo] : ['/og-image.png'],
+				images: store.cover ? [store.cover] : store.logo ? [store.logo] : ['/opengraph-image'],
 			},
 		};
 	} catch {

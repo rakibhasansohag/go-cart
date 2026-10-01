@@ -1,3 +1,4 @@
+import { getSiteUrl } from '@/lib/seo/site-url';
 import React from 'react';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
@@ -33,8 +34,7 @@ export async function generateMetadata({
 	}
 
 	const baseUrl =
-		process.env.NEXT_PUBLIC_APP_URL ||
-		(process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
+		getSiteUrl();
 	const canonicalUrl = `${baseUrl}/documentation/${article.slug}`;
 
 	return {
@@ -48,13 +48,13 @@ export async function generateMetadata({
 			description: article.description,
 			url: canonicalUrl,
 			type: 'article',
-			images: [{ url: '/og-image.png', alt: article.title }],
+			images: [{ url: '/opengraph-image', alt: article.title }],
 		},
 		twitter: {
 			card: 'summary_large_image',
 			title: `${article.title} · GoCart Docs`,
 			description: article.description,
-			images: ['/og-image.png'],
+			images: ['/opengraph-image'],
 		},
 	};
 }
@@ -147,8 +147,7 @@ export default async function DocumentationArticlePage({
 
 	const { prev, next } = getAdjacentDocArticles(slug);
 	const baseUrl =
-		process.env.NEXT_PUBLIC_APP_URL ||
-		(process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
+		getSiteUrl();
 	const articleUrl = `${baseUrl}/documentation/${article.slug}`;
 
 	const jsonLd = [

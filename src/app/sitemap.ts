@@ -1,19 +1,11 @@
+import { getSiteUrl } from '@/lib/seo/site-url';
 import type { MetadataRoute } from 'next';
 import { db } from '@/lib/db';
 import { getAllDocSlugs } from '@/lib/docs/docs-data';
 
-const getBaseUrl = (): string => {
-	if (process.env.NEXT_PUBLIC_APP_URL) {
-		return process.env.NEXT_PUBLIC_APP_URL.replace(/\/$/, '');
-	}
-	if (process.env.VERCEL_URL) {
-		return `https://${process.env.VERCEL_URL}`;
-	}
-	return 'http://localhost:3000';
-};
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-	const baseUrl = getBaseUrl();
+	const baseUrl = getSiteUrl();
 	const now = new Date();
 
 	const docSlugs = getAllDocSlugs();

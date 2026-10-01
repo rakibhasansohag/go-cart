@@ -1,3 +1,4 @@
+import { getSiteUrl } from '@/lib/seo/site-url';
 // Next.js
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono, Barlow } from 'next/font/google';
@@ -20,6 +21,7 @@ import ClientProviders from '@/components/ClientProviders';
 
 // Vercel Analytics
 import { Analytics } from '@vercel/analytics/next';
+import { SpeedInsights } from '@vercel/speed-insights/next';
 
 // Fonts
 const geistSans = Geist({
@@ -38,7 +40,7 @@ const barlowFont = Barlow({
 	weight: ['100', '200', '300', '400', '500', '600', '700', '800', '900'],
 });
 
-const siteUrl = process.env.NEXT_PUBLIC_APP_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
+const siteUrl = getSiteUrl();
 
 // Metadata
 export const metadata: Metadata = {
@@ -70,7 +72,7 @@ export const metadata: Metadata = {
 		siteName: 'GoCart',
 		images: [
 			{
-				url: '/og-image.png',
+				url: '/opengraph-image',
 				width: 1200,
 				height: 630,
 				alt: 'GoCart Multi-Vendor Platform',
@@ -82,7 +84,7 @@ export const metadata: Metadata = {
 		card: 'summary_large_image',
 		title: 'GoCart | Multi-Vendor E-commerce',
 		description: 'A full-featured marketplace built with Next.js and PostgreSQL.',
-		images: ['/og-image.png'],
+		images: ['/opengraph-image'],
 	},
 	icons: {
 		icon: '/goCart.svg',
@@ -112,6 +114,7 @@ export default function RootLayout({
 			>
 				<ClientProviders>{children}</ClientProviders>
 				<Analytics />
+				<SpeedInsights />
 			</body>
 		</html>
 	);
