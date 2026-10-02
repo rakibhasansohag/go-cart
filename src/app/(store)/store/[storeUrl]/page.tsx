@@ -1,3 +1,4 @@
+import { serializeJsonLd } from '@/lib/seo/serialize-jsonld';
 import { getSiteUrl } from '@/lib/seo/site-url';
 import ProductFilters from '@/components/store/browse-page/filters';
 import CategoriesHeader from '@/components/store/layout/categories-header/categories-header';
@@ -155,7 +156,7 @@ export default async function StorePage({
 					<script
 						type='application/ld+json'
 						dangerouslySetInnerHTML={{
-							__html: JSON.stringify(storeJsonLd),
+							__html: serializeJsonLd(storeJsonLd),
 						}}
 					/>
 				) : null}

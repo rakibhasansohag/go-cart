@@ -343,13 +343,14 @@ const StoreDetails: FC<StoreDetailsProps> = ({ data }) => {
 										<FormControl>
 											<Checkbox
 												checked={field.value}
+												disabled
 												onCheckedChange={field.onChange}
 											/>
 										</FormControl>
 										<div className='space-y-1 leading-none'>
 											<FormLabel>Featured</FormLabel>
 											<FormDescription>
-												This Store will appear on the home page.
+												Featured placement is managed by an administrator.
 											</FormDescription>
 										</div>
 									</FormItem>

@@ -60,8 +60,8 @@ export function sanitizeUserText(
 
 /**
  * Validates that an image or media URL uses HTTPS and originates from
- * an authorized storage provider (e.g., Cloudinary), preventing SSRF,
- * script execution via SVG/HTML, and protocol manipulation.
+ * an allowed storage host, excluding known active/executable URL formats.
+ * File contents, MIME types and provider upload policies need separate controls.
  */
 export function validateSecureMediaUrl(
 	rawUrl: string,
@@ -81,6 +81,9 @@ export function validateSecureMediaUrl(
 	if (parsedUrl.protocol !== 'https:') {
 		throw new Error('Media files must use a secure HTTPS protocol.');
 	}
+	if (parsedUrl.username || parsedUrl.password) {
+		throw new Error('Media URLs must not contain credentials.');
+	}
 
 	const allowedHosts = new Set(DEFAULT_ALLOWED_HOSTS);
 	if (customAllowedHosts) {
@@ -97,7 +100,19 @@ export function validateSecureMediaUrl(
 	}
 
 	// Check path extension for scriptable/executable vectors
-	const pathname = parsedUrl.pathname.toLowerCase();
+	let pathname = parsedUrl.pathname.toLowerCase();
+	try {
+		// Reject encoded active formats, including repeated encoding.
+		for (let pass = 0; pass < 4 && /%[0-9a-f]{2}/i.test(pathname); pass++) {
+			pathname = decodeURIComponent(pathname);
+		}
+	} catch {
+		throw new Error('Invalid media URL encoding.');
+	}
+	if (/%[0-9a-f]{2}/i.test(pathname)) {
+		throw new Error('Ambiguous media URL encoding.');
+	}
+	pathname = pathname.toLowerCase();
 	for (const ext of DISALLOWED_EXTENSIONS) {
 		if (pathname.endsWith(ext)) {
 			throw new Error(`Media format '${ext}' is not permitted.`);

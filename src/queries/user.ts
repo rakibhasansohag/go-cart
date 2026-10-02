@@ -2,6 +2,8 @@
 
 import { auth, currentUser } from '@clerk/nextjs/server';
 import { db } from '@/lib/db';
+import { pickActionFields, requirePositiveQuantity } from '@/lib/security/action-input';
+import { assertCouponUsageAvailable } from '@/lib/security/coupon-eligibility';
 import {
 	CartProductType,
 	CartWithCartItemsType,
@@ -279,6 +281,7 @@ export const saveUserCart = async (
 	const validatedCartItems = await Promise.all(
 		cartProducts.map(async (cartProduct) => {
 			const { productId, variantId, sizeId, quantity } = cartProduct;
+			requirePositiveQuantity(quantity);
 
 			// Fetch the product, variant, and size from the database
 			const product = await db.product.findUnique({
@@ -322,7 +325,7 @@ export const saveUserCart = async (
 			const size = variant.sizes[0];
 
 			// Validate stock and price
-			const validQuantity = Math.min(quantity, size.quantity);
+			const validQuantity = requirePositiveQuantity(Math.min(quantity, size.quantity));
 
 			const price = size.discount
 				? size.price - size.price * (size.discount / 100)
@@ -550,6 +553,7 @@ export const updateCartWithLatest = async (
 	const results = await Promise.all(
 		cartProducts.map(async (cartProduct) => {
 			const { productId, variantId, sizeId, quantity } = cartProduct;
+			requirePositiveQuantity(quantity);
 
 			// Fetch the product, variant, and size from the database
 			const product = await db.product.findUnique({
@@ -698,10 +702,23 @@ export const updateCheckoutProductstWithLatest = async (
 	cartProducts: CartItem[],
 	address: CountryDB | undefined,
 ): Promise<CartWithCartItemsType> => {
+	const user = await currentUser();
+	if (!user) throw new Error('Unauthenticated.');
+	if (!Array.isArray(cartProducts) || cartProducts.length === 0) throw new Error('Cart is empty.');
+	const ownedCart = await db.cart.findUnique({
+		where: { id: cartProducts[0].cartId, userId: user.id },
+		include: { cartItems: true },
+	});
+	if (!ownedCart || cartProducts.some((item) => item.cartId !== ownedCart.id ||
+		!ownedCart.cartItems.some((persisted) => persisted.id === item.id))) {
+		throw new Error('Cart not found or you do not have access to it.');
+	}
+	cartProducts = ownedCart.cartItems;
 	// Fetch product, variant, and size data from the database for validation
 	const validatedCartItems = await Promise.all(
 		cartProducts.map(async (cartProduct) => {
 			const { productId, variantId, sizeId, quantity } = cartProduct;
+			requirePositiveQuantity(quantity);
 
 			// Fetch the product, variant, and size from the database
 			const product = await db.product.findUnique({
@@ -786,6 +803,7 @@ export const updateCheckoutProductstWithLatest = async (
 				const newCartItem = await db.cartItem.update({
 					where: {
 						id: cartProduct.id,
+						cart: { userId: user.id },
 					},
 					data: {
 						name: `${product.name} · ${variant.variantName}`,
@@ -807,6 +825,7 @@ export const updateCheckoutProductstWithLatest = async (
 	const cartCoupon = await db.cart.findUnique({
 		where: {
 			id: cartProducts[0].cartId,
+			userId: user.id,
 		},
 		select: {
 			coupon: {
@@ -859,6 +878,7 @@ export const updateCheckoutProductstWithLatest = async (
 	const cart = await db.cart.update({
 		where: {
 			id: cartProducts[0].cartId,
+			userId: user.id,
 		},
 		data: {
 			subTotal,
@@ -893,47 +913,26 @@ export const upsertShippingAddress = async (
 		// Ensure address data is provided
 		if (!address) throw new Error('Please provide address data.');
 
-		// DIAGNOSTIC: ensure the server got the fields
-		console.log('Server upsertShippingAddress received:', address);
-
-		if (!address.firstName) throw new Error('firstName missing in payload');
-		if (!address.countryId) throw new Error('countryId missing in payload');
-
-		// Handle making the rest of addresses default false when we are adding a new default
-		if (address.default) {
-			const addressDB = await db.shippingAddress.findUnique({
-				where: { id: address.id },
-			});
-			if (addressDB) {
-				try {
-					await db.shippingAddress.updateMany({
-						where: {
-							userId: user.id,
-							default: true,
-						},
-						data: {
-							default: false,
-						},
-					});
-				} catch {
-					throw new Error('Could not reset default shipping addresses');
-				}
+		const addressData = pickActionFields(address, [
+			'firstName', 'lastName', 'phone', 'address1', 'address2',
+			'state', 'city', 'zip_code', 'countryId', 'default',
+		] as const, ['id']);
+		if (!address.id || !address.firstName || !address.countryId) throw new Error('Please provide valid address data.');
+		const upsertedAddress = await db.$transaction(async (tx) => {
+			const existing = await tx.shippingAddress.findUnique({ where: { id: address.id } });
+			if (existing && existing.userId !== user.id) {
+				throw new Error('Unauthorized: Shipping address belongs to another user.');
 			}
-		}
-
-		// Upsert shipping address into the database
-		const upsertedAddress = await db.shippingAddress.upsert({
-			where: {
-				id: address.id,
-			},
-			update: {
-				...address,
-				userId: user.id,
-			},
-			create: {
-				...address,
-				userId: user.id,
-			},
+			if (address.default) {
+				await tx.shippingAddress.updateMany({
+					where: { userId: user.id, default: true }, data: { default: false },
+				});
+			}
+			return tx.shippingAddress.upsert({
+				where: { id: address.id, userId: user.id },
+				update: addressData,
+				create: { ...addressData, id: address.id, userId: user.id },
+			});
 		});
 
 		return upsertedAddress;
@@ -1044,6 +1043,7 @@ export const placeOrder = async (
 	const cartCoupon = cart.coupon; // The coupon, if it exists
 
 	if (cartCoupon) {
+		await assertCouponUsageAvailable(cartCoupon, userId);
 		const currentDate = new Date();
 		const startDate = new Date(cartCoupon.startDate);
 		const endDate = new Date(cartCoupon.endDate);
@@ -1074,6 +1074,7 @@ export const placeOrder = async (
 	const validatedCartItems = await Promise.all(
 		cartItems.map(async (cartProduct) => {
 			const { productId, variantId, sizeId, quantity } = cartProduct;
+			requirePositiveQuantity(quantity);
 
 			// Fetch the product, variant, and size from the database
 			const product = await db.product.findUnique({
@@ -1117,7 +1118,7 @@ export const placeOrder = async (
 			const size = variant.sizes[0];
 
 			// Validate stock and price
-			const validQuantity = Math.min(quantity, size.quantity);
+			const validQuantity = requirePositiveQuantity(Math.min(quantity, size.quantity));
 
 			const price = size.discount
 				? size.price - size.price * (size.discount / 100)

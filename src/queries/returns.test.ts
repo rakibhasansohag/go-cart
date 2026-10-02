@@ -131,6 +131,12 @@ describe('return request service', () => {
 		expect(transactionMock).not.toHaveBeenCalled();
 	});
 
+	it.each(['document.html', 'document.%73vg'])('rejects active evidence format %s at the server', async (filename) => {
+		authMock.mockResolvedValue({ userId: 'customer-1' });
+		await expect(createReturnRequest({ orderItemId: 'item-1', quantity: 1, reason: 'DAMAGED', resolution: 'REFUND', evidence: [{ type: 'DOCUMENT', url: `https://res.cloudinary.com/demo/${filename}` }] })).rejects.toThrow('not permitted');
+		expect(transactionMock).not.toHaveBeenCalled();
+	});
+
 	it('returns a server-calculated eligibility preview for the customer', async () => {
 		authMock.mockResolvedValue({ userId: 'customer-1' });
 		dbOrderItemFindFirstMock.mockResolvedValue({

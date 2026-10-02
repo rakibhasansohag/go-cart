@@ -85,6 +85,7 @@ describe('realtime sync API route', () => {
 		expect(dbMock.message.count).toHaveBeenCalledWith({
 			where: {
 				conversationId: 'conv-123',
+				conversation: { OR: [{ userId: 'user-1' }, { store: { userId: 'user-1' } }] },
 				createdAt: { gt: expect.any(Date) },
 			},
 		});
@@ -114,6 +115,16 @@ describe('realtime sync API route', () => {
 				lastMessageAt: { gt: expect.any(Date) },
 			},
 		});
+	});
+
+	it('returns no message activity when the membership filter matches no conversation', async () => {
+		guardMock.mockResolvedValue({ id: 'outsider', role: 'USER' });
+		dbMock.message.count.mockResolvedValue(0);
+		dbMock.conversation.count.mockResolvedValue(0);
+		dbMock.notification.count.mockResolvedValue(0);
+		const response = await GET(new NextRequest('http://localhost/api/realtime/sync?conversationId=foreign&lastCheckedAt=2020-01-01'));
+		expect(await response.json()).toMatchObject({ hasNewMessages: false, newMessagesCount: 0 });
+		expect(dbMock.message.count).toHaveBeenCalledWith(expect.objectContaining({ where: expect.objectContaining({ conversation: { OR: [{ userId: 'outsider' }, { store: { userId: 'outsider' } }] } }) }));
 	});
 
 	it('returns 500 on unexpected database error', async () => {

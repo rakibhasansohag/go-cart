@@ -1,3 +1,4 @@
+import { serializeJsonLd } from '@/lib/seo/serialize-jsonld';
 import { getSiteUrl } from '@/lib/seo/site-url';
 // Next.js
 import type { Metadata } from 'next';
@@ -106,7 +107,7 @@ export default function RootLayout({
 				<link rel='icon' type='image/svg+xml' href='/goCart.svg' />
 				<script
 					type='application/ld+json'
-					dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
+					dangerouslySetInnerHTML={{ __html: serializeJsonLd(websiteJsonLd) }}
 				/>
 			</head>
 			<body

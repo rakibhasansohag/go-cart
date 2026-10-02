@@ -39,6 +39,16 @@ describe('content-safety', () => {
 	});
 
 	describe('validateSecureMediaUrl', () => {
+		it.each(['file.%73vg', 'file.%2573vg', 'file.HT%4dL', 'file.%2568tml'])('rejects encoded active format %s', (filename) => {
+			expect(() => validateSecureMediaUrl(`https://res.cloudinary.com/demo/${filename}`)).toThrow('not permitted');
+		});
+		it('rejects embedded URL credentials', () => {
+			expect(() => validateSecureMediaUrl('https://user:pass@res.cloudinary.com/demo/file.jpg')).toThrow('credentials');
+		});
+		it.each(['file.jpg', 'file.pdf', 'file.mp4'])('preserves supported image and evidence file %s', (filename) => {
+			const url = `https://res.cloudinary.com/demo/${filename}`;
+			expect(validateSecureMediaUrl(url)).toBe(url);
+		});
 		it('accepts valid Cloudinary HTTPS image URLs', () => {
 			const validUrl = 'https://res.cloudinary.com/gocart/image/upload/v12345/product.jpg';
 			const result = validateSecureMediaUrl(validUrl);

@@ -20,6 +20,7 @@ import {
 	verifyEmailAuthenticity,
 } from '@/lib/feedback/email-verification';
 import { revalidatePath } from 'next/cache';
+import { validateSecureMediaUrl } from '@/lib/security/content-safety';
 
 /**
  * Submit feedback from a guest, customer, seller, or developer.
@@ -55,7 +56,7 @@ export async function submitFeedback(
 		throw new Error(firstError);
 	}
 
-	const data = parsed.data;
+	const data = { ...parsed.data, images: parsed.data.images.map((url) => validateSecureMediaUrl(url)) };
 
 	// 3. Authenticate current session if available
 	const clerkUser = await currentUser();

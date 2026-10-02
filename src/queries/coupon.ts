@@ -7,6 +7,7 @@ import { v4 } from 'uuid';
 import { CouponFormSchema } from '@/lib/schemas';
 import { enforceSharedRateLimit } from '@/lib/security/rate-limit';
 import { sanitizeUserText } from '@/lib/security/content-safety';
+import { assertCouponUsageAvailable } from '@/lib/security/coupon-eligibility';
 
 type SellerCouponInput = {
 	id?: string;
@@ -175,6 +176,11 @@ export const getCouponRedemptions = async (couponId: string) => {
 		const user = await currentUser();
 		if (!user) throw new Error('Unauthenticated.');
 
+		const coupon = await db.coupon.findUnique({ where: { id: couponId }, include: { store: true } });
+		const dbUser = await db.user.findUnique({ where: { id: user.id }, select: { role: true } });
+		if (!coupon || (dbUser?.role !== 'ADMIN' && coupon.store?.userId !== user.id)) {
+			throw new Error('Unauthorized: Coupon redemption history is restricted to its store owner or an administrator.');
+		}
 		const redemptions = await db.orderGroup.findMany({
 			where: {
 				couponId: couponId,
@@ -232,6 +238,8 @@ export const applyCoupon = async (
 	cartId: string,
 ): Promise<{ message: string; cart: CartWithCartItemsType }> => {
 	try {
+		const user = await currentUser();
+		if (!user) throw new Error('Unauthenticated.');
 		if (!cartId) throw new Error('Cart ID is required.');
 		if (!couponCode || !couponCode.trim()) {
 			throw new Error('Please enter a valid coupon code.');
@@ -270,6 +278,7 @@ export const applyCoupon = async (
 		const cart = await db.cart.findUnique({
 			where: {
 				id: cartId,
+				userId: user.id,
 			},
 			include: {
 				cartItems: true,
@@ -285,6 +294,8 @@ export const applyCoupon = async (
 		if (coupon.targetUserId && coupon.targetUserId !== cart.userId) {
 			throw new Error('This coupon is not valid for your account.');
 		}
+
+		await assertCouponUsageAvailable(coupon, user.id);
 
 		// Step 4: Ensure no coupon is already applied to the cart
 		if (cart.couponId) {
@@ -324,6 +335,7 @@ export const applyCoupon = async (
 		const updatedCart = await db.cart.update({
 			where: {
 				id: cartId,
+				userId: user.id,
 			},
 			data: {
 				couponId: coupon.id,
@@ -423,6 +435,8 @@ export const applyCouponToOrder = async (
 		if (currentDate < startDate || currentDate > endDate) {
 			throw new Error('Coupon is expired or not yet active.');
 		}
+
+		await assertCouponUsageAvailable(coupon, user.id);
 
 		// Check Max Uses
 		if (coupon.maxUses > 0) {

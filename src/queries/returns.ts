@@ -9,6 +9,7 @@ import {
 	ReturnResolution,
 } from '@prisma/client';
 import { db } from '@/lib/db';
+import { validateSecureMediaUrl } from '@/lib/security/content-safety';
 import { scheduleEmailOutboxDispatch } from '@/lib/email/schedule';
 import {
 	INACTIVE_RETURN_STATUSES,
@@ -140,7 +141,7 @@ function validateEvidence(evidence: ReturnEvidenceInput[] = []) {
 
 		return {
 			type: file.type,
-			url: parsedUrl.toString(),
+			url: validateSecureMediaUrl(parsedUrl.toString()),
 			alt,
 		};
 	});

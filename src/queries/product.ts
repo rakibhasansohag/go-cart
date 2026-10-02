@@ -104,6 +104,13 @@ export const upsertProduct = async (
 			where: { id: product.variantId },
 		});
 
+		if (existingProduct && existingProduct.storeId !== store.id) {
+			throw new Error('Unauthorized: Product belongs to another store.');
+		}
+		if (existingVariant && (!existingProduct || existingVariant.productId !== existingProduct.id)) {
+			throw new Error('Unauthorized: Variant belongs to another product.');
+		}
+
 		if (existingProduct) {
 			if (existingVariant) {
 				// Update existing product and variant
@@ -688,7 +695,7 @@ export const deleteProduct = async (productId: string) => {
 	if (!productId) throw new Error('Please provide product id.');
 
 	// Delete product from the database
-	const response = await db.product.delete({ where: { id: productId } });
+	const response = await db.product.delete({ where: { id: productId, store: { userId: user.id } } });
 	return response;
 };
 

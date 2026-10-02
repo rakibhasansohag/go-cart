@@ -1,6 +1,7 @@
 'use server';
 
 import { db } from '@/lib/db';
+import { pickActionFields } from '@/lib/security/action-input';
 import { ReviewDetailsType } from '@/lib/types';
 import { OrderStatus } from '@prisma/client';
 import { currentUser } from '@clerk/nextjs/server';
@@ -32,6 +33,10 @@ export const upsertReview = async (
 		// Ensure productId and review data are provided
 		if (!productId) throw new Error('Product ID is required.');
 		if (!review) throw new Error('Please provide review data.');
+		review = pickActionFields(review, ['id', 'review', 'rating', 'images', 'size', 'quantity', 'variant', 'variantImage', 'color'] as const);
+		if (!Number.isFinite(review.rating) || review.rating < 1 || review.rating > 5) throw new Error('Rating must be between 1 and 5.');
+		const suppliedReview = await db.review.findUnique({ where: { id: review.id } });
+		if (suppliedReview && (suppliedReview.userId !== user.id || suppliedReview.productId !== productId)) throw new Error('Unauthorized: Review belongs to another user or product.');
 
 		// Enforce rate limiting on review creation/updating
 		await enforceSharedRateLimit({
@@ -80,6 +85,8 @@ export const upsertReview = async (
 		const reviewDetails = await db.review.upsert({
 			where: {
 				id: review_data.id,
+				userId: user.id,
+				productId,
 			},
 			update: {
 				...review_data,

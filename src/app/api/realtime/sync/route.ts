@@ -26,6 +26,7 @@ export async function GET(req: NextRequest) {
 			const count = await db.message.count({
 				where: {
 					conversationId,
+					conversation: user.role === 'ADMIN' ? undefined : { OR: [{ userId: user.id }, { store: { userId: user.id } }] },
 					createdAt: { gt: lastDate },
 				},
 			});

@@ -7,6 +7,7 @@ const harness = vi.hoisted(() => ({
 	db: {
 		review: {
 			findFirst: vi.fn(),
+			findUnique: vi.fn(),
 			findMany: vi.fn(),
 			upsert: vi.fn(),
 		},
@@ -55,6 +56,7 @@ describe('upsertReview query', () => {
 		harness.currentUser.mockResolvedValue({ id: 'user-1' });
 		harness.enforceSharedRateLimit.mockResolvedValue({ allowed: true, remaining: 4, retryAfterSeconds: 0 });
 		harness.db.review.findFirst.mockResolvedValue(null);
+		harness.db.review.findUnique.mockResolvedValue(null);
 		harness.db.orderItem.findFirst.mockResolvedValue(null);
 		harness.db.review.findMany.mockResolvedValue([{ rating: 5 }]);
 		harness.getRatingStatistics.mockResolvedValue({ total: 1, average: 5 });
@@ -76,6 +78,24 @@ describe('upsertReview query', () => {
 				review: 'test',
 			}),
 		).rejects.toThrow('Unauthenticated.');
+	});
+
+	it('rejects a supplied victim review ID before content or rating writes', async () => {
+		harness.db.review.findUnique.mockResolvedValue({ id: 'rev-1', userId: 'victim', productId: 'prod-1' });
+		await expect(upsertReview('prod-1', baseReview)).rejects.toThrow('another user or product');
+		expect(harness.db.review.upsert).not.toHaveBeenCalled();
+		expect(harness.db.product.update).not.toHaveBeenCalled();
+	});
+
+	it('preserves editing the author\'s existing review', async () => {
+		harness.db.review.findUnique.mockResolvedValue({ id: 'rev-1', userId: 'user-1', productId: 'prod-1' });
+		await upsertReview('prod-1', baseReview);
+		expect(harness.db.review.upsert).toHaveBeenCalledWith(expect.objectContaining({ where: { id: 'rev-1', userId: 'user-1', productId: 'prod-1' } }));
+	});
+
+	it.each([0, 6, NaN, Infinity])('rejects invalid rating %s', async (rating) => {
+		await expect(upsertReview('prod-1', { ...baseReview, rating })).rejects.toThrow('between 1 and 5');
+		expect(harness.db.review.upsert).not.toHaveBeenCalled();
 	});
 
 	it('enforces shared rate limiting per user', async () => {

@@ -517,6 +517,12 @@ export async function getConversationDetails(
 		return { success: false, error: 'Unauthorized to view this conversation.' };
 	}
 
+	if (conv.orderId && !isAdmin && !await db.order.findFirst({
+		where: { id: conv.orderId, userId: conv.userId, groups: { some: { storeId: conv.storeId } } }, select: { id: true },
+	})) {
+		return { success: false, error: 'Conversation contains an invalid order reference.' };
+	}
+
 	// Reset unread count for the active reader
 	if (isBuyer && conv.unreadByBuyer > 0) {
 		await db.conversation.update({
@@ -646,6 +652,19 @@ export async function startConversation(input: StartConversationInput): Promise<
 		};
 	}
 
+	if (productId && !await db.product.findFirst({ where: { id: productId, storeId }, select: { id: true } })) {
+		return { success: false, error: 'Product does not belong to this store.' };
+	}
+	if (orderId && !await db.order.findFirst({
+		where: { id: orderId, userId: user.id, groups: { some: { storeId } } }, select: { id: true },
+	})) {
+		return { success: false, error: 'Order not found or you do not have access to it.' };
+	}
+	if (orderGroupId && !await db.orderGroup.findFirst({
+		where: { id: orderGroupId, storeId, order: { userId: user.id }, ...(orderId ? { orderId } : {}) }, select: { id: true },
+	})) {
+		return { success: false, error: 'Order group does not belong to this customer and store.' };
+	}
 	const conversation = await db.conversation.create({
 		data: {
 			storeId,

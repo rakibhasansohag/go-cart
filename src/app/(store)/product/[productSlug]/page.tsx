@@ -1,3 +1,4 @@
+import { serializeJsonLd } from '@/lib/seo/serialize-jsonld';
 import { sanitizeUserText } from '@/lib/security/content-safety';
 import { getSiteUrl } from '@/lib/seo/site-url';
 import StoreCard from '@/components/store/cards/store-card';
@@ -251,13 +252,13 @@ export default async function ProductPage({
 				<script
 					type='application/ld+json'
 					dangerouslySetInnerHTML={{
-						__html: JSON.stringify(productJsonLd),
+						__html: serializeJsonLd(productJsonLd),
 					}}
 				/>
 				<script
 					type='application/ld+json'
 					dangerouslySetInnerHTML={{
-						__html: JSON.stringify(breadcrumbJsonLd),
+						__html: serializeJsonLd(breadcrumbJsonLd),
 					}}
 				/>
 				<HydrationBoundary state={dehydrate(queryClient)}>
@@ -322,7 +323,7 @@ export default async function ProductPage({
 					<script
 						type='application/ld+json'
 						dangerouslySetInnerHTML={{
-							__html: JSON.stringify({
+							__html: serializeJsonLd({
 								'@context': 'https://schema.org',
 								'@type': 'FAQPage',
 								mainEntity: [

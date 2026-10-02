@@ -1,6 +1,8 @@
 import { auth } from '@clerk/nextjs/server';
 import { db } from '@/lib/db';
 import type { Order, PaymentDetails, PaymentStatus } from '@prisma/client';
+import { requirePositiveQuantity } from '@/lib/security/action-input';
+import { assertCouponUsageAvailable } from '@/lib/security/coupon-eligibility';
 
 const PAYABLE_STATUSES: PaymentStatus[] = [
 	'Pending',
@@ -27,7 +29,7 @@ export async function requireOwnedOrder(
 
 	const order = await db.order.findFirst({
 		where: { id: orderId, userId },
-		include: { paymentDetails: true },
+		include: { paymentDetails: true, groups: { include: { items: true, coupon: true } } },
 	});
 
 	if (!order) {
@@ -44,6 +46,12 @@ export async function requireOwnedOrder(
 
 	if (!Number.isFinite(order.total) || order.total <= 0) {
 		throw new Error('This order has an invalid payable total.');
+	}
+	if (options.requirePayable) {
+		for (const group of order.groups) {
+			for (const item of group.items) requirePositiveQuantity(item.quantity);
+			if (group.coupon) await assertCouponUsageAvailable(group.coupon, userId);
+		}
 	}
 
 	return order;

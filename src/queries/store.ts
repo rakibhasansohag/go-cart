@@ -9,6 +9,18 @@ import { StoreStatus, StoreType } from '@/lib/types';
 import { checkIfUserFollowingStore } from './product';
 import { normalizeCommerceReference } from '@/lib/orders/references';
 import { primaryShipmentFromAssignments } from '@/lib/shipments/compat';
+import { pickActionFields } from '@/lib/security/action-input';
+
+const STORE_PROFILE_FIELDS = [
+	'name', 'description', 'phone', 'logo', 'cover', 'returnPolicy',
+	'returnsAccepted', 'returnWindowDays', 'returnShippingFees',
+	'defaultShippingService', 'defaultShippingFeePerItem',
+	'defaultShippingFeeForAdditionalItem', 'defaultShippingFeePerKg',
+	'defaultShippingFeeFixed', 'defaultDeliveryTimeMin', 'defaultDeliveryTimeMax',
+	'announcementText', 'announcementUrl', 'announcementActive',
+	'instagram', 'facebook', 'twitter', 'youtube', 'tiktok',
+] as const;
+const STORE_METADATA_FIELDS = ['id', 'email', 'url', 'createdAt', 'updatedAt', 'status', 'featured', 'userId', 'averageRating', 'numReviews'];
 
 // Point:   Function: upsertStore
 // Description: Upserts store details into the database, ensuring uniqueness of name,url, email, and phone number.
@@ -31,6 +43,8 @@ export const upsertStore = async (store: Partial<Store>) => {
 				'Unauthorized Access: Seller Privileges Required for Entry.',
 			);
 
+		const profileData = pickActionFields(store, STORE_PROFILE_FIELDS, STORE_METADATA_FIELDS);
+
 		// If store.id exists, we are updating an existing store
 		if (store.id) {
 			const existingStoreById = await db.store.findUnique({
@@ -49,11 +63,21 @@ export const upsertStore = async (store: Partial<Store>) => {
 
 				// Server-side Guard: Email and Store URL are immutable once created.
 				// Strip email and url from update payload so they can never be modified.
-				const updateData = { ...store };
-				delete updateData.email;
-				delete updateData.url;
-				delete updateData.createdAt;
-				delete updateData.updatedAt;
+				for (const key of ['userId', 'averageRating', 'numReviews'] as const) {
+					if (store[key] !== undefined && store[key] !== existingStoreById[key]) {
+						throw new Error('Unauthorized: Protected store fields cannot be changed.');
+					}
+				}
+				if (role !== 'ADMIN' && (
+					(store.status !== undefined && store.status !== existingStoreById.status) ||
+					(store.featured !== undefined && store.featured !== existingStoreById.featured)
+				)) {
+					throw new Error('Unauthorized: Store approval and featured placement require an administrator.');
+				}
+				const updateData = {
+					...profileData,
+					...(role === 'ADMIN' ? { status: store.status, featured: store.featured } : {}),
+				};
 
 				const storeDetails = await db.store.update({
 					where: { id: store.id },
@@ -65,6 +89,14 @@ export const upsertStore = async (store: Partial<Store>) => {
 
 				return storeDetails;
 			}
+		}
+
+		if ((store.status !== undefined && store.status !== 'PENDING') ||
+			(store.userId !== undefined && store.userId !== user.id) ||
+			(store.averageRating !== undefined && store.averageRating !== 0) ||
+			(store.numReviews !== undefined && store.numReviews !== 0) ||
+			(role !== 'ADMIN' && store.featured === true)) {
+			throw new Error('Unauthorized: Protected store fields cannot be set.');
 		}
 
 		// Creating a new store
@@ -352,11 +384,16 @@ export const upsertShippingRate = async (
 		if (!store) throw new Error('Please provide a valid store URL.');
 
 		const rateId = shippingRate.id || v4();
+		const existingRate = await db.shippingRate.findUnique({ where: { id: rateId } });
+		if (existingRate && existingRate.storeId !== store.id) {
+			throw new Error('Unauthorized: Shipping rate belongs to another store.');
+		}
 
 		// Upsert the shipping rate into the database
 		const shippingRateDetails = await db.shippingRate.upsert({
 			where: {
 				id: rateId,
+				storeId: store.id,
 			},
 			update: {
 				shippingService: shippingRate.shippingService ?? '',
@@ -605,6 +642,7 @@ export const applySeller = async (store: StoreType) => {
 
 		// Ensure store data is provided
 		if (!store) throw new Error('Please provide store data.');
+		const application = pickActionFields(store, ['name', 'description', 'email', 'phone', 'logo', 'cover', 'url', 'defaultShippingService', 'defaultShippingFeePerItem', 'defaultShippingFeeForAdditionalItem', 'defaultShippingFeePerKg', 'defaultShippingFeeFixed', 'defaultDeliveryTimeMin', 'defaultDeliveryTimeMax', 'returnPolicy'] as const);
 
 		// Check if store with same name, email,url, or phone number already exists
 		const existingStore = await db.store.findFirst({
@@ -640,7 +678,9 @@ export const applySeller = async (store: StoreType) => {
 		// Upsert store details into the database
 		const storeDetails = await db.store.create({
 			data: {
-				...store,
+				...application,
+				status: 'PENDING',
+				featured: false,
 				defaultShippingService:
 					store.defaultShippingService || 'International Delivery',
 				returnPolicy: store.returnPolicy || 'Return within 7 days of confirmed delivery in good condition.',

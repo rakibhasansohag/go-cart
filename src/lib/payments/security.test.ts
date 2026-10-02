@@ -1,8 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { authMock, findFirstMock } = vi.hoisted(() => ({
+const { authMock, findFirstMock, redemptionCountMock } = vi.hoisted(() => ({
 	authMock: vi.fn(),
 	findFirstMock: vi.fn(),
+	redemptionCountMock: vi.fn(),
 }));
 
 vi.mock('@clerk/nextjs/server', () => ({
@@ -11,6 +12,7 @@ vi.mock('@clerk/nextjs/server', () => ({
 
 vi.mock('@/lib/db', () => ({
 	db: {
+		orderGroup: { count: redemptionCountMock },
 		order: {
 			findFirst: findFirstMock,
 		},
@@ -25,12 +27,14 @@ const payableOrder = {
 	total: 49.99,
 	paymentStatus: 'Pending',
 	paymentDetails: null,
+	groups: [],
 };
 
 describe('payment ownership and eligibility', () => {
 	beforeEach(() => {
 		authMock.mockReset();
 		findFirstMock.mockReset();
+		redemptionCountMock.mockReset();
 	});
 
 	it('requires an authenticated customer', async () => {
@@ -51,7 +55,7 @@ describe('payment ownership and eligibility', () => {
 		).resolves.toEqual(payableOrder);
 		expect(findFirstMock).toHaveBeenCalledWith({
 			where: { id: 'order-1', userId: 'user-1' },
-			include: { paymentDetails: true },
+			include: { paymentDetails: true, groups: { include: { items: true, coupon: true } } },
 		});
 	});
 
@@ -62,6 +66,35 @@ describe('payment ownership and eligibility', () => {
 		await expect(
 			requireOwnedOrder('order-1', { requirePayable: true }),
 		).rejects.toThrow('Order not found');
+	});
+
+	it('rejects an old order containing a negative quantity before payment', async () => {
+		authMock.mockResolvedValue({ userId: 'user-1' });
+		findFirstMock.mockResolvedValue({ ...payableOrder, groups: [{ items: [{ quantity: -1 }], coupon: null }] });
+		await expect(requireOwnedOrder('order-1', { requirePayable: true })).rejects.toThrow('positive integer');
+	});
+
+	it('preserves paying an ordinary order with positive line quantities', async () => {
+		authMock.mockResolvedValue({ userId: 'user-1' });
+		const order = { ...payableOrder, groups: [{ items: [{ quantity: 2 }], coupon: null }] };
+		findFirstMock.mockResolvedValue(order);
+		await expect(requireOwnedOrder('order-1', { requirePayable: true })).resolves.toEqual(order);
+	});
+
+	it('rechecks coupon limits for an order prepared before the first redemption', async () => {
+		authMock.mockResolvedValue({ userId: 'user-1' });
+		findFirstMock.mockResolvedValue({ ...payableOrder, groups: [{ items: [{ quantity: 1 }], coupon: { id: 'coupon', maxUses: 0, maxUsesPerUser: 1 } }] });
+		redemptionCountMock.mockResolvedValue(1);
+		await expect(requireOwnedOrder('order-1', { requirePayable: true })).rejects.toThrow('per-customer');
+		expect(redemptionCountMock).toHaveBeenCalledWith({ where: { couponId: 'coupon', order: { userId: 'user-1', paymentStatus: 'Paid' } } });
+	});
+
+	it('preserves paying a coupon order while customer capacity remains', async () => {
+		authMock.mockResolvedValue({ userId: 'user-1' });
+		const order = { ...payableOrder, groups: [{ items: [{ quantity: 1 }], coupon: { id: 'coupon', maxUses: 0, maxUsesPerUser: 1 } }] };
+		findFirstMock.mockResolvedValue(order);
+		redemptionCountMock.mockResolvedValue(0);
+		await expect(requireOwnedOrder('order-1', { requirePayable: true })).resolves.toEqual(order);
 	});
 
 	it('prevents paying an already-paid order again', async () => {

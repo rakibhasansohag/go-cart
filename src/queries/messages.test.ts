@@ -57,6 +57,7 @@ vi.mock('@clerk/nextjs/server', () => ({
 
 vi.mock('@/lib/db', () => ({
 	db: {
+		product: { findFirst: vi.fn().mockResolvedValue({ id: 'prod-1' }) },
 		store: {
 			findUnique: findUniqueStoreMock,
 		},
