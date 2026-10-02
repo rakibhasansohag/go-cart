@@ -1,5 +1,5 @@
 'use client';
-import { FC, Suspense, useState } from 'react';
+import { FC, Suspense, useState, useSyncExternalStore } from 'react';
 import {
 	FacebookShareButton,
 	FacebookIcon,
@@ -14,6 +14,12 @@ import { cn } from '@/lib/utils';
 import { Link2, Check } from 'lucide-react';
 import { toast } from 'sonner';
 import { usePathname, useSearchParams } from 'next/navigation';
+
+// The origin stays constant within this document. Use an empty server snapshot
+// so the first browser render matches the HTML during hydration.
+const subscribeToOrigin = () => () => undefined;
+const getBrowserOrigin = () => window.location.origin;
+const getServerOrigin = () => '';
 
 interface Props {
 	url?: string;
@@ -36,18 +42,21 @@ const SocialShare: FC<Props> = ({
 }) => {
 	const pathname = usePathname();
 	const searchParams = useSearchParams();
+	const origin = useSyncExternalStore(
+		subscribeToOrigin,
+		getBrowserOrigin,
+		getServerOrigin,
+	);
 	const [copied, setCopied] = useState(false);
 	const query = searchParams.toString();
-	const currentUrl =
-		typeof window === 'undefined'
-			? ''
-			: `${window.location.origin}${pathname}${query ? `?${query}` : ''}`;
+	const currentUrl = origin ? `${origin}${pathname}${query ? `?${query}` : ''}` : '';
 	const shareUrl = url || currentUrl;
-	const shareQuote = quote || (typeof document === 'undefined' ? '' : document.title) || 'Check out this deal on GoCart!';
-	const ogImage = typeof document === 'undefined' ? null : document
-		.querySelector('meta[property="og:image"]')
-		?.getAttribute('content');
-	const shareMedia = media || ogImage || (typeof window === 'undefined' ? '' : `${window.location.origin}/opengraph-image`);
+	const shareQuote =
+		quote || (origin ? document.title : '') || 'Check out this deal on GoCart!';
+	const ogImage = origin
+		? document.querySelector('meta[property="og:image"]')?.getAttribute('content')
+		: null;
+	const shareMedia = media || ogImage || (origin ? `${origin}/opengraph-image` : '');
 
 	const handleCopy = async (e: React.MouseEvent<HTMLButtonElement>) => {
 		e.preventDefault();
