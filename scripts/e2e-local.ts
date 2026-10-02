@@ -95,6 +95,9 @@ if (action === "up") {
   run("docker", [...compose, "up", "-d", "postgres"]);
   run("bun", ["x", "prisma", "migrate", "deploy"], env);
   run("bun", ["prisma/integration-check.ts"], env);
+} else if (action === "portfolio-fixtures") {
+  const env = validatedE2EEnv();
+  run("bun", ["prisma/seed-portfolio-regression.ts"], env);
 } else if (action === "analytics") {
   const env = validatedE2EEnv();
   run("bun", ["scripts/analytics-integration-check.ts"], env);
