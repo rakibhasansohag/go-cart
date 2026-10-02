@@ -20,6 +20,21 @@ import { usePathname, useSearchParams } from 'next/navigation';
 const subscribeToOrigin = () => () => undefined;
 const getBrowserOrigin = () => window.location.origin;
 const getServerOrigin = () => '';
+const getBrowserTitle = () => document.title;
+const getBrowserImage = () =>
+	document.querySelector('meta[property="og:image"]')?.getAttribute('content') || '';
+
+function subscribeToMetadata(onChange: () => void): () => void {
+	const observer = new MutationObserver(onChange);
+	observer.observe(document.head, {
+		childList: true,
+		subtree: true,
+		characterData: true,
+		attributes: true,
+		attributeFilter: ['content'],
+	});
+	return () => observer.disconnect();
+}
 
 interface Props {
 	url?: string;
@@ -47,16 +62,22 @@ const SocialShare: FC<Props> = ({
 		getBrowserOrigin,
 		getServerOrigin,
 	);
+	const pageTitle = useSyncExternalStore(
+		subscribeToMetadata,
+		getBrowserTitle,
+		getServerOrigin,
+	);
+	const pageImage = useSyncExternalStore(
+		subscribeToMetadata,
+		getBrowserImage,
+		getServerOrigin,
+	);
 	const [copied, setCopied] = useState(false);
 	const query = searchParams.toString();
 	const currentUrl = origin ? `${origin}${pathname}${query ? `?${query}` : ''}` : '';
 	const shareUrl = url || currentUrl;
-	const shareQuote =
-		quote || (origin ? document.title : '') || 'Check out this deal on GoCart!';
-	const ogImage = origin
-		? document.querySelector('meta[property="og:image"]')?.getAttribute('content')
-		: null;
-	const shareMedia = media || ogImage || (origin ? `${origin}/opengraph-image` : '');
+	const shareQuote = quote || pageTitle || 'Check out this deal on GoCart!';
+	const shareMedia = media || pageImage || (origin ? `${origin}/opengraph-image` : '');
 
 	const handleCopy = async (e: React.MouseEvent<HTMLButtonElement>) => {
 		e.preventDefault();
