@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
-import { coinsToDiscount } from "@/lib/loyalty/coins";
+import { coinsToDiscount } from "@/lib/loyalty/calculations";
 import CheckInCalendar from "@/components/store/checkin/checkin-calendar";
 import { LoyaltyTxType } from "@prisma/client";
 

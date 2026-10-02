@@ -1,5 +1,5 @@
 'use client';
-import { FC, Suspense, useEffect, useState } from 'react';
+import { FC, Suspense, useState } from 'react';
 import {
 	FacebookShareButton,
 	FacebookIcon,
@@ -36,27 +36,18 @@ const SocialShare: FC<Props> = ({
 }) => {
 	const pathname = usePathname();
 	const searchParams = useSearchParams();
-	const [shareUrl, setShareUrl] = useState(url || '');
-	const [shareQuote, setShareQuote] = useState(quote || '');
-	const [shareMedia, setShareMedia] = useState(media || '');
 	const [copied, setCopied] = useState(false);
-
-	useEffect(() => {
-		if (typeof window !== 'undefined') {
-			setShareUrl(url || window.location.href);
-			setShareQuote(quote || document.title || 'Check out this deal on GoCart!');
-			if (!media) {
-				const ogImage = document
-					.querySelector('meta[property="og:image"]')
-					?.getAttribute('content');
-				setShareMedia(
-					ogImage || `${window.location.origin}/opengraph-image`,
-				);
-			} else {
-				setShareMedia(media);
-			}
-		}
-	}, [url, quote, media, pathname, searchParams]);
+	const query = searchParams.toString();
+	const currentUrl =
+		typeof window === 'undefined'
+			? ''
+			: `${window.location.origin}${pathname}${query ? `?${query}` : ''}`;
+	const shareUrl = url || currentUrl;
+	const shareQuote = quote || (typeof document === 'undefined' ? '' : document.title) || 'Check out this deal on GoCart!';
+	const ogImage = typeof document === 'undefined' ? null : document
+		.querySelector('meta[property="og:image"]')
+		?.getAttribute('content');
+	const shareMedia = media || ogImage || (typeof window === 'undefined' ? '' : `${window.location.origin}/opengraph-image`);
 
 	const handleCopy = async (e: React.MouseEvent<HTMLButtonElement>) => {
 		e.preventDefault();

@@ -12,7 +12,7 @@ import ApplyCouponForm from '../forms/apply-coupon';
 import { PulseLoader } from 'react-spinners';
 import { useMutation } from '@tanstack/react-query';
 
-import { coinsEarned, coinsToDiscount, maxRedeemableCoins, MIN_REDEEM_COINS } from '@/lib/loyalty/coins';
+import { coinsEarned, coinsToDiscount, maxRedeemableCoins, MIN_REDEEM_COINS } from '@/lib/loyalty/calculations';
 import { Coins } from 'lucide-react';
 import { useCurrency } from '@/providers/currency-provider';
 
