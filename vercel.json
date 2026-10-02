@@ -1,30 +1,5 @@
 {
-	"crons": [
-		{
-			"path": "/api/cron/dispatch",
-			"schedule": "0 8 * * *"
-		}
-	],
-	"functions": {
-		"src/app/api/queues/email/route.ts": {
-			"experimentalTriggers": [
-				{ "type": "queue/v2beta", "topic": "email.outbox" }
-			]
-		},
-		"src/app/api/queues/notification/route.ts": {
-			"experimentalTriggers": [
-				{ "type": "queue/v2beta", "topic": "notification.fan" }
-			]
-		},
-		"src/app/api/queues/payment/route.ts": {
-			"experimentalTriggers": [
-				{ "type": "queue/v2beta", "topic": "payment.events" }
-			]
-		},
-		"src/app/api/queues/inventory/route.ts": {
-			"experimentalTriggers": [
-				{ "type": "queue/v2beta", "topic": "inventory.events" }
-			]
-		}
-	}
+  "crons": [
+    { "path": "/api/cron/dispatch", "schedule": "0 8 * * *" }
+  ]
 }

@@ -1,7 +1,6 @@
 import { NextResponse, after } from "next/server";
 import { getStripeClient } from "@/lib/payments/stripe-client";
 import { handleStripeEvent } from "@/lib/payments/stripe-events";
-import { publishToQueue, QUEUE_TOPICS } from "@/lib/queue";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -34,21 +33,6 @@ export async function POST(request: Request) {
     const result = await handleStripeEvent(event);
 
     const afterTask = async () => {
-      void publishToQueue({
-        topic: QUEUE_TOPICS.PAYMENT_EVENTS,
-        eventKey: `stripe:${event.id}`,
-        eventType: `stripe.${event.type}`,
-        aggregateType: "PAYMENT",
-        aggregateId: event.id,
-        payload: {
-          eventId: event.id,
-          type: event.type,
-          created: event.created,
-          livemode: event.livemode,
-        },
-      }).catch((queueError: unknown) => {
-        console.warn("[queue] Stripe event publishing skipped:", queueError);
-      });
       console.log(`[stripe:webhook] Event ${event.id} (${event.type}) processed successfully.`);
     };
 

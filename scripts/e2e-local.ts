@@ -95,6 +95,9 @@ if (action === "up") {
   run("docker", [...compose, "up", "-d", "postgres"]);
   run("bun", ["x", "prisma", "migrate", "deploy"], env);
   run("bun", ["prisma/integration-check.ts"], env);
+} else if (action === "analytics") {
+  const env = validatedE2EEnv();
+  run("bun", ["scripts/analytics-integration-check.ts"], env);
 } else if (action === "rate-limit") {
   const env = validatedE2EEnv();
   run("docker", [...compose, "up", "-d", "postgres"]);
@@ -298,7 +301,9 @@ if (action === "up") {
   });
 } else if (action === "build:e2e") {
   const env = validatedE2EEnv();
-  run("bun", ["prisma", "generate"], env);
+  if (!process.argv.includes("--skip-prisma-generate")) {
+    run("bun", ["prisma", "generate"], env);
+  }
   // Use the same production build path as the normal application build. The
   // Next 16 default Turbopack build completes reliably on Windows; the
   // Webpack fallback can leave BUILD_ID present while route output is still

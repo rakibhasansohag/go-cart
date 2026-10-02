@@ -1,7 +1,7 @@
 'use client';
 
 import { Dispatch, SetStateAction, useState, useEffect, MouseEvent } from 'react';
-import Image from 'next/image';
+import Image from '@/components/store/shared/catalog-image';
 import { cn } from '@/lib/utils';
 import { Maximize2, ZoomIn, ZoomOut, RotateCcw, X, ChevronLeft, ChevronRight } from 'lucide-react';
 

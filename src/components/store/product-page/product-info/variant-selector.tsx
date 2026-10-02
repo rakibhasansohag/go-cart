@@ -1,7 +1,7 @@
 'use client';
 import { CartProductType, ProductVariantDataType } from '@/lib/types';
 import { cn } from '@/lib/utils';
-import Image from 'next/image';
+import Image from '@/components/store/shared/catalog-image';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Dispatch, FC, SetStateAction } from 'react';
 

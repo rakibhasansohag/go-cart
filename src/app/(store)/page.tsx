@@ -76,7 +76,7 @@ export default async function HomePage() {
 	];
 
 	// Non-blocking parallel execution
-	await Promise.allSettled(prefetchPromises);
+	void Promise.allSettled(prefetchPromises);
 
 	return (
 		<>

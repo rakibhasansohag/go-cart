@@ -1,5 +1,5 @@
 import { SimpleProduct } from '@/lib/types';
-import Image from 'next/image';
+import Image from '@/components/store/shared/catalog-image';
 import Link from 'next/link';
 import { useCurrency } from '@/providers/currency-provider';
 

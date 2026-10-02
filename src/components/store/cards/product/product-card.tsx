@@ -37,7 +37,7 @@ export default function ProductCard({
 		checkedRef.current = true;
 		checkIsWishlisted(id, variant.variantId).then((res) => {
 			setIsInWishlist(res);
-		});
+		}).catch(() => { checkedRef.current = false; });
 	};
 
 	const wishlistToggleMutation = useMutation({
@@ -111,7 +111,7 @@ export default function ProductCard({
 						className='w-full relative block overflow-hidden'
 					>
 						{/* Images Swiper */}
-						<ProductCardImageSwiper images={images} />
+						<ProductCardImageSwiper key={variant.variantId} images={images} />
 						{/* Title */}
 						<div className='text-xs sm:text-sm text-main-primary font-medium leading-snug line-clamp-2 h-8 sm:h-9 overflow-hidden overflow-ellipsis'>
 							{name} · {variantName}

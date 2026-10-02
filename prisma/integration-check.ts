@@ -82,7 +82,7 @@ async function assertPostgresSearchAndBrowse() {
 			data: [
 				{ id: variantIds[0], variantName: 'Standard', variantDescription: 'Precision chronograph standard movement', variantImage: 'https://example.test/search-watch.png', slug: `integration-search-watch-standard-${variantIds[0]}`, sku: 'SEARCH-WATCH-001', keywords: 'cafe chronograph accented timing', weight: 1, productId: productIds[0] },
 				{ id: variantIds[1], variantName: 'Rose Edition', variantDescription: 'Chronograph movement rose accent', variantImage: 'https://example.test/search-watch-rose.png', slug: `integration-search-watch-rose-${variantIds[1]}`, sku: 'SEARCH-WATCH-002', keywords: 'cafe chronograph rose timing', weight: 1, productId: productIds[0] },
-				{ id: variantIds[2], variantName: 'Standard', variantDescription: 'Protective case for timing instruments', variantImage: 'https://example.test/search-case.png', slug: `integration-search-case-standard-${variantIds[2]}`, sku: 'SEARCH-CASE-001', keywords: 'precision timing instrument strap', weight: 1, productId: productIds[1] },
+				{ id: variantIds[2], variantName: 'Standard', variantDescription: 'Protective case for timing instruments', variantImage: 'https://example.test/search-case.png', slug: `integration-search-case-standard-${variantIds[2]}`, sku: 'SEARCH-CASE-001', keywords: 'chronograph precision timing instrument strap', weight: 1, productId: productIds[1] },
 			],
 		});
 		await db.size.createMany({
@@ -135,6 +135,44 @@ async function assertPostgresSearchAndBrowse() {
 		assert(popular.products[0]?.id === productIds[1], 'explicit most-popular sort was replaced by relevance ordering');
 		const topRated = await getProducts({ search: 'Chronograph Watch' }, 'top-rated', null, 10);
 		assert(topRated.products[0]?.id === productIds[0], 'explicit top-rated sort was not preserved');
+		// More than two pages ensures relevance and price order are global.
+		const paginationProducts = Array.from({ length: 50 }, (_, index) => ({
+			id: randomUUID(), variantId: randomUUID(), sizeId: randomUUID(), imageId: randomUUID(), index,
+		}));
+		productIds.push(...paginationProducts.map((item) => item.id));
+		variantIds.push(...paginationProducts.map((item) => item.variantId));
+		sizeIds.push(...paginationProducts.map((item) => item.sizeId));
+		imageIds.push(...paginationProducts.map((item) => item.imageId));
+		await db.product.createMany({ data: paginationProducts.map((item) => ({
+			id: item.id, name: `PaginationProbe item ${item.index}`, description: 'Multi-page regression fixture',
+			brand: 'PaginationProbe', slug: `pagination-probe-${item.id}`, views: item.index,
+			storeId: store.id, categoryId: category.id, subCategoryId: subCategory.id, offerTagId: offer.id,
+		})) });
+		await db.productVariant.createMany({ data: paginationProducts.map((item) => ({
+			id: item.variantId, productId: item.id, variantName: 'Standard', variantDescription: 'PaginationProbe',
+			variantImage: '/assets/images/no_image.png', slug: `pagination-variant-${item.id}`,
+			sku: item.id, keywords: 'PaginationProbe', weight: 1,
+		})) });
+		await db.size.createMany({ data: paginationProducts.map((item) => ({
+			id: item.sizeId, productVariantId: item.variantId, size: 'Standard', quantity: 10,
+			price: 10 + item.index, discount: item.index % 2 ? 50 : 0,
+		})) });
+		await db.productVariantImage.createMany({ data: paginationProducts.map((item) => ({
+			id: item.imageId, productVariantId: item.variantId, url: '/assets/images/no_image.png', order: 0,
+		})) });
+		const filters = { store: 'gocart-demo-store', offer: offer.url, search: 'PaginationProbe' };
+		for (const sort of ['', 'price-low-to-high', 'price-high-to-low']) {
+			const pages = await Promise.all([1, 2, 3].map((page) => getProducts({ ...filters, page }, sort, null, 24)));
+			assert(pages.every((page) => page.totalCount === 50), 'multi-page search count is incorrect');
+			assert(pages[0].products.length === 24 && pages[1].products.length === 24 && pages[2].products.length === 2, 'search page boundaries are incorrect');
+			const all = pages.flatMap((page) => page.products);
+			assert(new Set(all.map((product) => product.id)).size === 50, 'search pages duplicate or omit products');
+			if (sort) {
+				const prices = all.map((product) => Math.min(...product.variants.flatMap((variant) => variant.sizes.map((size) => size.price * (1 - size.discount / 100)))));
+				assert(prices.every((price, index) => index === 0 || (sort === 'price-low-to-high' ? price >= prices[index - 1] : price <= prices[index - 1])), 'price ordering is incorrect across pages');
+			}
+		}
+
 	} finally {
 		await db.color.deleteMany({ where: { id: { in: colorIds } } });
 		await db.productVariantImage.deleteMany({ where: { id: { in: imageIds } } });

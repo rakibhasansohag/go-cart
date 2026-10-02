@@ -1,5 +1,5 @@
 import { SearchResult } from '@/lib/types';
-import Image from 'next/image';
+import Image from '@/components/store/shared/catalog-image';
 import { useRouter } from 'next/navigation';
 import { FC } from 'react';
 import { cn } from '@/lib/utils';

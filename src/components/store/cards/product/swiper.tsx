@@ -4,6 +4,7 @@ import { ProductVariantImage } from '@prisma/client';
 import { useRef, useState, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Image as ImageIcon } from 'lucide-react';
+import { catalogImageSource } from '@/lib/catalog-image';
 
 const CYCLE_INTERVAL = 1200; // ms between slides
 
@@ -19,7 +20,12 @@ export default function ProductCardImageSwiper({
 	const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 	const currentIndexRef = useRef(0);
 
-	const currentUrl = safeImages[index]?.url;
+	const currentUrl = safeImages[index]?.url ? catalogImageSource(safeImages[index].url) : undefined;
+	const [failedUrls, setFailedUrls] = useState<Set<string>>(new Set());
+
+	useEffect(() => () => {
+		if (intervalRef.current) clearInterval(intervalRef.current);
+	}, []);
 
 	useEffect(() => {
 		if (currentUrl && loadedUrlsRef.current.has(currentUrl)) {
@@ -43,7 +49,7 @@ export default function ProductCardImageSwiper({
 	};
 
 	const startCycle = () => {
-		if (safeImages.length <= 1) return;
+		if (safeImages.length <= 1 || intervalRef.current) return;
 		intervalRef.current = setInterval(advance, CYCLE_INTERVAL);
 	};
 
@@ -56,7 +62,7 @@ export default function ProductCardImageSwiper({
 		setIndex(0);
 	};
 
-	if (!safeImages.length) {
+	if (!currentUrl || failedUrls.has(currentUrl)) {
 		return (
 			<div className='relative w-full aspect-square overflow-hidden rounded-xl sm:rounded-2xl mb-1.5 sm:mb-2 bg-muted/40 dark:bg-slate-800/40 border border-border/50 flex flex-col items-center justify-center gap-2 text-muted-foreground'>
 				<ImageIcon className='w-8 h-8 sm:w-10 sm:h-10 opacity-45' aria-hidden='true' />
@@ -104,7 +110,7 @@ export default function ProductCardImageSwiper({
 						}
 					}}
 					onLoad={handleImageLoad}
-					onError={() => setIsLoaded(true)}
+					onError={() => { if (currentUrl) setFailedUrls((previous) => new Set(previous).add(currentUrl)); }}
 					loading='lazy'
 					decoding='async'
 					initial={{ opacity: 0 }}

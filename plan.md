@@ -1669,13 +1669,13 @@ Goal: Conduct a comprehensive security inspection across API routes, server acti
 
 ### Phase 26 — Event-Driven Architecture (Vercel Native)
 
-**Implementation audit (2026-10-02): partially implemented; not yet verified as a durable queue migration.**
+**Release correction (2026-10-02): Phase 26 is planned and inactive.**
 
-- Stripe and PayPal still await their existing event handlers before responding. Their post-response queue messages contain references, not a complete replayable event. The payment consumer currently validates and logs only; it does not reconcile payments.
-- The inventory consumer also validates and logs only. Existing synchronous notifications remain the functioning path.
-- Queue routes currently use plain JSON POST handlers. Migrate them to the installed SDK's `handleCallback` contract, which handles message delivery, acknowledgement, visibility and retries; verify the actual deployment before calling a consumer complete.
-- The publisher currently requires custom token/base-URL environment variables, while the SDK documents an auto-configured client on Vercel. Verify authentication in the deployment rather than assuming `vercel env pull` enables these custom variables.
-- `publishDomainEvent()` starts unawaited external queue sends while using the business transaction. A consumer can run before commit, or a send can survive rollback. Keep the DB outbox as the durable source; dispatch committed rows with a retryable relay and use queues as delivery triggers. Do not disable the fallback cron merely after a week of observation.
+- Removed pre-commit external queue sends from `publishDomainEvent()`. Notifications, email outbox rows and audits remain transactional.
+- Removed reference-only queue sends from payment webhooks; the verified synchronous reconciliation remains authoritative.
+- Removed experimental queue triggers. All four scaffold consumers return HTTP 503 and cannot claim unprocessed work succeeded or dispatch email through an arbitrary JSON POST.
+- Existing post-commit email dispatch and DB outbox recovery cron remain active. The SDK/publisher scaffold is retained for the future committed-outbox relay.
+- Before re-enabling queues, implement the installed SDK callback contract, durable committed-row relay, idempotent business consumers, retry/dead-letter monitoring and deployed delivery evidence.
 
 **Optimized delivery order:**
 1. Add delivery health, lag/failure metrics and duplicate/replay tests before migrating more consumers.
@@ -1707,7 +1707,7 @@ Goal: Conduct a comprehensive security inspection across API routes, server acti
 ---
 
 - [x] **Phase 26.1 — Quick Wins with `after()`**
-  - [x] Add `after()` callbacks in webhook handlers for analytics logging and queue dispatch
+  - [x] Add `after()` callbacks in webhook handlers for analytics logging (queue dispatch deferred)
   - [ ] Add `after()` in order placement for non-critical side effects (view count, search index warm)
   - [x] No new packages needed — `after()` is built into Next.js 15+ (`next/server`)
   - **Test**: Response time unchanged, analytics events fire after response
@@ -1716,15 +1716,15 @@ Goal: Conduct a comprehensive security inspection across API routes, server acti
   - [x] Install `@vercel/queue` SDK
   - [x] Create `src/lib/queue/publisher.ts` — typed `publishToQueue<T>(topic, payload)` with idempotency key
   - [x] Create `src/lib/queue/topics.ts` — topic constants (`email.outbox`, `notification.fan`, `payment.events`, `inventory.events`, `order.events`)
-  - [x] Add `experimentalTriggers` in `vercel.json` for each consumer route
+  - [ ] Re-enable `experimentalTriggers` only after consumers satisfy the acceptance gate
   - [x] Add Zod schemas for queue event payloads (reuse existing `contracts.ts` types)
   - [ ] Verify SDK authentication and local/deployed queue delivery
   - **Test**: Producer sends test message, consumer route receives and processes it
 
 - [ ] **Phase 26.3 — Email Outbox → Queue (Lowest Risk)** (partial implementation; durable relay and callback contract pending)
-  - [x] Dual-write: `publishDomainEvent()` writes to DB outbox AND publishes to `email.outbox` topic
-  - [x] Create `app/api/queues/email/route.ts` using `dispatchEmailOutboxBatch()`
-  - [x] Register consumer in `vercel.json` with `experimentalTriggers`
+  - [ ] Relay committed DB outbox rows to `email.outbox` with retries (never send from the business transaction)
+  - [ ] Implement SDK email consumer using `dispatchEmailOutboxBatch()` (scaffold currently returns 503)
+  - [ ] Register verified consumer in `vercel.json` with `experimentalTriggers`
   - [ ] Retain outbox recovery dispatch until queue loss/retry/rollback tests and deployed delivery metrics pass
   - **Test**: Email arrives within 30s of event (vs previous daily cron)
 

@@ -1,6 +1,6 @@
 import { VariantImageType, VariantSimplified } from '@/lib/types';
 import { cn } from '@/lib/utils';
-import Image from 'next/image';
+import Image from '@/components/store/shared/catalog-image';
 import Link from 'next/link';
 import { Dispatch, FC, SetStateAction } from 'react';
 

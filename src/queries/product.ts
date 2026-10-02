@@ -15,7 +15,7 @@ import {
 	VariantImageType,
 	VariantSimplified,
 } from '@/lib/types';
-import { Prisma, ProductVariant, Size, Store } from '@prisma/client';
+import { Prisma, Store } from '@prisma/client';
 import { getRankedProductCandidates } from '@/lib/search';
 
 // Clerk
@@ -953,20 +953,45 @@ export const getProducts = async (
 			orderBy = [{ views: 'desc' }, { id: 'asc' }];
 	}
 
+	// Sort the entire filtered catalog before selecting a page. Only identifiers
+	// leave this query; variant/image records remain limited to the current page.
+	const isPriceSort = sortBy === 'price-low-to-high' || sortBy === 'price-high-to-low';
+	let pricePageIds: string[] | null = null;
+	if (isPriceSort) {
+		const matches = await db.product.findMany({ where: wherClause, select: { id: true } });
+		if (matches.length === 0) {
+			pricePageIds = [];
+		} else {
+			const direction = sortBy === 'price-low-to-high' ? Prisma.sql`ASC` : Prisma.sql`DESC`;
+			const ordered = await db.$queryRaw<{ id: string }[]>(Prisma.sql`
+				SELECT p.id
+				FROM "Product" p
+				LEFT JOIN "ProductVariant" v ON v."productId" = p.id
+				LEFT JOIN "Size" s ON s."productVariantId" = v.id
+				WHERE p.id IN (${Prisma.join(matches.map((product) => product.id))})
+				GROUP BY p.id
+				ORDER BY MIN(s.price * (1 - s.discount / 100.0)) ${direction} NULLS LAST, p.id ASC
+			`);
+			const cursorIndex = cursor ? ordered.findIndex((product) => product.id === cursor) : -1;
+			const offset = cursor ? (cursorIndex < 0 ? ordered.length : cursorIndex + 1) : (currentPage - 1) * limit;
+			pricePageIds = ordered.slice(offset, offset + limit + 1).map((product) => product.id);
+		}
+	}
+
 	// Get all filtered, sorted products using cursor-based or offset pagination
 	const useRankedSearchOrder = Boolean(searchPattern && !sortBy && rankedSearch);
 	const [totalCount, rawProducts] = await Promise.all([
 		db.product.count({ where: wherClause }),
 		db.product.findMany({
-			where: wherClause,
+			where: pricePageIds ? { AND: [wherClause, { id: { in: pricePageIds } }] } : wherClause,
 			orderBy: useRankedSearchOrder ? [{ id: 'asc' }] : orderBy,
 			take: useRankedSearchOrder ? rankedSearch!.candidates.length : limit + 1,
-			...(cursor && !useRankedSearchOrder
+			...(cursor && !useRankedSearchOrder && !isPriceSort
 				? {
 					cursor: { id: cursor },
 					skip: 1,
 				}
-				: !cursor && currentPage > 1 && !useRankedSearchOrder
+				: !cursor && currentPage > 1 && !useRankedSearchOrder && !isPriceSort
 				? {
 					skip: (currentPage - 1) * limit,
 				}
@@ -986,6 +1011,11 @@ export const getProducts = async (
 			},
 		}),
 	]);
+
+	if (pricePageIds) {
+		const positions = new Map(pricePageIds.map((id, index) => [id, index]));
+		rawProducts.sort((a, b) => positions.get(a.id)! - positions.get(b.id)!);
+	}
 
 	if (useRankedSearchOrder && rankedSearch) {
 		const relevanceOrder = new Map(
@@ -1008,38 +1038,6 @@ export const getProducts = async (
 			: hasNextPage && products.length > 0
 				? products[products.length - 1].id
 				: null;
-
-	type VariantWithSizes = ProductVariant & { sizes: Size[] };
-
-	// Product price sorting
-	products.sort((a, b) => {
-		// Helper function to get the minimum price from a product's variants
-		const getMinPrice = (product: { variants: VariantWithSizes[] }) =>
-			Math.min(
-				...product.variants.flatMap((variant: VariantWithSizes) =>
-					variant.sizes.map((size) => {
-						const discount = size.discount;
-						const discountedPrice = size.price * (1 - discount / 100);
-						return discountedPrice;
-					}),
-				),
-				Infinity, // Default to Infinity if no sizes exist
-			);
-
-		// Get minimum prices for both products
-		const minPriceA = getMinPrice(a);
-		const minPriceB = getMinPrice(b);
-
-		// Explicitly check for price sorting conditions
-		if (sortBy === 'price-low-to-high') {
-			return minPriceA - minPriceB; // Ascending order
-		} else if (sortBy === 'price-high-to-low') {
-			return minPriceB - minPriceA; // Descending order
-		}
-
-		// If no price sort option is provided, return 0 (no sorting by price)
-		return 0;
-	});
 
 	// Transform the products with filtered variants into ProductCardType structure
 	const productsWithFilteredVariants = products.map((product) => {
