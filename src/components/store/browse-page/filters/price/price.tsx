@@ -7,60 +7,35 @@ const PriceFilter: FC = () => {
 	const { replace } = useRouter();
 	const pathname = usePathname();
 
-	const [minPrice, setMinPrice] = useState<string | number>(''); // Initial value as empty string
-	const [maxPrice, setMaxPrice] = useState<string | number>('');
-
-	const [debounceTimeout, setDebounceTimeout] = useState<NodeJS.Timeout | null>(
-		null,
-	);
-
-	// Update URL params
-	const updateUrlParams = () => {
-		const params = new URLSearchParams(searchParams);
-		if (minPrice) {
-			params.set('minPrice', String(minPrice));
-		} else {
-			params.delete('minPrice');
-		}
-
-		if (maxPrice) {
-			params.set('maxPrice', String(maxPrice));
-		} else {
-			params.delete('maxPrice');
-		}
-
-		replace(`${pathname}?${params.toString()}`);
-	};
+	const [draft, setDraft] = useState<{ min: string; max: string } | null>(null);
+	const minPrice = draft?.min ?? searchParams.get('minPrice') ?? '';
+	const maxPrice = draft?.max ?? searchParams.get('maxPrice') ?? '';
 
 	// Handle minPrice change
 	const handleMinPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-		setMinPrice(e.target.value);
+		setDraft({ min: e.target.value, max: String(maxPrice) });
 	};
 
 	// Handle maxPrice change
 	const handleMaxPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-		setMaxPrice(e.target.value);
+		setDraft({ min: String(minPrice), max: e.target.value });
 	};
 
 	// Use effect to handle debounce of the URL update
 	useEffect(() => {
-		if (debounceTimeout) {
-			clearTimeout(debounceTimeout);
-		}
-
+		if (!draft) return;
 		const timeout = setTimeout(() => {
-			updateUrlParams();
-		}, 500); // Debouncing for 500ms delay
-
-		setDebounceTimeout(timeout);
-
-		// Cleanup the timeout when the component unmounts or changes
-		return () => {
-			if (debounceTimeout) {
-				clearTimeout(debounceTimeout);
-			}
-		};
-	}, [minPrice, maxPrice]);
+			const params = new URLSearchParams(searchParams.toString());
+			params.delete('page');
+			if (draft.min) params.set('minPrice', draft.min);
+			else params.delete('minPrice');
+			if (draft.max) params.set('maxPrice', draft.max);
+			else params.delete('maxPrice');
+			replace(`${pathname}?${params.toString()}`);
+			setDraft(null);
+		}, 500);
+		return () => clearTimeout(timeout);
+	}, [draft, searchParams, pathname, replace]);
 
 	return (
 		<div className='pt-5 pb-4'>

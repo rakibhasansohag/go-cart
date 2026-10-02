@@ -44,6 +44,8 @@ export default function SellerOverview({ storeUrl }: SellerOverviewProps) {
 		queryKey: queryKeys.dashboard.sellerAnalytics(storeUrl, timeframe, granularity),
 		queryFn: () => getSellerStoreAnalyticsData(storeUrl, timeframe, granularity),
 		staleTime: 30_000,
+		refetchInterval: 60_000,
+		refetchOnWindowFocus: true,
 	});
 
 	if (isError) return <p role='alert' className='rounded-lg border border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive'>Analytics are temporarily unavailable. Try again shortly.</p>;

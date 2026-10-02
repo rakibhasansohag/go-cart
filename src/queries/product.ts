@@ -930,6 +930,7 @@ export const getProducts = async (
 			searchFilters,
 			sortBy ? null : cursor,
 			sortBy ? Math.max(limit * 1000, 1000) : limit,
+			!sortBy && !cursor && filters.page !== undefined ? (currentPage - 1) * limit : undefined,
 		);
 		andConditions.push({
 			id: { in: rankedSearch.candidates.map((candidate) => candidate.productId) },
@@ -965,7 +966,7 @@ export const getProducts = async (
 					cursor: { id: cursor },
 					skip: 1,
 				}
-				: !cursor && currentPage > 1
+				: !cursor && currentPage > 1 && !useRankedSearchOrder
 				? {
 					skip: (currentPage - 1) * limit,
 				}
@@ -1077,7 +1078,8 @@ export const getProducts = async (
 		};
 	});
 
-	const totalPages = Math.max(1, Math.ceil(totalCount / limit));
+	const matchingCount = rankedSearch?.totalCount ?? totalCount;
+	const totalPages = Math.max(1, Math.ceil(matchingCount / limit));
 
 	// Return the paginated data along with metadata
 	return {
@@ -1085,7 +1087,7 @@ export const getProducts = async (
 		nextCursor,
 		hasNextPage: hasNextPage || currentPage < totalPages,
 		pageSize: limit,
-		totalCount,
+		totalCount: matchingCount,
 		totalPages,
 		currentPage,
 	};

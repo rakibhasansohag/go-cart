@@ -30,6 +30,7 @@ export default function ColorCircle({ color }: { color: string }) {
 	};
 
 	const replaceParams = () => {
+		params.delete('page');
 		replace(`${pathname}?${params.toString()}`);
 	};
 

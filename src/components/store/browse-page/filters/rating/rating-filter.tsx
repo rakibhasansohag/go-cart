@@ -24,6 +24,7 @@ export default function RatingFilter({
 
 	const handleRatingToggle = (tier: number) => {
 		const params = new URLSearchParams(searchParams.toString());
+		params.delete('page');
 		if (activeRating === String(tier)) {
 			params.delete('rating');
 		} else {

@@ -22,7 +22,7 @@ const categoryGradients = [
 export default function CategoryDistribution({
 	data,
 	title = 'Catalog Category Distribution',
-	description = 'Top categories by total active product catalog volume',
+	description = 'Top five categories by catalog product count; percentages are among these categories',
 }: CategoryDistributionProps) {
 	const total = data.reduce((sum, item) => sum + item.value, 0);
 

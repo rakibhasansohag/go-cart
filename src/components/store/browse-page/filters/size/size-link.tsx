@@ -28,6 +28,7 @@ export default function SizeLink({ size }: { size: string }) {
 	};
 
 	const replaceParams = () => {
+		params.delete('page');
 		replace(`${pathname}?${params.toString()}`);
 	};
 	return (

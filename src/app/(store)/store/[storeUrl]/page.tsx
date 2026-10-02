@@ -8,7 +8,7 @@ import StoreProducts from '@/components/store/store-page/store-products';
 import StoreLayoutClient from '@/components/store/store-page/store-layout';
 import { FiltersQueryType } from '@/lib/types';
 import { getStorePageDetails } from '@/queries/store';
-import { Suspense } from 'react';
+import { cache, Suspense } from 'react';
 import { dehydrate, HydrationBoundary } from '@tanstack/react-query';
 import { getQueryClient } from '@/lib/get-query-client';
 import { queryKeys } from '@/lib/query-keys';
@@ -18,6 +18,10 @@ import { getFilteredSizes } from '@/queries/size';
 import { ProductsGridSkeleton } from '@/components/store/skeletons/home-skeletons';
 import type { Metadata } from 'next';
 import { generateStoreJsonLd } from '@/lib/seo/schema';
+import { getStoreProductFilters } from '@/lib/store-product-filters';
+
+// Share the metadata/page lookup within one request, including its viewer state.
+const getRequestStoreDetails = cache(getStorePageDetails);
 
 export async function generateMetadata({
 	params,
@@ -33,7 +37,7 @@ export async function generateMetadata({
 	}
 
 	try {
-		const store = await getStorePageDetails(storeUrl);
+		const store = await getRequestStoreDetails(storeUrl);
 		if (!store) {
 			return {
 				title: 'Store Not Found',
@@ -95,32 +99,17 @@ export default async function StorePage({
 	const {
 		category,
 		offer,
-		search,
-		size,
 		sort,
 		subCategory,
-		color,
-		minPrice,
-		maxPrice,
 	} = resolvedSearchParams;
 
 	const queryClient = getQueryClient();
 
-	const filterOptions = {
-		search,
-		minPrice: Number(minPrice) || 0,
-		maxPrice: Number(maxPrice) || Number.MAX_SAFE_INTEGER,
-		category,
-		subCategory,
-		offer,
-		size: Array.isArray(size) ? size : size ? [size] : undefined,
-		color: Array.isArray(color) ? color : color ? [color] : undefined,
-		store: storeUrl,
-	};
+	const filterOptions = getStoreProductFilters(resolvedSearchParams, storeUrl);
 
 	// Parallel prefetch store info, products list and active filter options on server
 	const [store] = await Promise.all([
-		getStorePageDetails(storeUrl),
+		getRequestStoreDetails(storeUrl),
 		queryClient.prefetchQuery({
 			queryKey: queryKeys.products.list(filterOptions, sort || '', null),
 			queryFn: () => getProducts(filterOptions, sort, null),

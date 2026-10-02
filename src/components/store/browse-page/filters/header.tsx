@@ -74,6 +74,7 @@ export default function FiltersHeader({
 
 	const handleRemoveChip = (chipKey: string, chipValue: string) => {
 		const params = new URLSearchParams(searchParams.toString());
+		params.delete('page');
 
 		if (chipKey === 'brand' || chipKey === 'color' || chipKey === 'size') {
 			const existing = (params.get(chipKey) || '')

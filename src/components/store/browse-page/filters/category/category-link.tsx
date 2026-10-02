@@ -41,6 +41,7 @@ export default function CategoryLink({
 	};
 
 	const replaceParams = () => {
+		params.delete('page');
 		replace(`${pathname}?${params.toString()}`);
 		setExpand(true);
 	};

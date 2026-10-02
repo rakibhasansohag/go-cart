@@ -391,6 +391,7 @@ export const getAdminAnalyticsData = async (): Promise<AdminAnalyticsData> => {
     }),
     db.category.findMany({
       take: 5,
+      orderBy: [{ products: { _count: 'desc' } }, { id: 'asc' }],
       select: {
         name: true,
         _count: { select: { products: true } },

@@ -1669,6 +1669,23 @@ Goal: Conduct a comprehensive security inspection across API routes, server acti
 
 ### Phase 26 — Event-Driven Architecture (Vercel Native)
 
+**Implementation audit (2026-10-02): partially implemented; not yet verified as a durable queue migration.**
+
+- Stripe and PayPal still await their existing event handlers before responding. Their post-response queue messages contain references, not a complete replayable event. The payment consumer currently validates and logs only; it does not reconcile payments.
+- The inventory consumer also validates and logs only. Existing synchronous notifications remain the functioning path.
+- Queue routes currently use plain JSON POST handlers. Migrate them to the installed SDK's `handleCallback` contract, which handles message delivery, acknowledgement, visibility and retries; verify the actual deployment before calling a consumer complete.
+- The publisher currently requires custom token/base-URL environment variables, while the SDK documents an auto-configured client on Vercel. Verify authentication in the deployment rather than assuming `vercel env pull` enables these custom variables.
+- `publishDomainEvent()` starts unawaited external queue sends while using the business transaction. A consumer can run before commit, or a send can survive rollback. Keep the DB outbox as the durable source; dispatch committed rows with a retryable relay and use queues as delivery triggers. Do not disable the fallback cron merely after a week of observation.
+
+**Optimized delivery order:**
+1. Add delivery health, lag/failure metrics and duplicate/replay tests before migrating more consumers.
+2. Correct the SDK callback/authentication integration and add a committed-outbox relay with retry/backoff and dead-letter handling.
+3. Prove email delivery remains correct across transaction rollback, queue outage, duplicate delivery and worker failure; then implement inventory processing.
+4. For payment buffering, verify the signature and durably persist a replayable inbox event (or await confirmed queue acceptance) before returning success. Reconciliation must be idempotent and retryable. Keep today's synchronous handler until this replacement is validated. `after()` alone is not a durable payment inbox.
+5. Decompose cron jobs only after each has independent idempotency/lease protection. Introduce Workflows selectively for processes that benefit from durable waits, rather than migrating every state machine at once.
+
+**Acceptance gate:** deployed callback delivery, persistent retry/replay evidence, duplicate-safe consumer effects, no pre-commit dispatch, measured processing latency, and actionable failure alerts. Package installation and route existence alone do not satisfy this gate. Pricing/free-tier numbers below are research notes and must be rechecked before capacity or budget decisions.
+
 **Goal**: Migrate synchronous in-process domain events and DB-based email outbox to durable async processing, decoupling producers from consumers and enabling near-real-time delivery on Vercel serverless.
 
 **Why**: `publishDomainEvent()` writes notifications, email outbox entries, and delivery audits inside the same DB transaction as the business operation — coupling unrelated concerns and risking transaction timeouts under load. The single `/api/cron/dispatch` endpoint runs 7 sequential jobs in one 60s function — any slow job blocks the rest. A queue decouples these, adds retry/DLQ capability, and lets each consumer scale independently.
@@ -1695,20 +1712,20 @@ Goal: Conduct a comprehensive security inspection across API routes, server acti
   - [x] No new packages needed — `after()` is built into Next.js 15+ (`next/server`)
   - **Test**: Response time unchanged, analytics events fire after response
 
-- [x] **Phase 26.2 — Vercel Queues Infrastructure**
+- [ ] **Phase 26.2 — Vercel Queues Infrastructure** (scaffold present; callback/authentication and deployed delivery unverified)
   - [x] Install `@vercel/queue` SDK
   - [x] Create `src/lib/queue/publisher.ts` — typed `publishToQueue<T>(topic, payload)` with idempotency key
   - [x] Create `src/lib/queue/topics.ts` — topic constants (`email.outbox`, `notification.fan`, `payment.events`, `inventory.events`, `order.events`)
   - [x] Add `experimentalTriggers` in `vercel.json` for each consumer route
   - [x] Add Zod schemas for queue event payloads (reuse existing `contracts.ts` types)
-  - [x] Set up local dev with `vercel link` + `vercel env pull` for OIDC auth
+  - [ ] Verify SDK authentication and local/deployed queue delivery
   - **Test**: Producer sends test message, consumer route receives and processes it
 
-- [x] **Phase 26.3 — Email Outbox → Queue (Lowest Risk)**
+- [ ] **Phase 26.3 — Email Outbox → Queue (Lowest Risk)** (partial implementation; durable relay and callback contract pending)
   - [x] Dual-write: `publishDomainEvent()` writes to DB outbox AND publishes to `email.outbox` topic
   - [x] Create `app/api/queues/email/route.ts` using `dispatchEmailOutboxBatch()`
   - [x] Register consumer in `vercel.json` with `experimentalTriggers`
-  - [ ] Monitor both paths for 1 week, then disable DB outbox cron for email
+  - [ ] Retain outbox recovery dispatch until queue loss/retry/rollback tests and deployed delivery metrics pass
   - **Test**: Email arrives within 30s of event (vs previous daily cron)
 
 - [ ] **Phase 26.4 — Notification Fan-Out → Queue**
@@ -1717,15 +1734,15 @@ Goal: Conduct a comprehensive security inspection across API routes, server acti
   - [ ] Decouple notification delivery audit from the source business transaction
   - **Test**: Notification appears in user bell within 30s, source transaction unblocked
 
-- [x] **Phase 26.5 — Webhook Ingestion Buffer**
-  - [x] Stripe webhook: validate signature → `publishToQueue('payment.events', ...)` via `after()` → return 200 immediately
-  - [x] PayPal webhook: same pattern via `after()`
-  - [x] Create `app/api/queues/payment/route.ts` — consumer runs payment reconciliation with retry
+- [ ] **Phase 26.5 — Webhook Ingestion Buffer**
+  - [ ] Stripe webhook: validate signature → persist replayable inbox event/confirm queue acceptance → return 200; currently reconciliation remains synchronous
+  - [ ] PayPal webhook: same durable acknowledgement pattern; currently reconciliation remains synchronous
+  - [ ] Implement `app/api/queues/payment/route.ts` reconciliation with idempotency and retry; route currently logs only
   - **Test**: Webhook returns 200 in < 500ms, payment state updates within 5s
 
-- [x] **Phase 26.6 — Inventory Alerts → Queue**
+- [ ] **Phase 26.6 — Inventory Alerts → Queue**
   - [x] Publish `INVENTORY_LOW_STOCK` / `INVENTORY_RESTOCKED` to `inventory.events` topic
-  - [x] Consumer route in `src/app/api/queues/inventory/route.ts` processes restock reminders independently
+  - [ ] Implement independent restock reminder processing in `src/app/api/queues/inventory/route.ts`; route currently logs only
   - [ ] Remove inventory notification logic from `/api/cron/dispatch`
   - **Test**: Seller gets low-stock alert within 1 minute of threshold crossing
 

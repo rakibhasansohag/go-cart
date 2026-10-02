@@ -22,6 +22,7 @@ export default function OfferLink({ offer }: { offer: OfferTag }) {
 	};
 
 	const replaceParams = () => {
+		params.delete('page');
 		replace(`${pathname}?${params.toString()}`);
 	};
 	return (

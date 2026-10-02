@@ -45,6 +45,7 @@ export default function ProductSort() {
 			params.delete('sort');
 		} else {
 			params.set('sort', newSort);
+			params.delete('page');
 		}
 		const queryString = params.toString();
 		replace(queryString ? `${pathname}?${queryString}` : pathname);

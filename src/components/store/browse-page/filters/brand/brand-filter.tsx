@@ -28,6 +28,7 @@ export default function BrandFilter({
 
 	const handleBrandToggle = (brandName: string) => {
 		const params = new URLSearchParams(searchParams.toString());
+		params.delete('page');
 		let updated: string[];
 
 		if (activeBrands.includes(brandName)) {

@@ -14,12 +14,14 @@ interface OverviewChartProps {
 	data: OverviewChartData[];
 	title?: string;
 	description?: string;
+	metricLabel?: string;
 }
 
 export default function OverviewChart({
 	data = [],
 	title = 'Revenue Overview',
 	description = 'Monthly sales performance & order totals',
+	metricLabel = 'Revenue ($)',
 }: OverviewChartProps) {
 	const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
@@ -76,7 +78,7 @@ export default function OverviewChart({
 					{/* Bar Swatch */}
 					<div className='flex items-center gap-1.5'>
 						<span className='w-3.5 h-3 rounded-xs bg-gradient-to-t from-blue-600 to-indigo-500 dark:from-blue-500 dark:to-cyan-400 inline-block shadow-xs' />
-						<span>Revenue ($)</span>
+						<span>{metricLabel}</span>
 					</div>
 					{/* Trendline Swatch */}
 					<div className='flex items-center gap-1.5'>

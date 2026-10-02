@@ -27,6 +27,8 @@ export default function AdminOverview() {
 		queryKey: queryKeys.dashboard.adminAnalytics(),
 		queryFn: () => getAdminAnalyticsData(),
 		staleTime: 30_000,
+		refetchInterval: 60_000,
+		refetchOnWindowFocus: true,
 	});
 
 	if (isLoading) return <OverviewSkeleton />;
@@ -58,7 +60,7 @@ export default function AdminOverview() {
 
 			<section className='grid grid-cols-1 gap-6 xl:grid-cols-3'>
 				<div className='xl:col-span-2'>
-					<OverviewChart data={data.monthlyRevenue} title='Platform GMV trend' description='Paid and partially refunded order-group GMV over the last six UTC months' />
+					<OverviewChart data={data.monthlyRevenue} title='Platform GMV trend' metricLabel='GMV ($)' description='Paid and partially refunded order-group GMV over the last six UTC months' />
 				</div>
 				<Card className='border-border/60 shadow-sm'>
 					<CardHeader>

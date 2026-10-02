@@ -163,10 +163,12 @@ export async function getRankedProductCandidates(
 	filters: Prisma.Sql[] = [],
 	cursor?: string | null,
 	limit = 10,
+	numberedOffset?: number,
 ): Promise<{
 	candidates: RankedProductCandidate[];
 	hasNextPage: boolean;
 	nextCursor: string | null;
+	totalCount?: number;
 }> {
 	const trimmed = query.trim();
 	if (!trimmed || trimmed.length > SEARCH_MAX_QUERY_LENGTH) {
@@ -207,6 +209,14 @@ export async function getRankedProductCandidates(
 		${cursorSql}
 		ORDER BY relevance DESC, product_id ASC
 		LIMIT ${safeLimit + 1}
+		${numberedOffset === undefined ? Prisma.empty : Prisma.sql`OFFSET ${numberedOffset}`}
+	`);
+	const countRows = numberedOffset === undefined ? undefined : await db.$queryRaw<{ count: number }[]>(Prisma.sql`
+		SELECT COUNT(DISTINCT p.id)::int AS count
+		FROM "Product" p
+		JOIN "ProductVariant" pv ON pv."productId" = p.id
+		${searchInput(trimmed)}
+		WHERE ${match} ${filterSql}
 	`);
 
 	const hasNextPage = rows.length > safeLimit;
@@ -219,6 +229,7 @@ export async function getRankedProductCandidates(
 
 	return {
 		candidates,
+		...(countRows ? { totalCount: Number(countRows[0]?.count ?? 0) } : {}),
 		hasNextPage,
 		nextCursor: hasNextPage && last ? encodeSearchCursor(last) : null,
 	};

@@ -281,6 +281,10 @@ describe("seller analytics authorization", () => {
       categoryBreakdown: [{ name: "Home", value: 7 }],
     });
     expect(result.topStores).toEqual([expect.objectContaining({ name: "Owned Store", gmv: 1250, settlementRiskCents: 3000 })]);
+    expect(dbMock.category.findMany).toHaveBeenCalledWith(expect.objectContaining({
+      take: 5,
+      orderBy: [{ products: { _count: 'desc' } }, { id: 'asc' }],
+    }));
     expect(dbMock.orderGroup.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
         take: 6,

@@ -10,6 +10,7 @@ import {
 	clearSearchCache,
 	getSearchMinSimilarity,
 	searchProducts,
+	getRankedProductCandidates,
 } from './search';
 
 const row = {
@@ -45,6 +46,19 @@ describe('PostgreSQL search service', () => {
 		expect(query.sql).toContain('plainto_tsquery');
 		expect(query.values).toContain(20);
 		expect(query.values).toContain('Café');
+	});
+
+	it('pages ranked store search in SQL and counts the full matching catalog', async () => {
+		queryRawMock.mockResolvedValueOnce([{ product_id: 'page-two-product', relevance: 1 }])
+			.mockResolvedValueOnce([{ count: 124 }]);
+		const result = await getRankedProductCandidates('chair', [], null, 24, 24);
+		expect(result).toMatchObject({ candidates: [{ productId: 'page-two-product', relevance: 1 }], totalCount: 124 });
+		const pageQuery = queryRawMock.mock.calls[0][0] as { sql: string; values: unknown[] };
+		expect(pageQuery.sql).toContain('OFFSET');
+		expect(pageQuery.values).toContain(24);
+		const countQuery = queryRawMock.mock.calls[1][0] as { sql: string };
+		expect(countQuery.sql).toContain('COUNT(DISTINCT p.id)');
+		expect(countQuery.sql).not.toContain('LIMIT');
 	});
 
 	it('bounds the configurable trigram threshold', () => {
