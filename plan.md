@@ -1689,9 +1689,10 @@ The free approach uses the existing PostgreSQL database, native Vercel Queues an
 - [x] Production build, 578 unit tests, lint and type checks passed; database integration checks are recorded in the operations report.
 - [x] Deploy six matching hyphenated queue topics; notification and inventory jobs have reached SUCCEEDED through Vercel callbacks with persisted recipient notifications.
 - [x] Enable `PHASE26_ENABLED=true` in Production after applying the additive migration.
-- [x] Cover all 25 canonical domain events with renderable email definitions; inventory mail exposed unsupported templates during production verification and the correction is pending deployment.
+- [x] Cover all 25 canonical domain events with renderable email definitions; the inventory template correction is deployed and a controlled operational email passed through the Vercel callback to an actual mailbox.
 - [x] Recover workflow entities beyond the first 100 records using stable pages; skip disabled cart reminders.
-- [ ] Prove real SMTP receipt, provider-signed sandbox payment reconciliation and each workflow's due-time behavior on the target deployment.
+- [x] Prove real SMTP receipt through the production queue callback and confirm receipt in the target mailbox.
+- [ ] Prove provider-signed sandbox payment reconciliation and each workflow's due-time behavior on the target deployment. The inspected sandbox Stripe account currently has no configured webhook endpoints.
 - [ ] Capture deployed latency, transport outage recovery, duplicate delivery, dead-letter alert and admin replay evidence.
 
 **Acceptance:** implementation, local tests and route existence are separate from deployed verification. Keep this phase open until actual callback delivery and persisted effects are evidenced. SMTP retains the at-least-once crash window; the daily Hobby recovery fallback has daily latency after a missed wake-up. Workflow recovery scans in pages of 100 rather than stopping at 100 entities; interrupted recovery retries from the start using existing idempotent checkpoints.
