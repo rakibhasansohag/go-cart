@@ -18,6 +18,15 @@ it('retains the committed job when the transport is unavailable', async () => {
 	await expect(relayBackgroundJobs()).resolves.toMatchObject({ failed: 1 });
 	expect(h.updateMany).toHaveBeenLastCalledWith(expect.objectContaining({ where: { id: 'job', status: 'READY' }, data: expect.objectContaining({ nextPublishAt: expect.any(Date), lastError: expect.not.stringContaining('private-token') }) }));
 });
+it('distinguishes missing OIDC credentials from broker authorization failures', async () => {
+	h.send.mockRejectedValue(new Error('Failed to get OIDC token. private-token'));
+	await relayBackgroundJobs();
+	expect(h.updateMany).toHaveBeenLastCalledWith(expect.objectContaining({ data: expect.objectContaining({ lastError: expect.stringContaining('OIDC_TOKEN_UNAVAILABLE') }) }));
+	const error = new Error('private-response'); error.name = 'ForbiddenError';
+	h.send.mockRejectedValue(error);
+	await relayBackgroundJobs();
+	expect(h.updateMany).toHaveBeenLastCalledWith(expect.objectContaining({ data: expect.objectContaining({ lastError: expect.stringContaining('BROKER_FORBIDDEN') }) }));
+});
 it('does not send when another relay owns the publishing lease', async () => {
 	h.updateMany.mockResolvedValue({ count: 0 }); await relayBackgroundJobs(); expect(h.send).not.toHaveBeenCalled();
 });

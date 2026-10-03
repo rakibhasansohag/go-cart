@@ -2,7 +2,7 @@
 
 ## Implementation and deployment status
 
-Implemented: transactional database jobs, committed-row relay, six Vercel queue consumers, retry backoff, worker leases, failure alerts, admin replay, independent cron jobs, and delayed workflow checkpoints. The source is not yet deployed or enabled on the public domain. Local tests cannot prove Vercel callback delivery or actual SMTP receipt.
+Implemented: transactional database jobs, committed-row relay, six Vercel queue consumers, retry backoff, worker leases, failure alerts, admin replay, independent cron jobs, and delayed workflow checkpoints. Commit `009e42d` is deployed and the user enabled processing in Production. Production callback delivery has not passed: a genuine notification job remains READY with zero worker attempts. Local tests cannot prove Vercel callback delivery or actual SMTP receipt.
 
 The existing synchronous path remains active when `PHASE26_ENABLED` is absent or false. Apply `20261003110000_durable_background_jobs` before enabling the flag. The migration is additive. Turning the flag off does not delete pending jobs; resume the worker to finish them.
 
@@ -49,7 +49,17 @@ Deploy this source with the six `queue/v2beta` triggers in `vercel.json`. Verify
 
 Run the focused [BrowserOS prompt](PHASE26_BROWSEROS_TEST_PROMPT.md). Confirm a real application event moves READY → PROCESSING → SUCCEEDED through Vercel's callback, record latency, verify notification/email receipt and signed sandbox payment state, and observe failure alert/replay. Confirm unrelated cron jobs succeed when one fails. Local unit tests, opening a route, or seeing a 503 are not proof of deployed processing.
 
-The current public deployment remains commit `cd3a2ef`; BrowserOS verified it as Ready on October 3. The additive migration has been applied to both local PostgreSQL and shared Neon. Phase 26's production acceptance gate remains open until the new source is deployed and this evidence exists.
+The user reports Ready deployment `dpl_Fg2JcMChs1dirbewjC1rAQvB6U7A` at commit `009e42d`, with `PHASE26_ENABLED=true`. The additive migration has been applied to both local PostgreSQL and shared Neon. Phase 26's production acceptance gate remains open until callback delivery and the remaining receipt checks pass.
+
+### October 3 transport diagnosis
+
+Genuine notification job `0f0ca2dd-483b-4929-b996-69313192be38` was committed for product question `0b06ad90-cc5d-49b3-a5cf-a5b399485170`. The supplied report records READY, zero attempts, and the old generic relay error. That error does not identify whether SDK authentication, broker delivery, consumer discovery, or recording the send result failed.
+
+Read-only BrowserOS checks of the Vercel project confirmed OIDC enabled with the team issuer and OIDC claims present on this deployment. These checks do not prove a token was available in the specific runtime request or its `after()` callback. An empty storage list does not establish that Queues needs a manually provisioned broker; Vercel documents Queues on all plans and automatic deployed authentication. See [Queues quickstart](https://vercel.com/docs/queues/quickstart) and [OIDC](https://vercel.com/docs/oidc).
+
+The local diagnostic patch records a whitelisted failure category in the job and runtime logs, without raw provider errors or credentials. The dashboard now says transport is Configured rather than implying a verified connection. Deploy this patch, use an admin recovery/replay action for the retained job when eligible, and record the resulting category. Resolve that specific failure before claiming callback delivery. Successful acceptance requires the same job to reach SUCCEEDED through the deployed consumer and its intended notification to appear once.
+
+Diagnostic patch verification: 28 tests across five queue/admin-query test files passed; type checking, affected-file lint and whitespace checks passed. Graphify was refreshed. The patch has not yet been deployed, and no production transport remediation is claimed.
 
 ## Checks completed October 3
 

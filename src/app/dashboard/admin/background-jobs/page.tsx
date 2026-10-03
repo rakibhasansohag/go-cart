@@ -11,7 +11,8 @@ export default async function BackgroundJobsPage() {
 				<p className='text-muted-foreground'>Review delayed work, failures and completed deliveries.</p></div>
 			<Link href='/dashboard/admin/delivery-health' className='underline'>Email delivery health</Link>
 		</header>
-		<p>Processing: {health.enabled ? 'Enabled' : 'Disabled'} · Queue connection: {health.transportAvailable ? 'Available' : 'Not configured'} · Oldest pending: {health.oldestPendingAgeSeconds}s</p>
+		<p>Processing: {health.enabled ? 'Enabled' : 'Disabled'} · Queue transport: {health.transportAvailable ? 'Configured' : 'Not configured'} · Oldest pending: {health.oldestPendingAgeSeconds}s</p>
+		<p className='text-sm text-muted-foreground'>Transport configuration does not confirm delivery. Check job status and failure details below.</p>
 		<div className='flex flex-wrap gap-4'>{health.counts.map(count => <div key={count.status} className='rounded border p-4'>{count.status}: {count._count._all}</div>)}</div>
 		<form action={recoverBackgroundJobs}><button className='rounded border px-4 py-2'>Recover interrupted work and dispatch pending jobs</button></form>
 		<div className='overflow-x-auto'><table className='w-full text-left text-sm'>

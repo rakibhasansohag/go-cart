@@ -3,6 +3,7 @@ import { getQueueClient } from './client';
 import { queuesEnabled, queueTransportAvailable } from './config';
 import { QUEUE_TOPICS } from './topics';
 import type { BackgroundJobKind } from '@prisma/client';
+import { queueTransportFailure } from './transport-error';
 
 export const jobTopics: Record<BackgroundJobKind, string> = {
 	EMAIL: QUEUE_TOPICS.EMAIL_OUTBOX, NOTIFICATION: QUEUE_TOPICS.NOTIFICATION_FAN,
@@ -38,10 +39,12 @@ export async function relayBackgroundJobs(limit = 20) {
 				messageId, publishedAt: now, nextPublishAt: new Date(now.getTime() + 60 * 60_000),
 			} });
 			published++;
-		} catch {
+		} catch (error) {
 			// Never store provider credentials or raw provider error responses.
+			const code = queueTransportFailure(error);
+			console.error('[queue] relay failed', { jobId: job.id, kind: job.kind, code });
 			await db.backgroundJob.updateMany({ where: { id: job.id, status: 'READY' }, data: {
-				lastError: 'Queue transport unavailable; the committed job will be relayed again.',
+				lastError: `Queue dispatch failed (${code}); the committed job will be relayed again.`,
 				nextPublishAt: new Date(now.getTime() + 60_000),
 			} });
 			failed++;
