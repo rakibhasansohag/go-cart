@@ -13,6 +13,8 @@ assert.equal(process.env.EMAIL_NOTIFICATIONS_ENABLED, 'false');
 assert.equal(process.env.PHASE26_ENABLED, 'true');
 const prefix = `queue-check:${randomUUID()}`;
 const jobIds: string[] = [];
+const fixtureEntityIds: string[] = [];
+let fixtureOrderId: string | undefined;
 const admin = await db.user.create({ data: { name: 'Queue integration admin', email: `${randomUUID()}@example.invalid`, picture: '', role: 'ADMIN' } });
 const create = async (key: string) => {
 	const job = await enqueueBackgroundJob(db, { eventKey: `${prefix}:${key}`, kind: 'NOTIFICATION', payload: {} });
@@ -85,9 +87,67 @@ try {
 	await processBackgroundJob(inventoryJob.id, 'INVENTORY');
 	const count = await db.notification.count({ where: { sourceEventId: event.id } });
 	assert(count > 0);
+	const inventoryNotice = await db.notification.findFirstOrThrow({ where: { sourceEventId: event.id } });
+	assert(inventoryNotice.message.includes('Only 0 unit(s)'));
+	assert(inventoryNotice.message.includes('Threshold is 1'));
 	await processBackgroundJob(inventoryJob.id, 'INVENTORY');
 	assert.equal(await db.notification.count({ where: { sourceEventId: event.id } }), count);
 	console.log('PASS: actual inventory handler creates durable notifications once');
+
+	// Exercise real due-time handlers, with disposable entities in this isolated database.
+	process.env.ABANDONED_CHECKOUT_EMAIL_ENABLED = 'true';
+	process.env.DEMO_FULFILLMENT_AUTOMATION_ENABLED = 'true';
+	const checkpoint = new Date(Date.now() - 86_400_000);
+	const cart = await db.cart.create({ data: { userId: admin.id, subTotal: 10, total: 10, updatedAt: checkpoint,
+		cartItems: { create: { productId: product.id, variantId: size.productVariantId, sizeId: size.id,
+			productSlug: product.slug, variantSlug: 'queue-check', sku: 'QUEUE-CHECK', name: product.name,
+			image: '', size: size.size, price: 10, quantity: 1, totalPrice: 10, storeId: product.storeId } } } });
+	fixtureEntityIds.push(cart.id);
+	const reminder = await scheduleWorkflowStep(db, 'ABANDONED_CHECKOUT', cart.id, checkpoint, checkpoint);
+	assert(reminder); jobIds.push(reminder.id);
+	await processBackgroundJob(reminder.id, 'WORKFLOW');
+	const reminderEvent = await db.domainEvent.findUniqueOrThrow({ where: { eventKey: `checkout:abandoned:${cart.id}:${checkpoint.toISOString()}` } });
+	assert.equal(reminderEvent.eventType, 'checkout.abandoned');
+	const staleReminder = await scheduleWorkflowStep(db, 'ABANDONED_CHECKOUT', cart.id, new Date(0), new Date(0));
+	assert(staleReminder); jobIds.push(staleReminder.id);
+	await processBackgroundJob(staleReminder.id, 'WORKFLOW');
+	assert.equal(await db.domainEvent.count({ where: { aggregateId: cart.id } }), 1);
+	console.log('PASS: due cart reminder emits once; changed cart checkpoint is ignored');
+
+	const sourceOrder = await db.order.findFirstOrThrow();
+	const order = await db.order.create({ data: { userId: admin.id, shippingAddressId: sourceOrder.shippingAddressId,
+		shippingFees: 0, subTotal: 10, total: 10, paymentStatus: 'Paid' } });
+	fixtureOrderId = order.id; fixtureEntityIds.push(order.id);
+	const group = await db.orderGroup.create({ data: { orderId: order.id, storeId: product.storeId,
+		shippingService: 'Integration', shippingDeliveryMin: 1, shippingDeliveryMax: 2,
+		shippingFees: 0, subTotal: 10, total: 10, automationMode: 'DEMO', nextTransitionAt: checkpoint } });
+	fixtureEntityIds.push(group.id);
+	const fulfillment = await scheduleWorkflowStep(db, 'DEMO_FULFILLMENT', group.id, checkpoint, checkpoint);
+	assert(fulfillment); jobIds.push(fulfillment.id);
+	await processBackgroundJob(fulfillment.id, 'WORKFLOW');
+	const advanced = await db.orderGroup.findUniqueOrThrow({ where: { id: group.id } });
+	assert.notEqual(advanced.packageStatus, 'PENDING'); assert(advanced.nextTransitionAt && advanced.nextTransitionAt > new Date());
+	const transitions = await db.fulfillmentTransition.count({ where: { orderGroupId: group.id } });
+	await processBackgroundJob(fulfillment.id, 'WORKFLOW');
+	assert.equal(await db.fulfillmentTransition.count({ where: { orderGroupId: group.id } }), transitions);
+	console.log('PASS: due demo fulfillment advances once and schedules its next checkpoint');
+
+	const request = await db.returnRequest.create({ data: { customerId: admin.id, orderId: order.id,
+		orderGroupId: group.id, storeId: product.storeId, reason: 'OTHER', resolution: 'REFUND',
+		requestedAmount: 10, respondBy: checkpoint } });
+	fixtureEntityIds.push(request.id);
+	const deadline = await scheduleWorkflowStep(db, 'RETURN_DEADLINE', request.id, checkpoint, checkpoint);
+	assert(deadline); jobIds.push(deadline.id);
+	await processBackgroundJob(deadline.id, 'WORKFLOW');
+	assert.equal(await db.domainEvent.count({ where: { eventType: 'return.deadline_due', aggregateId: request.id } }), 1);
+	const deadlineEvent = await db.domainEvent.findFirstOrThrow({ where: { eventType: 'return.deadline_due', aggregateId: request.id } });
+	const deadlineNoticeJob = await db.backgroundJob.findUniqueOrThrow({ where: { eventKey: `domain:${deadlineEvent.id}` } });
+	jobIds.push(deadlineNoticeJob.id); await processBackgroundJob(deadlineNoticeJob.id, 'NOTIFICATION');
+	const adminDeadlineNotice = await db.notification.findUniqueOrThrow({ where: { sourceEventId_recipientId: { sourceEventId: deadlineEvent.id, recipientId: admin.id } } });
+	assert.equal(adminDeadlineNotice.actionUrl, '/dashboard/admin/returns');
+	assert.equal((await db.returnRequest.findUniqueOrThrow({ where: { id: request.id } })).status, 'REQUESTED');
+	assert.equal(await db.refundTransaction.count({ where: { returnRequestId: request.id } }), 0);
+	console.log('PASS: due return deadline requests review without approving a refund');
 
 	const step = await scheduleWorkflowStep(db, 'RETURN_DEADLINE', `${prefix}:missing-return`, new Date(0), new Date(0));
 	assert(step); jobIds.push(step.id);
@@ -102,11 +162,18 @@ try {
 	console.log('PASS: payment consumer processes ignored provider events');
 } finally {
 	// Only this run's rows and their fan-out records are removed.
-	const events = await db.domainEvent.findMany({ where: { OR: [{ eventKey: { startsWith: prefix } }, { eventKey: { startsWith: 'queue:dead:' }, aggregateId: { in: jobIds } }] }, select: { id: true } });
+	const events = await db.domainEvent.findMany({ where: { OR: [{ aggregateId: { in: fixtureEntityIds } }, { eventKey: { startsWith: prefix } }, { eventKey: { startsWith: 'queue:dead:' }, aggregateId: { in: jobIds } }] }, select: { id: true } });
 	await db.backgroundJob.deleteMany({ where: { OR: [{ eventKey: { startsWith: prefix } }, { id: { in: jobIds } }, { eventKey: { contains: prefix } }] } });
 	const outbox = await db.emailOutbox.findMany({ where: { sourceEventId: { in: events.map(row => row.id) } }, select: { id: true } });
 	await db.backgroundJob.deleteMany({ where: { eventKey: { in: outbox.map(row => `email:${row.id}`) } } });
+	await db.backgroundJob.deleteMany({ where: { OR: [{ eventKey: { in: events.map(row => `domain:${row.id}`) } }, ...fixtureEntityIds.map(id => ({ eventKey: { contains: `:${id}:` } }))] } });
 	await db.domainEvent.deleteMany({ where: { id: { in: events.map(row => row.id) } } });
+	if (fixtureOrderId) {
+		await db.returnRequest.deleteMany({ where: { orderId: fixtureOrderId } });
+		await db.fulfillmentTransition.deleteMany({ where: { orderId: fixtureOrderId } });
+		await db.orderGroup.deleteMany({ where: { orderId: fixtureOrderId } });
+		await db.order.delete({ where: { id: fixtureOrderId } });
+	}
 	await db.user.delete({ where: { id: admin.id } });
 	await db.$disconnect();
 }

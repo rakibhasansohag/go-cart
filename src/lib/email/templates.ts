@@ -54,7 +54,35 @@ export type EmailTemplateDefinition = {
 
 const commonVariables = EMAIL_TEMPLATE_VARIABLES;
 
+// Operational events use the recipient-specific title, message and protected action URL
+// already persisted by the domain-event fan-out. They still use the same escaping rules.
+const operationalTemplates = [
+	['shipment.delivery_attempt', 'Delivery attempt update', 'Delivery'],
+	['shipment.tracking_updated', 'Tracking updated', 'Delivery'],
+	['return.deadline_due', 'Return response deadline', 'Returns'],
+	['return.dispute_escalated', 'Return dispute update', 'Returns'],
+	['return.inventory_reconciled', 'Returned inventory updated', 'Returns'],
+	['refund.issued', 'Refund issued', 'Returns'],
+	['exchange.approved', 'Exchange approved', 'Returns'],
+	['product.question_asked', 'New product question', 'Product questions'],
+	['product.question_answered', 'Product question answered', 'Product questions'],
+	['inquiry.buyer_sent', 'New buyer message', 'Messages'],
+	['inquiry.seller_replied', 'Seller replied', 'Messages'],
+	['inventory.low_stock', 'Low stock alert', 'Inventory'],
+	['inventory.restocked', 'Inventory restocked', 'Inventory'],
+	['gocoin.earned', 'GoCoins earned', 'Rewards'],
+	['gocoin.redeemed', 'GoCoins redeemed', 'Rewards'],
+	['gocoin.reversed', 'GoCoins adjusted', 'Rewards'],
+	['checkin.claimed', 'Daily check-in reward', 'Rewards'],
+] as const;
+
 export const EMAIL_TEMPLATE_DEFINITIONS: EmailTemplateDefinition[] = [
+	...operationalTemplates.map(([key, name, category]): EmailTemplateDefinition => ({
+		key, name, category, description: `Recipient notification for ${name.toLowerCase()}.`,
+		audience: 'Event recipients', trigger: `After ${key} is committed`,
+		subject: '{{title}}', preheader: '{{message}}', bodyHtml: '<p>{{message}}</p>',
+		ctaLabel: 'View in GoCart', allowedVariables: commonVariables,
+	})),
 	{
 		key: 'payment.succeeded',
 		name: 'Payment confirmed',

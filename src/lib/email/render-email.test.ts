@@ -1,7 +1,18 @@
 import { describe, expect, it } from 'vitest';
 import { renderEmailTemplate } from './render-email';
+import { DOMAIN_EVENT_TYPES } from '@/lib/notifications/domain-events';
 
 describe('renderEmailTemplate', () => {
+	it.each(Object.values(DOMAIN_EVENT_TYPES))('renders queued domain event %s without unsupported-template failures', async templateKey => {
+		process.env.APP_URL = 'https://gocart.example';
+		const email = await renderEmailTemplate({ templateKey, payload: {
+			title: 'Operational update', message: 'Only 5 units left <script>alert(1)</script>',
+			actionUrl: '/notifications',
+		} });
+		expect(email.html).toContain('Only 5 units left');
+		expect(email.html).not.toContain('<script>');
+		expect(email.text).toContain('https://gocart.example/notifications');
+	});
 	it('escapes dynamic content and creates a safe internal action link', async () => {
 		process.env.APP_URL = 'https://gocart.example';
 		const email = await renderEmailTemplate({

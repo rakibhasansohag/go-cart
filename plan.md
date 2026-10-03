@@ -1669,7 +1669,7 @@ Goal: Conduct a comprehensive security inspection across API routes, server acti
 
 ### Phase 26 — Durable Background Jobs (Free Allowance Implementation)
 
-**Status (October 3): implemented locally; production acceptance remains open.** Public Vercel deployment is still `cd3a2ef`. `PHASE26_ENABLED` is off by default. See [operations](PHASE26_OPERATIONS.md) and [focused BrowserOS tests](PHASE26_BROWSEROS_TEST_PROMPT.md).
+**Status (October 4): implemented and enabled in Production; remaining acceptance checks are open.** Deployment `5e948e4` has verified notification and inventory callback delivery. Internal audit reports and browser handoffs are maintained locally outside Git tracking.
 
 The free approach uses the existing PostgreSQL database, native Vercel Queues and the existing daily Hobby cron. It replaces the proposed separate Workflow SDK with database checkpoints plus delayed messages. No additional paid vendor is required; queue, function, database and email limits still apply.
 
@@ -1687,11 +1687,13 @@ The free approach uses the existing PostgreSQL database, native Vercel Queues an
 - [x] Admin job health, elapsed time, safe errors and authorized replay with a new transport generation.
 - [x] Local PostgreSQL integration: rollback, competing workers, duplicate delivery, retry, lease fencing, inventory fan-out, deleted workflow target, ignored payment event.
 - [x] Production build, 578 unit tests, lint and type checks passed; database integration checks are recorded in the operations report.
-- [ ] Deploy this source and verify Vercel accepts every trigger and delivers actual queue callbacks.
-- [ ] Enable the feature in the intended deployment after its database migration is applied.
+- [x] Deploy six matching hyphenated queue topics; notification and inventory jobs have reached SUCCEEDED through Vercel callbacks with persisted recipient notifications.
+- [x] Enable `PHASE26_ENABLED=true` in Production after applying the additive migration.
+- [x] Cover all 25 canonical domain events with renderable email definitions; inventory mail exposed unsupported templates during production verification and the correction is pending deployment.
+- [x] Recover workflow entities beyond the first 100 records using stable pages; skip disabled cart reminders.
 - [ ] Prove real SMTP receipt, provider-signed sandbox payment reconciliation and each workflow's due-time behavior on the target deployment.
 - [ ] Capture deployed latency, transport outage recovery, duplicate delivery, dead-letter alert and admin replay evidence.
 
-**Acceptance:** implementation, local tests and route existence are separate from deployed verification. Keep this phase open until actual callback delivery and persisted effects are evidenced. SMTP retains the at-least-once crash window; the daily Hobby recovery fallback has daily latency after a missed wake-up. Legacy workflow recovery currently scans up to 100 records per type per run.
+**Acceptance:** implementation, local tests and route existence are separate from deployed verification. Keep this phase open until actual callback delivery and persisted effects are evidenced. SMTP retains the at-least-once crash window; the daily Hobby recovery fallback has daily latency after a missed wake-up. Workflow recovery scans in pages of 100 rather than stopping at 100 entities; interrupted recovery retries from the start using existing idempotent checkpoints.
 
 Keep payment creation/capture, cart CRUD, authorization, stock reservation and ACID business mutations synchronous. Return deadlines request review and never automatically approve financial actions. A separate Workflow SDK/dashboard is no longer an implementation requirement for this selected approach.

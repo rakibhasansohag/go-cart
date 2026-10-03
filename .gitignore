@@ -82,3 +82,15 @@ migrate-to-neon.ts
 !/docs/testing-and-quality-overview.md
 
 .next-e2e
+
+# Local development guidance and audit handoffs
+/.private/
+/.agents/
+/AGENTS.md
+/CLAUDE.md
+/BROWSEROS_*.md
+/DASHBOARD_STORE_AUDIT_*.md
+/PHASE26_*.md
+/PORTFOLIO_RELEASE_CHECK_*.md
+/RELEASE_REPORT_REVIEW.md
+/VERCEL_FULL_FEATURE_TEST_PROMPT.md

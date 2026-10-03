@@ -6,10 +6,10 @@
 [![Prisma](https://img.shields.io/badge/Prisma-6.19-2D3748?style=flat&logo=prisma)](https://www.prisma.io/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-336791?style=flat&logo=postgresql)](https://www.postgresql.org/)
 [![TanStack Query](https://img.shields.io/badge/TanStack_Query-v5-FF4154?style=flat&logo=reactquery)](https://tanstack.com/query/latest)
-[![TailwindCSS](https://img.shields.io/badge/TailwindCSS-v3.4-38B2AC?style=flat&logo=tailwind-css)](https://tailwindcss.com/)
+[![TailwindCSS](https://img.shields.io/badge/TailwindCSS-v4-38B2AC?style=flat&logo=tailwind-css)](https://tailwindcss.com/)
 [![Clerk](https://img.shields.io/badge/Auth-Clerk-6C47FF?style=flat&logo=clerk)](https://clerk.com/)
 [![Stripe](https://img.shields.io/badge/Payments-Stripe_Connect-008CDD?style=flat&logo=stripe)](https://stripe.com/)
-[![Tests](https://img.shields.io/badge/Tests-413_Passing-brightgreen?style=flat&logo=vitest)](https://vitest.dev/)
+[![Tests](https://img.shields.io/badge/Tests-Vitest-brightgreen?style=flat&logo=vitest)](https://vitest.dev/)
 
 GoCart is a multi-vendor e-commerce platform built with Next.js App Router, React 19, TypeScript, Prisma ORM, PostgreSQL, and TanStack Query. It unifies customer discovery, seller storefront management, real-time messaging, automated payout disbursements via Stripe Connect, and an administrative control hub.
 

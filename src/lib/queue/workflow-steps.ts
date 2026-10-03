@@ -56,13 +56,36 @@ export async function executeWorkflowStep(job: BackgroundJob, token: string) {
 	});
 }
 
+const recoveryPageSize = 100;
+
+/** Stable keyset pages avoid repeatedly recovering only the first 100 entities. */
+async function recoverPages<T extends { id: string }>(read: (after?: string) => Promise<T[]>, schedule: (row: T) => Promise<unknown>) {
+	let after: string | undefined;
+	let scanned = 0;
+	for (;;) {
+		const rows = await read(after);
+		for (const row of rows) await schedule(row);
+		scanned += rows.length;
+		if (rows.length < recoveryPageSize) return scanned;
+		after = rows[rows.length - 1].id;
+	}
+}
+
 export async function recoverWorkflowSteps() {
+	if (!queuesEnabled()) return { carts: 0, groups: 0, returns: 0 };
 	const [carts, groups, returns] = await Promise.all([
-		db.cart.findMany({ where: { cartItems: { some: {} } }, select: { id: true, updatedAt: true }, take: 100, orderBy: { updatedAt: 'desc' } }),
-		db.orderGroup.findMany({ where: { automationMode: 'DEMO', automationPaused: false, nextTransitionAt: { not: null }, order: { paymentStatus: 'Paid' } }, select: { id: true, nextTransitionAt: true }, take: 100 }),
-		db.returnRequest.findMany({ where: { status: 'REQUESTED', respondBy: { not: null } }, select: { id: true, respondBy: true }, take: 100 }),
+		abandonedCheckoutEnabled() ? recoverPages(after => db.cart.findMany({
+			where: { cartItems: { some: {} }, ...(after ? { id: { gt: after } } : {}) },
+			select: { id: true, updatedAt: true }, take: recoveryPageSize, orderBy: { id: 'asc' },
+		}), cart => scheduleCartReminder(db, cart)) : Promise.resolve(0),
+		recoverPages(after => db.orderGroup.findMany({
+			where: { automationMode: 'DEMO', automationPaused: false, nextTransitionAt: { not: null }, order: { paymentStatus: 'Paid' }, ...(after ? { id: { gt: after } } : {}) },
+			select: { id: true, nextTransitionAt: true }, take: recoveryPageSize, orderBy: { id: 'asc' },
+		}), group => group.nextTransitionAt ? scheduleWorkflowStep(db, 'DEMO_FULFILLMENT', group.id, group.nextTransitionAt, group.nextTransitionAt) : Promise.resolve()),
+		recoverPages(after => db.returnRequest.findMany({
+			where: { status: 'REQUESTED', respondBy: { not: null }, ...(after ? { id: { gt: after } } : {}) },
+			select: { id: true, respondBy: true }, take: recoveryPageSize, orderBy: { id: 'asc' },
+		}), request => request.respondBy ? scheduleWorkflowStep(db, 'RETURN_DEADLINE', request.id, request.respondBy, request.respondBy) : Promise.resolve()),
 	]);
-	for (const cart of carts) await scheduleCartReminder(db, cart);
-	for (const group of groups) if (group.nextTransitionAt) await scheduleWorkflowStep(db, 'DEMO_FULFILLMENT', group.id, group.nextTransitionAt, group.nextTransitionAt);
-	for (const request of returns) if (request.respondBy) await scheduleWorkflowStep(db, 'RETURN_DEADLINE', request.id, request.respondBy, request.respondBy);
+	return { carts, groups, returns };
 }

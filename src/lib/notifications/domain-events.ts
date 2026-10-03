@@ -193,7 +193,7 @@ type Recipient = {
 
 function payloadText(payload: Prisma.InputJsonObject, key: string) {
   const value = payload[key];
-  return typeof value === "string" ? value : "";
+  return typeof value === "string" ? value : typeof value === "number" && Number.isFinite(value) ? String(value) : "";
 }
 
 function humanizeStatus(value: string) {
@@ -470,7 +470,9 @@ function notificationFor(input: PublishDomainEventInput, recipient: Recipient) {
         category: NotificationCategory.RETURN,
         title: "Return workflow updated",
         message: `Your return request has a new ${humanizeStatus(input.eventType.split(".")[1] ?? "update")} update.`,
-        actionUrl: payloadText(input.payload, "returnRequestId")
+        actionUrl: recipient.role === Role.ADMIN ? '/dashboard/admin/returns'
+          : recipient.role === Role.SELLER && storeUrl ? `/dashboard/seller/stores/${storeUrl}/returns`
+          : payloadText(input.payload, "returnRequestId")
           ? `/profile/returns/${payloadText(input.payload, "returnRequestId")}`
           : null,
       };
