@@ -1,13 +1,6 @@
-import { NextResponse } from "next/server";
+import { backgroundConsumer } from '@/lib/queue/consumer';
 
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
-
-// Phase 26 is not active: the durable DB outbox and signed provider webhooks
-// handle delivery today. Never acknowledge an unimplemented queue consumer.
-export async function POST() {
-  return NextResponse.json(
-    { ok: false, error: "Queue consumer is not enabled. Use the existing outbox workflow." },
-    { status: 503 },
-  );
-}
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+export const maxDuration = 60;
+export const POST = backgroundConsumer('INVENTORY');

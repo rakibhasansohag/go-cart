@@ -41,6 +41,7 @@ export default async function AdminDeliveryHealthPage() {
 			</header>
 
 			<AdminDeliveryHealth initialData={deliveryHealth} />
+			<Link href='/dashboard/admin/background-jobs' className='underline'>Background delivery, retries and failed jobs</Link>
 		</div>
 	);
 }

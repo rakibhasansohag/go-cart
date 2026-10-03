@@ -1667,118 +1667,31 @@ Goal: Conduct a comprehensive security inspection across API routes, server acti
 
 ---
 
-### Phase 26 — Event-Driven Architecture (Vercel Native)
+### Phase 26 — Durable Background Jobs (Free Allowance Implementation)
 
-**Release correction (2026-10-02): Phase 26 is planned and inactive.**
+**Status (October 3): implemented locally; production acceptance remains open.** Public Vercel deployment is still `cd3a2ef`. `PHASE26_ENABLED` is off by default. See [operations](PHASE26_OPERATIONS.md) and [focused BrowserOS tests](PHASE26_BROWSEROS_TEST_PROMPT.md).
 
-- Removed pre-commit external queue sends from `publishDomainEvent()`. Notifications, email outbox rows and audits remain transactional.
-- Removed reference-only queue sends from payment webhooks; the verified synchronous reconciliation remains authoritative.
-- Removed experimental queue triggers. All four scaffold consumers return HTTP 503 and cannot claim unprocessed work succeeded or dispatch email through an arbitrary JSON POST.
-- Existing post-commit email dispatch and DB outbox recovery cron remain active. The SDK/publisher scaffold is retained for the future committed-outbox relay.
-- Before re-enabling queues, implement the installed SDK callback contract, durable committed-row relay, idempotent business consumers, retry/dead-letter monitoring and deployed delivery evidence.
+The free approach uses the existing PostgreSQL database, native Vercel Queues and the existing daily Hobby cron. It replaces the proposed separate Workflow SDK with database checkpoints plus delayed messages. No additional paid vendor is required; queue, function, database and email limits still apply.
 
-**Optimized delivery order:**
-1. Add delivery health, lag/failure metrics and duplicate/replay tests before migrating more consumers.
-2. Correct the SDK callback/authentication integration and add a committed-outbox relay with retry/backoff and dead-letter handling.
-3. Prove email delivery remains correct across transaction rollback, queue outage, duplicate delivery and worker failure; then implement inventory processing.
-4. For payment buffering, verify the signature and durably persist a replayable inbox event (or await confirmed queue acceptance) before returning success. Reconciliation must be idempotent and retryable. Keep today's synchronous handler until this replacement is validated. `after()` alone is not a durable payment inbox.
-5. Decompose cron jobs only after each has independent idempotency/lease protection. Introduce Workflows selectively for processes that benefit from durable waits, rather than migrating every state machine at once.
+- [x] Transactional canonical events and durable background jobs; rollback creates no dispatchable work.
+- [x] Committed-row relay using request-scoped `after()` wake-ups and daily/admin recovery.
+- [x] Six typed job kinds and private `queue/v2beta` consumer registrations: email, notification, inventory, payment, cron, workflow.
+- [x] Default Vercel OIDC client; explicit optional local transport credentials.
+- [x] Notification/inventory fan-out with fenced transactional success and existing deduplication constraints.
+- [x] Email consumer uses the existing outbox leases, retries and provider configuration; disabled delivery defers without spending failure attempts.
+- [x] Signature-verified Stripe/PayPal inbox persists before acknowledgement; storage failures return retryable 503.
+- [x] Queued payment reconciliation retries idempotent notification, loyalty and settlement effects after the payment commit.
+- [x] Seven cron jobs have independent durable execution records and retry outcomes.
+- [x] Cart reminder, demo fulfillment and return deadline checkpoints reread current authoritative state before taking action.
+- [x] Exponential retry, eight-attempt limit, expired lease recovery, dead-letter state and durable admin bell alerts.
+- [x] Admin job health, elapsed time, safe errors and authorized replay with a new transport generation.
+- [x] Local PostgreSQL integration: rollback, competing workers, duplicate delivery, retry, lease fencing, inventory fan-out, deleted workflow target, ignored payment event.
+- [x] Production build, 578 unit tests, lint and type checks passed; database integration checks are recorded in the operations report.
+- [ ] Deploy this source and verify Vercel accepts every trigger and delivers actual queue callbacks.
+- [ ] Enable the feature in the intended deployment after its database migration is applied.
+- [ ] Prove real SMTP receipt, provider-signed sandbox payment reconciliation and each workflow's due-time behavior on the target deployment.
+- [ ] Capture deployed latency, transport outage recovery, duplicate delivery, dead-letter alert and admin replay evidence.
 
-**Acceptance gate:** deployed callback delivery, persistent retry/replay evidence, duplicate-safe consumer effects, no pre-commit dispatch, measured processing latency, and actionable failure alerts. Package installation and route existence alone do not satisfy this gate. Pricing/free-tier numbers below are research notes and must be rechecked before capacity or budget decisions.
+**Acceptance:** implementation, local tests and route existence are separate from deployed verification. Keep this phase open until actual callback delivery and persisted effects are evidenced. SMTP retains the at-least-once crash window; the daily Hobby recovery fallback has daily latency after a missed wake-up. Legacy workflow recovery currently scans up to 100 records per type per run.
 
-**Goal**: Migrate synchronous in-process domain events and DB-based email outbox to durable async processing, decoupling producers from consumers and enabling near-real-time delivery on Vercel serverless.
-
-**Why**: `publishDomainEvent()` writes notifications, email outbox entries, and delivery audits inside the same DB transaction as the business operation — coupling unrelated concerns and risking transaction timeouts under load. The single `/api/cron/dispatch` endpoint runs 7 sequential jobs in one 60s function — any slow job blocks the rest. A queue decouples these, adds retry/DLQ capability, and lets each consumer scale independently.
-
-**Research (October 2026)**:
-- ❌ Upstash Kafka — deprecated Sept 2024, shut down March 2025. Does not exist.
-- ✅ **Vercel Queues** (beta) — `@vercel/queue` SDK, 1M free API ops/month, at-least-once delivery, consumer routes private by default. Messages metered in 4KB chunks.
-- ✅ **Vercel Workflows** — `workflow` package with `'use workflow'` directive, durable step execution with sleep/state/resume. Replaces Inngest for multi-step stateful flows without extra vendor.
-- ✅ **Next.js `after()`** — stable in Next.js 15+, runs code after response is sent. For quick non-critical side effects only.
-- Fallback alternatives: Upstash QStash (500 msgs/day free), Inngest (50K runs/month free), Trigger.dev v3 ($5 credit/month free).
-
-**Tiered strategy** (no extra vendor accounts):
-| Tier | Tool | Use Case |
-|---|---|---|
-| Quick side effects | `after()` from `next/server` | Analytics logging, cache warming |
-| Durable fire-and-forget | **Vercel Queues** (`@vercel/queue`) | Email, notifications, webhooks, inventory |
-| Multi-step stateful | **Vercel Workflows** (`workflow`) | Abandoned cart, demo fulfillment, return processing |
-
----
-
-- [x] **Phase 26.1 — Quick Wins with `after()`**
-  - [x] Add `after()` callbacks in webhook handlers for analytics logging (queue dispatch deferred)
-  - [ ] Add `after()` in order placement for non-critical side effects (view count, search index warm)
-  - [x] No new packages needed — `after()` is built into Next.js 15+ (`next/server`)
-  - **Test**: Response time unchanged, analytics events fire after response
-
-- [ ] **Phase 26.2 — Vercel Queues Infrastructure** (scaffold present; callback/authentication and deployed delivery unverified)
-  - [x] Install `@vercel/queue` SDK
-  - [x] Create `src/lib/queue/publisher.ts` — typed `publishToQueue<T>(topic, payload)` with idempotency key
-  - [x] Create `src/lib/queue/topics.ts` — topic constants (`email.outbox`, `notification.fan`, `payment.events`, `inventory.events`, `order.events`)
-  - [ ] Re-enable `experimentalTriggers` only after consumers satisfy the acceptance gate
-  - [x] Add Zod schemas for queue event payloads (reuse existing `contracts.ts` types)
-  - [ ] Verify SDK authentication and local/deployed queue delivery
-  - **Test**: Producer sends test message, consumer route receives and processes it
-
-- [ ] **Phase 26.3 — Email Outbox → Queue (Lowest Risk)** (partial implementation; durable relay and callback contract pending)
-  - [ ] Relay committed DB outbox rows to `email.outbox` with retries (never send from the business transaction)
-  - [ ] Implement SDK email consumer using `dispatchEmailOutboxBatch()` (scaffold currently returns 503)
-  - [ ] Register verified consumer in `vercel.json` with `experimentalTriggers`
-  - [ ] Retain outbox recovery dispatch until queue loss/retry/rollback tests and deployed delivery metrics pass
-  - **Test**: Email arrives within 30s of event (vs previous daily cron)
-
-- [ ] **Phase 26.4 — Notification Fan-Out → Queue**
-  - [ ] Publish in-app notifications to `notification.fan` topic instead of direct DB insert in `publishDomainEvent()`
-  - [ ] Create `app/api/queues/notification/route.ts` — consumer writes to `Notification` table
-  - [ ] Decouple notification delivery audit from the source business transaction
-  - **Test**: Notification appears in user bell within 30s, source transaction unblocked
-
-- [ ] **Phase 26.5 — Webhook Ingestion Buffer**
-  - [ ] Stripe webhook: validate signature → persist replayable inbox event/confirm queue acceptance → return 200; currently reconciliation remains synchronous
-  - [ ] PayPal webhook: same durable acknowledgement pattern; currently reconciliation remains synchronous
-  - [ ] Implement `app/api/queues/payment/route.ts` reconciliation with idempotency and retry; route currently logs only
-  - **Test**: Webhook returns 200 in < 500ms, payment state updates within 5s
-
-- [ ] **Phase 26.6 — Inventory Alerts → Queue**
-  - [x] Publish `INVENTORY_LOW_STOCK` / `INVENTORY_RESTOCKED` to `inventory.events` topic
-  - [ ] Implement independent restock reminder processing in `src/app/api/queues/inventory/route.ts`; route currently logs only
-  - [ ] Remove inventory notification logic from `/api/cron/dispatch`
-  - **Test**: Seller gets low-stock alert within 1 minute of threshold crossing
-
-- [ ] **Phase 26.7 — Cron Decomposition**
-  - [ ] Cron dispatch publishes one trigger message per job to `cron.jobs` topic
-  - [ ] Each job subscribes as an independent consumer route
-  - [ ] Jobs run in parallel, individual failures don't cascade
-  - **Test**: All 7 cron jobs complete independently
-
-- [ ] **Phase 26.8 — Vercel Workflows for Stateful Processes**
-  - [ ] Install `workflow` package and wrap `next.config.ts` with `withWorkflow()`
-  - [ ] Migrate abandoned checkout flow: `'use workflow'` → step(fetch cart) → sleep(1h) → step(check still abandoned) → step(send reminder)
-  - [ ] Migrate demo fulfillment progression: step-based state machine with durable sleep between transitions
-  - [ ] Migrate multi-step return processing: step(validate) → step(notify seller) → sleep(wait for response) → step(process refund)
-  - **Test**: Workflows complete with correct delays, visible in Vercel dashboard and `npx workflow web`
-
-- [ ] **Phase 26.9 — Observability & Monitoring**
-  - [ ] Monitor queue processing via Vercel dashboard (built-in)
-  - [ ] Monitor workflow execution via `npx workflow web` and Vercel dashboard
-  - [ ] Add dead-letter alerting (email to admin on permanently failed messages)
-  - [ ] Log consumer processing time per message type
-  - **Test**: Admin can see event flow health, DLQ alerts trigger within 5 minutes
-
-**What to keep synchronous (do NOT move to queues)**:
-- Payment creation / capture (user must see confirmation immediately)
-- Cart CRUD (latency-sensitive, must be immediate)
-- Auth / session checks (blocking by nature)
-- DB transactions requiring ACID consistency
-
-**When to add a third-party tool**:
-- Need isolated containers for heavy compute (video, ML) → add Trigger.dev
-- Hit 1M Vercel Queues ops and Pro is too expensive → add QStash as overflow
-- Vercel Workflows missing a feature (complex fan-out + merge) → add Inngest
-
-**Cost projection**:
-- Current scale (< 100 orders/day): **$0** (1M queue ops/month included)
-- 500 orders/day (~5K events): **$0** (still within free tier)
-- Heavy usage exceeding 1M ops: Vercel Pro required ($20/month base, includes 1M ops)
-- Hobby plan caveat: strictly non-commercial — goCart needs Pro if generating revenue
+Keep payment creation/capture, cart CRUD, authorization, stock reservation and ACID business mutations synchronous. Return deadlines request review and never automatically approve financial actions. A separate Workflow SDK/dashboard is no longer an implementation requirement for this selected approach.

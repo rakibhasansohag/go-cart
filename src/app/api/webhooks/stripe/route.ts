@@ -1,6 +1,8 @@
 import { NextResponse, after } from "next/server";
 import { getStripeClient } from "@/lib/payments/stripe-client";
 import { handleStripeEvent } from "@/lib/payments/stripe-events";
+import { queuesEnabled } from '@/lib/queue/config';
+import { persistVerifiedPayment } from '@/lib/queue/payment-inbox';
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -23,6 +25,7 @@ export async function POST(request: Request) {
     );
   }
 
+  let verified = false;
   try {
     const rawBody = await request.text();
     const event = await getStripeClient().webhooks.constructEventAsync(
@@ -30,6 +33,11 @@ export async function POST(request: Request) {
       signature,
       webhookSecret,
     );
+    verified = true;
+    if (queuesEnabled()) {
+      const job = await persistVerifiedPayment('Stripe', event);
+      return NextResponse.json({ received: true, accepted: true, jobId: job.id });
+    }
     const result = await handleStripeEvent(event);
 
     const afterTask = async () => {
@@ -50,7 +58,7 @@ export async function POST(request: Request) {
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Stripe webhook failed.";
-    console.error("Stripe webhook processing failed:", message);
-    return NextResponse.json({ error: message }, { status: 400 });
+    console.error("Stripe webhook processing failed:", error instanceof Error ? error.name : 'unknown');
+    return NextResponse.json({ error: verified ? 'Webhook processing temporarily unavailable.' : message }, { status: verified ? 503 : 400 });
   }
 }

@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 const { dbMock, publishPaidOrderNotificationsMock, scheduleEmailOutboxDispatchMock, awardCoinsMock, createSettlementsForPaidOrderMock } = vi.hoisted(() => ({
 	dbMock: {
@@ -17,8 +17,27 @@ vi.mock('@/lib/loyalty/coins', () => ({ awardCoins: awardCoinsMock }));
 vi.mock('@/lib/settlement/service', () => ({ createSettlementsForPaidOrder: createSettlementsForPaidOrderMock }));
 
 import { reconcilePaymentEvent } from './reconcile';
+afterEach(() => vi.unstubAllEnvs());
 
 describe('payment reconciliation side effects', () => {
+	it('retries missing side effects after a payment event was already committed in queued mode', async () => {
+		vi.clearAllMocks(); vi.stubEnv('PHASE26_ENABLED', 'true');
+		const paymentDetails = { updatedAt: new Date(), amount: 25, currency: 'USD' };
+		const order = { id: 'order-retry', userId: 'user-retry', total: 25, paymentStatus: 'Paid', paymentDetails };
+		const committed = { duplicate: true, order, paymentDetails };
+		dbMock.$transaction.mockResolvedValueOnce(committed);
+		publishPaidOrderNotificationsMock.mockRejectedValueOnce(new Error('Temporary fan-out failure'));
+		const input = { orderId: order.id, provider: 'Stripe', providerEventId: 'evt-retry', providerPaymentId: 'pi-retry', eventType: 'payment_intent.succeeded', providerStatus: 'succeeded', paymentStatus: 'Paid' } as const;
+		await expect(reconcilePaymentEvent(input)).rejects.toThrow('Temporary fan-out');
+		expect(createSettlementsForPaidOrderMock).not.toHaveBeenCalled();
+		dbMock.$transaction.mockResolvedValueOnce(committed).mockImplementation(async (callback: (tx: object) => unknown) => callback({}));
+		publishPaidOrderNotificationsMock.mockResolvedValueOnce(['retry-event']);
+		awardCoinsMock.mockResolvedValueOnce({ id: 'award' });
+		createSettlementsForPaidOrderMock.mockResolvedValueOnce([]);
+		await expect(reconcilePaymentEvent(input)).resolves.toMatchObject({ duplicate: true });
+		expect(awardCoinsMock).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ idempotencyKey: `order:${order.id}:paid:earn` }));
+		expect(createSettlementsForPaidOrderMock).toHaveBeenCalledWith(order.id);
+	});
 	it('commits payment state before fan-out notifications and settlement work', async () => {
 		const paymentDetails = {
 			updatedAt: new Date('2026-08-15T00:00:00.000Z'),

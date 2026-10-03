@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const { constructEventAsyncMock, getStripeClientMock, handleStripeEventMock } =
   vi.hoisted(() => ({
@@ -14,16 +14,41 @@ vi.mock("@/lib/payments/stripe-client", () => ({
 vi.mock("@/lib/payments/stripe-events", () => ({
   handleStripeEvent: handleStripeEventMock,
 }));
+const { persist } = vi.hoisted(() => ({ persist: vi.fn() }));
+vi.mock('@/lib/queue/payment-inbox', () => ({ persistVerifiedPayment: persist }));
+afterEach(() => vi.unstubAllEnvs());
 
 import { POST } from "./route";
 
 describe("Stripe webhook route", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.stubEnv('PHASE26_ENABLED', 'false');
     process.env.STRIPE_WEBHOOK_SECRET = "whsec_test";
     getStripeClientMock.mockReturnValue({
       webhooks: { constructEventAsync: constructEventAsyncMock },
     });
+  });
+
+  it('acknowledges verified queued events only after durable storage', async () => {
+    vi.stubEnv('PHASE26_ENABLED', 'true');
+    const event = { id: 'evt_queue', type: 'payment_intent.succeeded' };
+    constructEventAsyncMock.mockResolvedValue(event);
+    persist.mockResolvedValue({ id: 'job-id' });
+    const response = await POST(new Request('http://localhost/api/webhooks/stripe', { method: 'POST', headers: { 'stripe-signature': 'valid' }, body: '{}' }));
+    expect(response.status).toBe(200);
+    expect(persist).toHaveBeenCalledWith('Stripe', event);
+    expect(handleStripeEventMock).not.toHaveBeenCalled();
+    expect(await response.json()).toMatchObject({ accepted: true, jobId: 'job-id' });
+  });
+
+  it('asks the provider to retry when verified event storage fails', async () => {
+    vi.stubEnv('PHASE26_ENABLED', 'true');
+    constructEventAsyncMock.mockResolvedValue({ id: 'evt_queue' });
+    persist.mockRejectedValue(new Error('private database connection'));
+    const response = await POST(new Request('http://localhost/api/webhooks/stripe', { method: 'POST', headers: { 'stripe-signature': 'valid' }, body: '{}' }));
+    expect(response.status).toBe(503);
+    expect(JSON.stringify(await response.json())).not.toContain('private database');
   });
 
   it("rejects an unconfigured webhook", async () => {

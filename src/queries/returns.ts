@@ -1,4 +1,5 @@
 'use server';
+import { scheduleWorkflowStep } from '@/lib/queue/workflow-steps';
 
 import { auth } from '@clerk/nextjs/server';
 import {
@@ -628,6 +629,7 @@ export async function createReturnRequest(input: CreateReturnRequestInput) {
 				},
 			});
 
+			if (request.respondBy) await scheduleWorkflowStep(tx, 'RETURN_DEADLINE', request.id, request.respondBy, request.respondBy);
 			const domainEvent = await publishDomainEvent(tx, {
 				eventKey: `return.requested:${request.id}`,
 				eventType: DOMAIN_EVENT_TYPES.RETURN_REQUESTED,

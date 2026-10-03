@@ -7,6 +7,13 @@ import { cleanupNotificationDeliveryData } from '@/lib/notifications/retention';
 import { createWeeklyPayoutReview } from '@/lib/settlement/payout-review';
 import { db } from '@/lib/db';
 import { DOMAIN_EVENT_TYPES, publishDomainEvent } from '@/lib/notifications/domain-events';
+import { queuesEnabled } from '@/lib/queue/config';
+import { enqueueDailyCronJobs } from '@/lib/queue/cron-jobs';
+import { recoverExpiredJobs } from '@/lib/queue/worker';
+import { relayBackgroundJobs } from '@/lib/queue/relay';
+import { scheduleBackgroundJobs } from '@/lib/queue/schedule';
+import { alertDeadJobs } from '@/lib/queue/alerts';
+import { recoverWorkflowSteps } from '@/lib/queue/workflow-steps';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -99,6 +106,15 @@ async function handle(request: Request) {
 	}
 
 	const startTime = Date.now();
+	if (queuesEnabled()) {
+		await recoverExpiredJobs();
+		await alertDeadJobs();
+		await recoverWorkflowSteps();
+		const jobs = await enqueueDailyCronJobs();
+		const relay = await relayBackgroundJobs();
+		scheduleBackgroundJobs();
+		return NextResponse.json({ ok: true, accepted: jobs.length, relay, mode: 'durable-queue' });
+	}
 	const results: Record<string, JobResult> = {};
 
 	// 1. Email Outbox Retry

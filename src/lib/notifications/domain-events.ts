@@ -5,12 +5,16 @@ import {
   Role,
 } from "@prisma/client";
 import type { PrismaClient } from "@prisma/client";
+import type { DomainEvent } from '@prisma/client';
 import { formatOrderId, formatPackageId } from "@/lib/orders/references";
 import {
   demoFulfillmentAutomationEnabled,
   demoFulfillmentStepHours,
 } from "@/lib/orders/demo-config";
 import { validateDomainEventPayload } from "./contracts";
+import { queuesEnabled } from '@/lib/queue/config';
+import { enqueueBackgroundJob } from '@/lib/queue/jobs';
+import { scheduleWorkflowStep } from '@/lib/queue/workflow-steps';
 
 type NotificationDbClient = Prisma.TransactionClient | PrismaClient;
 
@@ -177,6 +181,8 @@ export type PublishDomainEventInput = {
   payload: Prisma.InputJsonObject;
   /** Persist the event now and defer recipient/notification fan-out until after commit. */
   persistEventOnly?: boolean;
+  /** Internal worker bypass: fan-out and its completion marker commit together. */
+  deliveryMode?: 'inline';
 };
 
 type Recipient = {
@@ -613,7 +619,10 @@ export async function publishPaidOrderNotifications(
     currency: string;
     paidAt: Date;
   },
-) {
+): Promise<string[]> {
+  if (queuesEnabled() && '$transaction' in tx) {
+    return tx.$transaction(client => publishPaidOrderNotifications(client, input), { maxWait: 10_000, timeout: 30_000 });
+  }
   const paidOrder = await tx.order.findUnique({
     where: { id: input.orderId },
     select: {
@@ -710,15 +719,15 @@ export async function publishPaidOrderNotifications(
 
   for (const orderPackage of paidOrder.groups) {
     if (demoFulfillmentAutomationEnabled()) {
-      await tx.orderGroup.update({
-        where: { id: orderPackage.id },
+      const dueAt = new Date(Date.now() + demoFulfillmentStepHours() * 60 * 60 * 1000);
+      const initialized = await tx.orderGroup.updateMany({
+        where: { id: orderPackage.id, automationMode: 'MANUAL', nextTransitionAt: null, packageStatus: 'PENDING' },
         data: {
           automationMode: "DEMO",
-          nextTransitionAt: new Date(
-            Date.now() + demoFulfillmentStepHours() * 60 * 60 * 1000,
-          ),
+          nextTransitionAt: dueAt,
         },
       });
+      if (initialized.count === 1) await scheduleWorkflowStep(tx, 'DEMO_FULFILLMENT', orderPackage.id, dueAt, dueAt);
     }
     const packageEvent = await publishDomainEvent(tx, {
       eventKey: `package:paid-ready:${input.provider}:${input.providerPaymentId}:${orderPackage.id}`,
@@ -771,7 +780,10 @@ export async function publishPaidOrderNotifications(
 export async function publishDomainEvent(
   tx: NotificationDbClient,
   input: PublishDomainEventInput,
-) {
+): Promise<DomainEvent> {
+  if (queuesEnabled() && '$transaction' in tx) {
+    return tx.$transaction(client => publishDomainEvent(client, input), { maxWait: 10_000, timeout: 30_000 });
+  }
   validateDomainEventPayload(input.eventType, input.payload);
   const eventData = {
     eventKey: input.eventKey,
@@ -796,6 +808,21 @@ export async function publishDomainEvent(
     });
     if (!concurrentEvent) throw error;
     event = concurrentEvent;
+  }
+  if (queuesEnabled() && input.deliveryMode !== 'inline') {
+    await enqueueBackgroundJob(tx, {
+      eventKey: `domain:${event.id}`,
+      kind: input.eventType.startsWith('inventory.') ? 'INVENTORY' : 'NOTIFICATION',
+      payload: {
+        eventKey: input.eventKey, eventType: input.eventType,
+        aggregateType: input.aggregateType, aggregateId: input.aggregateId,
+        actorUserId: input.actorUserId ?? null,
+        ...(input.orderId ? { orderId: input.orderId } : {}),
+        ...(input.storeId ? { storeId: input.storeId } : {}),
+        payload: input.payload,
+      },
+    });
+    return event;
   }
   if (input.persistEventOnly) return event;
 
@@ -846,7 +873,7 @@ export async function publishDomainEvent(
       });
       continue;
     }
-    await ensureEmailOutbox(tx, {
+    const outbox = await ensureEmailOutbox(tx, {
       sourceEventId: event.id,
       recipientId: recipient.id,
       recipientEmail: recipient.email,
@@ -857,6 +884,9 @@ export async function publishDomainEvent(
         message: content.message,
         actionUrl: content.actionUrl,
       },
+    });
+    if (queuesEnabled()) await enqueueBackgroundJob(tx, {
+      eventKey: `email:${outbox.id}`, kind: 'EMAIL', payload: { outboxId: outbox.id },
     });
     await ensureDeliveryAudit(tx, {
       sourceEventId: event.id,

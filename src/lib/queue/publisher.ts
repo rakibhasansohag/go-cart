@@ -1,4 +1,5 @@
 import { getQueueClient } from "./client";
+import { queueTransportAvailable } from './config';
 import type { PublishToQueueInput, QueueMessageEnvelope } from "./types";
 
 /**
@@ -15,10 +16,7 @@ export async function publishToQueue(
 ): Promise<string | null> {
 	// Gracefully skip if queue env vars are not configured (e.g. local dev
 	// without `vercel link`). The existing DB-based path is still the fallback.
-	if (
-		!process.env.VERCEL_QUEUE_TOKEN ||
-		!process.env.VERCEL_QUEUE_BASE_URL
-	) {
+	if (!queueTransportAvailable()) {
 		return null;
 	}
 

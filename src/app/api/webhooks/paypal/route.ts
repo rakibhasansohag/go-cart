@@ -4,14 +4,22 @@ import {
 	verifyPayPalWebhook,
 	type PayPalWebhookEvent,
 } from '@/lib/payments/paypal-events';
+import { queuesEnabled } from '@/lib/queue/config';
+import { persistVerifiedPayment } from '@/lib/queue/payment-inbox';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: Request) {
+	let verified = false;
 	try {
 		const event = (await request.json()) as PayPalWebhookEvent;
 		await verifyPayPalWebhook(request.headers, event);
+		verified = true;
+		if (queuesEnabled()) {
+			const job = await persistVerifiedPayment('Paypal', event);
+			return NextResponse.json({ received: true, accepted: true, jobId: job.id });
+		}
 		const result = await handlePayPalEvent(event);
 
 		const afterTask = async () => {
@@ -32,8 +40,8 @@ export async function POST(request: Request) {
 	} catch (error) {
 		const message =
 			error instanceof Error ? error.message : 'PayPal webhook failed.';
-		console.error('PayPal webhook processing failed:', message);
-		return NextResponse.json({ error: message }, { status: 400 });
+		console.error('PayPal webhook processing failed:', error instanceof Error ? error.name : 'unknown');
+		return NextResponse.json({ error: verified ? 'Webhook processing temporarily unavailable.' : message }, { status: verified ? 503 : 400 });
 	}
 }
 

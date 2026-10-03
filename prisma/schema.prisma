@@ -1339,6 +1339,48 @@ enum EmailTemplateSource {
   CUSTOM
 }
 
+enum BackgroundJobKind {
+  EMAIL
+  NOTIFICATION
+  INVENTORY
+  PAYMENT
+  CRON
+  WORKFLOW
+}
+
+enum BackgroundJobStatus {
+  READY
+  PROCESSING
+  SUCCEEDED
+  DEAD
+}
+
+model BackgroundJob {
+  id String @id @default(uuid())
+  eventKey String @unique
+  kind BackgroundJobKind
+  payload Json
+  status BackgroundJobStatus @default(READY)
+  attempts Int @default(0)
+  replayCount Int @default(0)
+  nextAttemptAt DateTime @default(now())
+  nextPublishAt DateTime @default(now())
+  leaseToken String?
+  leaseUntil DateTime?
+  messageId String?
+  publishedAt DateTime?
+  startedAt DateTime?
+  completedAt DateTime?
+  lastError String? @db.Text
+  alertedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status, nextAttemptAt])
+  @@index([status, nextPublishAt])
+  @@index([kind, createdAt])
+}
+
 model DomainEvent {
   id            String @id @default(uuid())
   eventKey      String @unique

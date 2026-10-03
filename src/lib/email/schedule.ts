@@ -1,6 +1,12 @@
 import { after } from 'next/server';
+import { queuesEnabled } from '@/lib/queue/config';
+import { scheduleBackgroundJobs } from '@/lib/queue/schedule';
 
 export function scheduleEmailOutboxDispatch(sourceEventIds: string[]) {
+	if (queuesEnabled()) {
+		scheduleBackgroundJobs();
+		return;
+	}
 	const uniqueEventIds = [...new Set(sourceEventIds)].filter(Boolean);
 	if (uniqueEventIds.length === 0) return;
 

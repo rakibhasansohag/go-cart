@@ -19,6 +19,8 @@ export const QUEUE_TOPICS = {
 
 	/** Order lifecycle events (placed, confirmed, shipped, delivered) */
 	ORDER_EVENTS: "order.events",
+	CRON_JOBS: "cron.jobs",
+	WORKFLOW_STEPS: "workflow.steps",
 } as const;
 
 export type QueueTopic = (typeof QUEUE_TOPICS)[keyof typeof QUEUE_TOPICS];

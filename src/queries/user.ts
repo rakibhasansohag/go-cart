@@ -1,6 +1,8 @@
 'use server';
 
 import { reserveCheckoutInventory } from '@/lib/inventory/checkout';
+import { queuesEnabled } from '@/lib/queue/config';
+import { scheduleCartReminder } from '@/lib/queue/workflow-steps';
 
 import { auth, currentUser } from '@clerk/nextjs/server';
 import { db } from '@/lib/db';
@@ -456,7 +458,8 @@ export const saveUserCart = async (
 	}
 
 	// Save the validated items to the cart in the database
-	const cart = await db.cart.create({
+	const cart = await db.$transaction(async tx => {
+	const cart = await tx.cart.create({
 		data: {
 			cartItems: {
 				create: validatedCartItems.map((item) => ({
@@ -482,6 +485,9 @@ export const saveUserCart = async (
 			couponId: validCouponId,
 			userId,
 		},
+	});
+	if (queuesEnabled()) await scheduleCartReminder(tx, cart);
+	return cart;
 	});
 	if (cart) return true;
 	return false;

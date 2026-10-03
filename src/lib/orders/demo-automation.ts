@@ -1,6 +1,7 @@
 import 'server-only';
 
 import { db } from '@/lib/db';
+import { scheduleWorkflowStep } from '@/lib/queue/workflow-steps';
 import { syncLegacyFulfillmentSummary } from '@/queries/fulfillment';
 import {
 	DOMAIN_EVENT_TYPES,
@@ -37,8 +38,9 @@ function key(groupId: string, next: string) {
 	return `automation:${groupId}:${next}:${Date.now()}`;
 }
 
-async function advanceOne(groupId: string) {
+async function advanceOne(groupId: string, expectedDueAt?: Date) {
 	return db.$transaction(async (tx) => {
+		if (expectedDueAt) await tx.$queryRaw`SELECT id FROM "OrderGroup" WHERE id = ${groupId} FOR UPDATE`;
 		const group = await tx.orderGroup.findUnique({
 			where: { id: groupId },
 			include: {
@@ -53,15 +55,18 @@ async function advanceOne(groupId: string) {
 		});
 		if (!group || group.automationMode !== 'DEMO' || group.automationPaused) return false;
 		if (group.order.paymentStatus !== PaymentStatus.Paid) return false;
+		if (expectedDueAt && (!group.nextTransitionAt || group.nextTransitionAt.getTime() !== expectedDueAt.getTime() || expectedDueAt > new Date())) return false;
 
 		const packageNext = getAllowedPackageTransitions(group.packageStatus, FulfillmentActorRole.SYSTEM)[0];
 		if (packageNext) {
-			const idempotencyKey = key(group.id, packageNext);
+			const idempotencyKey = expectedDueAt ? `automation:${group.id}:${packageNext}:${expectedDueAt.toISOString()}` : key(group.id, packageNext);
+			const dueAt = nextDue();
 			const changed = await tx.orderGroup.updateMany({
 				where: { id: group.id, packageStatus: group.packageStatus, automationMode: 'DEMO', automationPaused: false },
-				data: { packageStatus: packageNext, nextTransitionAt: nextDue() },
+				data: { packageStatus: packageNext, nextTransitionAt: dueAt },
 			});
 			if (changed.count !== 1) return false;
+			await scheduleWorkflowStep(tx, 'DEMO_FULFILLMENT', group.id, dueAt, dueAt);
 			await tx.fulfillmentTransition.create({
 				data: {
 					entityType: FulfillmentEntityType.PACKAGE,
@@ -110,7 +115,7 @@ async function advanceOne(groupId: string) {
 			await tx.orderGroup.update({ where: { id: group.id }, data: { automationMode: 'MANUAL', nextTransitionAt: null } });
 			return false;
 		}
-		const idempotencyKey = key(group.id, shipmentNext);
+		const idempotencyKey = expectedDueAt ? `automation:${group.id}:${shipmentNext}:${expectedDueAt.toISOString()}` : key(group.id, shipmentNext);
 		const changed = await tx.shipment.updateMany({ where: { id: shipment.id, status: shipment.status }, data: { status: shipmentNext } });
 		if (changed.count !== 1) return false;
 		await tx.fulfillmentTransition.create({
@@ -144,10 +149,17 @@ async function advanceOne(groupId: string) {
 				items: group.items.map((item) => ({ name: item.name, image: item.image, sku: item.sku, size: item.size, quantity: item.quantity, unitPrice: item.price, totalPrice: item.totalPrice, storeName: group.store.name })),
 			},
 		});
-		await tx.orderGroup.update({ where: { id: group.id }, data: { nextTransitionAt: nextDue() } });
+		const dueAt = nextDue();
+		await tx.orderGroup.update({ where: { id: group.id }, data: { nextTransitionAt: dueAt } });
+		await scheduleWorkflowStep(tx, 'DEMO_FULFILLMENT', group.id, dueAt, dueAt);
 		await syncLegacyFulfillmentSummary(tx, { ...group, shipment: { status: shipmentNext } });
 		return true;
 	}, TX_OPTIONS);
+}
+
+export async function runDemoFulfillmentStep(groupId: string, expectedDueAt: Date) {
+	if (!demoFulfillmentAutomationEnabled()) return false;
+	return advanceOne(groupId, expectedDueAt);
 }
 
 export async function runDemoFulfillment(input: { manual?: boolean } = {}) {

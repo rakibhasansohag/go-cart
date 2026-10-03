@@ -6,6 +6,7 @@ import { publishPaidOrderNotifications } from "@/lib/notifications/domain-events
 import { scheduleEmailOutboxDispatch } from "@/lib/email/schedule";
 import { awardCoins } from "@/lib/loyalty/coins";
 import { createSettlementsForPaidOrder } from "@/lib/settlement/service";
+import { queuesEnabled } from '@/lib/queue/config';
 
 export type ReconcilePaymentInput = {
   orderId: string;
@@ -56,6 +57,7 @@ async function runPaidPaymentSideEffects(input: {
     });
   } catch (error) {
     console.error("Paid-order notifications could not be published:", error);
+    if (queuesEnabled()) throw error;
   }
 
   try {
@@ -81,6 +83,7 @@ async function runPaidPaymentSideEffects(input: {
       : null;
     if (!existingAward)
       console.error("Paid-order GoCoins award could not be completed:", error);
+    if (!existingAward && queuesEnabled()) throw error;
   }
 
   return sourceEventIds;
@@ -198,8 +201,7 @@ export async function reconcilePaymentEvent(input: ReconcilePaymentInput) {
     );
     let sourceEventIds: string[] = [];
     if (
-      !result.duplicate &&
-      result.isFirstPaidTransition &&
+      (queuesEnabled() || (!result.duplicate && result.isFirstPaidTransition)) &&
       result.order?.paymentStatus === PaymentStatus.Paid &&
       result.paymentDetails
     ) {
@@ -216,8 +218,7 @@ export async function reconcilePaymentEvent(input: ReconcilePaymentInput) {
     }
     scheduleEmailOutboxDispatch(sourceEventIds);
     if (
-      !result.duplicate &&
-      result.isFirstPaidTransition &&
+      (queuesEnabled() || (!result.duplicate && result.isFirstPaidTransition)) &&
       result.order?.paymentStatus === PaymentStatus.Paid
     ) {
       await createSettlementsForPaidOrder(result.order.id);
@@ -233,7 +234,7 @@ export async function reconcilePaymentEvent(input: ReconcilePaymentInput) {
   } catch (error) {
     if (
       error instanceof Prisma.PrismaClientKnownRequestError &&
-      error.code === "P2002"
+      error.code === "P2002" && !queuesEnabled()
     ) {
       const existingEvent = await db.paymentEvent.findUnique({
         where: { providerEventId: input.providerEventId },

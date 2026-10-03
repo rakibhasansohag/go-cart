@@ -1,6 +1,5 @@
 import { backgroundConsumer } from '@/lib/queue/consumer';
-
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
-export const POST = backgroundConsumer('NOTIFICATION');
+export const POST = backgroundConsumer('CRON');

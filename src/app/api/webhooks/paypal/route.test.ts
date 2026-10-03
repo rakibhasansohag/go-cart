@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { handlePayPalEventMock, verifyPayPalWebhookMock } = vi.hoisted(() => ({
 	handlePayPalEventMock: vi.fn(),
@@ -11,6 +11,9 @@ vi.mock('@/lib/payments/paypal-events', () => ({
 }));
 
 import { POST } from './route';
+const { persist } = vi.hoisted(() => ({ persist: vi.fn() }));
+vi.mock('@/lib/queue/payment-inbox', () => ({ persistVerifiedPayment: persist }));
+afterEach(() => vi.unstubAllEnvs());
 
 const event = {
 	id: 'paypal-event-test',
@@ -21,7 +24,23 @@ const event = {
 describe('PayPal webhook route', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
+		vi.stubEnv('PHASE26_ENABLED', 'false');
 		verifyPayPalWebhookMock.mockResolvedValue(undefined);
+	});
+	it('stores verified events before acknowledging queued processing', async () => {
+		vi.stubEnv('PHASE26_ENABLED', 'true');
+		persist.mockResolvedValue({ id: 'job-id' });
+		const response = await POST(new Request('http://localhost/api/webhooks/paypal', { method: 'POST', body: JSON.stringify(event) }));
+		expect(response.status).toBe(200);
+		expect(persist).toHaveBeenCalledWith('Paypal', event);
+		expect(handlePayPalEventMock).not.toHaveBeenCalled();
+	});
+	it('returns a retryable response for durable storage failure', async () => {
+		vi.stubEnv('PHASE26_ENABLED', 'true');
+		persist.mockRejectedValue(new Error('private database connection'));
+		const response = await POST(new Request('http://localhost/api/webhooks/paypal', { method: 'POST', body: JSON.stringify(event) }));
+		expect(response.status).toBe(503);
+		expect(JSON.stringify(await response.json())).not.toContain('private database');
 	});
 
 	it('verifies the event before processing it', async () => {

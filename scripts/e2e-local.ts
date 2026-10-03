@@ -95,6 +95,12 @@ if (action === "up") {
   run("docker", [...compose, "up", "-d", "postgres"]);
   run("bun", ["x", "prisma", "migrate", "deploy"], env);
   run("bun", ["prisma/integration-check.ts"], env);
+} else if (action === "queue-browser-fixture") {
+  run("bun", ["--preload", "./scripts/queue-cli-preload.mjs", "--no-env-file", "scripts/queue-browser-fixture.ts", process.argv[3] ?? 'setup'], { ...validatedE2EEnv(), PHASE26_ENABLED: 'true' });
+} else if (action === "queues" || action === "queue-worker") {
+  const env = { ...validatedE2EEnv(), PHASE26_ENABLED: 'true', VERCEL: '', VERCEL_QUEUE_TOKEN: '', VERCEL_QUEUE_BASE_URL: '' };
+  run("bun", ["x", "prisma", "migrate", "deploy"], env);
+  run("bun", ["--preload", "./scripts/queue-cli-preload.mjs", "--no-env-file", action === "queues" ? "scripts/queue-integration-check.ts" : "scripts/background-worker.ts"], env);
 } else if (action === "coupon-reservations") {
   const env = validatedE2EEnv();
   run("bun", ["x", "prisma", "migrate", "deploy"], env);
@@ -296,6 +302,8 @@ if (action === "up") {
     ...env,
     PORT: env.E2E_PORT ?? "3100",
   });
+} else if (action === "queue-server") {
+  run("node", ["node_modules/next/dist/bin/next", "start"], { ...validatedE2EEnv(), PHASE26_ENABLED: 'true', VERCEL: '', VERCEL_QUEUE_TOKEN: '', VERCEL_QUEUE_BASE_URL: '', PORT: '3150' });
 } else if (action === "server:prod") {
   const env = validatedE2EEnv();
   // Production-mode E2E avoids repeated cold development compilation on
