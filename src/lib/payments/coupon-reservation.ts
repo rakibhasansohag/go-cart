@@ -25,6 +25,9 @@ export async function reserveOwnedOrderPayment(orderId: string, userId: string) 
 			throw new Error(order.paymentStatus === 'Paid' ? 'This order is already paid.' : 'This order is not currently eligible for payment.');
 		}
 		if (!Number.isFinite(order.total) || order.total <= 0) throw new Error('This order has an invalid payable total.');
+		if (order.groups.some(group => group.packageStatus === 'CANCELLED' || group.status === 'Cancelled')) {
+			throw new Error('This order contains a cancelled package. Create a new checkout for the remaining items.');
+		}
 		for (const group of order.groups) {
 			for (const item of group.items) requirePositiveQuantity(item.quantity);
 		}

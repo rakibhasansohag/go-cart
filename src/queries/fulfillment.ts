@@ -31,6 +31,7 @@ import {
 	ShipmentStatus,
 } from '@prisma/client';
 import { updateTag } from 'next/cache';
+import { lockOwnedOrder, hasPaymentReservation } from '@/lib/payments/coupon-reservation';
 
 type TransactionClient = Prisma.TransactionClient;
 
@@ -486,6 +487,16 @@ export async function decidePackageCancellation(input: {
 
 	const idempotencyKey = requiredIdempotencyKey(input.idempotencyKey);
 	const result = await db.$transaction(async (tx) => {
+		const ownedRequest = await tx.cancellationRequest.findFirst({
+			where: {
+				id: input.requestId,
+				orderGroup: { storeId: input.storeId, store: { userId: user.id } },
+			},
+			select: { orderId: true, customerId: true },
+		});
+		if (!ownedRequest) throw new Error('Cancellation request not found.');
+		// Serialize approval with provider initialization; then re-read current state.
+		await lockOwnedOrder(tx, ownedRequest.orderId, ownedRequest.customerId);
 		const request = await tx.cancellationRequest.findFirst({
 			where: {
 				id: input.requestId,
@@ -495,8 +506,10 @@ export async function decidePackageCancellation(input: {
 				},
 			},
 			include: {
+				order: { select: { paymentStatus: true, paymentDetails: { select: { id: true } } } },
 				orderGroup: {
 					include: {
+						items: { select: { id: true, sizeId: true, quantity: true, inventoryReserved: true } },
 						shipmentAssignments: {
 							include: { shipment: true },
 							orderBy: { createdAt: 'asc' },
@@ -523,11 +536,28 @@ export async function decidePackageCancellation(input: {
 		if (!canRequestCancellation(request.orderGroup.packageStatus)) {
 			throw new Error('This package has passed the cancellable stage.');
 		}
+		if (
+			['Pending', 'Failed', 'Declined', 'Cancelled'].includes(request.order.paymentStatus) &&
+			(request.order.paymentDetails || await hasPaymentReservation(tx, request.orderId))
+		) {
+			throw new Error('Payment has already started. Resolve the payment before approving cancellation.');
+		}
 
 		await tx.orderGroup.update({
 			where: { id: request.orderGroup.id },
 			data: { packageStatus: PackageStatus.CANCELLED },
 		});
+		for (const item of [...request.orderGroup.items].sort((a, b) => a.sizeId.localeCompare(b.sizeId))) {
+			if (!item.inventoryReserved) continue;
+			await tx.size.updateMany({
+				where: { id: item.sizeId },
+				data: { quantity: { increment: item.quantity } },
+			});
+			await tx.orderItem.updateMany({
+				where: { id: item.id, inventoryReserved: true },
+				data: { inventoryReserved: false },
+			});
+		}
 		const shipment = request.orderGroup.shipmentAssignments[0]?.shipment ?? null;
 		if (shipment) {
 			await tx.shipment.update({

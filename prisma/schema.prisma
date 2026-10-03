@@ -1132,6 +1132,7 @@ model OrderItem {
   image       String
   size        String
   quantity    Int    @default(1)
+  inventoryReserved Boolean @default(false)
   shippingFee Float  @default(0)
   price       Float
   totalPrice  Float

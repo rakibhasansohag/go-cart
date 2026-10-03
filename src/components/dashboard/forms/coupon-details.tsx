@@ -12,6 +12,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 
 // Schema
 import { CouponFormSchema } from '@/lib/schemas';
+import { couponTimestamp } from '@/lib/coupon-dates';
 
 // UI Components
 import { AlertDialog } from '@/components/ui/alert-dialog';
@@ -44,7 +45,7 @@ import { useFormDirtyGuard } from '@/hooks/use-form-dirty-guard';
 import { v4 } from 'uuid';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
-import { format, addDays } from 'date-fns';
+import { addDays } from 'date-fns';
 
 // Date time picker
 import DateTimePicker from 'react-datetime-picker';
@@ -72,8 +73,8 @@ const CouponDetails: FC<CouponDetailsProps> = ({ data, storeUrl }) => {
 			discount: data?.discount,
 			maxUses: data?.maxUses ?? 0,
 			maxUsesPerUser: data?.maxUsesPerUser ?? 1,
-			startDate: data?.startDate || format(new Date(), "yyyy-MM-dd'T'HH:mm:ss"),
-			endDate: data?.endDate || format(addDays(new Date(), 7), "yyyy-MM-dd'T'HH:mm:ss"),
+			startDate: couponTimestamp(data?.startDate || new Date()),
+			endDate: couponTimestamp(data?.endDate || addDays(new Date(), 7)),
 		},
 	});
 
@@ -119,8 +120,8 @@ const CouponDetails: FC<CouponDetailsProps> = ({ data, storeUrl }) => {
 				discount: data.discount,
 				maxUses: data.maxUses,
 				maxUsesPerUser: data.maxUsesPerUser ?? 1,
-				startDate: data.startDate,
-				endDate: data.endDate,
+				startDate: couponTimestamp(data.startDate),
+				endDate: couponTimestamp(data.endDate),
 			});
 		}
 	}, [data, form]);
@@ -135,8 +136,8 @@ const CouponDetails: FC<CouponDetailsProps> = ({ data, storeUrl }) => {
 				discount: Number(values.discount),
 				maxUses: Number(values.maxUses ?? 0),
 				maxUsesPerUser: Number(values.maxUsesPerUser ?? 1),
-				startDate: values.startDate,
-				endDate: values.endDate,
+				startDate: couponTimestamp(values.startDate),
+				endDate: couponTimestamp(values.endDate),
 			});
 		} catch {
 			// Error Toast handled in upsertMutation onError callback
@@ -266,7 +267,7 @@ const CouponDetails: FC<CouponDetailsProps> = ({ data, storeUrl }) => {
 													calendarProps={{ showFixedNumberOfWeeks: true }}
 													onChange={(date) => {
 														field.onChange(
-															date ? format(date, "yyyy-MM-dd'T'HH:mm:ss") : '',
+															couponTimestamp(date),
 														);
 													}}
 													value={field.value ? new Date(field.value) : null}
@@ -293,7 +294,7 @@ const CouponDetails: FC<CouponDetailsProps> = ({ data, storeUrl }) => {
 													calendarProps={{ showFixedNumberOfWeeks: true }}
 													onChange={(date) => {
 														field.onChange(
-															date ? format(date, "yyyy-MM-dd'T'HH:mm:ss") : '',
+															couponTimestamp(date),
 														);
 													}}
 													value={field.value ? new Date(field.value) : null}

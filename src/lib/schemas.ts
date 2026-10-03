@@ -1,5 +1,6 @@
 import * as z from 'zod';
 import { ShippingFeeMethod } from '@prisma/client';
+import { isExplicitCouponTimestamp } from '@/lib/coupon-dates';
 
 // Point: Category
 export const CategoryFormSchema = z.object({
@@ -297,7 +298,7 @@ export const OfferTagFormSchema = z.object({
 		.nonempty('Offer tag name is required.')
 		.min(2, { message: 'Category name must be at least 2 characters long.' })
 		.max(50, { message: 'Category name cannot exceed 50 characters.' })
-		.regex(/^[a-zA-Z0-9\s&$.%,']+$/, {
+		.regex(/^[a-zA-Z0-9\s&$.%,'-]+$/, {
 			message: 'Only letters, numbers, and common symbols are allowed.',
 		}),
 
@@ -501,15 +502,15 @@ export const CouponFormSchema = z
 		startDate: z
 			.string()
 			.refine(
-				(val) => !isNaN(Date.parse(val)),
-				'Start date must be a valid date.',
+				isExplicitCouponTimestamp,
+				'Start date must include a valid time and timezone.',
 			),
 
 		endDate: z
 			.string()
 			.refine(
-				(val) => !isNaN(Date.parse(val)),
-				'End date must be a valid date.',
+				isExplicitCouponTimestamp,
+				'End date must include a valid time and timezone.',
 			),
 
 		discount: z.preprocess(

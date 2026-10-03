@@ -10,6 +10,7 @@ const h = vi.hoisted(() => ({
 		cartItem: { update: vi.fn() }, product: { findUnique: vi.fn() }, orderGroup: { count: vi.fn(), create: vi.fn() },
 		order: { create: vi.fn(), update: vi.fn() }, country: { findUnique: vi.fn() }, shipment: { create: vi.fn() }, orderItem: { create: vi.fn() }, shipmentItem: { create: vi.fn() }, fulfillmentTransition: { createMany: vi.fn() },
 		$transaction: vi.fn(),
+		size: { updateMany: vi.fn() },
 	},
 	getCookie: vi.fn(),
 }));
@@ -32,6 +33,7 @@ describe('customer action boundaries', () => {
 		h.currentUser.mockResolvedValue({ id: 'buyer' });
 		h.auth.mockResolvedValue({ userId: 'buyer' });
 		h.db.$transaction.mockImplementation((callback: (tx: typeof h.db) => Promise<unknown>) => callback(h.db));
+		h.db.size.updateMany.mockResolvedValue({ count: 1 });
 		h.db.shippingAddress.findUnique.mockResolvedValue(null);
 		h.db.shippingAddress.findFirst.mockResolvedValue({ ...address, userId: 'buyer' });
 		h.db.shippingAddress.upsert.mockResolvedValue({ ...address, userId: 'buyer' });
@@ -98,6 +100,16 @@ describe('customer action boundaries', () => {
 		vi.mocked(getShippingDetails).mockResolvedValue(false);
 		await expect(placeOrder({ ...address, userId: 'buyer', createdAt: new Date(), updatedAt: new Date() } as ShippingAddress, 'cart')).resolves.toEqual({ orderId: 'order' });
 		expect(h.db.orderItem.create).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ quantity: 2, price: 10, totalPrice: 20 }) }));
+		expect(h.db.size.updateMany).toHaveBeenCalledWith({ where: { id: 'size', quantity: { gte: 2 } }, data: { quantity: { decrement: 2 } } });
+		expect(h.db.orderItem.create).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ inventoryReserved: true }) }));
+	});
+	it('rejects a competing checkout stock loss before creating any order or clearing its cart', async () => {
+		const { getShippingDetails } = await import('./product');
+		vi.mocked(getShippingDetails).mockResolvedValue(false);
+		h.db.size.updateMany.mockResolvedValue({ count: 0 });
+		await expect(placeOrder({ ...address, userId: 'buyer', createdAt: new Date(), updatedAt: new Date() } as ShippingAddress, 'cart')).rejects.toThrow('requested quantity');
+		expect(h.db.order.create).not.toHaveBeenCalled();
+		expect(h.db.cart.deleteMany).not.toHaveBeenCalled();
 	});
 	it('rejects a negative quantity already persisted in a cart before order creation', async () => {
 		h.db.cart.findFirst.mockResolvedValue({ ...cart, cartItems: [{ ...item, quantity: -1 }] });

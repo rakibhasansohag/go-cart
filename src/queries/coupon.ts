@@ -780,9 +780,11 @@ export const upsertAdminCoupon = async (couponData: {
 			throw new Error('Unauthorized Access: Admin privileges required.');
 		}
 
-		if (!couponData.code) throw new Error('Please provide a coupon code.');
-
-		const cleanCode = couponData.code.trim().toUpperCase();
+		const parsedCoupon = CouponFormSchema.parse({
+			...couponData,
+			storeId: couponData.storeId ?? undefined,
+		});
+		const cleanCode = parsedCoupon.code.trim().toUpperCase();
 
 		const existing = await db.coupon.findFirst({
 			where: {
@@ -803,11 +805,11 @@ export const upsertAdminCoupon = async (couponData: {
 
 		const payload = {
 			code: cleanCode,
-			discount: Number(couponData.discount),
-			maxUses: Number(couponData.maxUses ?? 0),
-			maxUsesPerUser: Number(couponData.maxUsesPerUser ?? 1),
-			startDate: couponData.startDate,
-			endDate: couponData.endDate,
+			discount: parsedCoupon.discount,
+			maxUses: parsedCoupon.maxUses,
+			maxUsesPerUser: parsedCoupon.maxUsesPerUser,
+			startDate: parsedCoupon.startDate,
+			endDate: parsedCoupon.endDate,
 			storeId: couponData.storeId || null,
 		};
 

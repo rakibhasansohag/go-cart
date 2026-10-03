@@ -6,7 +6,7 @@ const h = vi.hoisted(() => ({
 vi.mock('@clerk/nextjs/server', () => ({ currentUser: h.currentUser }));
 vi.mock('@/lib/db', () => ({ db: h.db }));
 vi.mock('@/lib/security/rate-limit', () => ({ enforceSharedRateLimit: vi.fn() }));
-import { applyCoupon, applyCouponToOrder, getCouponRedemptions } from './coupon';
+import { applyCoupon, applyCouponToOrder, getCouponRedemptions, upsertAdminCoupon } from './coupon';
 const coupon = { id: 'coupon', code: 'SAVE', discount: 10, startDate: new Date('2020-01-01'), endDate: new Date('2099-01-01'), maxUses: 100, maxUsesPerUser: 1, storeId: 'store', store: { userId: 'seller', name: 'Shop' } };
 const cart = { id: 'cart', userId: 'buyer', couponId: null, total: 100, cartItems: [{ storeId: 'store', price: 100, quantity: 1, shippingFee: 0 }] };
 describe('coupon authorization and eligibility', () => {
@@ -79,5 +79,11 @@ describe('coupon authorization and eligibility', () => {
 		h.currentUser.mockResolvedValue({ id: 'seller' });
 		h.db.coupon.findUnique.mockResolvedValue({ ...coupon, storeId: null, store: null });
 		await expect(getCouponRedemptions('coupon')).rejects.toThrow('restricted');
+	});
+	it('rejects timezone-free dates in the admin server action before any coupon lookup', async () => {
+		h.currentUser.mockResolvedValue({ id: 'admin' });
+		h.db.user.findUnique.mockResolvedValue({ role: 'ADMIN' });
+		await expect(upsertAdminCoupon({ code: 'TIMEZONE', discount: 15, startDate: '2026-10-03T12:00:00', endDate: '2026-10-04T12:00:00' })).rejects.toThrow('timezone');
+		expect(h.db.coupon.findFirst).not.toHaveBeenCalled();
 	});
 });

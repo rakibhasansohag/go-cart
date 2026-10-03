@@ -1,5 +1,7 @@
 'use server';
 
+import { reserveCheckoutInventory } from '@/lib/inventory/checkout';
+
 import { auth, currentUser } from '@clerk/nextjs/server';
 import { db } from '@/lib/db';
 import { pickActionFields, requirePositiveQuantity } from '@/lib/security/action-input';
@@ -325,7 +327,8 @@ export const saveUserCart = async (
 			const size = variant.sizes[0];
 
 			// Validate stock and price
-			const validQuantity = requirePositiveQuantity(Math.min(quantity, size.quantity));
+			const validQuantity = requirePositiveQuantity(quantity);
+			if (validQuantity > size.quantity) throw new Error('A product is no longer available in the requested quantity. Refresh your cart.');
 
 			const price = size.discount
 				? size.price - size.price * (size.discount / 100)
@@ -1188,6 +1191,7 @@ export const placeOrder = async (
 	// Execute order creation, GoCoins deduction, and cart clearance in a single atomic transaction
 	const result = await db.$transaction(
 		async (tx) => {
+			await reserveCheckoutInventory(tx, validatedCartItems);
 			let coinDiscount = 0;
 			if (coinsToRedeem > 0) {
 				const loyaltyAccount = await tx.loyaltyAccount.findUnique({
@@ -1321,6 +1325,7 @@ export const placeOrder = async (
 								image: item.image,
 								size: item.size,
 								quantity: item.quantity,
+								inventoryReserved: true,
 								price: item.price,
 								shippingFee: item.shippingFee,
 								totalPrice: item.totalPrice,

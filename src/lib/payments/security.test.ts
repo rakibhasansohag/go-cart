@@ -114,6 +114,17 @@ describe('payment ownership and eligibility', () => {
 			requireOwnedOrder('order-1', { requirePayable: true }),
 		).rejects.toThrow('already paid');
 	});
+	it.each(['package', 'legacy'])('rejects cancelled %s state even with an existing reservation', async state => {
+		authMock.mockResolvedValue({ userId: 'user-1' });
+		findFirstMock.mockResolvedValue({ ...payableOrder, groups: [{
+			packageStatus: state === 'package' ? 'CANCELLED' : 'PENDING',
+			status: state === 'legacy' ? 'Cancelled' : 'Pending',
+			items: [{ quantity: 1 }], coupon: null,
+		}] });
+		rawMock.mockResolvedValue([{ orderId: 'order-1' }]);
+		await expect(requireOwnedOrder('order-1', { requirePayable: true })).rejects.toThrow('cancelled package');
+		expect(executeMock).not.toHaveBeenCalled();
+	});
 });
 
 describe('provider amount validation', () => {

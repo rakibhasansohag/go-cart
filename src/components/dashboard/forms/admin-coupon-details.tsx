@@ -4,6 +4,7 @@ import { FC, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { CouponFormSchema } from '@/lib/schemas';
+import { couponTimestamp } from '@/lib/coupon-dates';
 import { AlertDialog } from '@/components/ui/alert-dialog';
 import {
 	Card,
@@ -26,11 +27,9 @@ import { Input } from '@/components/ui/input';
 import { useModal } from '@/providers/modal-provider';
 import { upsertAdminCoupon } from '@/queries/coupon';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { queryKeys } from '@/lib/query-keys';
 import { v4 } from 'uuid';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
-import { format } from 'date-fns';
 import DateTimePicker from 'react-datetime-picker';
 import 'react-datetime-picker/dist/DateTimePicker.css';
 import 'react-calendar/dist/Calendar.css';
@@ -62,8 +61,8 @@ export const AdminCouponDetails: FC<AdminCouponDetailsProps> = ({ data }) => {
 			discount: data?.discount ?? 10,
 			maxUses: data?.maxUses ?? 0,
 			maxUsesPerUser: data?.maxUsesPerUser ?? 1,
-			startDate: data?.startDate || format(new Date(), "yyyy-MM-dd'T'HH:mm:ss"),
-			endDate: data?.endDate || format(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), "yyyy-MM-dd'T'HH:mm:ss"),
+			startDate: couponTimestamp(data?.startDate || new Date()),
+			endDate: couponTimestamp(data?.endDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)),
 		},
 	});
 
@@ -95,8 +94,8 @@ export const AdminCouponDetails: FC<AdminCouponDetailsProps> = ({ data }) => {
 				discount: data.discount,
 				maxUses: data.maxUses,
 				maxUsesPerUser: data.maxUsesPerUser ?? 1,
-				startDate: data.startDate,
-				endDate: data.endDate,
+				startDate: couponTimestamp(data.startDate),
+				endDate: couponTimestamp(data.endDate),
 			});
 		}
 	}, [data, form]);
@@ -109,9 +108,9 @@ export const AdminCouponDetails: FC<AdminCouponDetailsProps> = ({ data }) => {
 				code: values.code,
 				discount: Number(values.discount),
 				maxUses: values.maxUses ? Number(values.maxUses) : 0,
-				maxUsesPerUser: values.maxUsesPerUser ? Number(values.maxUsesPerUser) : 1,
-				startDate: values.startDate,
-				endDate: values.endDate,
+				maxUsesPerUser: Number(values.maxUsesPerUser ?? 1),
+				startDate: couponTimestamp(values.startDate),
+				endDate: couponTimestamp(values.endDate),
 				storeId: data?.storeId || null,
 			});
 		} catch {
@@ -235,9 +234,7 @@ export const AdminCouponDetails: FC<AdminCouponDetailsProps> = ({ data }) => {
 											<FormControl>
 												<DateTimePicker
 													onChange={(date) => {
-														if (date instanceof Date) {
-															field.onChange(format(date, "yyyy-MM-dd'T'HH:mm:ss"));
-														}
+														field.onChange(couponTimestamp(date));
 													}}
 													value={field.value ? new Date(field.value) : new Date()}
 													className='w-full rounded-md border border-input p-2 text-sm bg-background'
@@ -257,9 +254,7 @@ export const AdminCouponDetails: FC<AdminCouponDetailsProps> = ({ data }) => {
 											<FormControl>
 												<DateTimePicker
 													onChange={(date) => {
-														if (date instanceof Date) {
-															field.onChange(format(date, "yyyy-MM-dd'T'HH:mm:ss"));
-														}
+														field.onChange(couponTimestamp(date));
 													}}
 													value={field.value ? new Date(field.value) : new Date()}
 													className='w-full rounded-md border border-input p-2 text-sm bg-background'
