@@ -11,7 +11,7 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllEnvs());
 it('sends only the durable reference and records acceptance', async () => {
 	await expect(relayBackgroundJobs()).resolves.toMatchObject({ published: 1 });
-	expect(h.send).toHaveBeenCalledWith('email.outbox', { jobId: 'job' }, expect.objectContaining({ idempotencyKey: expect.stringMatching(/^job:0:0:/) }));
+	expect(h.send).toHaveBeenCalledWith('email-outbox', { jobId: 'job' }, expect.objectContaining({ idempotencyKey: expect.stringMatching(/^job:0:0:/) }));
 });
 it('retains the committed job when the transport is unavailable', async () => {
 	h.send.mockRejectedValue(new Error('private-token'));
@@ -33,7 +33,7 @@ it('does not send when another relay owns the publishing lease', async () => {
 it('uses a new idempotency generation after a manual replay', async () => {
 	h.findMany.mockResolvedValue([{ id: 'job', kind: 'EMAIL', attempts: 0, replayCount: 1, nextAttemptAt: new Date() }]);
 	await relayBackgroundJobs();
-	expect(h.send).toHaveBeenCalledWith('email.outbox', { jobId: 'job' }, expect.objectContaining({ idempotencyKey: expect.stringMatching(/^job:1:0:/) }));
+	expect(h.send).toHaveBeenCalledWith('email-outbox', { jobId: 'job' }, expect.objectContaining({ idempotencyKey: expect.stringMatching(/^job:1:0:/) }));
 });
 it('publishes delayed checkpoints with enough retention after their wake-up time', async () => {
 	const due = new Date(Date.now() + 60 * 60_000);

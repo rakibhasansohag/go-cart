@@ -61,6 +61,18 @@ The local diagnostic patch records a whitelisted failure category in the job and
 
 Diagnostic patch verification: 28 tests across five queue/admin-query test files passed; type checking, affected-file lint and whitespace checks passed. Graphify was refreshed. The patch has not yet been deployed, and no production transport remediation is claimed.
 
+### Broker rejection correction
+
+The user deployed diagnostics at commit `32b8d2a` (`dpl_7r7xxGmSLoYbzw1StMZvg83wUCjV`). Replaying the notification job produced `BROKER_REJECTED_REQUEST`; the job remains READY with zero attempts and replay count 1.
+
+The source used dotted topic names such as `notification.fan`. Both the installed SDK and the [Queues API naming constraints](https://vercel.com/docs/queues/api#naming-constraints) require topic names to match `^[A-Za-z0-9_-]+$`. Dotted names violate that contract and are a concrete request defect consistent with the rejection. Publisher constants and all six deployment triggers now use matching hyphenated names. Domain event types and existing database event keys remain unchanged; pending jobs resolve their topic from their kind at relay time, so no database migration or replacement question is needed.
+
+Deploy the topic correction before retrying the retained notification job. Confirm the new commit is serving the production alias, replay/recover through the admin UI when eligible, then require a broker message ID, deployed callback processing, SUCCEEDED status, and exactly one intended notification. Capture a new safe failure category if the job still fails. A source fix alone is not production acceptance.
+
+Correct the report's notification query as well: `Notification.sourceEventId` is the bare domain event ID `91e3f8fa-15d3-44b1-a741-52a3a37d1e24`, not the `domain:`-prefixed background-job key. A zero-row query using the prefixed value does not prove notification absence. Check uniqueness per intended recipient and their in-app preferences.
+
+Topic correction verification: 30 tests across six queue/admin-query files passed; type checking, affected-file lint and whitespace checks passed. Graphify was refreshed. Use [the focused production test prompt](PHASE26_TOPIC_FIX_TEST_PROMPT.md) after deployment.
+
 ## Checks completed October 3
 
 - Full suite: 578 tests across 85 files passed, including admin authorization, verified webhook durable acknowledgement, retryable storage errors and recovery of missing paid-order side effects.
