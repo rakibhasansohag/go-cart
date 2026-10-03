@@ -416,30 +416,7 @@ export const saveUserCart = async (
 			const endDate = new Date(coupon.endDate);
 
 			if (currentDate >= startDate && currentDate <= endDate) {
-				const [successfulRedemptions, userRedemptions] = await Promise.all([
-					db.orderGroup.count({
-						where: {
-							couponId: coupon.id,
-							order: { paymentStatus: 'Paid' },
-						},
-					}),
-					db.orderGroup.count({
-						where: {
-							couponId: coupon.id,
-							order: { userId, paymentStatus: 'Paid' },
-						},
-					}),
-				]);
-
-				if (coupon.maxUses > 0 && successfulRedemptions >= coupon.maxUses) {
-					throw new Error('This coupon has reached its total usage limit.');
-				}
-				if (
-					coupon.maxUsesPerUser > 0 &&
-					userRedemptions >= coupon.maxUsesPerUser
-				) {
-					throw new Error('You have reached this coupon\'s per-customer limit.');
-				}
+				await assertCouponUsageAvailable(coupon, userId);
 
 				const storeItems = coupon.storeId
 					? validatedCartItems.filter((item) => item.storeId === coupon.storeId)
@@ -1054,20 +1031,7 @@ export const placeOrder = async (
 			);
 		}
 
-		if (cartCoupon.maxUses > 0) {
-			const successfulRedemptions = await db.orderGroup.count({
-				where: {
-					couponId: cartCoupon.id,
-					order: { paymentStatus: 'Paid' },
-				},
-			});
 
-			if (successfulRedemptions >= cartCoupon.maxUses) {
-				throw new Error(
-					`The coupon "${cartCoupon.code}" has reached its maximum limit of ${cartCoupon.maxUses} uses.`,
-				);
-			}
-		}
 	}
 
 	// Fetch product, variant, and size data from the database for validation

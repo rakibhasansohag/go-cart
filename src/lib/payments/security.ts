@@ -1,15 +1,7 @@
 import { auth } from '@clerk/nextjs/server';
 import { db } from '@/lib/db';
-import type { Order, PaymentDetails, PaymentStatus } from '@prisma/client';
-import { requirePositiveQuantity } from '@/lib/security/action-input';
-import { assertCouponUsageAvailable } from '@/lib/security/coupon-eligibility';
-
-const PAYABLE_STATUSES: PaymentStatus[] = [
-	'Pending',
-	'Failed',
-	'Declined',
-	'Cancelled',
-];
+import type { Order, PaymentDetails } from '@prisma/client';
+import { reserveOwnedOrderPayment } from './coupon-reservation';
 
 export const PAYMENT_CURRENCY = 'USD';
 
@@ -27,6 +19,8 @@ export async function requireOwnedOrder(
 		throw new Error('Please sign in to continue with payment.');
 	}
 
+	if (options.requirePayable) return reserveOwnedOrderPayment(orderId, userId);
+
 	const order = await db.order.findFirst({
 		where: { id: orderId, userId },
 		include: { paymentDetails: true, groups: { include: { items: true, coupon: true } } },
@@ -36,24 +30,9 @@ export async function requireOwnedOrder(
 		throw new Error('Order not found or you do not have access to it.');
 	}
 
-	if (options.requirePayable && !PAYABLE_STATUSES.includes(order.paymentStatus)) {
-		throw new Error(
-			order.paymentStatus === 'Paid'
-				? 'This order is already paid.'
-				: 'This order is not currently eligible for payment.',
-		);
-	}
-
 	if (!Number.isFinite(order.total) || order.total <= 0) {
 		throw new Error('This order has an invalid payable total.');
 	}
-	if (options.requirePayable) {
-		for (const group of order.groups) {
-			for (const item of group.items) requirePositiveQuantity(item.quantity);
-			if (group.coupon) await assertCouponUsageAvailable(group.coupon, userId);
-		}
-	}
-
 	return order;
 }
 

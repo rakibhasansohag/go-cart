@@ -1,5 +1,18 @@
 # BrowserOS portfolio release regression prompt
 
+## Evidence requirements for the next report
+
+The report supplied on 2026-10-03 improves pagination and coupon coverage, but does not close all release gates. Concentrate the next run on remaining checks rather than repeating already-passing cases.
+
+- Identify the actual served build: timestamp, launch command, commit, working-tree diff fingerprint, and Next BUILD_ID. A commit plus unspecified working tree does not identify a reproducible build. Retain the successful build exit log. Do not infer build success from source files or a previously running server.
+- Mark performance PARTIAL until fresh raw samples include LCP, documented CLS/INP instrumentation, device/network settings, and three cold plus three warm runs per route/device. Navigation Timing provides navigation timings, not INP. A click-handler duration is not INP. Retain traces or raw output, including the exact URLs of the two reported telemetry 404s. Do not reuse previous timings as fresh measurements.
+- Distinguish browser execution from source inspection and unit tests. Interval cleanup code and a catch handler do not independently demonstrate browser timer behavior or a simulated network rejection. Record the actual interaction/fault injection and observed outcome, or mark it NOT RUN.
+- Keep account-dependent payment/refund/tenant-isolation tests, interactive upload/Jodit tests, Cloudinary upload restrictions, final deployed crawler previews, and Vercel Speed Insights delivery BLOCKED until directly verified. An unavailable provider console is an access limitation, not evidence that an unknown security risk is low severity.
+- Queue routes returning 503 prove deactivation. Cite separate signed-webhook/outbox test results before claiming those workflows passed.
+- Report coupon holds accurately: the implementation retains reservations after failed/cancelled/refunded/chargeback states. It does not implement automatic reservation release. Include this operational limitation in the unresolved list.
+
+INP measurement reference: https://web.dev/articles/inp
+
 Use BrowserOS neo in session-owned tabs. Test the updated production-mode local build at http://localhost:3100. It uses isolated Docker Postgres at localhost:55432/gocart_e2e. Treat localhost:3000 and https://go-cart-iota-eight.vercel.app as shared/live environments: read-only checks there. The latest source changes have not been deployed. Do not use the existing deployment as evidence for the local patch.
 
 First verify that 3100 renders after a hard reload. Record prolonged loading screens, hydration errors, failed scripts and requests. Do not force-hide loaders. Local Vercel telemetry script 404s are expected outside Vercel; distinguish those from application errors.
@@ -16,3 +29,13 @@ Use existing isolated customer, seller and admin test accounts. Do not reset pas
 8. Performance: test final production build on home/store/product at desktop and 375px, with declared device/network throttling, three cold and three warm runs. Record TTFB, LCP, CLS, transfer size and resource failures. Measure INP using supported web-vitals instrumentation and real interactions; do not substitute a handler duration or claim field INP from a tiny warm sample. Record slow external scripts. Verify Vercel Speed Insights events/dashboard data on Vercel, separately from package installation. No production load test.
 
 Return a table: check, exact target/revision, PASS/FAIL/BLOCKED, evidence, console/network errors and reproduction steps. List unresolved issues by severity. Never call blocked checks verified or certify the entire application 100% bug-free.
+
+## Coupon payment reservation regression (latest local build)
+
+Use only isolated localhost:3100 fixtures and sandbox credentials. Rebuild before testing; an already running build may predate these changes. First run `bun --no-env-file scripts/e2e-local.ts coupon-reservations` for the actual PostgreSQL concurrency checks; this creates and removes its own fixtures and does not retain browser orders.
+
+For browser checks, use a dedicated limited coupon and two sandbox customer orders. A global coupon covering several stores consumes ONE redemption per checkout. Opening the card form must not initialize a payment or reserve capacity; clicking Pay Now after valid payment details does. Coupon editing before payment must preserve coin discounts. Once payment starts, changing the coupon must return a clear error without changing totals. Simultaneously submit two checkouts for the last available coupon use: only one may initialize a provider payment. Test same-user per-customer limits and different-user controls. Retry the winning order: it must reuse its reservation, including after a failed payment. Check Stripe and PayPal separately. Missing provider configuration must show an error without reserving a slot. Verify initialization errors appear visibly and the submit button becomes usable again.
+
+Reservations intentionally do not expire or release automatically on failure, cancellation, refund, or chargeback: another provider attempt might still be payable. Confirm that these statuses do not permit an extra checkout to claim the same slot. Safe administrative release after provider cancellation is not implemented. Do not delete reservations manually. Test provider cancellation/release only after that workflow exists.
+
+Record provider outcomes and webhook arrival separately from application/database results. If sandbox authentication or provider access is unavailable, mark provider/browser checks BLOCKED; passing the database script is not a substitute. Production requires the new database migration plus the updated deployment. Historical provider attempts must be reviewed before asserting a clean production quota boundary.

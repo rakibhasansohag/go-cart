@@ -37,12 +37,14 @@ function assertIntentMatchesOrder(
 }
 
 export async function createStripePaymentIntent(orderId: string) {
-  const order = await requireOwnedOrder(orderId, { requirePayable: true });
+  const ownedOrder = await requireOwnedOrder(orderId);
   await enforceSharedRateLimit({
-    key: `stripe-payment-intent:${order.userId}`,
+    key: `stripe-payment-intent:${ownedOrder.userId}`,
     limit: 20,
     windowMs: 10 * 60 * 1000,
   });
+  getStripeClient(); // Fail configuration checks before consuming coupon capacity.
+  const order = await requireOwnedOrder(orderId, { requirePayable: true });
   const stripe = getStripeClient();
 
   if (

@@ -19,6 +19,10 @@ function getPayPalCredentials() {
 	return { clientId, secret };
 }
 
+export function assertPayPalConfigured() {
+	getPayPalCredentials();
+}
+
 export async function getPayPalAccessToken() {
 	const { clientId, secret } = getPayPalCredentials();
 	const response = await fetch(`${getPayPalBaseUrl()}/v1/oauth2/token`, {

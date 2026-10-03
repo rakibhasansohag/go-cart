@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { authMock, findFirstMock, redemptionCountMock } = vi.hoisted(() => ({
+const { authMock, findFirstMock, redemptionCountMock, transactionMock, rawMock, executeMock, couponMock } = vi.hoisted(() => ({
 	authMock: vi.fn(),
 	findFirstMock: vi.fn(),
-	redemptionCountMock: vi.fn(),
+	redemptionCountMock: vi.fn(), transactionMock: vi.fn(), rawMock: vi.fn(), executeMock: vi.fn(), couponMock: vi.fn(),
 }));
 
 vi.mock('@clerk/nextjs/server', () => ({
@@ -12,6 +12,7 @@ vi.mock('@clerk/nextjs/server', () => ({
 
 vi.mock('@/lib/db', () => ({
 	db: {
+		$transaction: transactionMock, $queryRaw: rawMock, $executeRaw: executeMock, coupon: { findUniqueOrThrow: couponMock },
 		orderGroup: { count: redemptionCountMock },
 		order: {
 			findFirst: findFirstMock,
@@ -19,6 +20,7 @@ vi.mock('@/lib/db', () => ({
 	},
 }));
 
+import { db } from '@/lib/db';
 import { assertPaymentAmount, requireOwnedOrder } from './security';
 
 const payableOrder = {
@@ -34,6 +36,10 @@ describe('payment ownership and eligibility', () => {
 	beforeEach(() => {
 		authMock.mockReset();
 		findFirstMock.mockReset();
+		vi.clearAllMocks();
+		transactionMock.mockImplementation((callback: (tx: typeof db) => Promise<unknown>) => callback(db));
+		rawMock.mockImplementation(async (sql: TemplateStringsArray) => sql.join('').includes('COUNT(*)') ? [{ totalUses: 0, userUses: await redemptionCountMock() ?? 0 }] : []);
+		couponMock.mockResolvedValue({ id: 'coupon', maxUses: 0, maxUsesPerUser: 1 });
 		redemptionCountMock.mockReset();
 	});
 
@@ -86,7 +92,7 @@ describe('payment ownership and eligibility', () => {
 		findFirstMock.mockResolvedValue({ ...payableOrder, groups: [{ items: [{ quantity: 1 }], coupon: { id: 'coupon', maxUses: 0, maxUsesPerUser: 1 } }] });
 		redemptionCountMock.mockResolvedValue(1);
 		await expect(requireOwnedOrder('order-1', { requirePayable: true })).rejects.toThrow('per-customer');
-		expect(redemptionCountMock).toHaveBeenCalledWith({ where: { couponId: 'coupon', order: { userId: 'user-1', paymentStatus: 'Paid' } } });
+		expect(executeMock).not.toHaveBeenCalled();
 	});
 
 	it('preserves paying a coupon order while customer capacity remains', async () => {

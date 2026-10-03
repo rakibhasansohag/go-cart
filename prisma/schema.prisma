@@ -913,6 +913,7 @@ model Order {
   paymentMethod        PaymentMethod?
   paymentDetails       PaymentDetails?         @relation("PaymentDetailsToOrder")
   paymentEvents        PaymentEvent[]          @relation("PaymentEventsToOrder")
+  paymentReservation   OrderPaymentReservation?
   returnRequests       ReturnRequest[]         @relation("ReturnRequestToOrder")
   fulfillmentEvents    FulfillmentTransition[] @relation("FulfillmentTransitionToOrder")
   cancellationRequests CancellationRequest[]   @relation("CancellationRequestToOrder")
@@ -931,6 +932,13 @@ model Order {
 
   @@index([shippingAddressId])
   @@index([userId])
+}
+
+model OrderPaymentReservation {
+  orderId   String   @id
+  couponIds String[]
+  createdAt DateTime @default(now())
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
 }
 
 model OrderGroup {

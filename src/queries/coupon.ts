@@ -7,6 +7,7 @@ import { v4 } from 'uuid';
 import { CouponFormSchema } from '@/lib/schemas';
 import { enforceSharedRateLimit } from '@/lib/security/rate-limit';
 import { sanitizeUserText } from '@/lib/security/content-safety';
+import { lockOwnedOrder, hasPaymentReservation } from '@/lib/payments/coupon-reservation';
 import { assertCouponUsageAvailable } from '@/lib/security/coupon-eligibility';
 
 type SellerCouponInput = {
@@ -118,39 +119,8 @@ export const validateCouponCode = async (code: string) => {
 			throw new Error(`This coupon is inactive until ${startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}.`);
 		}
 
-		// Calculate successful redemptions (Paid orders only)
-		const successfulRedemptions = await db.orderGroup.count({
-			where: {
-				couponId: coupon.id,
-				order: { paymentStatus: 'Paid' },
-			},
-		});
-
-		if (coupon.maxUses > 0 && successfulRedemptions >= coupon.maxUses) {
-			throw new Error(`This coupon is inactive (limit of ${coupon.maxUses} uses reached).`);
-		}
-
-		// Verify per-customer max usage limit
 		const user = await currentUser();
-		if (user) {
-			const userRedemptions = await db.orderGroup.count({
-				where: {
-					couponId: coupon.id,
-					order: {
-						userId: user.id,
-						paymentStatus: 'Paid',
-					},
-				},
-			});
-
-			const maxPerUser = coupon.maxUsesPerUser ?? 1;
-			if (maxPerUser > 0 && userRedemptions >= maxPerUser) {
-				const limitText = maxPerUser === 1 ? 'one time' : `${maxPerUser} times`;
-				throw new Error(
-					`Sorry, this discount code can only be used ${limitText} per customer.`,
-				);
-			}
-		}
+		const { totalUses } = await assertCouponUsageAvailable({ ...coupon, maxUsesPerUser: user ? coupon.maxUsesPerUser : 0 }, user?.id ?? '');
 
 		return {
 			id: coupon.id,
@@ -159,7 +129,7 @@ export const validateCouponCode = async (code: string) => {
 			storeId: coupon.storeId,
 			storeName: coupon.store?.name || 'Global Platform',
 			maxUses: coupon.maxUses,
-			usedCount: successfulRedemptions,
+			usedCount: totalUses,
 		};
 	} catch (error: unknown) {
 		throw new Error(
@@ -388,13 +358,16 @@ export const applyCouponToOrder = async (
 
 		const cleanCode = sanitizeUserText(couponCode).trim().toUpperCase();
 
+		return await db.$transaction(async (tx) => {
+		await lockOwnedOrder(tx, orderId, user.id);
 		// 1. Fetch Order with groups and items
-		const order = await db.order.findUnique({
+		const order = await tx.order.findUnique({
 			where: {
 				id: orderId,
 				userId: user.id,
 			},
 			include: {
+				paymentDetails: true,
 				groups: {
 					include: {
 						items: true,
@@ -406,12 +379,15 @@ export const applyCouponToOrder = async (
 
 		if (!order) throw new Error('Order not found.');
 
-		if (order.paymentStatus === 'Paid') {
-			throw new Error('Cannot apply coupon to an already paid order.');
-		}
+		if (!['Pending', 'Failed', 'Declined', 'Cancelled'].includes(order.paymentStatus)) {
+            throw new Error('Cannot apply a coupon to this payment status.');
+        }
+        if (order.paymentDetails || await hasPaymentReservation(tx, orderId)) {
+            throw new Error('Payment has already started. Retry this order with its existing coupon.');
+        }
 
 		// 2. Fetch & Validate Coupon
-		const coupon = await db.coupon.findUnique({
+		const coupon = await tx.coupon.findUnique({
 			where: {
 				code: cleanCode,
 			},
@@ -436,23 +412,7 @@ export const applyCouponToOrder = async (
 			throw new Error('Coupon is expired or not yet active.');
 		}
 
-		await assertCouponUsageAvailable(coupon, user.id);
-
-		// Check Max Uses
-		if (coupon.maxUses > 0) {
-			const successfulRedemptions = await db.orderGroup.count({
-				where: {
-					couponId: coupon.id,
-					order: { paymentStatus: 'Paid' },
-				},
-			});
-
-			if (successfulRedemptions >= coupon.maxUses) {
-				throw new Error(
-					`The coupon "${coupon.code}" has reached its maximum limit of ${coupon.maxUses} uses.`,
-				);
-			}
-		}
+		await assertCouponUsageAvailable(coupon, user.id, tx);
 
 		// 3. Apply discount to target order groups (all groups if global coupon, store-specific group if store coupon)
 		let targetGroups = order.groups;
@@ -472,7 +432,7 @@ export const applyCouponToOrder = async (
 				const discountedAmount = (storeSubTotal * coupon.discount) / 100;
 				const newGroupTotal = Math.max(0, storeSubTotal - discountedAmount);
 
-				return db.orderGroup.update({
+				return tx.orderGroup.update({
 					where: { id: matchingGroup.id },
 					data: {
 						couponId: coupon.id,
@@ -483,13 +443,13 @@ export const applyCouponToOrder = async (
 		);
 
 		// 5. Recalculate main Order total
-		const allGroups = await db.orderGroup.findMany({
+		const allGroups = await tx.orderGroup.findMany({
 			where: { orderId: order.id },
 		});
 
-		const newOrderTotal = allGroups.reduce((acc, g) => acc + g.total, 0);
+		const newOrderTotal = Math.max(0, allGroups.reduce((acc, g) => acc + g.total, 0) - order.coinDiscount);
 
-		const updatedOrder = await db.order.update({
+		const updatedOrder = await tx.order.update({
 			where: { id: order.id },
 			data: {
 				subTotal: order.subTotal,
@@ -513,6 +473,7 @@ export const applyCouponToOrder = async (
 			message: `Coupon "${coupon.code}" (${coupon.discount}% OFF) applied successfully!`,
 			order: updatedOrder,
 		};
+		});
 	} catch (error) {
 		const message = error instanceof Error ? error.message : 'Failed to apply coupon to order.';
 		throw new Error(message);

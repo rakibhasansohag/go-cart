@@ -5,7 +5,7 @@ import {
   assertPaymentAmount,
   requireOwnedOrder,
 } from "@/lib/payments/security";
-import { paypalRequest } from "@/lib/payments/paypal-client";
+import { assertPayPalConfigured, paypalRequest } from "@/lib/payments/paypal-client";
 import { reconcilePaymentEvent } from "@/lib/payments/reconcile";
 import { enforceSharedRateLimit } from "@/lib/security/rate-limit";
 import type { PaymentStatus } from "@prisma/client";
@@ -79,12 +79,14 @@ function paymentStatusFromCapture(status: string): PaymentStatus {
 }
 
 export async function createPayPalPayment(orderId: string) {
-  const order = await requireOwnedOrder(orderId, { requirePayable: true });
+  assertPayPalConfigured();
+  const ownedOrder = await requireOwnedOrder(orderId);
   await enforceSharedRateLimit({
-    key: `paypal-payment-create:${order.userId}`,
+    key: `paypal-payment-create:${ownedOrder.userId}`,
     limit: 20,
     windowMs: 10 * 60 * 1000,
   });
+  const order = await requireOwnedOrder(orderId, { requirePayable: true });
 
   if (
     order.paymentDetails?.paymentMethod === "Paypal" &&
@@ -141,12 +143,14 @@ export async function createPayPalPayment(orderId: string) {
 }
 
 export async function capturePayPalPayment(orderId: string, paymentId: string) {
-  const order = await requireOwnedOrder(orderId, { requirePayable: true });
+  assertPayPalConfigured();
+  const ownedOrder = await requireOwnedOrder(orderId);
   await enforceSharedRateLimit({
-    key: `paypal-payment-capture:${order.userId}`,
+    key: `paypal-payment-capture:${ownedOrder.userId}`,
     limit: 20,
     windowMs: 10 * 60 * 1000,
   });
+  const order = await requireOwnedOrder(orderId, { requirePayable: true });
 
   if (
     !order.paymentDetails ||

@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 const h = vi.hoisted(() => ({
 	currentUser: vi.fn(),
-	db: { coupon: { findUnique: vi.fn(), findFirst: vi.fn() }, cart: { findUnique: vi.fn(), update: vi.fn() }, user: { findUnique: vi.fn() }, orderGroup: { findMany: vi.fn(), count: vi.fn() }, order: { findUnique: vi.fn() } },
+	db: { $transaction: vi.fn(), $queryRaw: vi.fn(), coupon: { findUnique: vi.fn(), findFirst: vi.fn() }, cart: { findUnique: vi.fn(), update: vi.fn() }, user: { findUnique: vi.fn() }, orderGroup: { findMany: vi.fn(), count: vi.fn(), update: vi.fn() }, order: { findUnique: vi.fn(), update: vi.fn() } },
 }));
 vi.mock('@clerk/nextjs/server', () => ({ currentUser: h.currentUser }));
 vi.mock('@/lib/db', () => ({ db: h.db }));
@@ -12,6 +12,8 @@ const cart = { id: 'cart', userId: 'buyer', couponId: null, total: 100, cartItem
 describe('coupon authorization and eligibility', () => {
 	beforeEach(() => {
 		vi.resetAllMocks();
+		h.db.$transaction.mockImplementation((callback: (tx: typeof h.db) => Promise<unknown>) => callback(h.db));
+		h.db.$queryRaw.mockImplementation(async (sql: TemplateStringsArray) => sql.join('').includes('COUNT(*)') ? [{ totalUses: 0, userUses: 0 }] : []);
 		h.currentUser.mockResolvedValue({ id: 'buyer' });
 		h.db.coupon.findFirst.mockResolvedValue(coupon);
 		h.db.coupon.findUnique.mockResolvedValue(coupon);
@@ -37,15 +39,33 @@ describe('coupon authorization and eligibility', () => {
 		expect(h.db.cart.update).toHaveBeenCalledWith(expect.objectContaining({ where: { id: 'cart', userId: 'buyer' } }));
 	});
 	it('blocks repeat per-user redemption through alternate cart action', async () => {
-		h.db.orderGroup.count.mockImplementation(async ({ where }: { where: { order: { userId?: string } } }) => where.order.userId ? 1 : 0);
+		h.db.$queryRaw.mockImplementation(async (sql: TemplateStringsArray) => sql.join('').includes('COUNT(*)') ? [{ totalUses: 1, userUses: 1 }] : []);
 		await expect(applyCoupon('SAVE', 'cart')).rejects.toThrow('per-customer');
 		expect(h.db.cart.update).not.toHaveBeenCalled();
 	});
 	it('blocks repeat per-user redemption through unpaid-order action', async () => {
 		h.db.order.findUnique.mockResolvedValue({ id: 'order', paymentStatus: 'Pending', groups: [] });
-		h.db.orderGroup.count.mockImplementation(async ({ where }: { where: { order: { userId?: string } } }) => where.order.userId ? 1 : 0);
+		h.db.$queryRaw.mockImplementation(async (sql: TemplateStringsArray) => sql.join('').includes('COUNT(*)') ? [{ totalUses: 1, userUses: 1 }] : []);
 		await expect(applyCouponToOrder('SAVE', 'order')).rejects.toThrow('per-customer');
 	});
+	it('freezes coupon edits once payment is reserved', async () => {
+        h.db.order.findUnique.mockResolvedValue({ id: 'order', paymentStatus: 'Pending', groups: [] });
+        h.db.$queryRaw.mockImplementation(async (sql: TemplateStringsArray) => sql.join('').includes('OrderPaymentReservation') ? [{ orderId: 'order' }] : []);
+        await expect(applyCouponToOrder('SAVE', 'order')).rejects.toThrow('Payment has already started');
+        expect(h.db.orderGroup.update).not.toHaveBeenCalled();
+    });
+    it('freezes legacy provider-initialized orders without a reservation', async () => {
+        h.db.order.findUnique.mockResolvedValue({ id: 'order', paymentStatus: 'Failed', paymentDetails: { id: 'payment' }, groups: [] });
+        await expect(applyCouponToOrder('SAVE', 'order')).rejects.toThrow('Payment has already started');
+        expect(h.db.orderGroup.update).not.toHaveBeenCalled();
+    });
+    it('preserves coupon editing before payment and the existing coin discount', async () => {
+        h.db.order.findUnique.mockResolvedValue({ id: 'order', paymentStatus: 'Pending', coinDiscount: 5, subTotal: 100, shippingFees: 0, groups: [{ id: 'group', storeId: 'store', subTotal: 100, shippingFees: 0 }] });
+        h.db.orderGroup.findMany.mockResolvedValue([{ total: 90 }]);
+        h.db.order.update.mockResolvedValue({ id: 'order', total: 85 });
+        await expect(applyCouponToOrder('SAVE', 'order')).resolves.toMatchObject({ order: { total: 85 } });
+        expect(h.db.order.update).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ total: 85 }) }));
+    });
 	it('blocks ordinary customers from buyer redemption history', async () => {
 		await expect(getCouponRedemptions('coupon')).rejects.toThrow('restricted');
 		expect(h.db.orderGroup.findMany).not.toHaveBeenCalled();
