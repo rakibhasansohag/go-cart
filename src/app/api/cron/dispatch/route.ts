@@ -107,13 +107,25 @@ async function handle(request: Request) {
 
 	const startTime = Date.now();
 	if (queuesEnabled()) {
-		await recoverExpiredJobs();
-		await alertDeadJobs();
-		await recoverWorkflowSteps();
-		const jobs = await enqueueDailyCronJobs();
-		const relay = await relayBackgroundJobs();
+		const results: Record<string, JobResult> = {};
+		let accepted = 0;
+		let relay: Awaited<ReturnType<typeof relayBackgroundJobs>> | null = null;
+		// Recovery failures must not prevent independent jobs from being queued or relayed.
+		const run = async (name: string, operation: () => Promise<unknown>) => {
+			try {
+				results[name] = { status: 'success', details: await operation() };
+			} catch (error) {
+				console.error('[queue] Cron maintenance failed', { task: name, errorType: error instanceof Error ? error.name : 'unknown' });
+				results[name] = { status: 'failed', error: 'Maintenance failed; inspect runtime logs and retry.' };
+			}
+		};
+		await run('leaseRecovery', recoverExpiredJobs);
+		await run('deadLetterAlerts', alertDeadJobs);
+		await run('workflowRecovery', recoverWorkflowSteps);
+		await run('dailyJobs', async () => { accepted = (await enqueueDailyCronJobs()).length; return { accepted }; });
+		await run('relay', async () => { relay = await relayBackgroundJobs(); return relay; });
 		scheduleBackgroundJobs();
-		return NextResponse.json({ ok: true, accepted: jobs.length, relay, mode: 'durable-queue' });
+		return NextResponse.json({ ok: Object.values(results).every(result => result.status === 'success'), accepted, relay, jobs: results, mode: 'durable-queue' });
 	}
 	const results: Record<string, JobResult> = {};
 

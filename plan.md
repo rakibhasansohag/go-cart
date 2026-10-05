@@ -1692,7 +1692,9 @@ The free approach uses the existing PostgreSQL database, native Vercel Queues an
 - [x] Cover all 25 canonical domain events with renderable email definitions; the inventory template correction is deployed and a controlled operational email passed through the Vercel callback to an actual mailbox.
 - [x] Recover workflow entities beyond the first 100 records using stable pages; skip disabled cart reminders.
 - [x] Prove real SMTP receipt through the production queue callback and confirm receipt in the target mailbox.
-- [ ] Prove provider-signed sandbox payment reconciliation and each workflow's due-time behavior on the target deployment. The inspected sandbox Stripe account currently has no configured webhook endpoints.
+- [x] Prove provider-signed sandbox payment reconciliation and each workflow's due-time behavior on the target deployment. Controlled production fixtures verified one payment event and coin award, delayed callbacks, stale checkpoints and duplicate prevention; accelerated fixtures do not certify browser checkout UX.
+- [x] Verify a failed production cron job does not stop an independent cron job; eight actual callback attempts reach DEAD with one durable alert per admin. Retry waits were accelerated only for the owned test fixture.
+- [ ] Deploy the cron dispatcher maintenance-isolation correction and verify authorized admin replay on the target deployment.
 - [ ] Capture deployed latency, transport outage recovery, duplicate delivery, dead-letter alert and admin replay evidence.
 
 **Acceptance:** implementation, local tests and route existence are separate from deployed verification. Keep this phase open until actual callback delivery and persisted effects are evidenced. SMTP retains the at-least-once crash window; the daily Hobby recovery fallback has daily latency after a missed wake-up. Workflow recovery scans in pages of 100 rather than stopping at 100 entities; interrupted recovery retries from the start using existing idempotent checkpoints.
