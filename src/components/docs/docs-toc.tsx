@@ -14,26 +14,35 @@ export function DocsToc({ headings }: DocsTocProps) {
 	useEffect(() => {
 		if (headings.length === 0) return;
 
-		const observer = new IntersectionObserver(
-			(entries) => {
-				for (const entry of entries) {
-					if (entry.isIntersecting) {
-						setActiveId(entry.target.id);
-					}
-				}
-			},
-			{
-				rootMargin: '-80px 0% -60% 0%',
-				threshold: 0.1,
-			},
-		);
-
-		for (const heading of headings) {
-			const el = document.getElementById(heading.id);
-			if (el) observer.observe(el);
-		}
-
-		return () => observer.disconnect();
+		let frame = 0;
+		const updateActiveHeading = () => {
+			frame = 0;
+			const sections = headings.flatMap(heading => {
+				const element = document.getElementById(heading.id);
+				return element ? [{ id: heading.id, element }] : [];
+			});
+			if (sections.length === 0) return;
+			let current = sections[0].id;
+			for (const section of sections) {
+				if (section.element.getBoundingClientRect().top <= 97) current = section.id;
+			}
+			setActiveId(current);
+		};
+		const scheduleUpdate = () => {
+			if (!frame) frame = window.requestAnimationFrame(updateActiveHeading);
+		};
+		window.addEventListener('scroll', scheduleUpdate, { passive: true });
+		window.addEventListener('resize', scheduleUpdate);
+		const observer = new ResizeObserver(scheduleUpdate);
+		const article = document.querySelector('main');
+		if (article) observer.observe(article);
+		scheduleUpdate();
+		return () => {
+			window.removeEventListener('scroll', scheduleUpdate);
+			window.removeEventListener('resize', scheduleUpdate);
+			observer.disconnect();
+			window.cancelAnimationFrame(frame);
+		};
 	}, [headings]);
 
 	if (headings.length === 0) return null;
@@ -41,9 +50,8 @@ export function DocsToc({ headings }: DocsTocProps) {
 	const scrollToHeading = (id: string) => {
 		const el = document.getElementById(id);
 		if (el) {
-			const top = el.getBoundingClientRect().top + window.scrollY - 90;
+			const top = el.getBoundingClientRect().top + window.scrollY - 96;
 			window.scrollTo({ top, behavior: 'smooth' });
-			setActiveId(id);
 		}
 	};
 
@@ -63,6 +71,7 @@ export function DocsToc({ headings }: DocsTocProps) {
 									<button
 										type='button'
 										onClick={() => scrollToHeading(heading.id)}
+										aria-current={isActive ? 'location' : undefined}
 										className={`block text-left w-full transition-colors duration-150 py-1.5 pl-3.5 -ml-px border-l-2 text-xs leading-snug ${
 											isActive
 												? 'border-emerald-500 text-emerald-600 dark:text-emerald-400 font-semibold'

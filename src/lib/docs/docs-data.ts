@@ -72,1088 +72,273 @@ export interface DocCategory {
 	}[];
 }
 
-export const DOCS_CATEGORIES: DocCategory[] = [
-	{
-		id: 'getting-started',
-		title: 'Getting Started',
-		icon: 'Rocket',
-		description: 'Quick start guides, architecture overview, and platform setup.',
-		articles: [
-			{
-				slug: 'introduction',
-				title: 'Welcome to GoCart',
-				description: 'Overview of the GoCart multi-vendor marketplace platform.',
-			},
-			{
-				slug: 'quick-start',
-				title: 'Quick Start & Demo Guide',
-				description: '10-minute walkthrough with demo accounts and test workflows.',
-			},
-			{
-				slug: 'architecture',
-				title: 'Architecture & Data Models',
-				description: 'Database schema, multi-tenant store isolation, and security principles.',
-			},
-		],
-	},
-	{
-		id: 'buyer-experience',
-		title: 'Buyer Experience',
-		icon: 'ShoppingBag',
-		description: 'Catalog browsing, cart splitting, checkout, coupons, and loyalty rewards.',
-		articles: [
-			{
-				slug: 'storefront-shopping',
-				title: 'Browsing & Smart Search',
-				description: 'Catalog filtering, faceted search, category taxonomy, and stock visibility.',
-			},
-			{
-				slug: 'cart-checkout',
-				title: 'Cart, Coupons & Checkout',
-				description: 'Multi-vendor order splitting, promo codes, Stripe & PayPal checkout.',
-			},
-			{
-				slug: 'loyalty-rewards',
-				title: 'Loyalty Coins & Daily Check-In',
-				description: 'Daily login reward streaks, coin ledger, and coupon exchanges.',
-			},
-			{
-				slug: 'order-tracking-returns',
-				title: 'Orders, Tracking & Returns',
-				description: 'Order timeline status transitions and multi-evidence return dispute flow.',
-			},
-		],
-	},
-	{
-		id: 'seller-management',
-		title: 'Seller & Vendor Hub',
-		icon: 'Store',
-		description: 'Store setup, multi-variant products, fulfillment, and automated payouts.',
-		articles: [
-			{
-				slug: 'seller-onboarding',
-				title: 'Storefront Setup & Branding',
-				description: 'Store registration, logos, banners, announcement bars, and policy rules.',
-			},
-			{
-				slug: 'product-management',
-				title: 'Products, Variants & Inventory',
-				description: 'Multi-variant sizes, colors, SKU generation, and stock management.',
-			},
-			{
-				slug: 'order-fulfillment',
-				title: 'Order Fulfillment & Shipments',
-				description: 'Package splitting, tracking numbers, and fulfillment state machines.',
-			},
-			{
-				slug: 'seller-payouts',
-				title: 'Payouts & Stripe Connect',
-				description: 'Automated commission deductions, escrow hold periods, and payout ledger.',
-			},
-		],
-	},
-	{
-		id: 'admin-operations',
-		title: 'Admin Control Center',
-		icon: 'ShieldCheck',
-		description: 'Platform configuration, store moderation, and dispute arbitration.',
-		articles: [
-			{
-				slug: 'admin-operations',
-				title: 'Platform Settings & Store Moderation',
-				description: 'Commission fee sliders, vendor account moderation, and category management.',
-			},
-			{
-				slug: 'fraud-disputes',
-				title: 'Dispute Arbitration & Refunds',
-				description: 'Reviewing return evidence, customer claims, and approving refunds.',
-			},
-		],
-	},
-	{
-		id: 'developer-integrations',
-		title: 'Developer & Integrations',
-		icon: 'Code',
-		description: 'Webhooks, real-time sync, idempotency guards, and SEO structured data.',
-		articles: [
-			{
-				slug: 'api-webhooks',
-				title: 'Webhooks & Idempotency',
-				description: 'Stripe & PayPal webhook handlers, replay attack protection, and rate limiting.',
-			},
-			{
-				slug: 'seo-metadata',
-				title: 'SEO & Structured Data',
-				description: 'Schema.org JSON-LD generation, dynamic sitemaps, and OpenGraph cards.',
-			},
-		],
-	},
-	{
-		id: 'reference',
-		title: 'Support & Reference',
-		icon: 'HelpCircle',
-		description: 'Frequently asked questions, troubleshooting, and platform changelog.',
-		articles: [
-			{
-				slug: 'faq',
-				title: 'Frequently Asked Questions',
-				description: 'Common questions regarding buyers, sellers, payments, and admin roles.',
-			},
-			{
-				slug: 'changelog',
-				title: 'Platform Changelog',
-				description: 'Recent feature releases, performance improvements, and fixes.',
-			},
-		],
-	},
-];
+type GuideInput = Omit<DocArticle, 'headings' | 'readTime' | 'lastUpdated'>;
+
+function guide(input: GuideInput): DocArticle {
+	return {
+		...input,
+		readTime: '2 min read',
+		lastUpdated: 'October 5, 2026',
+		headings: input.sections.map(section => ({ id: section.id, title: section.title, level: 2 })),
+	};
+}
 
 export const DOC_ARTICLES: Record<string, DocArticle> = {
-	introduction: {
-		slug: 'introduction',
-		title: 'Welcome to GoCart',
-		category: 'Getting Started',
-		description: 'GoCart is a modern multi-vendor e-commerce platform where sellers manage storefronts and buyers shop seamlessly.',
-		readTime: '4 min read',
-		lastUpdated: 'September 2026',
-		tags: ['introduction', 'overview', 'architecture', 'marketplace'],
-		headings: [
-			{ id: 'overview', title: 'Platform Overview', level: 2 },
-			{ id: 'marketplace-model', title: 'Multi-Vendor Marketplace Model', level: 2 },
-			{ id: 'tech-stack', title: 'Core Technology Stack', level: 2 },
-			{ id: 'key-highlights', title: 'Key Platform Highlights', level: 2 },
-			{ id: 'documentation-map', title: 'Documentation Sitemap', level: 2 },
-		],
-		intro: 'GoCart is a complete multi-vendor e-commerce platform built on Next.js 16 and PostgreSQL. It delivers distinct role-based experiences for buyers, independent store vendors, and marketplace platform administrators.',
-		topCallout: {
-			type: 'tip',
-			title: 'Explore with Demo Accounts',
-			content: 'You can test the entire platform without creating new accounts. Visit the Sign-In page to find one-click demo credentials for Admin, Seller, and Buyer roles.',
-		},
+	introduction: guide({
+		slug: 'introduction', title: 'Welcome to GoCart', category: 'Getting Started',
+		description: 'Choose a demo account and learn what customers, sellers and admins can do.',
+		intro: 'GoCart is a shopping website with several independent stores. Customers buy products, sellers manage their stores, and admins look after the marketplace.',
+		tags: ['welcome', 'demo', 'login', 'customer', 'seller', 'admin'],
 		sections: [
-			{
-				id: 'overview',
-				title: 'Platform Overview',
-				content: [
-					'GoCart connects multiple independent merchants under a unified e-commerce experience. Buyers can browse thousands of products across multiple sellers, add items from different stores into a unified cart, apply global and store coupons, and complete checkout in a single payment step.',
-					'Behind the scenes, GoCart automatically splits multi-vendor orders into discrete store packages, handles individual vendor fulfillment, calculates platform commissions, and coordinates seller disbursements.',
+			{ id: 'start-here', title: 'Start here', content: [
+				'You do not need to install anything to try the website. Use a demo account, or create your own account from [Sign up](/sign-up).',
+				'For a short tour, open [Try the demo](/documentation/quick-start). To shop without signing in, visit the [storefront](/).',
+			] },
+			{ id: 'choose-your-role', title: 'Choose what you want to try', content: [], table: {
+				headers: ['Role', 'What you can do', 'Start with'], rows: [
+					['Customer', 'Shop, checkout, track orders and request returns.', 'Shopping and checkout'],
+					['Seller', 'Edit your store, add products and manage orders.', 'Setting up a store'],
+					['Admin', 'Review stores, returns and marketplace totals.', 'Using the admin dashboard'],
 				],
-			},
-			{
-				id: 'marketplace-model',
-				title: 'Multi-Vendor Marketplace Model',
-				content: [
-					'The marketplace operates on a three-tier architecture ensuring complete separation of concerns and robust data isolation between competing vendors:',
-				],
-				table: {
-					headers: ['Role', 'Scope & Capabilities', 'Access Path'],
-					rows: [
-						['Buyer (Customer)', 'Search products, maintain wishlist, earn daily check-in coins, manage multi-vendor carts, place orders, and submit return requests with photo evidence.', '/, /browse, /cart, /profile'],
-						['Seller (Vendor)', 'Manage private storefront branding, create multi-variant products, configure shipping matrices, process order packages, and track Stripe Connect payouts.', '/dashboard/seller/stores/[storeUrl]'],
-						['Platform Administrator', 'Oversee marketplace operations, approve seller stores, adjust platform commission rates (default 2%), arbitrate return disputes, and audit financial settlements.', '/dashboard/admin'],
-					],
-				},
-			},
-			{
-				id: 'tech-stack',
-				title: 'Core Technology Stack',
-				content: [
-					'GoCart is built with industry-standard, production-ready technologies focusing on type safety, sub-second query performance, and SEO crawlability:',
-				],
-				table: {
-					headers: ['Layer', 'Technology', 'Role in GoCart'],
-					rows: [
-						['Framework', 'Next.js 16 (App Router)', 'Server components, streaming SSR, parallel routes, and metadata optimization'],
-						['Database & ORM', 'PostgreSQL + Prisma ORM', 'Relational database schema with strict constraints and automated migrations'],
-						['Authentication', 'Clerk Auth', 'Multi-role authentication (ADMIN, SELLER, USER) with metadata role sync'],
-						['Payments', 'Stripe Connect & PayPal SDK', 'Split payments, seller onboarding, webhooks, and automatic payouts'],
-						['State & Query', 'TanStack Query v5 + Zustand', 'Server hydration, optimistic UI updates, and cached query invalidation'],
-						['Styling & UI', 'Tailwind CSS + Radix UI', 'Accessible component primitives, dark/light theme toggle, responsive layout'],
-					],
-				},
-			},
-			{
-				id: 'key-highlights',
-				title: 'Key Platform Highlights',
-				content: [
-					'1. **Multi-Variant Product Engine**: Support for multiple colors, sizes, inventory stock tracking, SKU generation, and custom specifications.',
-					'2. **Daily Check-In & Gamification**: Buyers earn loyalty coins through daily check-in streaks, redeemable for discount coupons.',
-					'3. **Automated Payout Engine**: Platform commissions and seller payouts are tracked in real-time with configurable hold periods.',
-					'4. **Multi-Evidence Return Pipeline**: Structured return request workflow with customer reason selection, image proof uploads, and vendor/admin dispute arbitration.',
-					'5. **Platform-Wide SEO**: Schema.org JSON-LD structured data (Product, Store, WebSite, Breadcrumbs), dynamic sitemaps, and OpenGraph social cards.',
-				],
-			},
-			{
-				id: 'documentation-map',
-				title: 'Documentation Sitemap',
-				content: [
-					'Navigate through the specialized sections using the left sidebar to learn more about specific features, configuration guides, and developer workflows.',
-				],
-			},
+			} },
+			{ id: 'find-help', title: 'Find the right guide', content: [
+				'Use the menu to pick a topic. On a phone, tap the menu button at the top. Search the guides if you know what you need help with.',
+				'Each guide explains where to go, what to do and what happens next. Developer pages explain how the website works; they are optional for customers and sellers.',
+			] },
 		],
-	},
-
-	'quick-start': {
-		slug: 'quick-start',
-		title: 'Quick Start & Demo Guide',
-		category: 'Getting Started',
-		description: 'Get up and running with GoCart in under 5 minutes using pre-configured demo workflows.',
-		readTime: '5 min read',
-		lastUpdated: 'September 2026',
-		tags: ['quickstart', 'demo', 'setup', 'tutorial'],
-		headings: [
-			{ id: 'prerequisites', title: 'Prerequisites & Setup', level: 2 },
-			{ id: 'demo-accounts', title: 'Pre-Seeded Demo Accounts', level: 2 },
-			{ id: 'buyer-walkthrough', title: 'Step 1: Buyer Shopping Flow', level: 2 },
-			{ id: 'seller-walkthrough', title: 'Step 2: Seller Storefront Flow', level: 2 },
-			{ id: 'admin-walkthrough', title: 'Step 3: Admin Operations Flow', level: 2 },
-		],
-		intro: 'This quick start guide takes you through the full GoCart workflow—from browsing products and checking out as a buyer, to managing inventory and fulfilling packages as a seller, and moderating stores as an administrator.',
-		topCallout: {
-			type: 'note',
-			title: 'Local Development Server',
-			content: 'The application runs locally on http://localhost:3000. All mock checkout and demo flows are safe to test in sandbox mode.',
-		},
+	}),
+	'quick-start': guide({
+		slug: 'quick-start', title: 'Try the Demo', category: 'Getting Started',
+		description: 'Sign in and try shopping, store management or the admin dashboard.',
+		intro: 'Pick one role to start. You can explore the other roles later by signing out and using a different demo account.',
+		tags: ['demo', 'login', 'password', 'quick start', 'test payment'],
 		sections: [
-			{
-				id: 'prerequisites',
-				title: 'Prerequisites & Setup',
-				content: [
-					'To run GoCart locally, ensure you have the following installed:',
-					'- **Node.js 20+** or **Bun runtime**',
-					'- **PostgreSQL database** (local or hosted on Neon / Supabase)',
-					'- Configured environment variables for Clerk, Stripe, and Database URL',
-				],
-				codeBlock: {
-					language: 'bash',
-					filename: 'Terminal',
-					code: '# Install dependencies\nbun install\n\n# Run migrations and generate Prisma client\nbun run db:prepare\n\n# Seed test catalog and demo stores\nbun run db:seed:demo\n\n# Start the local development server\nbun run dev',
-				},
-			},
-			{
-				id: 'demo-accounts',
-				title: 'Pre-Seeded Demo Accounts',
-				content: [
-					'GoCart includes one-click demo credentials accessible directly on the `/sign-in` page:',
-				],
-				table: {
-					headers: ['Role', 'Demo Email', 'Capabilities'],
-					rows: [
-						['Admin', 'admin@gocart.com', 'Access full platform control panel at /dashboard/admin'],
-						['Seller', 'seller@gocart.com', 'Manage store "GoCart Demo Store" at /dashboard/seller'],
-						['Buyer', 'buyer@gocart.com', 'Browse catalog, earn loyalty coins, and checkout at /cart'],
-					],
-				},
-			},
-			{
-				id: 'buyer-walkthrough',
-				title: 'Step 1: Buyer Shopping Flow',
-				content: [
-					'1. Navigate to `/browse` to explore the catalog.',
-					'2. Use the sidebar filters to refine by Category, Color, Size, and Price Range.',
-					'3. Open any product page (e.g., `/product/gocart-demo-product-20`) to select color/size variants.',
-					'4. Click **Add to Cart** and visit `/cart` to review shipping fee calculations and apply test coupons.',
-					'5. Complete checkout using test card credentials.',
-				],
-			},
-			{
-				id: 'seller-walkthrough',
-				title: 'Step 2: Seller Storefront Flow',
-				content: [
-					'1. Sign in with the Seller account and open `/dashboard/seller`.',
-					'2. Click **Products → New Product** to create a product with multiple sizes, SKU codes, and images.',
-					'3. Open **Orders** to inspect new incoming order groups.',
-					'4. Transition order status from `PENDING` → `PROCESSING` → `SHIPPED` with tracking numbers.',
-				],
-			},
-			{
-				id: 'admin-walkthrough',
-				title: 'Step 3: Admin Operations Flow',
-				content: [
-					'1. Open `/dashboard/admin` to view marketplace GMV metrics and vendor statistics.',
-					'2. Adjust global commission rates under **Settings**.',
-					'3. Review pending store applications and approve or suspend vendor stores.',
-				],
-			},
+			{ id: 'customer-tour', title: 'Try shopping as a customer', content: [
+				'1. Sign in with the Customer account shown above.',
+				'2. Open the [storefront](/), choose a product, pick a size or option and add it to your cart.',
+				'3. Open [Cart](/cart). Change the quantity or remove an item. Check the total before checkout.',
+				'4. At checkout, choose an address and an available payment method. For a Stripe sandbox checkout, use the test card below.',
+				'5. After payment is confirmed, open [My orders](/profile/orders) to see the order.',
+			], table: { headers: ['Stripe test field', 'Enter this'], rows: [
+				['Card number', '4242 4242 4242 4242'], ['Expiry date', 'Any future date'], ['CVC', 'Any three digits'], ['Postal code, if asked', 'Any valid postal code'],
+			], caption: 'Use this card only when checkout is configured for Stripe test mode. It does not make a real payment.' } },
+			{ id: 'seller-tour', title: 'Try managing a store', content: [
+				'1. Sign out, then sign in with the Seller account.',
+				'2. Open the [seller dashboard](/dashboard/seller) and choose a store.',
+				'3. Open Products to view a product, or Orders to view the store’s packages.',
+				'4. Read [Managing products and stock](/documentation/product-management) before editing sample data.',
+			] },
+			{ id: 'admin-tour', title: 'Try the admin dashboard', content: [
+				'1. Sign out, then sign in with the Admin account.',
+				'2. Open the [admin dashboard](/dashboard/admin). Review the totals and charts.',
+				'3. Open Stores, Orders or Returns to see what admins can manage.',
+				'4. Read [Using the admin dashboard](/documentation/admin-operations) for the meaning of each total.',
+			] },
 		],
-	},
-
-	architecture: {
-		slug: 'architecture',
-		title: 'Architecture & Data Models',
-		category: 'Getting Started',
-		description: 'Deep dive into GoCart database entities, multi-tenant isolation, and request security.',
-		readTime: '6 min read',
-		lastUpdated: 'September 2026',
-		tags: ['architecture', 'database', 'prisma', 'security'],
-		headings: [
-			{ id: 'entity-model', title: 'Core Relational Schema', level: 2 },
-			{ id: 'tenant-isolation', title: 'Multi-Tenant Store Isolation', level: 2 },
-			{ id: 'order-lifecycle', title: 'Order & Package Splitting Model', level: 2 },
-			{ id: 'security-guards', title: 'Request Security & Guardrails', level: 2 },
-		],
-		intro: 'GoCart is engineered around a clean PostgreSQL schema managed via Prisma ORM, enforcing strict foreign key constraints, tenant isolation, and audit trails.',
+	}),
+	architecture: guide({
+		slug: 'architecture', title: 'How GoCart Works', category: 'Getting Started',
+		description: 'A short explanation of accounts, stores, orders and background work.',
+		intro: 'This page is for people who want to understand the project. You can use the website without knowing these details.', tags: ['developer', 'architecture', 'database', 'roles'],
 		sections: [
-			{
-				id: 'entity-model',
-				title: 'Core Relational Schema',
-				content: [
-					'The data model is structured around core marketplace relationships:',
-					'- **User**: Core entity linked to Clerk identity, holding role (`USER`, `SELLER`, `ADMIN`) and account status.',
-					'- **Store**: Vendor business entity owning products, shipping policies, and linked to a `SellerPaymentAccount`.',
-					'- **Product & ProductVariant**: Products hold root metadata, while `ProductVariant` models specific SKU, color, size, price, and stock combinations.',
-					'- **Order & OrderGroup**: The root `Order` represents the buyer payment transaction, while individual `OrderGroup` records represent distinct vendor packages.',
-				],
-			},
-			{
-				id: 'tenant-isolation',
-				title: 'Multi-Tenant Store Isolation',
-				content: [
-					'To protect vendor business data and prevent cross-tenant tampering, all seller queries enforce strict database-level owner filters (`where: { store: { userId: currentUserId } }`).',
-					'Store URL slugs and email addresses are immutable after store creation, preventing store impersonation.',
-				],
-				callout: {
-					type: 'important',
-					title: 'Security Rule',
-					content: 'No vendor API or server action can read, modify, or cancel orders belonging to a different store. Violations throw explicit unauthenticated/unauthorized errors and log security audit events.',
-				},
-			},
-			{
-				id: 'order-lifecycle',
-				title: 'Order & Package Splitting Model',
-				content: [
-					'When a buyer checks out with items from Store A and Store B:',
-					'1. Single `Order` is created for payment capture ($250 total).',
-					'2. Two independent `OrderGroup` packages are generated: Package A ($150) and Package B ($100).',
-					'3. Each store manages their package fulfillment independently without seeing the other store items.',
-				],
-			},
-			{
-				id: 'security-guards',
-				title: 'Request Security & Guardrails',
-				content: [
-					'GoCart implements comprehensive security guardrails across mutation endpoints:',
-					'- **CSRF & Origin Verification**: Browser mutations verify same-origin headers.',
-					'- **Rate Limiting**: Sliding window rate limits via `RateLimitBucket` model.',
-					'- **Content Sanitization**: Jodit rich-text descriptions sanitized with `sanitize-html` and `dompurify`.',
-					'- **Webhook Idempotency**: Stripe and PayPal webhooks verify cryptographic signatures and record processed event IDs.',
-				],
-			},
+			{ id: 'roles-and-stores', title: 'Accounts and stores', content: [
+				'An account has a Customer, Seller or Admin role. Sellers manage the stores they own. Admins manage the marketplace.',
+				'A product belongs to a store. Its options, such as colors and sizes, have their own stock quantities.',
+			] },
+			{ id: 'orders-and-packages', title: 'One checkout, separate store packages', content: [
+				'If you buy from two stores, checkout creates one order for your payment and a separate package for each store.',
+				'For example, a $50 item from Store A and a $30 item from Store B appear in one checkout, but each seller handles their own package. Shipping and discounts affect the final total.',
+			] },
+			{ id: 'behind-the-scenes', title: 'What happens behind the scenes', content: [
+				'Next.js displays the website. PostgreSQL stores the data, and Prisma helps the application read and update it. Clerk handles sign-in.',
+				'Payment providers send signed messages to confirm payment changes. Background jobs handle work such as notifications, emails and reminders. Repeated messages are checked to avoid repeating the same business action.',
+			] },
 		],
-	},
-
-	'storefront-shopping': {
-		slug: 'storefront-shopping',
-		title: 'Browsing & Smart Search',
-		category: 'Buyer Experience',
-		description: 'Catalog browsing, full-text faceted filtering, category navigation, and live inventory.',
-		readTime: '4 min read',
-		lastUpdated: 'September 2026',
-		tags: ['catalog', 'search', 'filters', 'browse'],
-		headings: [
-			{ id: 'browse-catalog', title: 'Catalog Navigation', level: 2 },
-			{ id: 'faceted-filters', title: 'Faceted Filtering Engine', level: 2 },
-			{ id: 'smart-search', title: 'Search Query Processing', level: 2 },
-			{ id: 'product-details', title: 'Product Details & Variant Selection', level: 2 },
-		],
-		intro: 'GoCart provides a responsive catalog browsing experience with multi-faceted filtering, instant search, and real-time inventory calculation.',
+	}),
+	'storefront-shopping': guide({
+		slug: 'storefront-shopping', title: 'Finding Products', category: 'For Customers',
+		description: 'Search for products, use filters and browse a store one page at a time.',
+		intro: 'You can browse products before signing in. Sign in when you want to save favorites or place an order.', tags: ['search', 'filters', 'pagination', 'wishlist'],
 		sections: [
-			{
-				id: 'browse-catalog',
-				title: 'Catalog Navigation',
-				content: [
-					'The `/browse` page provides instant access to all published marketplace products. Buyers can sort items by Popularity, Newest Arrivals, Price (Low to High), and Price (High to Low).',
-					'Category headers on the storefront allow quick one-click filtering to subcategories like Watches, Shirts, Electronics, and Gaming gear.',
-				],
-			},
-			{
-				id: 'faceted-filters',
-				title: 'Faceted Filtering Engine',
-				content: [
-					'The filter sidebar computes available facets dynamically based on current inventory:',
-					'- **Price Range Slider**: Min and Max bounds computed dynamically from active inventory.',
-					'- **Color Selector**: Swatch picker displaying matching color variants with hex previews.',
-					'- **Size Matrix**: Multi-select size pills with instant product count badges.',
-					'- **Special Offers**: Deals filter for Flash Sales, Super Deals, and Free Shipping items.',
-				],
-			},
-			{
-				id: 'smart-search',
-				title: 'Search Query Processing',
-				content: [
-					'Search queries match against product titles, descriptions, brand names, and variant SKU codes using case-insensitive PostgreSQL ILIKE queries.',
-					'Search URLs update cleanly to `/browse?search=term`, preserving browser history and allowing easy bookmarking.',
-				],
-			},
-			{
-				id: 'product-details',
-				title: 'Product Details & Variant Selection',
-				content: [
-					'On the product page (`/product/[slug]`):',
-					'- Interactive image gallery with thumbnail preview and zoom lens.',
-					'- Real-time price updating when switching between variant sizes and discounted promotional sale rates.',
-					'- Verified buyer review breakdown with 5-star rating distribution and helpfulness voting.',
-					'- Community Q&A accordion where buyers ask questions answered by verified store owners.',
-				],
-			},
+			{ id: 'search', title: 'Search and filter', content: [
+				'Use the search box at the top, or open [Browse](/browse). Enter a product name or browse a category.',
+				'Use the available filters to narrow the results. Change the sort order to compare prices or find other matches.',
+			] },
+			{ id: 'store-pages', title: 'Browse a store', content: [
+				'Open a store from a product page. A store with many products shows page controls below its product list.',
+				'Use Next and Previous to move between pages. Changing a filter starts the results from the first page.',
+			] },
+			{ id: 'product-options', title: 'Check the product before buying', content: [
+				'Read the description and choose the size, color or other option you want. Check the displayed price and available stock.',
+				'Use the heart button to save a product to your wishlist. If you need more information, ask a question on the product page.',
+			] },
 		],
-	},
-
-	'cart-checkout': {
-		slug: 'cart-checkout',
-		title: 'Cart, Coupons & Checkout',
-		category: 'Buyer Experience',
-		description: 'Multi-vendor cart grouping, coupon calculations, shipping estimation, and payment processing.',
-		readTime: '5 min read',
-		lastUpdated: 'September 2026',
-		tags: ['cart', 'checkout', 'stripe', 'paypal', 'coupons'],
-		headings: [
-			{ id: 'cart-architecture', title: 'Cart Architecture & Storage', level: 2 },
-			{ id: 'coupon-discounts', title: 'Coupon Validation Rules', level: 2 },
-			{ id: 'shipping-calculation', title: 'Multi-Store Shipping Calculation', level: 2 },
-			{ id: 'payment-methods', title: 'Stripe & PayPal Integration', level: 2 },
-		],
-		intro: 'The GoCart cart engine groups items by vendor store, calculates international shipping fees, applies personal and store coupons, and orchestrates secure split payments.',
+	}),
+	'cart-checkout': guide({
+		slug: 'cart-checkout', title: 'Cart, Coupons and Checkout', category: 'For Customers',
+		description: 'Review your cart, apply a coupon and place an order.',
+		intro: 'You can buy products from different stores in one checkout. Review the final total before paying.', tags: ['cart', 'coupon', 'checkout', 'payment'],
 		sections: [
-			{
-				id: 'cart-architecture',
-				title: 'Cart Architecture & Storage',
-				content: [
-					'Cart items are synchronized to the buyer account database when signed in, and persisted to `localStorage` for guest visitors.',
-					'When items from multiple sellers are present, the cart summary displays transparent per-store subtotals and individual estimated delivery date ranges.',
-				],
-			},
-			{
-				id: 'coupon-discounts',
-				title: 'Coupon Validation Rules',
-				content: [
-					'GoCart supports two distinct coupon types:',
-					'1. **Platform Coupons**: Applicable across all stores, funded by marketplace promotions.',
-					'2. **Store-Specific Coupons**: Created by individual vendors for their storefront items.',
-					'Coupons validate active date windows, maximum global uses, and per-user usage limits before deduction.',
-				],
-			},
-			{
-				id: 'shipping-calculation',
-				title: 'Multi-Store Shipping Calculation',
-				content: [
-					'Shipping rates are calculated per store using three flexible rate strategies:',
-					'- **Per-Item Rate**: Flat base fee + increment per additional item.',
-					'- **Weight-Based Rate**: Scaled rate based on total variant package weight (kg).',
-					'- **Fixed Flat Rate**: Single fixed delivery fee per order group regardless of quantity.',
-				],
-			},
-			{
-				id: 'payment-methods',
-				title: 'Stripe & PayPal Integration',
-				content: [
-					'GoCart supports direct credit/debit card processing via Stripe Elements and one-click PayPal Smart Buttons.',
-					'Payment authorization triggers atomic database transactions that reserve inventory stock, record payment records, and spawn seller fulfillment tasks.',
-				],
-			},
+			{ id: 'review-cart', title: 'Review your cart', content: [
+				'Open [Cart](/cart). Check the selected product options and quantities. Remove items you no longer want.',
+				'Items are grouped by store. Shipping costs can differ between stores, so check both shipping and the final total.',
+			] },
+			{ id: 'apply-coupon', title: 'Use a coupon', content: [
+				'Enter a coupon code and apply it. A coupon may have an expiry date, minimum spend or usage limit.',
+				'Check that the discount appears in your total. A coupon used in one checkout counts as one redemption even when the checkout includes several stores.',
+			] },
+			{ id: 'pay-and-confirm', title: 'Pay and confirm', content: [
+				'Choose your shipping address and an available payment method. Follow the payment form and wait for confirmation.',
+				'Open [My orders](/profile/orders) after payment. An order can contain separate store packages with different shipping progress.',
+				'If confirmation is unclear, check the order’s payment status before trying another payment.',
+			] },
 		],
-	},
-
-	'loyalty-rewards': {
-		slug: 'loyalty-rewards',
-		title: 'Loyalty Coins & Daily Check-In',
-		category: 'Buyer Experience',
-		description: 'Gamified buyer retention with streak tracking, coin balances, and reward coupon exchanges.',
-		readTime: '4 min read',
-		lastUpdated: 'September 2026',
-		tags: ['loyalty', 'gamification', 'checkin', 'coins'],
-		headings: [
-			{ id: 'checkin-mechanics', title: 'Daily Check-In Mechanics', level: 2 },
-			{ id: 'streak-bonuses', title: 'Streak Milestones & Rewards', level: 2 },
-			{ id: 'coin-ledger', title: 'Coin Balance & Transaction History', level: 2 },
-			{ id: 'reward-exchange', title: 'Redeeming Coins for Coupons', level: 2 },
-		],
-		intro: 'GoCart includes a built-in gamification engine that rewards buyers for daily visits with loyalty coins that can be exchanged for exclusive discount coupons.',
+	}),
+	'loyalty-rewards': guide({
+		slug: 'loyalty-rewards', title: 'GoCoins and Daily Rewards', category: 'For Customers',
+		description: 'Find your GoCoins balance, claim daily rewards and use available rewards.',
+		intro: 'GoCoins are reward points in GoCart. Your rewards page shows your balance and the rewards you can use.', tags: ['coins', 'rewards', 'check-in', 'loyalty'],
 		sections: [
-			{
-				id: 'checkin-mechanics',
-				title: 'Daily Check-In Mechanics',
-				content: [
-					'Buyers can check in once per calendar day (UTC) via the header check-in modal. Consecutive check-ins build a monthly streak that unlocks escalating coin bonuses.',
-					'Database constraints (`@@unique([userId, date])`) guarantee that each user can only earn one check-in reward per day.',
-				],
-			},
-			{
-				id: 'streak-bonuses',
-				title: 'Streak Milestones & Rewards',
-				content: [
-					'Daily check-ins award standard coins with special mystery boxes on milestone days:',
-				],
-				table: {
-					headers: ['Day Streak', 'Coins Awarded', 'Special Bonus'],
-					rows: [
-						['Day 1 - 6', '10 - 30 Coins', 'Standard daily claim'],
-						['Day 7 (Milestone)', '100 Coins', '7-Day Streak Badge + 5% Off Coupon'],
-						['Day 14 (Milestone)', '250 Coins', '14-Day Streak Badge + Free Shipping Coupon'],
-						['Day 30 (Milestone)', '500 Coins', 'Monthly Champion Badge + $20 Store Coupon'],
-					],
-				},
-			},
-			{
-				id: 'coin-ledger',
-				title: 'Coin Balance & Transaction History',
-				content: [
-					'The buyer loyalty dashboard at `/profile/loyalty` displays total lifetime coins, current redeemable balance, and an itemized audit ledger of earned and spent coins.',
-				],
-			},
-			{
-				id: 'reward-exchange',
-				title: 'Redeeming Coins for Coupons',
-				content: [
-					'Buyers can exchange accumulated coins for personalized coupons directly within the check-in modal or profile page. The redeemed coupon code is automatically added to the buyer checkout wallet.',
-				],
-			},
+			{ id: 'check-balance', title: 'Find your balance', content: ['Sign in and open [Rewards](/profile/rewards). You can see your balance and the history of coins added or used.'] },
+			{ id: 'claim-rewards', title: 'Claim daily rewards', content: ['Open the daily check-in calendar and claim the available reward. The calendar shows which days you have already claimed.', 'Paid orders may also earn coins. Check your reward history to see the recorded amount.'] },
+			{ id: 'use-coins', title: 'Use your coins', content: ['Choose an available reward or discount and check how many coins it costs.', 'Refunds can adjust coins earned from an order. Your rewards history records those changes.'] },
 		],
-	},
-
-	'order-tracking-returns': {
-		slug: 'order-tracking-returns',
-		title: 'Orders, Tracking & Returns',
-		category: 'Buyer Experience',
-		description: 'Order status lifecycle, package tracking, delivery confirmation, and return dispute resolution.',
-		readTime: '5 min read',
-		lastUpdated: 'September 2026',
-		tags: ['orders', 'returns', 'disputes', 'tracking'],
-		headings: [
-			{ id: 'order-lifecycle', title: 'Order Status Lifecycle', level: 2 },
-			{ id: 'tracking-packages', title: 'Real-Time Package Tracking', level: 2 },
-			{ id: 'return-pipeline', title: 'Multi-Evidence Return Pipeline', level: 2 },
-			{ id: 'resolution-refunds', title: 'Resolution & Refund Issuance', level: 2 },
-		],
-		intro: 'GoCart provides transparent order status tracking from placement to delivery, alongside a structured return pipeline with multi-photo evidence submission.',
+	}),
+	'order-tracking-returns': guide({
+		slug: 'order-tracking-returns', title: 'Orders, Delivery and Returns', category: 'For Customers',
+		description: 'Check an order, follow its delivery progress and request a return.',
+		intro: 'Payment status and delivery status are different. An order can be paid while its store packages are still being prepared.', tags: ['orders', 'tracking', 'returns', 'refunds'],
 		sections: [
-			{
-				id: 'order-lifecycle',
-				title: 'Order Status Lifecycle',
-				content: [
-					'Order groups progress through defined state transitions:',
-					'- **PENDING**: Order placed, waiting for store fulfillment acknowledgment.',
-					'- **PROCESSING**: Store is picking, packing, and preparing shipment.',
-					'- **SHIPPED**: Package handed to carrier with active tracking number.',
-					'- **DELIVERED**: Carrier confirmed delivery to buyer shipping address.',
-					'- **CANCELLED**: Order cancelled prior to shipment with automated refund.',
-				],
-			},
-			{
-				id: 'tracking-packages',
-				title: 'Real-Time Package Tracking',
-				content: [
-					'Buyers can view individual store packages at `/profile/orders`. Each package shows carrier details (FedEx, DHL, USPS), tracking code, and an estimated delivery timeline.',
-				],
-			},
-			{
-				id: 'return-pipeline',
-				title: 'Multi-Evidence Return Pipeline',
-				content: [
-					'Within the store return window (default 7 days after delivery), buyers can initiate a return request by:',
-					'1. Selecting specific items and quantities to return.',
-					'2. Choosing a return reason (e.g. Defective, Wrong Item, Damaged Package).',
-					'3. Uploading photographic evidence of the item and shipping label.',
-					'4. Submitting a detailed explanation for store review.',
-				],
-			},
-			{
-				id: 'resolution-refunds',
-				title: 'Resolution & Refund Issuance',
-				content: [
-					'Store owners can approve the return, request additional photos, or decline with a reason. If approved, refunds are processed automatically back to the original payment method.',
-					'In case of disagreement, platform administrators can intervene via the Admin Dispute Arbitration console.',
-				],
-			},
+			{ id: 'find-order', title: 'Find your order', content: ['Open [My orders](/profile/orders) and choose the order. Check its payment status, store packages and delivery information.', 'If several stores are involved, each package can move at a different speed.'] },
+			{ id: 'request-return', title: 'Request a return', content: ['Open [Returns](/profile/returns), start a return request and select an eligible order or item.', 'Choose a reason, explain the problem and add any requested evidence. Submit the request and follow its status in Returns.', 'Eligibility depends on the store’s policy and the item’s delivery date.'] },
+			{ id: 'refund-status', title: 'What happens next?', content: ['The seller or admin reviews the request. A submitted request does not automatically approve a refund.', 'Check the request for the decision and any return instructions. A confirmed refund is recorded separately from the return request.'] },
 		],
-	},
-
-	'seller-onboarding': {
-		slug: 'seller-onboarding',
-		title: 'Storefront Setup & Branding',
-		category: 'Seller & Vendor Hub',
-		description: 'Creating a store, customizing logos and banners, configuring announcements and return policies.',
-		readTime: '4 min read',
-		lastUpdated: 'September 2026',
-		tags: ['seller', 'store', 'branding', 'settings'],
-		headings: [
-			{ id: 'store-registration', title: 'Registering a New Store', level: 2 },
-			{ id: 'branding-customization', title: 'Store Branding & Banners', level: 2 },
-			{ id: 'announcement-bar', title: 'Top Announcement Bar', level: 2 },
-			{ id: 'shipping-policies', title: 'Shipping & Return Policies', level: 2 },
-		],
-		intro: 'Vendors can launch personalized storefronts on GoCart with custom branding, announcement banners, social links, and granular return policies.',
+	}),
+	'seller-onboarding': guide({
+		slug: 'seller-onboarding', title: 'Setting Up a Store', category: 'For Sellers',
+		description: 'Create a store and add its name, images, shipping details and return policy.',
+		intro: 'A store is where you sell your products. The Seller demo account already has sample stores to explore.', tags: ['seller', 'store', 'branding', 'shipping'],
 		sections: [
-			{
-				id: 'store-registration',
-				title: 'Registering a New Store',
-				content: [
-					'Any authenticated user can apply to become a seller. Store registration requires:',
-					'- **Store Name & Unique URL Slug**: Chosen URL becomes the public storefront link (`/store/[slug]`).',
-					'- **Contact Information**: Support email and business phone number.',
-					'- **Business Description**: Public description visible on the store header and search cards.',
-				],
-			},
-			{
-				id: 'branding-customization',
-				title: 'Store Branding & Banners',
-				content: [
-					'Sellers customize their storefront appearance via `/dashboard/seller/stores/[storeUrl]/settings`:',
-					'- **Logo**: Displayed across product cards, store header, and invoice headers.',
-					'- **Cover Banner (1200x400)**: Hero banner displayed on top of the vendor store page.',
-					'- **Social Media Links**: Direct links to Instagram, Facebook, Twitter, YouTube, and TikTok.',
-				],
-			},
-			{
-				id: 'announcement-bar',
-				title: 'Top Announcement Bar',
-				content: [
-					'Sellers can activate an announcement bar displayed across all their product pages to advertise flash discounts, holiday shipping deadlines, or seasonal sales.',
-				],
-			},
-			{
-				id: 'shipping-policies',
-				title: 'Shipping & Return Policies',
-				content: [
-					'Configure default delivery window ranges (min/max days), return acceptance toggle, return window period (7 to 30 days), and customer return shipping fee rules.',
-				],
-			},
+			{ id: 'open-dashboard', title: 'Open the seller dashboard', content: ['Sign in as a seller and open the [seller dashboard](/dashboard/seller). Choose an existing store or use the new-store option.', 'If your account is not a seller account, start from [Become a seller](/seller/apply).'] },
+			{ id: 'store-details', title: 'Add store details', content: ['Enter the store name, contact details and description. Add a logo and cover image, then save.', 'Your store URL is the address customers use to visit your store. Review the preview and saved details. New stores may need admin approval before appearing publicly.'] },
+			{ id: 'store-policies', title: 'Set shipping and return information', content: ['Open the store’s Shipping and Settings pages. Set the available shipping costs and delivery estimates.', 'Write a clear return policy so customers know which items can be returned and how long they have to request a return.'] },
 		],
-	},
-
-	'product-management': {
-		slug: 'product-management',
-		title: 'Products, Variants & Inventory',
-		category: 'Seller & Vendor Hub',
-		description: 'Creating multi-variant products, managing SKUs, size charts, color swatches, and low stock alerts.',
-		readTime: '6 min read',
-		lastUpdated: 'September 2026',
-		tags: ['products', 'variants', 'inventory', 'sku'],
-		headings: [
-			{ id: 'product-creation', title: 'Creating Products', level: 2 },
-			{ id: 'variant-hierarchy', title: 'Variant Structure (Colors & Sizes)', level: 2 },
-			{ id: 'inventory-tracking', title: 'Inventory Stock & Low-Stock Alerts', level: 2 },
-			{ id: 'specifications-faq', title: 'Product Specs & Custom FAQs', level: 2 },
-		],
-		intro: 'GoCart features a multi-tiered product and variant management system allowing sellers to create rich catalogs with multi-image color swatches and individual size stock.',
+	}),
+	'product-management': guide({
+		slug: 'product-management', title: 'Managing Products and Stock', category: 'For Sellers',
+		description: 'Add a product, upload photos and set prices and stock for each option.',
+		intro: 'Choose your store before editing products. Each size or option can have its own price and stock.', tags: ['products', 'upload', 'images', 'variants', 'inventory'],
 		sections: [
-			{
-				id: 'product-creation',
-				title: 'Creating Products',
-				content: [
-					'To create a new product, navigate to `/dashboard/seller/stores/[storeUrl]/products/new`:',
-					'1. Enter Product Title, Brand, Description (with rich text formatting), and Category taxonomy.',
-					'2. Choose a Shipping Fee calculation strategy (Item, Weight, or Fixed).',
-					'3. Add custom product specifications (e.g. Material: Ceramic, Dimensions: 10x15cm).',
-				],
-			},
-			{
-				id: 'variant-hierarchy',
-				title: 'Variant Structure (Colors & Sizes)',
-				content: [
-					'GoCart uses a hierarchical variant model:',
-					'- **Color Variant**: Holds dedicated gallery images, variant description, keywords, and unique slug.',
-					'- **Size Option**: Belongs to a color variant and defines specific Size label, Price, Discount percentage, and available Quantity.',
-				],
-				table: {
-					headers: ['Attribute', 'Level', 'Example Value'],
-					rows: [
-						['Brand & Category', 'Root Product', 'Nike · Footwear / Running Shoes'],
-						['Color & Gallery', 'Product Variant', 'Midnight Blue (4 high-res photos)'],
-						['Size, Price & Stock', 'Size Entity', 'US 10 · $149.99 · 25 units in stock · SKU: NK-RN-BLU-10'],
-					],
-				},
-			},
-			{
-				id: 'inventory-tracking',
-				title: 'Inventory Stock & Low-Stock Alerts',
-				content: [
-					'When buyers place orders, quantity is automatically decremented. If stock drops below the configured `lowStockThreshold` (default 5 units), visual warning badges alert the vendor in their inventory dashboard.',
-				],
-			},
-			{
-				id: 'specifications-faq',
-				title: 'Product Specs & Custom FAQs',
-				content: [
-					'Vendors can add custom technical specifications and pre-answered FAQs to answer common buyer questions, reducing support overhead.',
-				],
-			},
+			{ id: 'add-product', title: 'Add or edit a product', content: ['Open your store’s Products page and choose the new-product option, or open an existing product to edit it.', 'Add a clear name, category and description. Use Upload images to add photos, fill the required fields and save.', 'Open the saved product on the storefront to check the description and photos.'] },
+			{ id: 'product-options', title: 'Add sizes and other options', content: ['A variant is one version of a product, such as a color. Sizes belong to that version.', 'For example, a blue shirt can have Small and Medium sizes. Set the price and stock for each size.', 'A SKU is a code that identifies a particular item or option. It helps you distinguish stock records.'] },
+			{ id: 'update-stock', title: 'Keep stock up to date', content: ['Open Inventory or the product’s stock fields. Check the correct size or option before changing its quantity.', 'Orders reserve stock, so the available quantity can change after checkout. Low-stock notifications help you decide when to restock.'] },
 		],
-	},
-
-	'order-fulfillment': {
-		slug: 'order-fulfillment',
-		title: 'Order Fulfillment & Shipments',
-		category: 'Seller & Vendor Hub',
-		description: 'Managing incoming orders, printing packing slips, assigning carrier tracking, and status transitions.',
-		readTime: '4 min read',
-		lastUpdated: 'September 2026',
-		tags: ['fulfillment', 'orders', 'shipping', 'packages'],
-		headings: [
-			{ id: 'incoming-orders', title: 'Managing Incoming Orders', level: 2 },
-			{ id: 'package-assignment', title: 'Package Assignment & Tracking', level: 2 },
-			{ id: 'bulk-actions', title: 'Bulk Fulfillment Actions', level: 2 },
-			{ id: 'invoices-packing', title: 'Invoices & PDF Packing Slips', level: 2 },
-		],
-		intro: 'The seller order fulfillment dashboard gives merchants full control over order processing, shipping labels, and carrier tracking updates.',
+	}),
+	'order-fulfillment': guide({
+		slug: 'order-fulfillment', title: 'Preparing and Sending Orders', category: 'For Sellers',
+		description: 'Find paid packages and update their preparation and delivery information.',
+		intro: 'Your order workspace shows the packages for your store. Payment confirmation and package preparation are separate steps.', tags: ['seller', 'orders', 'packages', 'shipping', 'packing slip'],
 		sections: [
-			{
-				id: 'incoming-orders',
-				title: 'Managing Incoming Orders',
-				content: [
-					'Vendors view pending order groups at `/dashboard/seller/stores/[storeUrl]/orders`. Orders display buyer shipping destination, purchased variants, item quantities, and gross totals.',
-				],
-			},
-			{
-				id: 'package-assignment',
-				title: 'Package Assignment & Tracking',
-				content: [
-					'When an order is ready for dispatch, click **Fulfill Package** to input:',
-					'- Carrier Name (e.g., DHL Express, FedEx, USPS)',
-					'- Tracking Code / Airway Bill Number',
-					'- Estimated Arrival Date',
-					'Saving transitions status to `SHIPPED` and dispatches automated delivery notification emails to the customer.',
-				],
-			},
-			{
-				id: 'bulk-actions',
-				title: 'Bulk Fulfillment Actions',
-				content: [
-					'Merchants processing high volume can select multiple orders to execute batch status updates (e.g. Move 20 orders to `PROCESSING` simultaneously).',
-				],
-			},
-			{
-				id: 'invoices-packing',
-				title: 'Invoices & PDF Packing Slips',
-				content: [
-					'One-click PDF invoice generation allows sellers to download and print formatted packing slips with barcode references and customer shipping addresses.',
-				],
-			},
+			{ id: 'review-orders', title: 'Review incoming orders', content: ['Open your store’s Orders page and choose a package. Check that payment is confirmed, then review its items and quantities.', 'A customer’s checkout may include other stores. You manage only your store’s package.'] },
+			{ id: 'prepare-package', title: 'Update preparation progress', content: ['Use the available package actions as you accept, prepare and hand off the items. Only allowed next actions appear.', 'Use the packing slip where available to check the items going into the package.'] },
+			{ id: 'delivery-progress', title: 'Follow delivery progress', content: ['Add or review shipment and tracking information in the order workspace. Shipment progress can differ from the package preparation status.', 'Some sample orders use demo automation to show progress over time. This is a demonstration, not proof of a real shipment.'] },
 		],
-	},
-
-	'seller-payouts': {
-		slug: 'seller-payouts',
-		title: 'Payouts & Stripe Connect',
-		category: 'Seller & Vendor Hub',
-		description: 'Connecting Stripe Express accounts, understanding settlement hold periods, and payout ledger audits.',
-		readTime: '5 min read',
-		lastUpdated: 'September 2026',
-		tags: ['payouts', 'stripe', 'finance', 'settlement'],
-		headings: [
-			{ id: 'stripe-connect', title: 'Stripe Connect Onboarding', level: 2 },
-			{ id: 'commission-calculation', title: 'Platform Commission & Net Earnings', level: 2 },
-			{ id: 'settlement-hold', title: 'Settlement Hold Period (Escrow)', level: 2 },
-			{ id: 'payout-ledger', title: 'Payout History & Ledger', level: 2 },
-		],
-		intro: 'GoCart uses Stripe Connect to automate vendor onboarding, commission calculations, and direct bank payouts while protecting buyers through structured escrow hold periods.',
+	}),
+	'seller-payouts': guide({
+		slug: 'seller-payouts', title: 'Understanding Seller Earnings', category: 'For Sellers',
+		description: 'Understand sales, commission, money on hold and payouts.',
+		intro: 'A paid order does not mean money is ready to be paid out immediately. The earnings page shows the current status.', tags: ['earnings', 'commission', 'settlements', 'payout', 'Stripe Connect'],
 		sections: [
-			{
-				id: 'stripe-connect',
-				title: 'Stripe Connect Onboarding',
-				content: [
-					'Vendors connect their bank account via Stripe Express on `/dashboard/seller/stores/[storeUrl]/payouts`. Stripe handles KYC identity verification and bank account verification.',
-				],
-			},
-			{
-				id: 'commission-calculation',
-				title: 'Platform Commission & Net Earnings',
-				content: [
-					'For every successful sale, GoCart automatically deducts the platform commission fee (configurable by admin, default 2%). The remaining 98% is credited to the seller pending settlement balance.',
-				],
-				table: {
-					headers: ['Gross Order Group', 'Platform Commission (2%)', 'Net Seller Credit'],
-					rows: [
-						['$100.00', '$2.00', '$98.00'],
-						['$250.00', '$5.00', '$245.00'],
-						['$1,000.00', '$20.00', '$980.00'],
-					],
-				},
-			},
-			{
-				id: 'settlement-hold',
-				title: 'Settlement Hold Period (Escrow)',
-				content: [
-					'To allow sufficient time for return windows and buyer claims, earnings remain in `PENDING` status for a configurable hold period (default 7 days after delivery). Once the hold expires, funds automatically transfer to `AVAILABLE` balance for payout.',
-				],
-			},
-			{
-				id: 'payout-ledger',
-				title: 'Payout History & Ledger',
-				content: [
-					'Vendors can review every historical transfer, payout arrival date, currency breakdown, and bank account destination in their payout history ledger.',
-				],
-			},
+			{ id: 'earnings-terms', title: 'What the amounts mean', content: [], table: { headers: ['Term', 'Meaning'], rows: [
+				['Sales', 'The recorded value of your orders.'], ['Commission', 'The marketplace fee charged to the seller.'], ['Settlement', 'The record of how much is owed to the seller for a package.'], ['On hold or blocked', 'Money that is not yet eligible for release, or needs review.'], ['Payout', 'Money sent by the payment provider to the seller’s bank account.'],
+			] } },
+			{ id: 'view-earnings', title: 'Check your earnings', content: ['Open your store’s Earnings page. Review the amount, status and any explanation of a hold or block.', 'Refunds, disputes, fees and payout-account requirements can affect the amount available.'] },
+			{ id: 'payment-account', title: 'Connect a payout account', content: ['Use the Stripe Connect setup from your seller workspace and follow the provider’s instructions.', 'Account requirements and marketplace release rules must be met before payouts can happen. Sandbox balances and payouts are demonstrations, not real earnings.'] },
 		],
-	},
-
-	'admin-operations': {
-		slug: 'admin-operations',
-		title: 'Platform Settings & Store Moderation',
-		category: 'Admin Control Center',
-		description: 'Managing platform fee rates, approving new stores, category management, and audit logs.',
-		readTime: '4 min read',
-		lastUpdated: 'September 2026',
-		tags: ['admin', 'moderation', 'settings', 'categories'],
-		headings: [
-			{ id: 'admin-dashboard', title: 'Admin Control Overview', level: 2 },
-			{ id: 'platform-settings', title: 'Commission & Escrow Settings', level: 2 },
-			{ id: 'store-moderation', title: 'Vendor & Store Moderation', level: 2 },
-			{ id: 'category-management', title: 'Marketplace Categories Taxonomy', level: 2 },
-		],
-		intro: 'Platform administrators possess marketplace-wide governance tools to regulate commission percentages, approve or suspend vendor stores, and maintain product taxonomy.',
+	}),
+	'admin-operations': guide({
+		slug: 'admin-operations', title: 'Using the Admin Dashboard', category: 'For Admins',
+		description: 'Read the marketplace totals and review stores, orders and background jobs.',
+		intro: 'Sign in as an admin and open the admin dashboard. Start with the totals, then open the relevant management page.', tags: ['admin', 'GMV', 'revenue', 'stores', 'background jobs'],
 		sections: [
-			{
-				id: 'admin-dashboard',
-				title: 'Admin Control Overview',
-				content: [
-					'The admin dashboard at `/dashboard/admin` displays key marketplace metrics: Gross Merchandise Volume (GMV), active vendor counts, total orders, and open customer return disputes.',
-				],
-			},
-			{
-				id: 'platform-settings',
-				title: 'Commission & Escrow Settings',
-				content: [
-					'Administrators can update global marketplace parameters at `/dashboard/admin/settings`:',
-					'- **Commission Percentage**: Platform fee rate applied to all vendor sales (1% to 15%).',
-					'- **Payout Hold Days**: Minimum days before seller settlement funds mature for transfer (3 to 30 days).',
-				],
-			},
-			{
-				id: 'store-moderation',
-				title: 'Vendor & Store Moderation',
-				content: [
-					'Under `/dashboard/admin/stores`, admins can inspect new seller applications and set store status:',
-					'- **ACTIVE**: Store is approved and public across catalog.',
-					'- **PENDING**: Store undergoing review before public listing.',
-					'- **SUSPENDED**: Store temporarily hidden due to policy violations or disputes.',
-				],
-			},
-			{
-				id: 'category-management',
-				title: 'Marketplace Categories Taxonomy',
-				content: [
-					'Admins create and organize categories and subcategories with custom icon URLs and promotional banners under `/dashboard/admin/categories`.',
-				],
-			},
+			{ id: 'dashboard-totals', title: 'What the totals mean', content: [], table: { headers: ['Dashboard label', 'Plain meaning'], rows: [
+				['GMV', 'Gross merchandise value: the value of paid and partially refunded order groups included in the dashboard. It is not platform profit.'],
+				['Platform revenue', 'Recorded seller commission. It is not profit after operating costs.'],
+				['Paid order groups', 'Paid or partially refunded store packages. One checkout can create several groups.'],
+				['Active stores', 'Stores currently active. This is a current count, not a historical monthly count.'],
+				['Risk signals', 'Returns, disputes or settlement problems that may need review.'],
+			] } },
+			{ id: 'manage-marketplace', title: 'Manage the marketplace', content: ['Use Stores to review store applications and status. Use Categories to organize products, and Settings to review marketplace options.', 'Use Orders and Returns to investigate a specific purchase or request. Review the details before changing its status.'] },
+			{ id: 'background-jobs', title: 'Check background jobs', content: ['Open [Background jobs](/dashboard/admin/background-jobs) to see queued work such as emails and notifications.', 'A failed job needs investigation. After the cause is fixed, an admin can replay eligible failed work. A successful replay should not repeat the same business effect.'] },
 		],
-	},
-
-	'fraud-disputes': {
-		slug: 'fraud-disputes',
-		title: 'Dispute Arbitration & Refunds',
-		category: 'Admin Control Center',
-		description: 'Reviewing customer return evidence, vendor responses, arbitrating disputes, and enforcing refunds.',
-		readTime: '4 min read',
-		lastUpdated: 'September 2026',
-		tags: ['disputes', 'refunds', 'arbitration', 'fraud'],
-		headings: [
-			{ id: 'dispute-queue', title: 'Open Dispute Queue', level: 2 },
-			{ id: 'evidence-review', title: 'Evidence & Photo Verification', level: 2 },
-			{ id: 'arbitration-actions', title: 'Arbitration Decisions', level: 2 },
-		],
-		intro: 'When buyers and sellers cannot agree on a return or refund request, GoCart administrators step in to review evidence and make binding dispute decisions.',
+	}),
+	'fraud-disputes': guide({
+		slug: 'fraud-disputes', title: 'Reviewing Returns and Refunds', category: 'For Admins',
+		description: 'Review a return request, its evidence and the actions available to an admin.',
+		intro: 'Review the order, the customer’s explanation and the seller’s response before making a decision.', tags: ['admin', 'returns', 'refunds', 'disputes'],
 		sections: [
-			{
-				id: 'dispute-queue',
-				title: 'Open Dispute Queue',
-				content: [
-					'Disputed return requests appear in `/dashboard/admin/disputes` with status, timestamp, claim amounts, and involved parties.',
-				],
-			},
-			{
-				id: 'evidence-review',
-				title: 'Evidence & Photo Verification',
-				content: [
-					'The dispute detail view compiles the entire timeline: initial order items, buyer return reasons, submitted evidence photos, and vendor response logs.',
-				],
-			},
-			{
-				id: 'arbitration-actions',
-				title: 'Arbitration Decisions',
-				content: [
-					'Administrators can take two decisive actions:',
-					'1. **Approve Refund**: Triggers direct Stripe/PayPal refund reversal back to customer, adjusting seller settlement balance.',
-					'2. **Reject Claim**: Closes the dispute in favor of the vendor with an audit reason recorded.',
-				],
-			},
+			{ id: 'open-request', title: 'Open the request', content: ['Open [Admin returns](/dashboard/admin/returns) and select a request. Check its current status, requested amount and deadlines.', 'Compare the request with the paid order and the items involved.'] },
+			{ id: 'review-evidence', title: 'Read the evidence', content: ['Read the customer’s reason and notes. Review uploaded photos and the seller’s response.', 'Use the available review actions and explain the decision clearly. A deadline reminder asks for review; it does not automatically approve a refund.'] },
+			{ id: 'refund-confirmation', title: 'Check the result', content: ['A return decision and a completed refund are separate records. Check the refund status after an approved financial action.', 'If the provider has not confirmed success, investigate the recorded status rather than assuming the money was returned.'] },
 		],
-	},
-
-	'api-webhooks': {
-		slug: 'api-webhooks',
-		title: 'Webhooks & Idempotency',
-		category: 'Developer & Integrations',
-		description: 'Stripe and PayPal webhook integration, cryptographic signature validation, and replay attack protection.',
-		readTime: '5 min read',
-		lastUpdated: 'September 2026',
-		tags: ['webhooks', 'stripe', 'paypal', 'security', 'api'],
-		headings: [
-			{ id: 'webhook-endpoints', title: 'Configured Webhook Endpoints', level: 2 },
-			{ id: 'signature-verification', title: 'Cryptographic Signature Verification', level: 2 },
-			{ id: 'idempotency-guards', title: 'Idempotent Replay Attack Protection', level: 2 },
-			{ id: 'event-catalog', title: 'Supported Webhook Events', level: 2 },
-		],
-		intro: 'GoCart receives real-time payment and payout notifications from Stripe and PayPal through secure, idempotent webhook handlers.',
+	}),
+	'api-webhooks': guide({
+		slug: 'api-webhooks', title: 'Payment Updates and Background Jobs', category: 'For Developers',
+		description: 'Understand provider messages, duplicate checks and queued work.',
+		intro: 'This developer guide explains why payment updates and notifications can arrive at different times.', tags: ['developer', 'webhooks', 'queue', 'idempotency', 'recovery'],
 		sections: [
-			{
-				id: 'webhook-endpoints',
-				title: 'Configured Webhook Endpoints',
-				content: [
-					'GoCart exposes dedicated public endpoints for payment provider events:',
-					'- **Stripe**: `/api/webhooks/stripe`',
-					'- **PayPal**: `/api/webhooks/paypal`',
-				],
-			},
-			{
-				id: 'signature-verification',
-				title: 'Cryptographic Signature Verification',
-				content: [
-					'Every incoming request payload is verified against the provider webhook secret before execution. Invalid signatures are rejected immediately with HTTP 400.',
-				],
-				codeBlock: {
-					language: 'typescript',
-					filename: 'src/app/api/webhooks/stripe/route.ts',
-					code: '// Verify Stripe cryptographic signature\nconst event = stripe.webhooks.constructEvent(\n  rawBody,\n  signature,\n  process.env.STRIPE_WEBHOOK_SECRET!\n);',
-				},
-			},
-			{
-				id: 'idempotency-guards',
-				title: 'Idempotent Replay Attack Protection',
-				content: [
-					'To prevent duplicate balance credits or multiple order creations from network retries, processed event IDs are recorded in `SellerPaymentAccountEvent`. Repeated events return HTTP 200 without executing side effects twice.',
-				],
-			},
-			{
-				id: 'event-catalog',
-				title: 'Supported Webhook Events',
-				content: [
-					'- `payment_intent.succeeded`: Marks order paid, reserves stock, creates order groups.',
-					'- `charge.refunded`: Updates return request status and adjusts settlement ledger.',
-					'- `account.updated`: Synchronizes seller Stripe Express onboarding and payout capability.',
-					'- `payout.paid` / `payout.failed`: Records disbursement confirmation.',
-				],
-			},
+			{ id: 'payment-messages', title: 'Payment providers send updates', content: ['A webhook is a message sent by a payment provider when something changes, such as a payment succeeding.', 'GoCart checks the provider’s signature before accepting it. Payment handlers update the matching order using the provider event and payment identifiers.'] },
+			{ id: 'duplicates', title: 'The same message can arrive twice', content: ['Providers and queues may deliver a message more than once. Idempotency means processing it again does not repeat the same business action.', 'GoCart records event identifiers and business-action keys so a repeated payment message does not earn coins or create the same notification again.'] },
+			{ id: 'queued-work', title: 'Work can retry later', content: ['A durable job is saved in the database before delivery is attempted. The worker claims it, performs the work and records the result.', 'Failures retry with longer waits. Work that reaches the attempt limit becomes DEAD and creates an admin alert. Recovery and admin replay help resume eligible work after the cause is fixed.'] },
 		],
-	},
-
-	'seo-metadata': {
-		slug: 'seo-metadata',
-		title: 'SEO & Structured Data',
-		category: 'Developer & Integrations',
-		description: 'Schema.org JSON-LD structured data generators, dynamic sitemaps, robots.txt, and OpenGraph preview cards.',
-		readTime: '4 min read',
-		lastUpdated: 'September 2026',
-		tags: ['seo', 'schema', 'sitemap', 'opengraph'],
-		headings: [
-			{ id: 'schema-engine', title: 'Schema.org JSON-LD Generator Engine', level: 2 },
-			{ id: 'dynamic-sitemap', title: 'Dynamic XML Sitemap & Robots', level: 2 },
-			{ id: 'opengraph-cards', title: 'Dynamic Social Preview Cards', level: 2 },
-		],
-		intro: 'GoCart is optimized for search engines and social sharing, implementing Schema.org structured data, dynamic XML sitemaps, and OpenGraph previews across all pages.',
+	}),
+	'seo-metadata': guide({
+		slug: 'seo-metadata', title: 'Search Results and Shared Links', category: 'For Developers',
+		description: 'Understand page titles, search information and social link previews.',
+		intro: 'GoCart gives public pages information that search engines and social apps can read. Each service decides when and how to display it.', tags: ['SEO', 'sharing', 'preview', 'metadata', 'sitemap'],
 		sections: [
-			{
-				id: 'schema-engine',
-				title: 'Schema.org JSON-LD Generator Engine',
-				content: [
-					'The type-safe generator located at `src/lib/seo/schema.ts` outputs standardized Schema.org payloads:',
-					'- **Product**: Includes product name, description, SKU, brand, offers with price and availability (`InStock`), seller metadata, and aggregate reviews.',
-					'- **Store**: Outputs local business metadata with contact email, telephone, and logo.',
-					'- **BreadcrumbList**: Standard navigation trail linking Home → Category → Product.',
-					'- **WebSite & Organization**: Root platform metadata with `SearchAction` deep-linking.',
-				],
-			},
-			{
-				id: 'dynamic-sitemap',
-				title: 'Dynamic XML Sitemap & Robots',
-				content: [
-					'Next.js dynamic routes automatically generate `/sitemap.xml` and `/robots.txt`:',
-					'- `src/app/sitemap.ts`: Indexes all active products, stores, categories, and static endpoints.',
-					'- `src/app/robots.ts`: Allows public storefront paths while disallowing private dashboard routes.',
-				],
-			},
-			{
-				id: 'opengraph-cards',
-				title: 'Dynamic Social Preview Cards',
-				content: [
-					'Using Next.js `ImageResponse` in `src/app/opengraph-image.tsx`, social platforms (Facebook, Twitter, LinkedIn, Slack) render dynamic 1200x630 preview banners when links are shared.',
-				],
-			},
+			{ id: 'search-information', title: 'What search engines read', content: ['Public pages include a title, description and preferred page URL. Structured data describes information such as a product and its price in a format search engines understand.', 'The sitemap lists public pages. Having this information does not guarantee a search ranking or an enhanced search result.'] },
+			{ id: 'sharing-links', title: 'Share a page', content: ['Use the Share button or copy the product, store or home-page URL.', 'Social apps read preview information such as the title and image. The image must be publicly accessible.'] },
+			{ id: 'preview-troubleshooting', title: 'If a preview is missing or old', content: ['Check that the URL opens without signing in and that its preview image loads.', 'Social apps can cache an older preview. Their inspection tools may refresh it. A valid page does not guarantee every app updates its preview immediately.'] },
 		],
-	},
-
-	faq: {
-		slug: 'faq',
-		title: 'Frequently Asked Questions',
-		category: 'Support & Reference',
-		description: 'Answers to the most common questions from buyers, sellers, and developers.',
-		readTime: '4 min read',
-		lastUpdated: 'September 2026',
-		tags: ['faq', 'help', 'support', 'questions'],
-		headings: [
-			{ id: 'buyer-faq', title: 'Buyer Questions', level: 2 },
-			{ id: 'seller-faq', title: 'Seller Questions', level: 2 },
-			{ id: 'tech-faq', title: 'Developer & Technical Questions', level: 2 },
-		],
-		intro: 'Find answers to frequently asked questions about shopping, selling, order fulfillment, and platform setup on GoCart.',
+	}),
+	faq: guide({
+		slug: 'faq', title: 'Common Questions', category: 'Help',
+		description: 'Quick answers about demo logins, orders, store access and refunds.',
+		intro: 'Start here if you are unsure what to do next.', tags: ['help', 'FAQ', 'login', 'password', 'payment'],
 		sections: [
-			{
-				id: 'buyer-faq',
-				title: 'Buyer Questions',
-				content: [
-					'**Q: Can I buy items from multiple stores in a single checkout?**  \nYes. GoCart allows adding items from multiple stores to your cart. During checkout, you pay once and your order is split into separate store shipments with individual tracking numbers.',
-					'**Q: How do I submit a return request?**  \nGo to `/profile/orders`, click on your delivered order, choose **Request Return**, select the items and reason, upload photos, and submit for vendor review.',
-					'**Q: How do loyalty coins work?**  \nEarn coins by checking in daily. Accumulated coins can be redeemed for store and platform discount coupons in your account dashboard.',
-				],
-			},
-			{
-				id: 'seller-faq',
-				title: 'Seller Questions',
-				content: [
-					'**Q: How do I get paid for my sales?**  \nConnect your bank account via Stripe Express under your seller settings. After the order hold period (7 days after delivery) expires, your net earnings transfer directly to your bank account.',
-					'**Q: What is the marketplace commission rate?**  \nGoCart charges a standard platform fee (default 2%) deducted automatically upon payment capture.',
-				],
-			},
-			{
-				id: 'tech-faq',
-				title: 'Developer & Technical Questions',
-				content: [
-					'**Q: How do I reset or seed the demo database?**  \nRun `bun run db:seed:demo` to populate products, categories, demo users, and active stores.',
-					'**Q: How are unit and integration tests executed?**  \nRun `bun vitest run` to execute the full test suite across auth, payments, calculations, and security guards.',
-				],
-			},
+			{ id: 'login-help', title: 'How do I sign in or switch roles?', content: ['The demo emails and passwords are shown in [Try the demo](/documentation/quick-start) and on [Sign in](/sign-in).', 'To switch roles, sign out first. Sign in again with the Customer, Seller or Admin demo account you want to use.'] },
+			{ id: 'order-help', title: 'Why is my paid order still pending?', content: ['Paid means the payment was confirmed. Pending can mean the store has not started preparing its package yet.', 'Open the order and check both payment and package status. See [Orders, delivery and returns](/documentation/order-tracking-returns).'] },
+			{ id: 'access-help', title: 'Why can’t I open a dashboard or store?', content: ['Check which account you signed in with. Customers cannot open the admin dashboard, and sellers manage only stores they own.', 'Use the matching demo account, then open its dashboard. A missing or unavailable store may also need review by an admin.'] },
+			{ id: 'return-help', title: 'Does a return request guarantee a refund?', content: ['No. The seller or admin reviews the request first. Check the decision and refund status in your Returns page.'] },
 		],
-	},
-
-	changelog: {
-		slug: 'changelog',
-		title: 'Platform Changelog',
-		category: 'Support & Reference',
-		description: 'Chronological release notes and recent platform updates.',
-		readTime: '3 min read',
-		lastUpdated: 'September 2026',
-		tags: ['changelog', 'releases', 'updates', 'version'],
-		headings: [
-			{ id: 'version-1-0-0', title: 'Version 1.0.0 (September 2026)', level: 2 },
-		],
-		intro: 'Track the latest features, architectural enhancements, and fixes deployed to the GoCart multi-vendor marketplace platform.',
+	}),
+	changelog: guide({
+		slug: 'changelog', title: 'What You Can Explore', category: 'Help',
+		description: 'A short checklist of the features available in the GoCart demo.',
+		intro: 'Use this checklist to choose a part of the demo to explore. Provider-dependent features require their configured services.', tags: ['features', 'demo', 'overview'],
 		sections: [
-			{
-				id: 'version-1-0-0',
-				title: 'Version 1.0.0 (September 2026)',
-				content: [
-					'### Initial Stable Marketplace Release',
-					'- **Multi-Vendor Architecture**: Complete multi-tenant store isolation and dynamic sub-storefront pages.',
-					'- **Comprehensive Documentation Hub**: Interactive documentation center with live search, table of contents, and role guides.',
-					'- **Platform-Wide SEO**: Schema.org JSON-LD generation (`Product`, `Store`, `BreadcrumbList`, `WebSite`, `Organization`), dynamic sitemaps, and robots.txt.',
-					'- **Gamified Loyalty System**: Daily check-in streaks with mystery boxes and coin-to-coupon exchanges.',
-					'- **Payment & Escrow Engine**: Stripe Connect integration, PayPal SDK, and automated settlement calculation.',
-					'- **Multi-Evidence Return Pipeline**: Structured return request flow with customer photo evidence uploads.',
-				],
-			},
+			{ id: 'customer-features', title: 'Customer features', content: ['- Product search, filters, store pages and pagination.', '- Cart, coupons, checkout and order details.', '- Wishlists, GoCoins, daily check-in, questions and returns.'] },
+			{ id: 'seller-features', title: 'Seller features', content: ['- Store details, images, shipping and return policies.', '- Product descriptions, uploaded photos, sizes, prices and stock.', '- Store orders, preparation progress, return requests and earnings.'] },
+			{ id: 'admin-features', title: 'Admin features', content: ['- Marketplace totals, store review, categories and settings.', '- Order and return review, settlement records and background-job recovery.', 'Start with [Try the demo](/documentation/quick-start) to explore these features using the shared accounts.'] },
 		],
-	},
+	}),
 };
+
+const CATEGORY_INFO = [
+	{ id: 'getting-started', title: 'Getting Started', icon: 'Rocket', description: 'Choose an account and take a short tour.' },
+	{ id: 'buyer-experience', title: 'For Customers', icon: 'ShoppingBag', description: 'Find products, pay for orders and request returns.' },
+	{ id: 'seller-management', title: 'For Sellers', icon: 'Store', description: 'Manage a store, its products, orders and earnings.' },
+	{ id: 'admin-operations', title: 'For Admins', icon: 'ShieldCheck', description: 'Review the marketplace and understand its totals.' },
+	{ id: 'developer-integrations', title: 'For Developers', icon: 'Code', description: 'Understand payment updates, background work and sharing.' },
+	{ id: 'reference', title: 'Help', icon: 'HelpCircle', description: 'Find quick answers and features to explore.' },
+];
+
+export const DOCS_CATEGORIES: DocCategory[] = CATEGORY_INFO.map(category => ({
+	...category,
+	articles: Object.values(DOC_ARTICLES).filter(article => article.category === category.title)
+		.map(({ slug, title, description }) => ({ slug, title, description })),
+}));
 
 export const getAllDocSlugs = (): string[] => {
 	return Object.keys(DOC_ARTICLES);

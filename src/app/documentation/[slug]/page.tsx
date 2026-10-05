@@ -12,7 +12,8 @@ import { DocsToc } from '@/components/docs/docs-toc';
 import { DocsCallout } from '@/components/docs/docs-callout';
 import { DocsTable } from '@/components/docs/docs-table';
 import { DocsImage } from '@/components/docs/docs-image';
-import { ChevronLeft, ChevronRight, Clock, Calendar, Check, Copy } from 'lucide-react';
+import { DemoAccountCard } from '@/components/shared/demo-account-card';
+import { ChevronLeft, ChevronRight, Clock, Calendar } from 'lucide-react';
 
 export async function generateStaticParams() {
 	return getAllDocSlugs().map((slug) => ({ slug }));
@@ -196,14 +197,14 @@ export default async function DocumentationArticlePage({
 	];
 
 	return (
-		<div className='flex-1 flex justify-between gap-8 px-4 sm:px-8 lg:px-12 py-6 sm:py-8 max-w-full overflow-x-hidden'>
+		<div className='flex-1 flex justify-between gap-8 px-4 sm:px-8 lg:px-12 py-6 sm:py-8 max-w-full overflow-x-clip'>
 			<script
 				type='application/ld+json'
 				dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
 			/>
 
 			{/* Main Article Prose Content */}
-			<main className='flex-1 max-w-4xl min-w-0'>
+			<main className='flex-1 max-w-4xl min-w-0 xl:pb-[calc(100dvh-6rem)]'>
 				{/* Breadcrumbs & Metadata Bar */}
 				<div className='flex flex-wrap items-center justify-between gap-2 mb-6 text-xs text-muted-foreground'>
 					<div className='flex items-center gap-1.5 font-medium'>
@@ -244,6 +245,9 @@ export default async function DocumentationArticlePage({
 
 				{/* Optional Top Callout */}
 				{article.topCallout && <DocsCallout callout={article.topCallout} />}
+				{(slug === 'introduction' || slug === 'quick-start') && (
+					<div className='mb-8'><DemoAccountCard layout='grid' /></div>
+				)}
 
 				{/* Article Body Sections */}
 				<div className='space-y-10'>

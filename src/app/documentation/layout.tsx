@@ -8,10 +8,10 @@ export const metadata: Metadata = {
 		template: '%s · GoCart Docs',
 	},
 	description:
-		'Comprehensive guides, API references, vendor onboarding, and architectural documentation for the GoCart multi-vendor marketplace.',
+		'Simple guides for shopping, managing a store and using the GoCart admin dashboard. Includes demo login accounts.',
 	openGraph: {
 		title: 'GoCart Documentation Hub',
-		description: 'Complete guides and technical documentation for GoCart.',
+		description: 'Learn how to use GoCart with short guides and demo accounts.',
 		type: 'website',
 		images: ['/opengraph-image'],
 	},

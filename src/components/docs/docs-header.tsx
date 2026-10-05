@@ -39,7 +39,7 @@ export function DocsHeader({ onOpenSearch, onToggleMobileSidebar }: DocsHeaderPr
 								GoCart
 							</span>
 							<span className='hidden xs:inline-flex text-emerald-500 font-semibold text-[10px] sm:text-xs px-1.5 py-0.5 rounded bg-emerald-500/10'>
-								Docs
+								Guides
 							</span>
 						</div>
 					</Link>
@@ -66,7 +66,7 @@ export function DocsHeader({ onOpenSearch, onToggleMobileSidebar }: DocsHeaderPr
 					>
 						<div className='flex items-center gap-2 truncate'>
 							<Search className='w-3.5 h-3.5 shrink-0 text-muted-foreground' />
-							<span className='hidden sm:inline truncate'>Search docs...</span>
+							<span className='hidden sm:inline truncate'>Search guides...</span>
 						</div>
 						<kbd className='hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-semibold text-muted-foreground bg-background border border-border/80 rounded shadow-2xs'>
 							Ctrl K
