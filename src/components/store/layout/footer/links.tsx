@@ -34,6 +34,7 @@ const PROFILE_LINKS: FooterLinkItem[] = [
 ];
 
 const CUSTOMER_CARE_LINKS: FooterLinkItem[] = [
+	{ title: 'Browse Stores', link: '/stores' },
 	{
 		title: 'About Us',
 		link: '/about',

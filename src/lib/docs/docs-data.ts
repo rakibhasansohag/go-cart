@@ -165,7 +165,7 @@ export const DOC_ARTICLES: Record<string, DocArticle> = {
 				'Use the available filters to narrow the results. Change the sort order to compare prices or find other matches.',
 			] },
 			{ id: 'store-pages', title: 'Browse a store', content: [
-				'Open a store from a product page. A store with many products shows page controls below its product list.',
+				'Open [Browse stores](/stores) to see how many active stores are available, search for a store and read its profile. You can also open a store from a product page. A store with many products shows page controls below its product list.',
 				'Use Next and Previous to move between pages. Changing a filter starts the results from the first page.',
 			] },
 			{ id: 'product-options', title: 'Check the product before buying', content: [
