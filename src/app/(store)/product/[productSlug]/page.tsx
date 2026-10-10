@@ -1,4 +1,5 @@
 import { serializeJsonLd } from '@/lib/seo/serialize-jsonld';
+import { effectivePrice } from '@/lib/offers/pricing';
 import { sanitizeUserText } from '@/lib/security/content-safety';
 import { getSiteUrl } from '@/lib/seo/site-url';
 import StoreCard from '@/components/store/cards/store-card';
@@ -68,7 +69,8 @@ export async function generateMetadata({
 			}
 		}
 
-		const firstPrice = product.variants?.[0]?.sizes?.[0]?.price;
+		const firstSize = product.variants?.[0]?.sizes?.[0];
+		const firstPrice = firstSize ? effectivePrice(firstSize) : undefined;
 		const formattedPrice = typeof firstPrice === 'number' ? ` - $${firstPrice.toFixed(2)}` : '';
 		const title = `${product.name}${formattedPrice}`;
 		const description = product.description
@@ -219,7 +221,8 @@ export default async function ProductPage({
 		}
 	}
 
-	const activePrice = variant?.sizes?.[0]?.price ?? data.variants?.[0]?.sizes?.[0]?.price;
+	const activeSize = variant?.sizes?.[0] ?? data.variants?.[0]?.sizes?.[0];
+	const activePrice = activeSize ? effectivePrice(activeSize) : undefined;
 	const inStock = (variant?.sizes?.some((s) => s.quantity > 0) ?? data.variants?.some((v) => v.sizes?.some((s) => s.quantity > 0))) ?? true;
 
 	const productJsonLd = generateProductJsonLd({

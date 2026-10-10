@@ -1,6 +1,7 @@
 'use server';
 
 import { db } from '@/lib/db';
+import { storefrontSizes, storefrontVariant } from '@/lib/offers/pricing';
 
 import {
 	FreeShippingWithCountriesType,
@@ -88,7 +89,7 @@ export const retrieveProductDetailsOptimized = async (productSlug: string) => {
 	}
 
 	// Return the structured product details
-	return product;
+	return { ...product, variants: product.variants.map(storefrontVariant) };
 };
 
 export const getStoreFollowingInfo = async (storeId: string) => {
@@ -351,7 +352,7 @@ export const getRelatedProducts = async (
 			variantSlug: variant.slug,
 			variantName: variant.variantName,
 			images: variant.images,
-			sizes: variant.sizes,
+			sizes: storefrontSizes(variant.sizes),
 		}));
 
 		// Extract variant images for the product

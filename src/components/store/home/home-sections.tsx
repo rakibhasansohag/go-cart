@@ -101,6 +101,8 @@ export function SuperDealsSection({
 	const { data: deals = [] } = useSuspenseQuery({
 		queryKey: queryKeys.home.superDeals(maxItems, pinned),
 		queryFn: () => getSuperDealsShowcaseProducts(maxItems, config),
+		staleTime: 60_000,
+		refetchInterval: 60_000,
 	});
 
 	return (

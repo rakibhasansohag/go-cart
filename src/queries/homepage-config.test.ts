@@ -49,6 +49,7 @@ import { DEFAULT_HOMEPAGE_SECTIONS } from '@/lib/homepage-types';
 describe('Homepage Configuration & Visual Customizer Queries', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
+		harness.db.product.findMany.mockReset();
 	});
 
 	describe('getHomepageLayout', () => {
@@ -303,6 +304,22 @@ describe('Homepage Configuration & Visual Customizer Queries', () => {
 	});
 
 	describe('getSuperDealsShowcaseProducts', () => {
+		it('does not invent discounts for sale flags or expired automatic offers', async () => {
+			const product = (id: string, automaticDiscountEndsAt: Date | null) => ({
+				id, name: id, slug: id, rating: 4, sales: 10, numReviews: 1, offerTag: null,
+				variants: [{ id: `variant-${id}`, slug: id, variantImage: '/image.jpg',
+					isSale: true, sizes: [{ price: 100, quantity: 10, discount: 0,
+						automaticDiscount: 25, automaticDiscountEndsAt }], images: [] }],
+			});
+			harness.db.product.findMany.mockResolvedValueOnce([
+				product('expired', new Date(0)), product('missing-deadline', null),
+				product('active', new Date(Date.now() + 60_000)),
+			]);
+			const deals = await getSuperDealsShowcaseProducts(6);
+			expect(deals).toHaveLength(1);
+			expect(deals[0]).toMatchObject({ id: 'active', price: 75, originalPrice: 100, discount: 25 });
+			expect(deals[0].saleEndDate).toBeTruthy();
+		});
 		it('queries discounted products and normalizes DealProductItem structure', async () => {
 			const mockDealProducts = [
 				{

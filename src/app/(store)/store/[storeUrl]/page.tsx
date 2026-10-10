@@ -139,7 +139,7 @@ export default async function StorePage({
 		<>
 			<Header />
 			<CategoriesHeader />
-			<div className='max-w-[1600px] mx-auto px-4 '>
+			<div className='max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-12 pt-4 pb-8'>
 				{storeJsonLd ? (
 					<script
 						type='application/ld+json'

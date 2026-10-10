@@ -2,6 +2,7 @@
 
 // DB
 import { db } from '@/lib/db';
+import { storefrontSizes, storefrontVariant } from '@/lib/offers/pricing';
 
 // Types
 import {
@@ -831,22 +832,18 @@ export const getProducts = async (
 		}
 	}
 
-	// Apply price filters (min and max price)
+	// Filter using the same live price used by cards and checkout.
 	if (filters.minPrice || filters.maxPrice) {
-		andConditions.push({
-			variants: {
-				some: {
-					sizes: {
-						some: {
-							price: {
-								gte: filters.minPrice || 0, // Default to 0 if no min price is set
-								lte: filters.maxPrice || Infinity, // Default to Infinity if no max price is set
-							},
-						},
-					},
-				},
-			},
-		});
+		const min = filters.minPrice || 0;
+		const max = filters.maxPrice || Number.MAX_SAFE_INTEGER;
+		const pricedProducts = await db.$queryRaw<{ productId: string }[]>(Prisma.sql`
+			SELECT DISTINCT v."productId" FROM "Size" s
+			JOIN "ProductVariant" v ON v.id = s."productVariantId"
+			WHERE ROUND((s.price * (1 - GREATEST(s.discount,
+				CASE WHEN s."automaticDiscountEndsAt" > NOW() THEN s."automaticDiscount" ELSE 0 END) / 100.0))::numeric, 2)
+				BETWEEN ${min} AND ${max}
+		`);
+		andConditions.push({ id: { in: pricedProducts.map(product => product.productId) } });
 	}
 
 	if (filters.color && filters.color.length > 0) {
@@ -970,7 +967,7 @@ export const getProducts = async (
 				LEFT JOIN "Size" s ON s."productVariantId" = v.id
 				WHERE p.id IN (${Prisma.join(matches.map((product) => product.id))})
 				GROUP BY p.id
-				ORDER BY MIN(s.price * (1 - s.discount / 100.0)) ${direction} NULLS LAST, p.id ASC
+				ORDER BY MIN(s.price * (1 - GREATEST(s.discount, CASE WHEN s."automaticDiscountEndsAt" > NOW() THEN s."automaticDiscount" ELSE 0 END) / 100.0)) ${direction} NULLS LAST, p.id ASC
 			`);
 			const cursorIndex = cursor ? ordered.findIndex((product) => product.id === cursor) : -1;
 			const offset = cursor ? (cursorIndex < 0 ? ordered.length : cursorIndex + 1) : (currentPage - 1) * limit;
@@ -1050,7 +1047,7 @@ export const getProducts = async (
 			variantSlug: variant.slug,
 			variantName: variant.variantName,
 			images: variant.images,
-			sizes: variant.sizes,
+			sizes: storefrontSizes(variant.sizes),
 		}));
 
 		// Extract variant images for the product
@@ -1214,7 +1211,7 @@ export const retrieveProductDetails = async (
 			variantImage: variant.variantImage,
 			variantUrl: `/product/${productSlug}/${variant.slug}`,
 			images: variant.images,
-			sizes: variant.sizes,
+			sizes: storefrontSizes(variant.sizes),
 			colors: variant.colors,
 		})),
 	};
@@ -1250,7 +1247,8 @@ const formatProductResponse = (
 	const variant = product.variants[0];
 	const { store, category, subCategory, offerTag, questions, reviews } =
 		product;
-	const { images, colors, sizes } = variant;
+	const { images, colors } = variant;
+	const sizes = storefrontSizes(variant.sizes);
 
 	return {
 		productId: product.id,
@@ -1265,8 +1263,8 @@ const formatProductResponse = (
 		category,
 		subCategory,
 		offerTag,
-		isSale: variant.isSale,
-		saleEndDate: variant.saleEndDate,
+		isSale: storefrontVariant(variant).isSale,
+		saleEndDate: storefrontVariant(variant).saleEndDate,
 		brand: product.brand,
 		sku: variant.sku,
 		weight: variant.weight,
@@ -1741,7 +1739,7 @@ export const getProductsByIds = async (
 					variantName: variant.variantName,
 					variantSlug: variant.slug,
 					images: variant.images,
-					sizes: variant.sizes,
+					sizes: storefrontSizes(variant.sizes),
 				},
 			],
 			variantImages: [],

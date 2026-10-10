@@ -52,7 +52,7 @@ export default async function Header() {
 					</div>
 					<Search />
 				</div>
-				<div className='hidden lg:flex w-full lg:w-fit lg:mt-2 justify-end mt-1.5 pl-4 xl:pl-6 items-center gap-1.5 xl:gap-2 shrink-0'>
+				<div className='hidden lg:flex w-full lg:w-fit justify-end pl-4 xl:pl-6 items-center gap-1.5 xl:gap-2 shrink-0'>
 					<CheckInTrigger variant='header' />
 					<Link
 						href='/documentation'

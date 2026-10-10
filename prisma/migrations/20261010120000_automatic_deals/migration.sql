@@ -1,0 +1,3 @@
+ALTER TABLE "Size"
+ADD COLUMN "automaticDiscount" DOUBLE PRECISION NOT NULL DEFAULT 0,
+ADD COLUMN "automaticDiscountEndsAt" TIMESTAMP(3);

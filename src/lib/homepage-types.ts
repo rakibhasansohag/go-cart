@@ -67,6 +67,7 @@ export interface DealProductItem {
 	quantity?: number;
 	claimedPercent: number;
 	offerTag?: string | null;
+	saleEndDate?: string | null;
 }
 
 export const DEFAULT_HOMEPAGE_SECTIONS: Omit<HomepageSectionItem, 'id' | 'updatedAt'>[] = [

@@ -36,9 +36,9 @@ function normalizeDeal(
 	if ('originalPrice' in item && typeof item.originalPrice === 'number') {
 		return item as DealProductItem;
 	}
-	const basePrice = item.price || 49.99;
-	const discount = 15;
-	const originalPrice = Math.round((basePrice / (1 - discount / 100)) * 100) / 100;
+	const basePrice = item.price ?? 0;
+	const discount = 0;
+	const originalPrice = basePrice;
 	return {
 		id: item.slug || `deal-${index}`,
 		name: item.name,
@@ -50,7 +50,7 @@ function normalizeDeal(
 		discount,
 		rating: 'rating' in item && typeof item.rating === 'number' ? item.rating : 0,
 		sales: 'sales' in item && typeof item.sales === 'number' ? item.sales : 0,
-		claimedPercent: 50,
+		claimedPercent: 0,
 	};
 }
 
@@ -64,35 +64,30 @@ export default function AnimatedDeals({
 	const { formatPrice } = useCurrency();
 	const [swiper, setSwiper] = useState<SwiperType | null>(null);
 
-	const resolvedTargetDate = useMemo(() => {
-		if (targetDate) return targetDate;
-		const fallback = Date.now() + 3 * 24 * 60 * 60 * 1000;
-		return new Date(fallback).toISOString();
-	}, [targetDate]);
-
-	const [timeLeft, setTimeLeft] = useState({
-		days: 0,
-		hours: 0,
-		minutes: 0,
-		seconds: 0,
-	});
-
+	const [now, setNow] = useState<number | null>(null);
 	useEffect(() => {
-		const targetTime = new Date(resolvedTargetDate).getTime();
-		const calculate = () => {
-			const now = Date.now();
-			const diff = Math.max(0, targetTime - now);
-			setTimeLeft({
-				days: Math.floor(diff / (1000 * 60 * 60 * 24)),
-				hours: Math.floor((diff / (1000 * 60 * 60)) % 24),
-				minutes: Math.floor((diff / (1000 * 60)) % 60),
-				seconds: Math.floor((diff / 1000) % 60),
-			});
-		};
-		calculate();
-		const interval = setInterval(calculate, 1000);
-		return () => clearInterval(interval);
-	}, [resolvedTargetDate]);
+		const tick = () => setNow(Date.now());
+		const initial = setTimeout(tick, 0);
+		const interval = setInterval(tick, 1000);
+		return () => { clearTimeout(initial); clearInterval(interval); };
+	}, []);
+
+	const resolvedTargetDate = useMemo(() => {
+		const deadlines = products.flatMap(item => 'saleEndDate' in item && item.saleEndDate
+			? [new Date(item.saleEndDate).getTime()] : []).filter(time => (now === null || time > now));
+		if (deadlines.length) return new Date(Math.min(...deadlines)).toISOString();
+		if (targetDate && (now === null || new Date(targetDate).getTime() > now)) return targetDate;
+		return null;
+	}, [products, targetDate, now]);
+
+	const diff = now !== null && resolvedTargetDate
+		? Math.max(0, new Date(resolvedTargetDate).getTime() - now) : 0;
+	const timeLeft = {
+		days: Math.floor(diff / 86_400_000),
+		hours: Math.floor(diff / 3_600_000) % 24,
+		minutes: Math.floor(diff / 60_000) % 60,
+		seconds: Math.floor(diff / 1000) % 60,
+	};
 
 	// Strict deduplication by normalized name and key
 	const uniqueProducts = useMemo(() => {
@@ -102,6 +97,7 @@ export default function AnimatedDeals({
 
 		for (let i = 0; i < products.length; i++) {
 			const item = normalizeDeal(products[i], i);
+			if (item.discount <= 0 || (now !== null && item.saleEndDate && new Date(item.saleEndDate).getTime() <= now)) continue;
 			const nameKey = item.name.trim().toLowerCase();
 			const primaryKey = (item.slug || item.id || `item-${i}`).trim().toLowerCase();
 
@@ -112,7 +108,7 @@ export default function AnimatedDeals({
 			}
 		}
 		return result;
-	}, [products]);
+	}, [products, now]);
 
 	const maxDiscount = useMemo(() => {
 		if (uniqueProducts.length === 0) return 15;
@@ -174,7 +170,7 @@ export default function AnimatedDeals({
 				{/* Header Actions: Countdown Timer + Header Arrows + View All Link */}
 				<div className="flex items-center gap-3 sm:gap-4 flex-wrap">
 					{/* Live Countdown */}
-					<div className="flex items-center gap-2 bg-muted/60 border border-border/70 rounded-xl px-2.5 py-1 shadow-xs">
+					{resolvedTargetDate && diff > 0 && <div className="flex items-center gap-2 bg-muted/60 border border-border/70 rounded-xl px-2.5 py-1 shadow-xs">
 						<span className="flex size-2 relative">
 							<span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75" />
 							<span className="relative inline-flex rounded-full size-2 bg-rose-500" />
@@ -200,7 +196,7 @@ export default function AnimatedDeals({
 								{String(timeLeft.seconds).padStart(2, '0')}s
 							</span>
 						</div>
-					</div>
+					</div>}
 
 					{/* Header Navigation Arrows */}
 					<div className="flex items-center gap-1">
@@ -309,7 +305,7 @@ export default function AnimatedDeals({
 													Save {formatPrice(product.originalPrice - product.price)}
 												</span>
 												<span className="text-rose-600 dark:text-rose-400 font-medium shrink-0">
-													Only a few left!
+													{product.quantity !== undefined && product.quantity <= 5 ? 'Only a few left!' : 'In stock'}
 												</span>
 											</div>
 										</div>

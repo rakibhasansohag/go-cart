@@ -426,6 +426,8 @@ export type ProductSize = {
 	size: string;
 	price: number;
 	discount: number;
+	automaticDiscount?: number;
+	automaticDiscountEndsAt?: Date | null;
 	quantity: number;
 };
 

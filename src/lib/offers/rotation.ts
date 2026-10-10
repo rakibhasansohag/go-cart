@@ -1,11 +1,9 @@
+import { createHash } from 'node:crypto';
+import { revalidatePath } from 'next/cache';
 import { db } from '@/lib/db';
+import type { Prisma } from '@prisma/client';
 
-export interface OfferDefinition {
-	name: string;
-	url: string;
-}
-
-export const CORE_OFFER_TAGS: OfferDefinition[] = [
+export const CORE_OFFER_TAGS = [
 	{ name: 'Todays Top Pick', url: 'today-top-pick' },
 	{ name: 'Flash Deals', url: 'flash-deals' },
 	{ name: 'Super Deals', url: 'super-deals' },
@@ -14,146 +12,63 @@ export const CORE_OFFER_TAGS: OfferDefinition[] = [
 	{ name: 'User Card', url: 'user-card' },
 ];
 
-/**
- * Ensures standard offer tags exist in the database, removes obsolete ones,
- * and distributes catalog products across all offer tags with live sales & deadlines.
- */
-export async function rotateDailyOffers(): Promise<{
-	assignedCount: number;
-	tagCounts: Record<string, number>;
-}> {
-	// 1. Delete obsolete test tags (like "shirt")
-	const allowedUrls = new Set(CORE_OFFER_TAGS.map((t) => t.url));
-	const obsoleteTags = await db.offerTag.findMany({
+// The daily scheduler runs at 08:00 UTC. Use the same window on retries.
+export function offerWindow(now: Date) {
+	const start = new Date(now);
+	start.setUTCHours(8, 0, 0, 0);
+	if (start > now) start.setUTCDate(start.getUTCDate() - 1);
+	return { bucket: start.toISOString(), endsAt: new Date(start.getTime() + 86_400_000) };
+}
+
+export function dailyOfferPlan(ids: string[], bucket: string) {
+	const hash = (id: string) => createHash('sha256').update(`${bucket}:${id}`).digest('hex');
+	return [...ids].sort((a, b) => hash(a).localeCompare(hash(b))).map((id, index) => ({
+		id, offer: CORE_OFFER_TAGS[index % CORE_OFFER_TAGS.length].url,
+		discount: 10 + parseInt(hash(id).slice(0, 8), 16) % 21,
+	}));
+}
+
+export async function rotateDailyOffers(now = new Date()) {
+	const result = await db.$transaction(tx => applyDailyOffers(tx, now), { timeout: 30_000 });
+	for (const path of ['/', '/browse', '/stores']) revalidatePath(path);
+	revalidatePath('/product/[productSlug]', 'page');
+	revalidatePath('/store/[storeUrl]', 'page');
+	return result;
+}
+
+export async function applyDailyOffers(tx: Prisma.TransactionClient, now: Date) {
+	const { bucket, endsAt } = offerWindow(now);
+	// Serialize concurrent callbacks; updates either commit or roll back together.
+	await tx.$executeRaw`SELECT pg_advisory_xact_lock(260810)`;
+	const tags = await Promise.all(CORE_OFFER_TAGS.map(tag => tx.offerTag.upsert({
+		where: { url: tag.url }, create: tag, update: {},
+	})));
+	const tagIds = tags.map(tag => tag.id);
+	const products = await tx.product.findMany({
 		where: {
-			url: { notIn: Array.from(allowedUrls) },
-		},
-		select: { id: true, url: true },
+			store: { status: 'ACTIVE' },
+			OR: [{ offerTagId: null }, { offerTagId: { in: tagIds } }],
+			variants: { some: { sizes: { some: { quantity: { gt: 0 }, price: { gt: 0 } } } } },
+		}, select: { id: true },
 	});
-
-	for (const obs of obsoleteTags) {
-		await db.product.updateMany({
-			where: { offerTagId: obs.id },
-			data: { offerTagId: null },
-		});
-		await db.offerTag.delete({ where: { id: obs.id } });
-	}
-
-	// 2. Ensure the 6 core tags exist
-	const tagMap = new Map<string, string>();
-	for (const def of CORE_OFFER_TAGS) {
-		let tag = await db.offerTag.findUnique({ where: { url: def.url } });
-		if (!tag) {
-			tag = await db.offerTag.create({
-				data: {
-					name: def.name,
-					url: def.url,
-				},
-			});
-		}
-		tagMap.set(def.url, tag.id);
-	}
-
-	// 3. Fetch all products
-	const products = await db.product.findMany({
-		select: {
-			id: true,
-			name: true,
-			slug: true,
-			rating: true,
-			sales: true,
-			variants: {
-				select: {
-					id: true,
-					sizes: {
-						select: { id: true, discount: true },
-					},
-				},
-			},
-		},
-		orderBy: [{ rating: 'desc' }, { sales: 'desc' }],
-	});
-
-	if (products.length === 0) {
-		return { assignedCount: 0, tagCounts: {} };
-	}
-
-	// Set tomorrow at midnight UTC as flash deals expiration
-	const now = new Date();
-	const tomorrowEnd = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1, 23, 59, 59));
-	const saleEndDateIso = tomorrowEnd.toISOString();
-
-	// Calculate deterministic daily bucket offsets based on day of year
-	const dayOfYear = Math.floor((now.getTime() - new Date(now.getFullYear(), 0, 0).getTime()) / 86400000);
-	const targetBuckets = ['today-top-pick', 'flash-deals', 'super-deals', 'best-deals', 'featured', 'user-card'];
+	// Preserve seller discounts and custom offer tags.
+	await tx.size.updateMany({ where: { automaticDiscount: { gt: 0 } },
+		data: { automaticDiscount: 0, automaticDiscountEndsAt: null } });
+	await tx.product.updateMany({ where: { offerTagId: { in: tagIds } }, data: { offerTagId: null } });
+	const plan = dailyOfferPlan(products.map(product => product.id), bucket);
 	const tagCounts: Record<string, number> = {};
-	targetBuckets.forEach((b) => {
-		tagCounts[b] = 0;
-	});
-
-	let assignedCount = 0;
-
-	for (let i = 0; i < products.length; i++) {
-		const product = products[i];
-		// Rotate product bucket assignment deterministically by day
-		const bucketIndex = (i + dayOfYear) % targetBuckets.length;
-		const offerUrl = targetBuckets[bucketIndex];
-		const offerTagId = tagMap.get(offerUrl);
-
-		if (!offerTagId) continue;
-
-		await db.product.update({
-			where: { id: product.id },
-			data: { offerTagId },
-		});
-
-		tagCounts[offerUrl] = (tagCounts[offerUrl] || 0) + 1;
-		assignedCount++;
-
-		// Configure live discount values and sale timers for Flash Deals & Super Deals
-		if (offerUrl === 'flash-deals') {
-			for (const variant of product.variants) {
-				await db.productVariant.update({
-					where: { id: variant.id },
-					data: {
-						isSale: true,
-						saleEndDate: saleEndDateIso,
-					},
-				});
-
-				// Guarantee 15% - 30% discount on sizes for flash deals
-				for (const size of variant.sizes) {
-					if (size.discount < 15) {
-						const dynamicDiscount = 15 + ((i * 3 + 7) % 16);
-						await db.size.update({
-							where: { id: size.id },
-							data: { discount: dynamicDiscount },
-						});
-					}
-				}
-			}
-		} else if (offerUrl === 'super-deals') {
-			for (const variant of product.variants) {
-				await db.productVariant.update({
-					where: { id: variant.id },
-					data: {
-						isSale: true,
-					},
-				});
-
-				// Guarantee 10% - 25% discount on sizes for super deals
-				for (const size of variant.sizes) {
-					if (size.discount < 10) {
-						const dynamicDiscount = 10 + ((i * 2 + 5) % 16);
-						await db.size.update({
-							where: { id: size.id },
-							data: { discount: dynamicDiscount },
-						});
-					}
-				}
-			}
-		}
+	for (const tag of tags) {
+		const ids = plan.filter(item => item.offer === tag.url).map(item => item.id);
+		tagCounts[tag.url] = ids.length;
+		if (ids.length) await tx.product.updateMany({ where: { id: { in: ids } }, data: { offerTagId: tag.id } });
 	}
-
-	return { assignedCount, tagCounts };
+	const sales = plan.filter(item => ['flash-deals', 'super-deals', 'best-deals'].includes(item.offer));
+	for (let discount = 10; discount <= 30; discount++) {
+		const ids = sales.filter(item => item.discount === discount).map(item => item.id);
+		if (ids.length) await tx.size.updateMany({
+			where: { quantity: { gt: 0 }, price: { gt: 0 }, productVariant: { productId: { in: ids } } },
+			data: { automaticDiscount: discount, automaticDiscountEndsAt: endsAt },
+		});
+	}
+	return { assignedCount: plan.length, tagCounts, saleCount: sales.length, endsAt: endsAt.toISOString() };
 }

@@ -1,6 +1,7 @@
 'use server';
 
 import { db } from '@/lib/db';
+import { effectiveDiscount, effectivePrice } from '@/lib/offers/pricing';
 import { currentUser } from '@clerk/nextjs/server';
 import { revalidatePath } from 'next/cache';
 import { Prisma } from '@prisma/client';
@@ -325,6 +326,10 @@ export async function getSuperDealsShowcaseProducts(
 				select: { name: true, url: true },
 			},
 			variants: {
+				where: { sizes: { some: { quantity: { gt: 0 }, OR: [
+					{ discount: { gt: 0 } },
+					{ automaticDiscount: { gt: 0 }, automaticDiscountEndsAt: { gt: new Date() } },
+				] } } },
 				take: 1,
 				select: {
 					id: true,
@@ -332,12 +337,15 @@ export async function getSuperDealsShowcaseProducts(
 					variantImage: true,
 					slug: true,
 					isSale: true,
+					saleEndDate: true,
 					sales: true,
 					sizes: {
 						orderBy: { price: 'asc' as const },
 						select: {
 							price: true,
 							discount: true,
+							automaticDiscount: true,
+							automaticDiscountEndsAt: true,
 							quantity: true,
 						},
 					},
@@ -360,6 +368,7 @@ export async function getSuperDealsShowcaseProducts(
 			const pinned = await db.product.findMany({
 				where: {
 					id: { in: pinnedIds },
+					store: { status: 'ACTIVE' },
 				},
 				select: dealProductSelect,
 			});
@@ -384,9 +393,11 @@ export async function getSuperDealsShowcaseProducts(
 		const products = remainingCount > 0 ? await db.product.findMany({
 			where: {
 				id: { notIn: Array.from(seenIds) },
+				store: { status: 'ACTIVE' },
 				OR: [
 					{ variants: { some: { isSale: true } } },
 					{ variants: { some: { sizes: { some: { discount: { gt: 0 } } } } } },
+					{ variants: { some: { sizes: { some: { automaticDiscount: { gt: 0 }, automaticDiscountEndsAt: { gt: new Date() } } } } } },
 					{ offerTag: { url: { in: ['super-deals', 'best-deals', 'flash-deals'] } } },
 				],
 			},
@@ -405,46 +416,25 @@ export async function getSuperDealsShowcaseProducts(
 			}
 		}
 
-		// 3. Fallback: If not enough unique discounted products, supplement with top products
+		// Do not fabricate discounts to fill the section.
 		const finalProducts = curatedProducts;
-		if (finalProducts.length < 4) {
-			const extra = await db.product.findMany({
-				where: {
-					id: { notIn: Array.from(seenIds) },
-				},
-				take: 4 - finalProducts.length,
-				orderBy: { sales: 'desc' },
-				select: dealProductSelect,
-			});
-			for (const item of (Array.isArray(extra) ? extra : [])) {
-				const norm = item.name.trim().toLowerCase();
-				if (!seenNames.has(norm)) {
-					seenNames.add(norm);
-					finalProducts.push(item);
-				}
-			}
-		}
-
-		return finalProducts.slice(0, limit).map((p, idx): DealProductItem => {
+		return finalProducts.map((p): DealProductItem | null => {
 			const variant = p.variants[0];
-			const primarySize = variant?.sizes[0];
-			const rawPrice = primarySize?.price || 49.99;
-			const rawDiscount =
-				primarySize?.discount && primarySize.discount > 0
-					? primarySize.discount
-					: variant?.isSale
-						? 15
-						: 10 + ((idx * 5) % 20);
-			const discountedPrice = Math.round(rawPrice * (1 - rawDiscount / 100) * 100) / 100;
+			const primarySize = variant?.sizes.filter(size => size.quantity > 0 && effectiveDiscount(size) > 0)
+				.sort((a, b) => effectivePrice(a) - effectivePrice(b))[0];
+			if (!primarySize) return null;
+			const rawPrice = primarySize.price;
+			const rawDiscount = effectiveDiscount(primarySize);
+			const discountedPrice = effectivePrice(primarySize);
 			const imageUrl =
 				variant?.variantImage || variant?.images[0]?.url || '/assets/images/placeholder.webp';
 
 			const realSales = typeof p.sales === 'number' ? p.sales : 0;
 			const totalQuantity =
-				variant?.sizes.reduce((acc, s) => acc + (s.quantity || 0), 0) || primarySize?.quantity || 10;
+				variant.sizes.reduce((acc, s) => acc + s.quantity, 0);
 			const totalStock = totalQuantity + realSales;
 			const realClaimedPercent =
-				totalStock > 0 ? Math.min(95, Math.max(10, Math.round((realSales / totalStock) * 100))) : 40;
+				totalStock > 0 ? Math.round((realSales / totalStock) * 100) : 0;
 
 			return {
 				id: p.id,
@@ -462,8 +452,10 @@ export async function getSuperDealsShowcaseProducts(
 				quantity: primarySize?.quantity || 0,
 				claimedPercent: realClaimedPercent,
 				offerTag: p.offerTag?.name || null,
+				saleEndDate: primarySize.automaticDiscountEndsAt && (primarySize.automaticDiscount ?? 0) > primarySize.discount
+					? primarySize.automaticDiscountEndsAt.toISOString() : null,
 			};
-		});
+		}).filter((item): item is DealProductItem => item !== null).slice(0, limit);
 	} catch (error) {
 		console.error('[SUPER_DEALS_SHOWCASE] Failed to load deals products:', error);
 		return [];
@@ -508,7 +500,7 @@ export async function searchProductsForCuration(
 						sizes: {
 							take: 1,
 							orderBy: { price: 'asc' },
-							select: { price: true, discount: true },
+							select: { price: true, discount: true, automaticDiscount: true, automaticDiscountEndsAt: true },
 						},
 						images: {
 							take: 1,
@@ -524,7 +516,7 @@ export async function searchProductsForCuration(
 			const variant = p.variants[0];
 			const size = variant?.sizes[0];
 			const price = size?.price || 49.99;
-			const discount = size?.discount || 0;
+			const discount = size ? effectiveDiscount(size) : 0;
 			const image =
 				variant?.variantImage || variant?.images[0]?.url || '/assets/images/placeholder.webp';
 

@@ -1,6 +1,7 @@
 'use server';
 
 import { db } from '@/lib/db';
+import { effectivePrice } from '@/lib/offers/pricing';
 import { currentUser } from '@clerk/nextjs/server';
 import {
 	ConversationStatus,
@@ -995,7 +996,7 @@ export async function getStoreCatalogForChat(
 					sizes: {
 						take: 1,
 						orderBy: { price: 'asc' },
-						select: { id: true, size: true, price: true, discount: true, quantity: true },
+						select: { id: true, size: true, price: true, discount: true, automaticDiscount: true, automaticDiscountEndsAt: true, quantity: true },
 					},
 				},
 			},
@@ -1005,9 +1006,7 @@ export async function getStoreCatalogForChat(
 	const items: StoreCatalogItem[] = products.map((p) => {
 		const firstVariant = p.variants[0];
 		const firstSize = firstVariant?.sizes[0];
-		const basePrice = firstSize?.price || 0;
-		const discount = firstSize?.discount || 0;
-		const finalPrice = discount > 0 ? Math.max(0, basePrice - discount) : basePrice;
+		const finalPrice = firstSize ? effectivePrice(firstSize) : 0;
 
 		return {
 			id: p.id,

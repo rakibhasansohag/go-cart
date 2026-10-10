@@ -372,6 +372,8 @@ model Size {
   quantity          Int
   price             Float
   discount          Float  @default(0)
+  automaticDiscount Float  @default(0)
+  automaticDiscountEndsAt DateTime?
   lowStockThreshold Int    @default(5)
 
   wishlist Wishlist[] @relation("WishlistToSize")

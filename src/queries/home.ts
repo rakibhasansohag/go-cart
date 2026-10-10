@@ -1,6 +1,7 @@
 'use server';
 
 import { db } from '@/lib/db';
+import { effectivePrice, storefrontSizes } from '@/lib/offers/pricing';
 import {
 	ProductSimpleVariantType,
 	ProductSize,
@@ -51,7 +52,7 @@ export const getHomeDataDynamic = async (
 	): { discountedPrice: number } => {
 		const sizesWithDiscount = sizes.map((size) => ({
 			...size,
-			discountedPrice: size.price * (1 - size.discount / 100),
+			discountedPrice: effectivePrice(size),
 		}));
 
 		return sizesWithDiscount.sort(
@@ -87,7 +88,7 @@ export const getHomeDataDynamic = async (
 						variantName: variant.variantName,
 						variantImage: variant.variantImage,
 						images: variant.images,
-						sizes: variant.sizes,
+						sizes: storefrontSizes(variant.sizes),
 					}),
 				);
 
@@ -131,7 +132,7 @@ export const getHomeDataDynamic = async (
 
 			// Query products based on the constructed where clause
 			const products = await db.product.findMany({
-				where: whereClause,
+				where: { ...whereClause, store: { status: 'ACTIVE' } },
 				select: {
 					id: true,
 					slug: true,

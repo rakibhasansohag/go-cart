@@ -6,6 +6,7 @@ import { scheduleCartReminder } from '@/lib/queue/workflow-steps';
 
 import { auth, currentUser } from '@clerk/nextjs/server';
 import { db } from '@/lib/db';
+import { effectivePrice } from '@/lib/offers/pricing';
 import { pickActionFields, requirePositiveQuantity } from '@/lib/security/action-input';
 import { assertCouponUsageAvailable } from '@/lib/security/coupon-eligibility';
 import {
@@ -332,9 +333,7 @@ export const saveUserCart = async (
 			const validQuantity = requirePositiveQuantity(quantity);
 			if (validQuantity > size.quantity) throw new Error('A product is no longer available in the requested quantity. Refresh your cart.');
 
-			const price = size.discount
-				? size.price - size.price * (size.discount / 100)
-				: size.price;
+			const price = effectivePrice(size);
 
 			// Calculate Shipping details
 			const countryCookie = await getCookie('userCountry', { cookies });
@@ -607,9 +606,7 @@ export const updateCartWithLatest = async (
 				}
 			}
 
-			const price = size.discount
-				? size.price - (size.price * size.discount) / 100
-				: size.price;
+			const price = effectivePrice(size);
 
 			const validated_qty = Math.min(quantity, size.quantity);
 
@@ -777,9 +774,7 @@ export const updateCheckoutProductstWithLatest = async (
 				shippingFee = fee;
 			}
 
-			const price = size.discount
-				? size.price - (size.price * size.discount) / 100
-				: size.price;
+			const price = effectivePrice(size);
 
 			const validated_qty = Math.min(quantity, size.quantity);
 
@@ -1093,9 +1088,7 @@ export const placeOrder = async (
 			// Validate stock and price
 			const validQuantity = requirePositiveQuantity(Math.min(quantity, size.quantity));
 
-			const price = size.discount
-				? size.price - size.price * (size.discount / 100)
-				: size.price;
+			const price = effectivePrice(size);
 
 			// Calculate Shipping details
 			const countryId = ownedShippingAddress.countryId;

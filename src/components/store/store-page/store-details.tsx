@@ -34,8 +34,7 @@ export default function StoreDetails({
 }: {
 	details: StoreDetailsType;
 }) {
-	const { averageRating, cover, description, logo, name, numReviews } = details;
-	const numOfReviews = new Intl.NumberFormat().format(numReviews);
+	const { cover, description, logo, name } = details;
 	const [followersCount, setFollowersCount] = useState<number>(
 		details._count.followers,
 	);
@@ -57,11 +56,6 @@ export default function StoreDetails({
 		sessionStorage.setItem(`store-announcement-dismissed-${details.id}`, 'true');
 	};
 
-	console.log({
-		averageRating,
-		description,
-		numOfReviews,
-	});
 
 	const socialLinks = [
 		{ key: 'instagram', url: details.instagram, icon: Instagram, label: 'Instagram' },
@@ -77,15 +71,15 @@ export default function StoreDetails({
 	].filter((s) => Boolean(s.url));
 
 	return (
-		<div className='relative w-full pb-4 md:pb-44'>
+		<div className='relative w-full'>
 			{isAnnouncementVisible && details.announcementText && (
 				<div
 					data-testid='store-announcement-bar'
 					className='w-full bg-gradient-to-r from-orange-500 via-amber-500 to-orange-500 text-white px-4 py-2.5 rounded-xl mb-3 flex items-center justify-between gap-3 text-sm shadow-md transition-all'
 				>
-					<div className='flex items-center gap-2.5 overflow-hidden flex-1'>
+					<div className='flex min-w-0 flex-wrap items-center gap-2.5 flex-1'>
 						<Megaphone className='w-4 h-4 shrink-0' />
-						<p className='font-medium truncate'>{details.announcementText}</p>
+						<p className='min-w-0 font-medium break-words'>{details.announcementText}</p>
 						{details.announcementUrl && (
 							<a
 								href={details.announcementUrl}
@@ -114,9 +108,9 @@ export default function StoreDetails({
 					alt={name}
 					width={2000}
 					height={500}
-					className='w-full h-44 md:h-96 object-cover object-top rounded-b-2xl'
+					className='w-full h-44 md:h-96 object-cover object-top rounded-2xl'
 				/>
-				<div className='relative -mt-14 md:mt-0 md:absolute md:-bottom-[140px] left-0 md:left-2 flex flex-col md:flex-row w-full md:w-[calc(100%-1rem)] justify-between items-center px-4 md:px-0 md:gap-y-0 text-center md:text-left'>
+				<div className='relative -mt-14 md:-mt-11 flex flex-col md:flex-row w-full justify-between items-center gap-4 px-4 pb-2 text-center md:text-left'>
 					<div className='flex flex-col md:flex-row items-center gap-y-3 md:gap-y-0'>
 						<Image
 							src={logo}
