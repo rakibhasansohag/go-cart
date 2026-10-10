@@ -1,3 +1,4 @@
+import { publicPageMetadata } from '@/lib/seo/page-metadata';
 import React from 'react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
@@ -22,11 +23,7 @@ import {
 	ArrowRight,
 } from 'lucide-react';
 
-export const metadata: Metadata = {
-	title: 'About Us | GoCart Multi-Vendor Marketplace',
-	description:
-		'Learn about GoCart, our mission to champion independent sellers, and how our multi-vendor marketplace delivers a unified shopping experience.',
-};
+export const metadata: Metadata = publicPageMetadata('/about', 'About GoCart by Rakib Hasan Sohag', 'Learn about GoCart, our mission to champion independent sellers, and how our multi-vendor marketplace delivers a unified shopping experience.');
 
 export default function AboutPage() {
 	return (
@@ -61,10 +58,10 @@ export default function AboutPage() {
 							<span>The GoCart Marketplace Story</span>
 						</div>
 						<h1 className='text-3xl sm:text-5xl font-extrabold tracking-tight text-foreground'>
-							Empowering Independent Merchants, Delighting Shoppers
+							GoCart: A Multi-Vendor E-commerce Portfolio Project
 						</h1>
 						<p className='text-sm sm:text-base text-muted-foreground leading-relaxed'>
-							GoCart is a modern multi-vendor commerce destination designed to bridge independent brands, creative artisans, and local merchants directly with shoppers worldwide through a single unified shopping cart.
+							GoCart is a full-stack marketplace portfolio project by Rakib Hasan Sohag, built with Next.js, TypeScript, Prisma and PostgreSQL. Explore the customer, seller and admin experiences using the public demo accounts.
 						</p>
 					</header>
 
@@ -206,13 +203,13 @@ export default function AboutPage() {
 
 						<div className='flex items-center gap-3 shrink-0'>
 							<a
-								href='https://github.com/rakibhasansohag'
+								href='https://github.com/rakibhasansohag/go-cart'
 								target='_blank'
 								rel='noopener noreferrer'
 								className='flex items-center gap-2 px-4 py-2 rounded-xl border border-border bg-muted/30 hover:bg-muted text-xs font-semibold text-foreground transition-all'
 							>
 								<Github className='w-4 h-4' />
-								<span>GitHub</span>
+								<span>GoCart source code</span>
 							</a>
 							<a
 								href='https://linkedin.com/in/rakibhasansohag'

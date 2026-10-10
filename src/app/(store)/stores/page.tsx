@@ -7,13 +7,16 @@ import Footer from '@/components/store/layout/footer/footer';
 import CatalogImage from '@/components/store/shared/catalog-image';
 import { UrlPagination } from '@/components/ui/url-pagination';
 import { getPublicStoreDirectory } from '@/queries/store-directory';
-import { getSiteUrl } from '@/lib/seo/site-url';
+import { listingMetadata, publicPageMetadata } from '@/lib/seo/page-metadata';
 
-export const metadata: Metadata = {
-	title: 'Browse Stores',
-	description: 'Explore independent stores on GoCart. Find a store, learn about it and browse its products.',
-	alternates: { canonical: `${getSiteUrl()}/stores` },
-};
+export async function generateMetadata({ searchParams }: {
+	searchParams: Promise<{ q?: string | string[]; page?: string | string[] }>;
+}): Promise<Metadata> {
+	return {
+		...publicPageMetadata('/stores', 'Browse Stores', 'Explore independent stores on GoCart. Find a store, learn about it and browse its products.'),
+		...listingMetadata('/stores', await searchParams),
+	};
+}
 
 export default async function StoresPage({ searchParams }: {
 	searchParams: Promise<{ q?: string | string[]; page?: string | string[] }>;

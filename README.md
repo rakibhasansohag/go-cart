@@ -11,19 +11,23 @@
 [![Stripe](https://img.shields.io/badge/Payments-Stripe_Connect-008CDD?style=flat&logo=stripe)](https://stripe.com/)
 [![Tests](https://img.shields.io/badge/Tests-Vitest-brightgreen?style=flat&logo=vitest)](https://vitest.dev/)
 
-GoCart is a multi-vendor e-commerce platform built with Next.js App Router, React 19, TypeScript, Prisma ORM, PostgreSQL, and TanStack Query. It unifies customer discovery, seller storefront management, real-time messaging, automated payout disbursements via Stripe Connect, and an administrative control hub.
+GoCart is a full-stack multi-vendor e-commerce portfolio project by [Rakib Hasan Sohag](https://github.com/rakibhasansohag), built with Next.js App Router, React 19, TypeScript, Prisma ORM, PostgreSQL, and TanStack Query. It unifies customer discovery, seller storefront management, real-time messaging, automated payout disbursements via Stripe Connect, and an administrative control hub.
+
+**[Live demo](https://go-cart-iota-eight.vercel.app/) · [Browse stores](https://go-cart-iota-eight.vercel.app/stores) · [User guides and demo accounts](https://go-cart-iota-eight.vercel.app/documentation/quick-start)**
+
+Explore customer shopping, seller catalog and order management, and admin marketplace operations. Payments use sandbox providers in this portfolio demo.
 
 ---
 
 ## 🚀 Quick Test Accounts
 
-The [`/sign-in`](http://localhost:3000/sign-in) page features a **Demo Accounts Panel** with one-click copy buttons for instant access across all three user roles:
+The [`/sign-in`](https://go-cart-iota-eight.vercel.app/sign-in) page features a **Demo Accounts Panel** with one-click copy buttons for instant access across all three user roles:
 
 | Role | Email | Password | Primary Surface | Permissions & Access |
 | :--- | :--- | :--- | :--- | :--- |
-| **Customer** | `user@email.com` | `123456789` | [`/profile`](http://localhost:3000/profile) | Storefront browsing, cart, checkout, returns, reviews & coin streaks |
-| **Seller** | `seller@email.com` | `123456789` | [`/dashboard/seller/stores/srank`](http://localhost:3000/dashboard/seller/stores/srank) | Store studio, catalog & variants, inventory alerts, orders & Stripe payouts |
-| **Admin** | `admin@email.com` | `123456789` | [`/dashboard/admin`](http://localhost:3000/dashboard/admin) | Platform analytics, store verification, settlement ledger & moderation |
+| **Customer** | `user@email.com` | `123456789` | [`/profile`](https://go-cart-iota-eight.vercel.app/profile) | Storefront browsing, cart, checkout, returns, reviews & coin streaks |
+| **Seller** | `seller@email.com` | `123456789` | [`/dashboard/seller/stores/srank`](https://go-cart-iota-eight.vercel.app/dashboard/seller/stores/srank) | Store studio, catalog & variants, inventory alerts, orders & Stripe payouts |
+| **Admin** | `admin@email.com` | `123456789` | [`/dashboard/admin`](https://go-cart-iota-eight.vercel.app/dashboard/admin) | Platform analytics, store verification, settlement ledger & moderation |
 
 ---
 
@@ -149,7 +153,7 @@ bun run seed:countries
 bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+Open [https://go-cart-iota-eight.vercel.app](https://go-cart-iota-eight.vercel.app) in your browser.
 
 ---
 
@@ -170,6 +174,19 @@ GoCart maintains automated test coverage across financial calculations, inventor
 
 1. Create a feature branch: `git checkout -b feature/your-feature-name`
 2. Run validation checks: `bun vitest run && bun run typecheck && bun run lint`
-3. Verify changes in BrowserOS or local browser at `http://localhost:3000`
+3. Verify changes in BrowserOS or local browser at `https://go-cart-iota-eight.vercel.app`
 4. Update knowledge graph: `python -m graphify update .`
 5. Open a pull request against the `dev` branch.
+
+## Search visibility
+
+The public site includes page metadata, social previews, structured data, and `/sitemap.xml`. Account and checkout pages are excluded from search indexing.
+
+After deploying to your public domain:
+
+1. Set `NEXT_PUBLIC_APP_URL` to that domain in Vercel.
+2. Open the GoCart URL-prefix property in Google Search Console. Its downloaded HTML verification file is included in `public/googlebf0c5c840c8d6dd4.html`; deploy it, then click Verify. For another property, use its own verification file or set `GOOGLE_SITE_VERIFICATION` for HTML-tag verification.
+3. Submit `/sitemap.xml` and inspect the homepage, About page, a product, a store, and a documentation page.
+4. Optionally verify Bing Webmaster Tools with `BING_SITE_VERIFICATION` and submit the same sitemap.
+
+Google and AI search decide what to index and rank. Accurate content and crawlable pages help discovery; rankings and AI citations are not guaranteed.

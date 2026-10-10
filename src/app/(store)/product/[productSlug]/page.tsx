@@ -219,12 +219,12 @@ export default async function ProductPage({
 		}
 	}
 
-	const activePrice = variant?.sizes?.[0]?.price ?? data.variants?.[0]?.sizes?.[0]?.price ?? 0;
+	const activePrice = variant?.sizes?.[0]?.price ?? data.variants?.[0]?.sizes?.[0]?.price;
 	const inStock = (variant?.sizes?.some((s) => s.quantity > 0) ?? data.variants?.some((v) => v.sizes?.some((s) => s.quantity > 0))) ?? true;
 
 	const productJsonLd = generateProductJsonLd({
 		name: data.name,
-		description: data.description,
+		description: sanitizeUserText(data.description || ''),
 		slug: data.slug,
 		images: productImages,
 		sku: variant?.sku || data.variants?.[0]?.sku,

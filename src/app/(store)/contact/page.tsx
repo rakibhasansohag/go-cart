@@ -1,3 +1,4 @@
+import { publicPageMetadata } from '@/lib/seo/page-metadata';
 import React from 'react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
@@ -5,7 +6,6 @@ import Header from '@/components/store/layout/header/header';
 import Footer from '@/components/store/layout/footer/footer';
 import ContactForm from '@/components/store/contact/contact-form';
 import {
-	Phone,
 	Mail,
 	MapPin,
 	MessageSquare,
@@ -17,7 +17,6 @@ import {
 	Store,
 	HelpCircle,
 	ArrowUpRight,
-	ShieldCheck,
 } from 'lucide-react';
 import {
 	Accordion,
@@ -26,11 +25,7 @@ import {
 	AccordionTrigger,
 } from '@/components/ui/accordion';
 
-export const metadata: Metadata = {
-	title: 'Contact Us | GoCart Multi-Vendor Marketplace',
-	description:
-		'Reach out to GoCart customer support, connect with merchant relations, or contact lead platform developer Rakib Hasan Sohag.',
-};
+export const metadata: Metadata = publicPageMetadata('/contact', 'Contact Us', 'Reach out to GoCart customer support, connect with merchant relations, or contact lead platform developer Rakib Hasan Sohag.');
 
 export default function ContactPage() {
 	return (

@@ -1,5 +1,5 @@
+import { listingMetadata } from '@/lib/seo/page-metadata';
 import { serializeJsonLd } from '@/lib/seo/serialize-jsonld';
-import { getSiteUrl } from '@/lib/seo/site-url';
 import ProductFilters from '@/components/store/browse-page/filters';
 import CategoriesHeader from '@/components/store/layout/categories-header/categories-header';
 import Header from '@/components/store/layout/header/header';
@@ -25,8 +25,10 @@ const getRequestStoreDetails = cache(getStorePageDetails);
 
 export async function generateMetadata({
 	params,
+	searchParams,
 }: {
 	params: Promise<{ storeUrl: string }>;
+	searchParams: Promise<FiltersQueryType>;
 }): Promise<Metadata> {
 	const { storeUrl } = await params;
 	if (!storeUrl) {
@@ -50,16 +52,13 @@ export async function generateMetadata({
 			? store.description.slice(0, 160)
 			: `Shop products from ${store.name} on GoCart.`;
 
-		const baseUrl =
-			getSiteUrl();
-		const canonicalUrl = `${baseUrl}/store/${store.url}`;
+		const listing = listingMetadata(`/store/${encodeURIComponent(store.url)}`, await searchParams);
+		const canonicalUrl = String(listing.alternates?.canonical);
 
 		return {
 			title,
 			description,
-			alternates: {
-				canonical: canonicalUrl,
-			},
+			...listing,
 			openGraph: {
 				title: `${store.name} | GoCart`,
 				description,

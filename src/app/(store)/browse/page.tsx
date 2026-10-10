@@ -1,4 +1,4 @@
-import { getSiteUrl } from '@/lib/seo/site-url';
+import { listingMetadata } from '@/lib/seo/page-metadata';
 import ProductFilters from '@/components/store/browse-page/filters';
 import BrowseLayoutClient from '@/components/store/browse-page/browse-layout';
 import Header from '@/components/store/layout/header/header';
@@ -20,10 +20,13 @@ export async function generateMetadata({
 	searchParams: Promise<FiltersQueryType>;
 }): Promise<Metadata> {
 	const resolvedParams = await searchParams;
-	const { category, subCategory, offer, search } = resolvedParams;
+	const category = typeof resolvedParams.category === 'string' ? resolvedParams.category : undefined;
+	const subCategory = typeof resolvedParams.subCategory === 'string' ? resolvedParams.subCategory : undefined;
+	const offer = typeof resolvedParams.offer === 'string' ? resolvedParams.offer : undefined;
+	const search = typeof resolvedParams.search === 'string' ? resolvedParams.search : undefined;
 
 	let title = 'Browse Products';
-	let description = 'Browse thousands of products from trusted marketplace stores on GoCart.';
+	let description = 'Explore products from independent marketplace stores on GoCart.';
 
 	if (search) {
 		title = `Search results for "${search}"`;
@@ -42,16 +45,13 @@ export async function generateMetadata({
 		description = `Explore special offers, deals, and discounts on GoCart.`;
 	}
 
-	const baseUrl =
-		getSiteUrl();
-	const canonicalUrl = `${baseUrl}/browse`;
+	const listing = listingMetadata('/browse', resolvedParams, ['category', 'subCategory', 'offer']);
+	const canonicalUrl = String(listing.alternates?.canonical);
 
 	return {
 		title,
 		description,
-		alternates: {
-			canonical: canonicalUrl,
-		},
+		...listing,
 		openGraph: {
 			title: `${title} | GoCart`,
 			description,

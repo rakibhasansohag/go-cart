@@ -4,91 +4,56 @@ import { db } from '@/lib/db';
 import { getAllDocSlugs } from '@/lib/docs/docs-data';
 
 
+// Refresh public catalog URLs as sellers update the marketplace.
+export const revalidate = 3600;
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 	const baseUrl = getSiteUrl();
-	const now = new Date();
+
 
 	const docSlugs = getAllDocSlugs();
 	const docRoutes: MetadataRoute.Sitemap = docSlugs.map((slug) => ({
 		url: `${baseUrl}/documentation/${slug}`,
-		lastModified: now,
 		changeFrequency: 'weekly',
 		priority: 0.8,
 	}));
 
 	const staticRoutes: MetadataRoute.Sitemap = [
-		{ url: `${baseUrl}/stores`, lastModified: now, changeFrequency: 'daily', priority: 0.9 },
+		{ url: `${baseUrl}/stores`, changeFrequency: 'daily', priority: 0.9 },
 		{
 			url: baseUrl,
-			lastModified: now,
 			changeFrequency: 'daily',
 			priority: 1.0,
 		},
 		{
-			url: `${baseUrl}/documentation`,
-			lastModified: now,
-			changeFrequency: 'weekly',
-			priority: 0.9,
-		},
-		{
 			url: `${baseUrl}/browse`,
-			lastModified: now,
 			changeFrequency: 'daily',
 			priority: 0.9,
 		},
 		{
 			url: `${baseUrl}/about`,
-			lastModified: now,
 			changeFrequency: 'monthly',
 			priority: 0.7,
 		},
 		{
 			url: `${baseUrl}/contact`,
-			lastModified: now,
 			changeFrequency: 'monthly',
 			priority: 0.7,
 		},
 		{
 			url: `${baseUrl}/faq`,
-			lastModified: now,
 			changeFrequency: 'weekly',
 			priority: 0.7,
 		},
 		{
 			url: `${baseUrl}/privacy`,
-			lastModified: now,
 			changeFrequency: 'yearly',
 			priority: 0.4,
 		},
 		{
 			url: `${baseUrl}/terms`,
-			lastModified: now,
 			changeFrequency: 'yearly',
 			priority: 0.4,
-		},
-		{
-			url: `${baseUrl}/track-order`,
-			lastModified: now,
-			changeFrequency: 'monthly',
-			priority: 0.6,
-		},
-		{
-			url: `${baseUrl}/cart`,
-			lastModified: now,
-			changeFrequency: 'weekly',
-			priority: 0.5,
-		},
-		{
-			url: `${baseUrl}/sign-in`,
-			lastModified: now,
-			changeFrequency: 'monthly',
-			priority: 0.3,
-		},
-		{
-			url: `${baseUrl}/sign-up`,
-			lastModified: now,
-			changeFrequency: 'monthly',
-			priority: 0.3,
 		},
 		...docRoutes,
 	];
@@ -96,6 +61,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 	try {
 		const [products, stores, categories, subCategories] = await Promise.all([
 			db.product.findMany({
+				where: { store: { status: 'ACTIVE' } },
+				orderBy: { id: 'asc' },
 				select: {
 					slug: true,
 					updatedAt: true,
@@ -106,6 +73,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 				where: {
 					status: 'ACTIVE',
 				},
+				orderBy: { id: 'asc' },
 				select: {
 					url: true,
 					updatedAt: true,
@@ -127,28 +95,28 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 		]);
 
 		const productRoutes: MetadataRoute.Sitemap = products.map((product) => ({
-			url: `${baseUrl}/product/${product.slug}`,
+			url: `${baseUrl}/product/${encodeURIComponent(product.slug)}`,
 			lastModified: product.updatedAt,
 			changeFrequency: 'daily',
 			priority: 0.8,
 		}));
 
 		const storeRoutes: MetadataRoute.Sitemap = stores.map((store) => ({
-			url: `${baseUrl}/store/${store.url}`,
+			url: `${baseUrl}/store/${encodeURIComponent(store.url)}`,
 			lastModified: store.updatedAt,
 			changeFrequency: 'weekly',
 			priority: 0.7,
 		}));
 
 		const categoryRoutes: MetadataRoute.Sitemap = categories.map((cat) => ({
-			url: `${baseUrl}/browse?category=${cat.url}`,
+			url: `${baseUrl}/browse?category=${encodeURIComponent(cat.url)}`,
 			lastModified: cat.updatedAt,
 			changeFrequency: 'weekly',
 			priority: 0.7,
 		}));
 
 		const subCategoryRoutes: MetadataRoute.Sitemap = subCategories.map((subCat) => ({
-			url: `${baseUrl}/browse?subCategory=${subCat.url}`,
+			url: `${baseUrl}/browse?subCategory=${encodeURIComponent(subCat.url)}`,
 			lastModified: subCat.updatedAt,
 			changeFrequency: 'weekly',
 			priority: 0.6,

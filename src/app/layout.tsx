@@ -64,7 +64,9 @@ export const metadata: Metadata = {
 	authors: [
 		{ name: 'Rakib Hasan Sohag', url: 'https://github.com/rakibhasansohag' },
 	],
-	creator: 'Rakib',
+	creator: 'Rakib Hasan Sohag',
+	verification: { google: process.env.GOOGLE_SITE_VERIFICATION, other: process.env.BING_SITE_VERIFICATION ? { 'msvalidate.01': process.env.BING_SITE_VERIFICATION } : {} },
+	robots: { index: true, follow: true, googleBot: { index: true, follow: true, 'max-image-preview': 'large', 'max-snippet': -1, 'max-video-preview': -1 } },
 	openGraph: {
 		title: 'GoCart | Multi-Vendor E-commerce',
 		description:

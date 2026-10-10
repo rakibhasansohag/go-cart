@@ -1,13 +1,10 @@
+import { publicPageMetadata } from '@/lib/seo/page-metadata';
 import React from 'react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { HelpCircle, ArrowRight, ShoppingBag, Store, ShieldCheck, CreditCard } from 'lucide-react';
+import { HelpCircle, ArrowRight } from 'lucide-react';
 
-export const metadata: Metadata = {
-	title: 'Frequently Asked Questions (FAQ) | GoCart',
-	description:
-		'Frequently asked questions regarding buyers, store sellers, payments, order tracking, and returns on GoCart.',
-};
+export const metadata: Metadata = publicPageMetadata('/faq', 'Frequently Asked Questions', 'Frequently asked questions regarding buyers, store sellers, payments, order tracking, and returns on GoCart.');
 
 const FAQS = [
 	{

@@ -1,6 +1,9 @@
+import type { Metadata } from 'next';
 import { ReactNode } from 'react';
 import Header from '@/components/store/layout/header/header';
 import ProfileSidebar from '@/components/store/layout/profile-sidebar/sidebar';
+
+export const metadata: Metadata = { robots: { index: false, follow: false } };
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;

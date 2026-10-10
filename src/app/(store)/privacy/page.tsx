@@ -1,3 +1,4 @@
+import { publicPageMetadata } from '@/lib/seo/page-metadata';
 import React from 'react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
@@ -15,11 +16,7 @@ import {
 	KeyRound,
 } from 'lucide-react';
 
-export const metadata: Metadata = {
-	title: 'Privacy Policy | GoCart Multi-Vendor Marketplace',
-	description:
-		'Read the GoCart Privacy Policy to understand how we collect, protect, and process user, seller, and transaction data.',
-};
+export const metadata: Metadata = publicPageMetadata('/privacy', 'Privacy Policy', 'Read the GoCart Privacy Policy to understand how we collect, protect, and process user, seller, and transaction data.');
 
 export default function PrivacyPolicyPage() {
 	return (

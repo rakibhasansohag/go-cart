@@ -1,15 +1,12 @@
+import { publicPageMetadata } from '@/lib/seo/page-metadata';
 import React from 'react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import Header from '@/components/store/layout/header/header';
 import Footer from '@/components/store/layout/footer/footer';
-import { FileText, CheckCircle2, ChevronRight, Home } from 'lucide-react';
+import { FileText, ChevronRight, Home } from 'lucide-react';
 
-export const metadata: Metadata = {
-	title: 'Terms of Service | GoCart Multi-Vendor Marketplace',
-	description:
-		'Terms of service and marketplace agreement for buyers and sellers operating on the GoCart multi-vendor e-commerce platform.',
-};
+export const metadata: Metadata = publicPageMetadata('/terms', 'Terms of Service', 'Terms of service and marketplace agreement for buyers and sellers operating on the GoCart multi-vendor e-commerce platform.');
 
 export default function TermsOfServicePage() {
 	return (

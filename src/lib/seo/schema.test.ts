@@ -69,17 +69,16 @@ describe('SEO Schema.org JSON-LD Generators', () => {
 			expect(schema['@type']).toBe('Product');
 			expect(schema.name).toBe('Minimal Mug');
 			expect(schema.description).toBe('Minimal Mug');
+			expect(schema.aggregateRating).toBeUndefined();
 
-			const offers = schema.offers as Record<string, unknown>;
-			expect(offers.price).toBe('0.00');
-			expect(offers.priceCurrency).toBe('USD');
-			expect(offers.availability).toBe('https://schema.org/InStock');
+			expect(schema.offers).toBeUndefined();
 		});
 
 		it('marks out-of-stock when inStock is false', () => {
 			const outOfStockProduct = {
 				name: 'Sold Out Shirt',
 				slug: 'sold-out-shirt',
+			price: 20,
 				inStock: false,
 			};
 
@@ -139,7 +138,7 @@ describe('SEO Schema.org JSON-LD Generators', () => {
 		it('generates WebSite with SearchAction and Organization schemas', () => {
 			const schemas = generateWebsiteJsonLd();
 
-			expect(schemas).toHaveLength(2);
+			expect(schemas).toHaveLength(4);
 			const [website, organization] = schemas;
 
 			expect(website['@type']).toBe('WebSite');

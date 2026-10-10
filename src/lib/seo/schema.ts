@@ -43,7 +43,7 @@ export interface BreadcrumbItem {
  */
 export const generateProductJsonLd = (input: ProductJsonLdInput): Record<string, unknown> => {
 	const baseUrl = getSiteUrl();
-	const productUrl = `${baseUrl}/product/${input.slug}`;
+	const productUrl = `${baseUrl}/product/${encodeURIComponent(input.slug)}`;
 	const images = input.images && input.images.length > 0 ? input.images : [`${baseUrl}/opengraph-image`];
 
 	const schema: Record<string, unknown> = {
@@ -70,37 +70,42 @@ export const generateProductJsonLd = (input: ProductJsonLdInput): Record<string,
 		schema.category = input.categoryName;
 	}
 
-	const price = typeof input.price === 'number' && input.price > 0 ? input.price : 0;
+	const price = input.price;
 	const currency = input.currency || 'USD';
 	const availability = input.inStock !== false ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock';
 
-	schema.offers = {
-		'@type': 'Offer',
-		url: productUrl,
-		priceCurrency: currency,
-		price: price.toFixed(2),
-		availability,
-		itemCondition: 'https://schema.org/NewCondition',
-		seller: {
-			'@type': 'Organization',
-			name: input.storeName || 'GoCart Marketplace',
-			url: input.storeUrl ? `${baseUrl}/store/${input.storeUrl}` : baseUrl,
-		},
-	};
+	if (typeof price === 'number' && Number.isFinite(price) && price >= 0) {
+		schema.offers = {
+			'@type': 'Offer',
+			url: productUrl,
+			priceCurrency: currency,
+			price: price.toFixed(2),
+			availability,
+			itemCondition: 'https://schema.org/NewCondition',
+			seller: {
+				'@type': 'Organization',
+				name: input.storeName || 'GoCart Marketplace',
+				url: input.storeUrl ? `${baseUrl}/store/${encodeURIComponent(input.storeUrl)}` : baseUrl,
+			},
+		};
+	}
 
-	const ratingValue = input.rating && input.rating > 0 ? input.rating : 5;
-	const reviewCount = input.numReviews && input.numReviews > 0 ? input.numReviews : (input.reviews?.length || 1);
+	const ratingValue = input.rating;
+	const reviewCount = input.numReviews;
 
-	schema.aggregateRating = {
-		'@type': 'AggregateRating',
-		ratingValue: ratingValue.toFixed(1),
-		reviewCount,
-		bestRating: '5',
-		worstRating: '1',
-	};
+	if (typeof ratingValue === 'number' && Number.isFinite(ratingValue) && ratingValue >= 1 && ratingValue <= 5 && typeof reviewCount === 'number' && Number.isInteger(reviewCount) && reviewCount > 0) {
+		schema.aggregateRating = {
+			'@type': 'AggregateRating',
+			ratingValue: ratingValue.toFixed(1),
+			reviewCount,
+			bestRating: '5',
+			worstRating: '1',
+		};
+	}
 
-	if (input.reviews && input.reviews.length > 0) {
-		schema.review = input.reviews.map((r) => ({
+	const validReviews = input.reviews?.filter(r => Number.isFinite(r.rating) && r.rating >= 1 && r.rating <= 5);
+	if (validReviews && validReviews.length > 0) {
+		schema.review = validReviews.map((r) => ({
 			'@type': 'Review',
 			author: {
 				'@type': 'Person',
@@ -108,12 +113,12 @@ export const generateProductJsonLd = (input: ProductJsonLdInput): Record<string,
 			},
 			reviewRating: {
 				'@type': 'Rating',
-				ratingValue: (r.rating || 5).toString(),
+				ratingValue: r.rating.toString(),
 				bestRating: '5',
 				worstRating: '1',
 			},
 			reviewBody: r.reviewText || '',
-			datePublished: r.createdAt ? new Date(r.createdAt).toISOString() : new Date().toISOString(),
+			...(r.createdAt && !Number.isNaN(new Date(r.createdAt).getTime()) ? { datePublished: new Date(r.createdAt).toISOString() } : {}),
 		}));
 	}
 
@@ -125,7 +130,7 @@ export const generateProductJsonLd = (input: ProductJsonLdInput): Record<string,
  */
 export const generateStoreJsonLd = (input: StoreJsonLdInput): Record<string, unknown> => {
 	const baseUrl = getSiteUrl();
-	const storeFullUrl = `${baseUrl}/store/${input.url}`;
+	const storeFullUrl = `${baseUrl}/store/${encodeURIComponent(input.url)}`;
 
 	const schema: Record<string, unknown> = {
 		'@context': 'https://schema.org',
@@ -180,9 +185,11 @@ export const generateWebsiteJsonLd = (): Record<string, unknown>[] => {
 	const websiteSchema: Record<string, unknown> = {
 		'@context': 'https://schema.org',
 		'@type': 'WebSite',
+		'@id': `${baseUrl}/#website`,
 		name: 'GoCart',
 		url: baseUrl,
-		description: 'GoCart Multi-Vendor Marketplace Platform',
+		description: 'Multi-vendor e-commerce portfolio project by Rakib Hasan Sohag, built with Next.js, TypeScript, Prisma and PostgreSQL.',
+		creator: { '@id': `${baseUrl}/#creator` },
 		potentialAction: {
 			'@type': 'SearchAction',
 			target: {
@@ -200,9 +207,18 @@ export const generateWebsiteJsonLd = (): Record<string, unknown>[] => {
 		url: baseUrl,
 		logo: `${baseUrl}/goCart.svg`,
 		sameAs: [
-			'https://github.com/rakibhasansohag',
+			'https://github.com/rakibhasansohag/go-cart',
 		],
 	};
 
-	return [websiteSchema, organizationSchema];
+	return [websiteSchema, organizationSchema, {
+		'@context': 'https://schema.org', '@type': 'Person', '@id': `${baseUrl}/#creator`,
+		name: 'Rakib Hasan Sohag', url: 'https://github.com/rakibhasansohag',
+	}, {
+		'@context': 'https://schema.org', '@type': 'SoftwareSourceCode', '@id': `${baseUrl}/#source-code`,
+		name: 'GoCart', codeRepository: 'https://github.com/rakibhasansohag/go-cart',
+		url: `${baseUrl}/about`, programmingLanguage: 'TypeScript', runtimePlatform: 'Next.js',
+		author: { '@id': `${baseUrl}/#creator` },
+		description: 'Full-stack multi-vendor marketplace with customer, seller and admin roles.',
+	}];
 };
