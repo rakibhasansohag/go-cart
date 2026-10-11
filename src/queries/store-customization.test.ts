@@ -201,7 +201,7 @@ describe('Storefront Customization & Seller Branding Queries', () => {
 			harness.db.store.findUnique.mockResolvedValue(null);
 
 			await expect(getStorePageDetails('non-existent-store')).rejects.toThrow(
-				'Store with URL "non-existent-store" not found.'
+				'NEXT_HTTP_ERROR_FALLBACK;404'
 			);
 		});
 	});

@@ -168,25 +168,25 @@ export default function NotFound() {
 					</Link>
 
 					{isDashboardRoute ? (
-						<Link href='/dashboard/seller' className='col-span-2 sm:col-span-2 w-full'>
+						<Link href='/dashboard' className='col-span-2 sm:col-span-2 w-full'>
 							<Button
 								type='button'
 								variant='secondary'
 								className='w-full flex items-center justify-center gap-2 h-10 px-3 rounded-xl text-xs font-medium'
 							>
 								<LayoutDashboard className='w-3.5 h-3.5' />
-								Seller Dashboard
+								My Dashboard
 							</Button>
 						</Link>
 					) : (
-						<Link href='/dashboard/seller' className='col-span-2 sm:col-span-2 w-full'>
+						<Link href='/dashboard' className='col-span-2 sm:col-span-2 w-full'>
 							<Button
 								type='button'
 								variant='outline'
 								className='w-full flex items-center justify-center gap-2 h-10 px-3 rounded-xl text-xs font-medium border-border hover:bg-accent'
 							>
 								<LayoutDashboard className='w-3.5 h-3.5' />
-								Seller Dashboard
+								My Dashboard
 							</Button>
 						</Link>
 					)}

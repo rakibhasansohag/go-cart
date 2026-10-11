@@ -1,4 +1,5 @@
 'use server';
+import { notFound } from 'next/navigation';
 
 import { v4 } from 'uuid';
 
@@ -892,7 +893,7 @@ export const getStorePageDetails = async (storeUrl: string) => {
 	}
 	// Handle case where the store is not found
 	if (!store) {
-		throw new Error(`Store with URL "${storeUrl}" not found.`);
+		notFound();
 	}
 	return { ...store, isUserFollowingStore };
 };

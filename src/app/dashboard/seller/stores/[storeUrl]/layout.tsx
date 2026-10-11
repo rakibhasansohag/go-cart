@@ -1,6 +1,6 @@
 // React,Next.js
 import { ReactNode } from 'react';
-import { redirect } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 
 // Components
 import Header from '@/components/dashboard/Header/Header';
@@ -14,8 +14,10 @@ import { db } from '@/lib/db';
 
 export default async function SellerStoreDashboardLayout({
 	children,
+	params,
 }: {
 	children: ReactNode;
+	params: Promise<{ storeUrl: string }>;
 }) {
 	// Fetch the current user. If the user is not authenticated, redirect them to the home page.
 	const user = await currentUser();
@@ -30,6 +32,8 @@ export default async function SellerStoreDashboardLayout({
 			userId: user.id,
 		},
 	});
+	const { storeUrl } = await params;
+	if (!stores.some(store => store.url === storeUrl)) notFound();
 
 	return (
 		<div className='w-full min-h-screen bg-background text-foreground flex'>

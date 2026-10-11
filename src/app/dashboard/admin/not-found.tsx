@@ -12,15 +12,15 @@ export default function NotFound() {
 			icon: <Building className='w-5 h-5' />,
 		},
 		{
-			title: 'Users list',
-			description: 'View and manage users.',
-			href: '/dashboard/admin/users',
+			title: 'Sellers',
+			description: 'Review marketplace sellers.',
+			href: '/dashboard/admin/sellers',
 			icon: <Users className='w-5 h-5' />,
 		},
 		{
 			title: 'System health',
 			description: 'Check background jobs & logs.',
-			href: '/dashboard/admin/system',
+			href: '/dashboard/admin/background-jobs',
 			icon: <ShieldCheck className='w-5 h-5' />,
 		},
 	];

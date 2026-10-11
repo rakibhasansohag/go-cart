@@ -1,6 +1,7 @@
 'use server';
 
 import { db } from '@/lib/db';
+import { notFound } from 'next/navigation';
 import { storefrontSizes, storefrontVariant } from '@/lib/offers/pricing';
 import {
 	FreeShippingWithCountriesType,
@@ -92,7 +93,7 @@ export const retrieveProductDetailsOptimized = async (productSlug: string) => {
 	});
 
 	if (!product) {
-		throw new Error('Product not found');
+		notFound();
 	}
 
 	// Handle product views

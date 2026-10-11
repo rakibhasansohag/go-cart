@@ -1,6 +1,6 @@
 import { Suspense } from 'react';
 import { dehydrate, HydrationBoundary } from '@tanstack/react-query';
-import { redirect } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import Header from '@/components/store/layout/header/header';
 import OrderPageView from '@/components/store/order-page/order-page-view';
 import { getQueryClient } from '@/lib/get-query-client';
@@ -24,7 +24,7 @@ export default async function OrderPage({
 	const queryClient = getQueryClient();
 	const order = await getOrder(orderId);
 
-	if (!order) redirect('/');
+	if (!order) notFound();
 
 	queryClient.setQueryData(queryKeys.orders.detail(orderId), order);
 	await queryClient.prefetchQuery({

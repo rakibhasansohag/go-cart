@@ -6,21 +6,21 @@ import { Package, PlusCircle, ShoppingCart } from 'lucide-react';
 export default function NotFound() {
 	const suggestions = [
 		{
-			title: 'My products',
-			description: 'See and edit your listings.',
-			href: '/dashboard/seller/products',
+			title: 'My stores',
+			description: 'Choose a store to manage products and orders.',
+			href: '/dashboard/seller/stores',
 			icon: <Package className='w-5 h-5' />,
 		},
 		{
-			title: 'Add new product',
-			description: 'Create a fresh product listing.',
-			href: '/dashboard/seller/products/new',
+			title: 'Create a store',
+			description: 'Set up another marketplace store.',
+			href: '/dashboard/seller/stores/new',
 			icon: <PlusCircle className='w-5 h-5' />,
 		},
 		{
-			title: 'Orders',
-			description: 'View recent orders and shipments.',
-			href: '/dashboard/seller/orders',
+			title: 'Seller guide',
+			description: 'Learn how to manage your store.',
+			href: '/documentation/seller-onboarding',
 			icon: <ShoppingCart className='w-5 h-5' />,
 		},
 	];
