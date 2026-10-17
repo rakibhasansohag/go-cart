@@ -1,5 +1,6 @@
 /* Tailwind v4 directives */
 @import "tailwindcss";
+@import "tw-animate-css";
 
 /* Enable dark mode variant */
 @variant dark (.dark &);
@@ -1530,7 +1531,8 @@ input[type="number"],
   color: #9ca3af !important;
 }
 
-/* Smooth global theme transitions */
+/* Base defaults must not override component transition utilities. */
+@layer base {
 body,
 header,
 footer,
@@ -1547,6 +1549,44 @@ div[class*="bg-"] {
     color 0.4s cubic-bezier(0.4, 0, 0.2, 1),
     fill 0.4s cubic-bezier(0.4, 0, 0.2, 1),
     stroke 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+}
+
+/* Keep CSS hover panels mounted for both entrance and exit transitions. */
+.storefront-hover-panel {
+  visibility: hidden;
+  opacity: 0;
+  translate: 0 -6px;
+  pointer-events: none;
+  transition: opacity 160ms ease-out, translate 200ms ease-out,
+    visibility 0s linear 160ms;
+}
+
+.group:hover > .storefront-hover-panel,
+.group:focus-within > .storefront-hover-panel {
+  visibility: visible;
+  opacity: 1;
+  translate: 0 0;
+  pointer-events: auto;
+  transition-delay: 0s;
+}
+
+/* Preserve Radix exit lifetimes while making closing panels non-interactive. */
+:is([data-slot="popover-content"], [data-slot="dropdown-menu-content"],
+    [data-slot="dropdown-menu-sub-content"], [data-slot="tooltip-content"],
+    [data-slot="select-content"], [data-slot="hover-card-content"],
+    [data-slot="context-menu-content"], [data-slot="context-menu-sub-content"])[data-state="closed"] {
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 /* ─── Swiper layout overrides ─── */

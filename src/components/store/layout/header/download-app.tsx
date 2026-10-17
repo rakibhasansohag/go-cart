@@ -11,7 +11,7 @@ export default function DownloadApp() {
 	return (
 		<div className='relative group'>
 			{/* Trigger */}
-			<div className='flex h-11 items-center px-2 cursor-pointer'>
+			<button type='button' className='flex h-11 items-center px-2 cursor-pointer rounded-lg hover:bg-white/10 transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-white/60'>
 				<span className='text-3xl'>
 					<AppIcon />
 				</span>
@@ -20,9 +20,9 @@ export default function DownloadApp() {
 						Download the GoCart app
 					</b>
 				</div>
-			</div>
+			</button>
 			{/* Content */}
-			<div className='absolute hidden top-0 group-hover:block'>
+			<div className='storefront-hover-panel absolute top-0 z-50'>
 				<div className='relative mt-12 -ml-20 w-[300px] bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-700/40 rounded-3xl text-foreground pt-2 px-1 pb-6 z-50 shadow-lg'>
 					{/* Triangle */}
 					<div

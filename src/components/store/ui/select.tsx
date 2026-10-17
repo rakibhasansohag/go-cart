@@ -1,6 +1,7 @@
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import { FC, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 
 interface Props {
 	name: string;
@@ -64,33 +65,42 @@ const Select: FC<Props> = ({
 					/>
 				</div>
 			</div>
-			{isOpen && (
-				<div className='absolute top-16 w-full left-0 rounded-xl border border-emerald-500 p-4 bg-background shadow-lg'>
-					<p className='font-semibold text-xs text-neutral-500'>
-						{subPlaceholder}
-					</p>
-					<ul className='flex gap-2 flex-col mt-2'>
-						{options.map((option, index) => (
-							<li
-								key={index}
-								className='flex items-center gap-x-2 px-2 cursor-pointer text-sm hover:bg-green-100 py-2 rounded-lg'
-								onMouseDown={() => handleOptionClick(option.value)}
-							>
-								{option.image && (
-									<Image
-										src={option.image}
-										alt=''
-										width={100}
-										height={100}
-										className='w-10 h-10 rounded-full shadow-md object-top object-cover'
-									/>
-								)}
-								{option.name}
-							</li>
-						))}
-					</ul>
-				</div>
-			)}
+			<AnimatePresence initial={false}>
+				{isOpen && (
+					<motion.div
+						key='options'
+						initial={{ opacity: 0, y: -5 }}
+						animate={{ opacity: 1, y: 0, pointerEvents: 'auto' }}
+						exit={{ opacity: 0, y: -3, pointerEvents: 'none', transition: { duration: 0.12 } }}
+						transition={{ duration: 0.18, ease: 'easeOut' }}
+						className='absolute top-16 w-full left-0 rounded-xl border border-emerald-500 p-4 bg-background shadow-lg'
+					>
+						<p className='font-semibold text-xs text-neutral-500'>
+							{subPlaceholder}
+						</p>
+						<ul className='flex gap-2 flex-col mt-2'>
+							{options.map((option, index) => (
+								<li
+									key={index}
+									className='flex items-center gap-x-2 px-2 cursor-pointer text-sm hover:bg-green-100 py-2 rounded-lg'
+									onMouseDown={() => handleOptionClick(option.value)}
+								>
+									{option.image && (
+										<Image
+											src={option.image}
+											alt=''
+											width={100}
+											height={100}
+											className='w-10 h-10 rounded-full shadow-md object-top object-cover'
+										/>
+									)}
+									{option.name}
+								</li>
+							))}
+						</ul>
+					</motion.div>
+				)}
+			</AnimatePresence>
 		</div>
 	);
 };

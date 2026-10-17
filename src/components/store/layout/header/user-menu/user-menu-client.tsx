@@ -140,7 +140,7 @@ export default function UserMenuClient({ user, roleLink }: UserMenuClientProps) 
 						onClick={handleTriggerClick}
 						aria-label={user ? (user.name || 'User Account') : 'User Account'}
 						aria-expanded={isOpen}
-						className='group flex h-11 items-center py-0 px-1 sm:px-1.5 cursor-pointer text-white border-none outline-none focus-visible:ring-2 focus-visible:ring-white/40 rounded-lg select-none transition-all duration-200 hover:scale-105 active:scale-95'
+						className='group flex h-11 items-center py-0 px-1 sm:px-1.5 cursor-pointer text-white border-none outline-none focus-visible:ring-2 focus-visible:ring-white/40 rounded-lg select-none transition-colors duration-200 hover:bg-white/10 data-[state=open]:bg-white/10'
 					>
 						{user ? (
 							<Image
@@ -152,7 +152,7 @@ export default function UserMenuClient({ user, roleLink }: UserMenuClientProps) 
 							/>
 						) : (
 							<div className='flex items-center'>
-								<span className='text-2xl flex items-center justify-center shrink-0 transition-transform duration-200 group-hover:scale-110'>
+								<span className='text-2xl flex items-center justify-center shrink-0'>
 									<UserIcon className='w-6 h-6' />
 								</span>
 								<div className='ml-1 hidden md:block text-left'>
@@ -264,7 +264,7 @@ export default function UserMenuClient({ user, roleLink }: UserMenuClientProps) 
 												border border-transparent hover:border-slate-300/50 dark:hover:border-slate-600/50 
 												shadow-sm hover:shadow-md'
 											>
-												<span className='text-slate-600 dark:text-slate-200 transition-transform duration-200 group-hover/link:scale-110'>
+											<span className='text-slate-600 dark:text-slate-200 transition-transform duration-200 motion-safe:group-hover/link:-translate-y-0.5'>
 													{item.icon}
 												</span>
 											</div>
@@ -283,7 +283,7 @@ export default function UserMenuClient({ user, roleLink }: UserMenuClientProps) 
 								{[roleLink, ...extraLinks].map((item) => (
 									<li key={item.title}>
 										<Link href={item.link} onClick={() => setIsOpen(false)}>
-											<span className='block text-sm text-main-primary dark:text-slate-200 hover:underline hover:text-primary transition-colors'>
+											<span className='block rounded-md px-2 -mx-2 py-1 -my-1 text-sm text-main-primary dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-primary transition-colors duration-150'>
 												{item.title}
 											</span>
 										</Link>
