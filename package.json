@@ -20,6 +20,7 @@
 		"db:e2e:portfolio-fixtures": "bun --no-env-file scripts/e2e-local.ts portfolio-fixtures",
 		"test:integration:local": "bun --no-env-file scripts/e2e-local.ts integration",
 		"test:queues:local": "bun --no-env-file scripts/e2e-local.ts queues",
+		"test:queue-transport:local": "bun --no-env-file scripts/e2e-local.ts queue-transport",
 		"jobs:work:local": "bun --no-env-file scripts/e2e-local.ts queue-worker",
 		"start:queues:local": "bun --no-env-file scripts/e2e-local.ts queue-server",
 		"test:stripe:refund:local": "bun --no-env-file scripts/e2e-local.ts stripe-refund",

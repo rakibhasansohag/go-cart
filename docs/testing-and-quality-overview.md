@@ -752,3 +752,66 @@ are similarly verified.
 ```
 
 ```
+
+
+## Queue acceptance refresh — October 17, 2026
+
+Production target: `https://gocart.rakibhasansohag.com`, Vercel deployment
+`go-cart-9k9gy3ccy`, source commit `7e23b06`. Git ancestry confirms that it
+contains maintenance-isolation correction `11111f9`; no new application deploy
+was necessary for that correction.
+
+| Check | Evidence and limits |
+| --- | --- |
+| Authorized dispatch | Production POST returned HTTP 200, `ok: true`, `mode: durable-queue`, accepted 7 daily job references, relay failures 0; all five maintenance steps succeeded. Browser elapsed time: 891 ms. Accepted references can be existing date-keyed jobs, not seven new executions per ping. |
+| Admin access | Signed in with the existing admin account through the normal UI; `/dashboard/admin/background-jobs` rendered successfully. No role changes or authorization bypass. |
+| Replay | Independently refreshed production job `81420bd2-9a5c-4253-82b6-56999f035c10`: SUCCEEDED, attempts 1, replayCount 1, completed October 5 at 14:14:12.066 UTC. Its successful real admin-form replay was recorded in the earlier browser evidence; this completed job was not replayed again. |
+| Dead-letter alert | Original event `ed243673-3445-4cde-a889-9fc95563cf19` remains exactly once, with four alerts for four distinct admins. |
+| Deployed duplicate delivery | Earlier production callback fixtures remain SUCCEEDED. The retained October 5 callback observations record one payment/loyalty effect and stale workflow no-ops. October 17 refresh confirms retained fixture states; removed business fixtures cannot be independently reconstructed from the current database. |
+| Deployed timing | Latest eight completed jobs in the preceding 24 hours: execution p50 1351 ms, p95/max 1697 ms; due-to-start p50 1438 ms, p95/max 1927 ms. Small sample, not a load test or SLA. |
+| Queue health | At the initial refresh: 183 SUCCEEDED jobs; no READY, PROCESSING or DEAD jobs. This is a timestamped observation, not continuous monitoring. |
+| Real isolated outage | `bun run test:queue-transport:local` passed with PostgreSQL `gocart_e2e`, the actual QueueClient/relay, and a loopback HTTP transport surrogate. Closing its listener caused connection refusal; the committed job stayed READY with attempts 0 and a persisted retry deadline. Restoring the listener allowed publication and worker completion. Duplicate delivery left exactly one committed event. Only this fixture's 60-second publication retry wait was accelerated; all owned drill rows were cleaned up. This is not a deployed Vercel outage test. |
+| Existing database integration | `bun run test:queues:local` passed rollback, competing workers, duplicate delivery, retry, lease fencing, one admin alert/replay, inventory fan-out, cart/demo/return checkpoints, deleted target and ignored payment-event checks. |
+| Focused regressions | Dispatcher, relay, worker and cron authentication: four files, 22 tests passed; TypeScript and affected-file ESLint passed. |
+| CI | Added both isolated queue suites to the existing PostgreSQL CI job. Configuration is local; remote execution requires a push and a successful Actions run. |
+
+Raw production observations are stored locally in ignored
+`.private/queue-acceptance-refresh-2026-10-17.json`. Earlier native callback
+observations remain in `.private/phase26-production-evidence.jsonl`. Neither
+file contains a cron credential in the captured queue data.
+
+### Scheduler and monitoring
+
+UptimeRobot monitor `804030187` is named **GoCart background dispatcher** and
+checks every **five minutes**. It now calls the custom-domain dispatcher
+directly and requires the literal JSON fragment `"ok":true`; the previous
+keyword `ok` also matched `"ok":false`. The existing credential was retained
+privately and is deliberately omitted here. Alert recipients and interval
+were preserved. Configuration save was verified in the monitor details, and a fresh scheduled
+check after the change reported Up (last check 17 seconds before observation).
+
+Each authorized ping recovers expired leases, emits missing dead-letter
+alerts, discovers workflow checkpoints, ensures seven daily cron references,
+and relays due committed work. Those seven tasks use a UTC-date idempotency
+bucket, so repeated monitor pings do not mean each daily business task runs
+again every five minutes. Native queue callbacks execute work after relay;
+normal event-triggered wake-ups do not wait for the monitor. Vercel also retains
+the daily `0 8 * * *` fallback (14:00 Asia/Dhaka).
+
+A successful monitor response certifies the dispatcher result, not downstream
+SMTP receipt, provider payment settlement, or every consumer's final effect.
+Review the admin job view and delivery-health view for those outcomes.
+
+### Still open
+
+- Controlled maintenance-failure isolation on an isolated deployed preview.
+- Isolated deployed Vercel transport outage/restoration with callback and
+  persisted-effect evidence. No shared production queue or SMTP was disabled.
+- GitHub branch protection remains an explicit single-maintainer deferral.
+- Plan narrative still requires PayPal sandbox checkout/refund/provider-delivery
+  coverage and full-settlement restocking evidence. Those financial journeys
+  were outside this queue acceptance run.
+
+The older unchecked Stripe payout/browser item is superseded by the recorded
+Phase 14.4 acceptance. The stock reminder implementation does not automatically
+increase physical inventory.

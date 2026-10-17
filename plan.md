@@ -993,8 +993,10 @@ customer to each seller before adding more optional growth features.
         serialized, signed with the configured test webhook secret, and sent
         through the application `/api/webhooks/stripe` route; reversal replay
         remains idempotent at that signed route boundary.
-  - [ ] Remaining: a protected browser journey with a signed Stripe listener
-        that exercises provider delivery through the webhook HTTP boundary.
+  - [x] Protected Stripe browser payout and signed webhook HTTP-boundary journey
+        are recorded as passed under Phase 14.4 below. This earlier duplicate
+        checklist item is reconciled with that existing acceptance evidence;
+        it was not rerun during the October 17 queue audit.
 
 - [x] **Phase 14.1 — Business and responsibility decisions**
   - [x] Confirm whether goCart or each seller is the merchant the customer is
@@ -1629,7 +1631,10 @@ Goal: Conduct a comprehensive security inspection across API routes, server acti
 - [x] **Automation Audit**:
   - [x] `adjustSizeInventory()` emits `INVENTORY_LOW_STOCK` / `INVENTORY_RESTOCKED` domain events on threshold crossings — seller notified in-app and via email (when `EMAIL_NOTIFICATIONS_ENABLED=true`)
   - [x] Order status progression (Pending → Confirmed → Processing → Delivered) driven by seller fulfillment actions — no gaps found
-  - [ ] **Gap identified**: No 24 h stock-out auto-replenishment cron exists yet (see Phase 25)
+  - [x] **Resolved scope clarification**: Phase 25/26 implements reminders for
+        stock depleted for over 24 hours. It does not manufacture inventory or
+        automatically increase physical stock; actual replenishment remains a
+        seller/admin inventory action.
 
 ---
 
@@ -1669,7 +1674,7 @@ Goal: Conduct a comprehensive security inspection across API routes, server acti
 
 ### Phase 26 — Durable Background Jobs (Free Allowance Implementation)
 
-**Status (October 4): implemented and enabled in Production; remaining acceptance checks are open.** Deployment `5e948e4` has verified notification and inventory callback delivery. Internal audit reports and browser handoffs are maintained locally outside Git tracking.
+**Status (October 17): implemented and enabled in Production; failure-drill acceptance remains open.** Vercel production serves `7e23b06`, which contains dispatcher maintenance-isolation commit `11111f9`. Current production database and authenticated admin UI checks confirm no pending/failed work and the previously completed authorized replay. See the October 17 evidence section in `docs/testing-and-quality-overview.md`; internal raw fixture observations remain outside Git tracking.
 
 The free approach uses the existing PostgreSQL database, native Vercel Queues and the existing daily Hobby cron. It replaces the proposed separate Workflow SDK with database checkpoints plus delayed messages. No additional paid vendor is required; queue, function, database and email limits still apply.
 
@@ -1694,8 +1699,13 @@ The free approach uses the existing PostgreSQL database, native Vercel Queues an
 - [x] Prove real SMTP receipt through the production queue callback and confirm receipt in the target mailbox.
 - [x] Prove provider-signed sandbox payment reconciliation and each workflow's due-time behavior on the target deployment. Controlled production fixtures verified one payment event and coin award, delayed callbacks, stale checkpoints and duplicate prevention; accelerated fixtures do not certify browser checkout UX.
 - [x] Verify a failed production cron job does not stop an independent cron job; eight actual callback attempts reach DEAD with one durable alert per admin. Retry waits were accelerated only for the owned test fixture.
-- [ ] Deploy the cron dispatcher maintenance-isolation correction and verify authorized admin replay on the target deployment.
-- [ ] Capture deployed latency, transport outage recovery, duplicate delivery, dead-letter alert and admin replay evidence.
+- [x] Confirm the dispatcher maintenance-isolation correction is deployed (`7e23b06` contains `11111f9`); authorized dispatch on the custom domain returned HTTP 200, `ok: true`, and all five maintenance results successful. Existing authorized admin replay is independently reconfirmed in the production database: `SUCCEEDED`, attempts 1, replayCount 1; do not replay completed work again.
+- [x] Capture deployed latency from the latest eight completed jobs in the last 24 hours: processing p50 1351 ms / p95 1697 ms; due-to-start p50 1438 ms / p95 1927 ms. This small operational sample is not an SLA or load-test certification.
+- [x] Reconcile deployed duplicate-delivery, dead-letter and replay evidence: the completed fixture and original one dead-letter event/four distinct admin alerts remain persisted. Historical controlled callback observations are retained; these failure scenarios were not reinjected into production on October 17.
+- [x] Execute a real isolated PostgreSQL + QueueClient + loopback HTTP outage/restoration drill: connection refusal retains the committed READY job at attempts 0; restoring transport publishes it; worker execution and duplicate delivery commit exactly one effect. Only this fixture's publication retry wait is accelerated. Add the repeatable drill and queue integration checks to CI configuration (remote CI execution still requires a push).
+- [x] Correct UptimeRobot to call the custom domain directly every five minutes, use a credential-free friendly name, and require the literal `"ok":true` instead of the word `ok` that also matches failed responses.
+- [ ] Prove a controlled maintenance failure cannot prevent daily enqueue/relay on an isolated deployed preview; normal-path deployment and mocked failure-isolation tests do not certify this fault scenario.
+- [ ] Capture an isolated deployed Vercel transport outage/restoration drill with persisted callback/effect evidence. The successful local real-HTTP drill does not certify provider failover; never disable shared production queues or SMTP to manufacture this test.
 
 **Acceptance:** implementation, local tests and route existence are separate from deployed verification. Keep this phase open until actual callback delivery and persisted effects are evidenced. SMTP retains the at-least-once crash window; the daily Hobby recovery fallback has daily latency after a missed wake-up. Workflow recovery scans in pages of 100 rather than stopping at 100 entities; interrupted recovery retries from the start using existing idempotent checkpoints.
 

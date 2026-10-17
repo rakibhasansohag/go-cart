@@ -97,10 +97,11 @@ if (action === "up") {
   run("bun", ["prisma/integration-check.ts"], env);
 } else if (action === "queue-browser-fixture") {
   run("bun", ["--preload", "./scripts/queue-cli-preload.mjs", "--no-env-file", "scripts/queue-browser-fixture.ts", process.argv[3] ?? 'setup'], { ...validatedE2EEnv(), PHASE26_ENABLED: 'true' });
-} else if (action === "queues" || action === "queue-worker") {
+} else if (action === "queues" || action === "queue-worker" || action === "queue-transport") {
   const env = { ...validatedE2EEnv(), PHASE26_ENABLED: 'true', VERCEL: '', VERCEL_QUEUE_TOKEN: '', VERCEL_QUEUE_BASE_URL: '' };
   run("bun", ["x", "prisma", "migrate", "deploy"], env);
-  run("bun", ["--preload", "./scripts/queue-cli-preload.mjs", "--no-env-file", action === "queues" ? "scripts/queue-integration-check.ts" : "scripts/background-worker.ts"], env);
+  const script = action === "queues" ? "scripts/queue-integration-check.ts" : action === "queue-transport" ? "scripts/queue-transport-check.ts" : "scripts/background-worker.ts";
+  run("bun", ["--preload", "./scripts/queue-cli-preload.mjs", "--no-env-file", script], env);
 } else if (action === "coupon-reservations") {
   const env = validatedE2EEnv();
   run("bun", ["x", "prisma", "migrate", "deploy"], env);
