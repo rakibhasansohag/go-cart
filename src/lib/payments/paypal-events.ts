@@ -14,6 +14,7 @@ type PayPalWebhookEvent = {
 		id?: string;
 		status?: string;
 		amount?: { value?: string; currency_code?: string };
+		links?: Array<{ rel: string; href: string }>;
 		supplementary_data?: {
 			related_ids?: {
 				order_id?: string;
@@ -22,6 +23,17 @@ type PayPalWebhookEvent = {
 		};
 	};
 };
+
+function refundCaptureId(event: PayPalWebhookEvent): string | undefined {
+	if (event.event_type !== 'PAYMENT.CAPTURE.REFUNDED') return;
+	const parent = event.resource?.links?.find((link) => link.rel === 'up');
+	if (!parent) return;
+	try {
+		const url = new URL(parent.href);
+		if (url.protocol !== 'https:' || !['api.paypal.com', 'api-m.paypal.com', 'api.sandbox.paypal.com', 'api-m.sandbox.paypal.com'].includes(url.hostname)) return;
+		return /^\/v2\/payments\/captures\/([A-Za-z0-9]+)$/.exec(url.pathname)?.[1];
+	} catch { return; }
+}
 
 function mapPayPalStatus(eventType: string): PaymentStatus | null {
 	switch (eventType) {
@@ -70,7 +82,7 @@ export async function verifyPayPalWebhook(
 }
 
 export async function handlePayPalEvent(event: PayPalWebhookEvent) {
-	const paymentStatus = mapPayPalStatus(event.event_type);
+	let paymentStatus = mapPayPalStatus(event.event_type);
 	if (!paymentStatus || !event.resource) return { ignored: true };
 
 	const relatedIds = event.resource.supplementary_data?.related_ids;
@@ -79,7 +91,8 @@ export async function handlePayPalEvent(event: PayPalWebhookEvent) {
 		relatedIds?.capture_id ||
 		(event.event_type === 'PAYMENT.CAPTURE.COMPLETED'
 			? event.resource.id
-			: undefined);
+			: refundCaptureId(event));
+	if (!providerOrderId && !providerCaptureId) return { ignored: true };
 
 	const payment = await db.paymentDetails.findFirst({
 		where: {
@@ -102,6 +115,14 @@ export async function handlePayPalEvent(event: PayPalWebhookEvent) {
 	});
 
 	if (!payment) return { ignored: true };
+	if (event.event_type === 'PAYMENT.CAPTURE.REFUNDED') {
+		// Refund events identify the refund resource; its parent link identifies
+		// the capture. Read cumulative capture state to distinguish partial/full refunds.
+		const capture = await paypalRequest<{ status: string }>(`/v2/payments/captures/${payment.providerCaptureId ?? providerCaptureId}`);
+		if (capture.status === 'REFUNDED') paymentStatus = 'Refunded';
+		else if (capture.status === 'PARTIALLY_REFUNDED') paymentStatus = 'PartiallyRefunded';
+		else throw new Error('PayPal capture refund state is not ready for reconciliation.');
+	}
 
 	const amountValue = event.resource.amount?.value;
 	const amount = amountValue ? Number(amountValue) : null;

@@ -58,6 +58,11 @@ export async function paypalRequest<T>(
 		headers: {
 			Accept: 'application/json',
 			'Content-Type': 'application/json',
+			// Orders, captures and refunds default to minimal resource bodies.
+			// Server verification needs the complete provider amount/reference data.
+			...(init.method && init.method.toUpperCase() !== 'GET'
+				? { Prefer: 'return=representation' }
+				: {}),
 			Authorization: `Bearer ${accessToken}`,
 			...init.headers,
 		},

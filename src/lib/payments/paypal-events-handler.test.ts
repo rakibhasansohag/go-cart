@@ -1,10 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { dbMock, reconcilePaymentEventMock } = vi.hoisted(() => ({
+const { dbMock, reconcilePaymentEventMock, paypalRequestMock } = vi.hoisted(() => ({
 	dbMock: {
 		paymentDetails: { findFirst: vi.fn() },
+		refundTransaction: { findFirst: vi.fn() },
 	},
 	reconcilePaymentEventMock: vi.fn(),
+	paypalRequestMock: vi.fn(),
 }));
 
 vi.mock('@/lib/db', () => ({ db: dbMock }));
@@ -14,7 +16,7 @@ vi.mock('@/lib/notifications/domain-events', () => ({
 	publishDomainEvent: vi.fn(),
 }));
 vi.mock('@/lib/email/schedule', () => ({ scheduleEmailOutboxDispatch: vi.fn() }));
-vi.mock('./paypal-client', () => ({ paypalRequest: vi.fn() }));
+vi.mock('./paypal-client', () => ({ paypalRequest: paypalRequestMock }));
 
 import { handlePayPalEvent } from './paypal-events';
 
@@ -22,6 +24,7 @@ describe('PayPal provider event mapping', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		reconcilePaymentEventMock.mockResolvedValue({ duplicate: false });
+		dbMock.refundTransaction.findFirst.mockResolvedValue(null);
 	});
 
 	it('ignores events that do not map to a payment status', async () => {
@@ -77,5 +80,19 @@ describe('PayPal provider event mapping', () => {
 
 		expect(result).toEqual({ ignored: true });
 		expect(reconcilePaymentEventMock).not.toHaveBeenCalled();
+	});
+
+	it.each([['REFUNDED', 'Refunded'], ['PARTIALLY_REFUNDED', 'PartiallyRefunded']])('reconciles a real refund parent-link payload using cumulative capture status %s', async (status, paymentStatus) => {
+		dbMock.paymentDetails.findFirst.mockResolvedValue({ id: 'payment-1', orderId: 'order-1', paymentInetntId: 'paypal-order-1', providerCaptureId: '9V807479H3183464M' });
+		paypalRequestMock.mockResolvedValue({ status });
+		await handlePayPalEvent({ id: `evt_${status}`, event_type: 'PAYMENT.CAPTURE.REFUNDED', resource: { id: 'refund-1', status: 'COMPLETED', amount: { value: '25.00', currency_code: 'USD' }, links: [{ rel: 'up', href: 'https://api.sandbox.paypal.com/v2/payments/captures/9V807479H3183464M' }] } });
+		expect(dbMock.paymentDetails.findFirst).toHaveBeenCalledWith(expect.objectContaining({ where: { paymentMethod: 'Paypal', OR: [{ providerCaptureId: '9V807479H3183464M' }] } }));
+		expect(paypalRequestMock).toHaveBeenCalledWith('/v2/payments/captures/9V807479H3183464M');
+		expect(reconcilePaymentEventMock).toHaveBeenCalledWith(expect.objectContaining({ paymentStatus, providerCaptureId: '9V807479H3183464M', amount: 25 }));
+	});
+
+	it('ignores refund parent links outside the PayPal capture API', async () => {
+		await expect(handlePayPalEvent({ id: 'invalid-parent', event_type: 'PAYMENT.CAPTURE.REFUNDED', resource: { links: [{ rel: 'up', href: 'https://example.com/v2/payments/captures/9V807479H3183464M' }] } })).resolves.toEqual({ ignored: true });
+		expect(dbMock.paymentDetails.findFirst).not.toHaveBeenCalled();
 	});
 });

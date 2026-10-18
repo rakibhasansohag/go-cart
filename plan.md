@@ -608,7 +608,37 @@ refund coverage and live full-settlement coverage remain open.
   - [x] Aggregate terminal partial-return quantities across requests and finalize an order line only when its full quantity is refunded or exchanged
   - [x] Handle damaged-item disposition and rejected-return inventory outcomes
   - [x] Refresh admin return, inventory, and order caches after reconciliation
-  - **Test**: Unit coverage and a live partial refund/restock scenario pass; a live full-settlement restock scenario remains before phase completion
+  - **Test**: Unit coverage and live partial/full sandbox refund-restock scenarios pass. October 18 verified a full PayPal refund, one-unit idempotent restock, terminal order/package/item states, zero net GoCoins and zero remaining seller payable. Delivery/receipt prerequisites were synthetic local fixtures; no physical shipment or new external seller payout is claimed.
+
+**PayPal sandbox acceptance (October 18, 2026):** Supersedes the August
+PayPal/full-refund coverage gaps above. BrowserOS exercised the isolated local
+production build with Clerk customer/admin accounts and a verified PayPal
+sandbox buyer. The owner manually completed the provider approval when its
+button did not advance through automation. A real USD 25.00 capture and full
+admin refund succeeded. Signed capture/refund events reached the real webhook
+route through a temporary tunnel restricted to `/api/webhooks/paypal` (admin
+paths returned 404). The temporary webhook/tunnel were removed afterward.
+
+Found and fixed three issues: minimal PayPal write responses omitted purchase
+data; real refund payloads identified captures through parent links; and a full
+refund debited the platform commission from the seller a second time. Refund
+mapping now reads cumulative provider capture state to distinguish partial/full
+refunds. The local owned ledger was reset once to verify the correction through
+an idempotent admin retry: PayPal retained the same single refund. Final states
+were Refunded throughout, stock 99 → 100 (still 100 after repeat save), one
+50-coin award/one 50-coin reversal, one refund ledger entry (2500 gross cents,
+2450 seller cents, 50 platform cents), and remaining seller payable 0. The real
+signed refund-event resend reconciled the formerly ignored event. Partial/full
+status distinctions also have regression tests; no new partial PayPal browser
+refund or live-money payout was performed.
+
+Validation: 658 unit tests/97 files passed, typecheck passed, affected-file lint
+had zero errors (one pre-existing unused-type warning), isolated production
+build passed, and Graphify was refreshed. Evidence:
+`.private/paypal-acceptance-evidence.json` (ignored, no provider credentials).
+
+- [ ] Deploy the verified PayPal response/refund mapping and seller commission
+  corrections; isolated sandbox acceptance does not establish production rollout.
 
 ---
 
@@ -788,7 +818,7 @@ db:e2e:prepare`, then `bun run test:e2e:local`)
   - [x] Cover delivered item → return request → decision → refund/restock
         (the protected browser journey now performs the admin Stripe sandbox
         refund and inventory reconciliation, then verifies the provider and
-        Docker database state; PayPal browser coverage remains open)
+        Docker database state; PayPal browser coverage is verified in the October 18 checkpoint above)
   - [x] Cover keyboard-only search, checkout, and critical admin/seller actions
         end to end; public search/cart and authenticated native status-control
         keyboard paths pass in the isolated browser suite

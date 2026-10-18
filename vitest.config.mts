@@ -13,7 +13,7 @@ export default defineConfig({
 	test: {
 		environment: 'node',
 		clearMocks: true,
-		exclude: ['**/node_modules/**', '**/dist/**', 'e2e/**'],
+		exclude: ['**/node_modules/**', '**/dist/**', 'e2e/**', '.private/**'],
 		coverage: {
 			provider: 'v8',
 			reporter: ['text', 'json', 'html'],

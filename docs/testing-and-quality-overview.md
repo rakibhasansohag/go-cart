@@ -816,3 +816,47 @@ Review the admin job view and delivery-health view for those outcomes.
 The older unchecked Stripe payout/browser item is superseded by the recorded
 Phase 14.4 acceptance. The stock reminder implementation does not automatically
 increase physical inventory.
+
+## PayPal sandbox acceptance — October 18, 2026
+
+The prior PayPal browser/full-refund gaps are now verified against the isolated
+Docker database `gocart_e2e` and production-mode local app, not production data.
+The customer used BrowserOS and a verified sandbox buyer; the owner manually
+clicked the PayPal approval when automation did not advance its button. The
+admin signed in normally and issued the full provider refund and inventory
+reconciliation through the return workspace. Delivery/receipt prerequisites
+were synthetic fixture state; this does not certify physical delivery or a
+new external seller payout.
+
+| Evidence | Verified outcome |
+| --- | --- |
+| Order | `fbbd4095-5ec1-4710-b604-7b3807d160b1`, USD 25.00 |
+| PayPal capture | `9V807479H3183464M`, COMPLETED; provider order `0XN382971A774220E` |
+| PayPal refund | `55513294PL716303X`, COMPLETED, USD 25.00; provider order contains exactly one refund after stable-request-ID admin replay |
+| Signed capture event | `WH-1MX18037RK0712022-48287154E73435934`; signature verification and persisted payment event passed |
+| Signed refund event | `WH-3FV05110JJ692505M-1R619002A6851112X`; real provider resend verified the corrected parent-link mapping and updated payment status |
+| Return | `fe20228a-f787-4278-b289-607e54530355`, REFUNDED; payment/order/package/item all Refunded |
+| Inventory | 99 → 100, restockedQuantity 1; repeated save left stock 100 |
+| Loyalty | One 50-coin award and one -50 reversal; net 0 |
+| Settlement | One refund entry: gross 2500 cents, seller debit 2450, platform commission reversal 50; remaining seller payable 0 |
+| Validation | 658 tests/97 files, typecheck and isolated production build passed; affected-file lint: 0 errors, one existing unused-type warning |
+
+The run exposed and corrected missing full-resource response requests, real
+refund payload matching, and double-debiting the seller for reversed platform
+commission. Refund mapping reads the provider capture status so partial refunds
+remain PartiallyRefunded. New regression tests cover these response contracts,
+partial/full mapping, invalid parent links, commission allocation, zero seller
+share and duplicate ledger protection. Private drill artifacts are excluded
+from TypeScript/Vitest discovery; Graphify was refreshed.
+
+Only the webhook route was exposed through the temporary tunnel; admin paths
+returned HTTP 404. The temporary sandbox webhook was deleted and the tunnel
+stopped after verification. No production webhook, credentials or financial
+records were changed. The owned local refund ledger was rewound once to test
+the fix through the same idempotent provider request; the provider refund ID
+remained unchanged. Retained evidence is in ignored
+`.private/paypal-acceptance-evidence.json` and `.private/paypal-refund-event.json`.
+
+Production deployment of these corrections remains separate from this sandbox
+acceptance. Historical production refund balances have not been migrated or
+repaired by this run.

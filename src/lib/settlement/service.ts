@@ -453,7 +453,7 @@ export async function recordSettlementRefund(input: {
 	sellerRefundCents: number;
 	commissionReversalCents: number;
 }) {
-	if (input.refundCents <= 0 || input.sellerRefundCents <= 0) throw new Error('Refund adjustment must be positive.');
+	if (input.refundCents <= 0 || input.sellerRefundCents < 0) throw new Error('Refund adjustment must be positive with a non-negative seller share.');
 	return db.$transaction(async (tx) => {
 		const existing = await tx.settlementLedgerEntry.findUnique({ where: { idempotencyKey: input.idempotencyKey } });
 		if (existing) return existing;
@@ -580,12 +580,14 @@ export async function recordRefundForReturnRequest(returnRequestId: string, amou
 	if (!request || amountCents <= 0) return null;
 	const settlement = await db.sellerSettlement.findUnique({ where: { orderGroupId: request.orderGroupId }, select: { id: true, commissionPercent: true } });
 	if (!settlement) return null;
+	const commissionReversalCents = Math.round((amountCents * settlement.commissionPercent) / 100);
 	return recordSettlementRefund({
 		settlementId: settlement.id,
 		idempotencyKey: `settlement:refund:${returnRequestId}`,
 		refundCents: amountCents,
-		sellerRefundCents: amountCents,
-		commissionReversalCents: Math.round((amountCents * settlement.commissionPercent) / 100),
+		// The platform returns its commission; debit only the seller's net share.
+		sellerRefundCents: amountCents - commissionReversalCents,
+		commissionReversalCents,
 	});
 }
 
