@@ -25,6 +25,26 @@ jobs:
   validate-and-test:
     name: Build, Typecheck & Test Suite
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: gocart
+          POSTGRES_PASSWORD: gocart
+          POSTGRES_DB: gocart_e2e
+        ports:
+          - 55432:5432
+        options: >-
+          --health-cmd "pg_isready -U gocart -d gocart_e2e"
+          --health-interval 2s
+          --health-timeout 3s
+          --health-retries 30
+    env:
+      DATABASE_URL: postgresql://gocart:gocart@localhost:55432/gocart_e2e?schema=public
+      EMAIL_NOTIFICATIONS_ENABLED: "false"
+      ABANDONED_CHECKOUT_EMAIL_ENABLED: "false"
+      DEMO_FULFILLMENT_AUTOMATION_ENABLED: "false"
+      PHASE26_ENABLED: "false"
 
     steps:
       - name: Checkout Code
@@ -61,7 +81,10 @@ jobs:
         run: bun run test
 
       - name: Validate Next.js Production Build
-        run: bun run build
+        run: |
+          bun x prisma migrate deploy
+          bun prisma/seed-demo.ts
+          bun run build
         env:
           NEXT_TELEMETRY_DISABLED: 1
           NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ vars.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
@@ -163,7 +186,7 @@ jobs:
         run: bun prisma/seed-demo.ts
 
       - name: Run Database Integration Checks
-        run: bun prisma/integration-check.ts
+        run: bun --preload ./scripts/queue-cli-preload.mjs prisma/integration-check.ts
 
       - name: Verify shared PostgreSQL rate limiting under concurrency
         run: bun scripts/rate-limit-integration-check.ts

@@ -94,7 +94,7 @@ if (action === "up") {
   const env = validatedE2EEnv();
   run("docker", [...compose, "up", "-d", "postgres"]);
   run("bun", ["x", "prisma", "migrate", "deploy"], env);
-  run("bun", ["prisma/integration-check.ts"], env);
+  run("bun", ["--preload", "./scripts/queue-cli-preload.mjs", "prisma/integration-check.ts"], env);
 } else if (action === "queue-browser-fixture") {
   run("bun", ["--preload", "./scripts/queue-cli-preload.mjs", "--no-env-file", "scripts/queue-browser-fixture.ts", process.argv[3] ?? 'setup'], { ...validatedE2EEnv(), PHASE26_ENABLED: 'true' });
 } else if (action === "queues" || action === "queue-worker" || action === "queue-transport") {
