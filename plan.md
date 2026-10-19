@@ -142,8 +142,8 @@ Goal: make server-verified provider events the source of truth for payment state
 webhook ingestion, invalid-signature rejection, and duplicate-event
 idempotency passed. Payment tests (11/11), TypeScript, migration, and
 customer order synchronization passed. PayPal implementation is accepted;
-its deployed sandbox webhook verification is deferred and remains a release
-check before enabling PayPal in production.
+the later October 18 sandbox acceptance below supersedes the outstanding
+webhook check, and October 19 production rollout is recorded separately.
 
 ---
 
@@ -844,7 +844,9 @@ db:e2e:prepare`, then `bun run test:e2e:local`)
   - [x] Cache Bun dependencies safely; Playwright reports upload on E2E failure
         remains configured
   - [ ] Configure GitHub branch protection so required checks block merging
-        (deferred for the current single-maintainer push-based workflow)
+        (October 19: rule prepared for main with three required checks, zero
+        reviewer approvals and administrator enforcement; saving awaits GitHub
+        Confirm access authentication. PR #45 adds pull-request CI triggers.)
   - [x] **Test**: A successful commit pushed to `dev` runs the build, unit-test,
         and isolated database integration checks in GitHub Actions
 
