@@ -637,8 +637,15 @@ had zero errors (one pre-existing unused-type warning), isolated production
 build passed, and Graphify was refreshed. Evidence:
 `.private/paypal-acceptance-evidence.json` (ignored, no provider credentials).
 
-- [ ] Deploy the verified PayPal response/refund mapping and seller commission
-  corrections; isolated sandbox acceptance does not establish production rollout.
+- [x] Deploy the verified PayPal response/refund mapping and seller commission
+  corrections. Verified October 19, 2026: commit `b9af982` is Ready/Current in
+  Vercel production (`go-cart-nsqeyqa6m`) and assigned to
+  `gocart.rakibhasansohag.com`; `/api/health` returned `{"status":"ok"}`.
+  [CI #196](https://github.com/rakibhasansohag/go-cart/actions/runs/39148981500)
+  passed secret scanning, build/typecheck, 658 unit tests across 97 files and
+  isolated database integration checks. Browser E2E jobs remained gated/skipped.
+  [Deployment evidence](https://vercel.com/rakib-hasan-sohags-projects/go-cart/3mhtRPvywEeBdovdoRCmx9bCceUf).
+  This confirms rollout; payment acceptance evidence above remains sandbox-only.
 
 ---
 

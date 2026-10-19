@@ -857,6 +857,13 @@ the fix through the same idempotent provider request; the provider refund ID
 remained unchanged. Retained evidence is in ignored
 `.private/paypal-acceptance-evidence.json` and `.private/paypal-refund-event.json`.
 
-Production deployment of these corrections remains separate from this sandbox
-acceptance. Historical production refund balances have not been migrated or
+Production rollout was verified on October 19, 2026. Commit `b9af982` is
+Ready/Current on [Vercel](https://vercel.com/rakib-hasan-sohags-projects/go-cart/3mhtRPvywEeBdovdoRCmx9bCceUf),
+deployment `go-cart-nsqeyqa6m`, with `gocart.rakibhasansohag.com` assigned.
+The custom-domain `/api/health` returned `{"status":"ok"}`.
+[CI #196](https://github.com/rakibhasansohag/go-cart/actions/runs/39148981500)
+passed secret scanning, build/typecheck, all 658 unit tests across 97 files and
+isolated database integration checks; browser E2E jobs remained gated/skipped.
+Deployment verification does not extend the sandbox acceptance to live-money
+payments. Historical production refund balances have not been migrated or
 repaired by this run.
