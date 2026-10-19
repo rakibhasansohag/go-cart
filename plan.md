@@ -832,7 +832,7 @@ db:e2e:prepare`, then `bun run test:e2e:local`)
   - [x] **Test**: The complete customer, seller, and admin journeys pass in the
         supported Chromium E2E environment
 
-- [ ] **Phase 12.4 — Continuous integration**
+- [x] **Phase 12.4 — Continuous integration**
   - [x] Run linting, TypeScript, Vitest, and a production build for commits pushed
         to `main` or `dev`
   - [x] Pin the Bun runtime, restrict workflow token permissions to read-only,
@@ -843,10 +843,12 @@ db:e2e:prepare`, then `bun run test:e2e:local`)
         protected Playwright remains dependent on external Clerk/network access
   - [x] Cache Bun dependencies safely; Playwright reports upload on E2E failure
         remains configured
-  - [ ] Configure GitHub branch protection so required checks block merging
-        (October 19: rule prepared for main with three required checks, zero
-        reviewer approvals and administrator enforcement; saving awaits GitHub
-        Confirm access authentication. PR #45 adds pull-request CI triggers.)
+  - [x] Configure GitHub branch protection so required checks block merging
+        (October 19: saved and reopened rule 85041967 for main; requires Secret
+        Scan, Build/Typecheck/Test Suite and Isolated Database Integration Checks,
+        an up-to-date pull request and administrator enforcement. Reviewer
+        approvals remain disabled for single-maintainer use. PR #45 adds CI
+        triggers for pull requests to main/dev.)
   - [x] **Test**: A successful commit pushed to `dev` runs the build, unit-test,
         and isolated database integration checks in GitHub Actions
 
