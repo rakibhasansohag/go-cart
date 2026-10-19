@@ -806,12 +806,17 @@ Review the admin job view and delivery-health view for those outcomes.
 
 - Controlled maintenance-failure isolation passed October 18 on preview `go-cart-eygtu10y5` at `2b9a57f`. A trigger limited to synthetic expired job `d8e16563-4c46-4b28-9f6d-dd43857df223` raised during lease recovery in an empty isolated database. Dispatch reported lease recovery failed, daily enqueue succeeded (7 accepted references), and relay ran (8 failed sends during the configured transport fault). The notification `f40fb894-f5f5-42e8-9f99-9c354bccf00d` stayed READY, attempts 0, with a persisted retry deadline and safe `OIDC_TOKEN_UNAVAILABLE` error. The trigger and owned maintenance row were removed. This is configuration/authentication-failure evidence, not a regional provider outage.
 - Deployed transport restoration passed October 18 on recovery preview `go-cart-ech7gj94b`: native OIDC restored, HTTP 200/`ok:true`, 8 publications, 0 failures. Synthetic notification `f40fb894-f5f5-42e8-9f99-9c354bccf00d` persisted SUCCEEDED/attempts 1, message `4B-1M1eB3jATzfkc4dZJ5UdM2DMlcV7VcCQ`, published 16:01:01.273 UTC, started 16:01:02.162, completed 16:01:02.530. Native callback runtime log reported 382 ms; database start-to-completion was 368 ms and publish-to-start 889 ms. Exactly one notification and one in-app audit persisted; zero emails sent. Dispatcher curl time was 4.2119 seconds (includes network/cold start; not an SLA). This tests controlled configuration/authentication recovery, not a regional provider outage/failover. No production queue or SMTP was disabled. The deliberately disabled email delivery remains deferred in the expiring isolated branch.
-- GitHub branch protection remains an explicit single-maintainer deferral.
-- Plan narrative still requires PayPal sandbox checkout/refund/provider-delivery
-  coverage and full-settlement restocking evidence. Those financial journeys
-  remain open. The guarded PayPal sandbox OAuth probe passed again October 18;
-  BrowserOS PayPal Developer was signed out and the sign-in handoff timed out,
-  so no browser checkout/refund result is claimed.
+- GitHub branch protection was saved and reopened for verification October 19
+  (rule 85041967). The main-branch rule requires Secret Scan,
+  Build/Typecheck/Test Suite and Isolated Database Integration Checks,
+  up-to-date pull requests and administrator enforcement. Reviewer approvals
+  remain disabled for single-maintainer use; force pushes/deletions are disabled.
+  [PR #45](https://github.com/rakibhasansohag/go-cart/pull/45) adds CI triggers
+  for pull requests to main/dev, so checks run before the protected merge.
+- The initial PayPal sign-in handoff timed out. The later October 18 sandbox
+  acceptance below supersedes that gap with checkout, refund, signed webhook,
+  replay and restocking evidence. October 19 production rollout is recorded
+  separately from payment acceptance.
 
 The older unchecked Stripe payout/browser item is superseded by the recorded
 Phase 14.4 acceptance. The stock reminder implementation does not automatically
