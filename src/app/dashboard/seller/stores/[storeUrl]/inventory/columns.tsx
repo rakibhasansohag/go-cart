@@ -68,6 +68,7 @@ function QuickStockUpdater({ item }: { item: InventoryItem }) {
 					className='h-7 w-7 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground'
 					disabled={quantity <= 0 || mutation.isPending}
 					onClick={handleDecrement}
+					aria-label='Decrease stock quantity'
 				>
 					<Minus className='h-3 w-3' />
 				</Button>
@@ -108,6 +109,7 @@ function QuickStockUpdater({ item }: { item: InventoryItem }) {
 					className='h-7 w-7 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground'
 					disabled={mutation.isPending}
 					onClick={handleIncrement}
+					aria-label='Increase stock quantity'
 				>
 					<Plus className='h-3 w-3' />
 				</Button>
@@ -120,6 +122,7 @@ function QuickStockUpdater({ item }: { item: InventoryItem }) {
 					className='h-7 w-7 rounded-md bg-primary hover:bg-primary/90 text-primary-foreground'
 					onClick={handleSave}
 					disabled={mutation.isPending}
+					aria-label='Save stock quantity'
 				>
 					<Check className='h-3.5 w-3.5' />
 				</Button>
@@ -184,6 +187,7 @@ function QuickThresholdUpdater({ item }: { item: InventoryItem }) {
 						className='h-7 w-7 text-primary hover:bg-primary/10'
 						onClick={handleSave}
 						disabled={mutation.isPending}
+						aria-label='Save alert threshold'
 					>
 						<Check className='h-3.5 w-3.5' />
 					</Button>
