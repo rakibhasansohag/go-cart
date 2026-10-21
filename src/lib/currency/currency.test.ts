@@ -8,7 +8,6 @@ import {
 import {
 	getCurrencyForCountry,
 	isSupportedCurrency,
-	SUPPORTED_CURRENCIES,
 } from './country-currency-map';
 import { getDefaultExchangeRates } from './rates';
 import { ExchangeRatesMap } from './types';
@@ -114,6 +113,14 @@ describe('Multi-Currency System', () => {
 		it('formats converted prices end-to-end', () => {
 			const bdtFormatted = formatConvertedPrice(10, 'BDT', mockRates);
 			expect(bdtFormatted).toContain('1,200');
+		});
+
+		it('consistently produces correct output across repeated cached calls', () => {
+			for (let i = 0; i < 100; i++) {
+				expect(formatCurrency(100 + i, 'USD')).toContain(`${100 + i}.00`);
+				expect(formatCurrency(500 + i, 'EUR')).toContain(`${500 + i}.00`);
+				expect(formatCurrency(1000 + i, 'JPY')).not.toContain('.00');
+			}
 		});
 	});
 
