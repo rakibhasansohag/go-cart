@@ -115,6 +115,7 @@ const ImagesPreviewGrid: FC<ImagesPreviewGridProps> = ({
 								<button
 									className='Btn'
 									type='button'
+									aria-label='Remove image'
 									onClick={() => onRemove(img.url)}
 								>
 									<div className='sign'>
