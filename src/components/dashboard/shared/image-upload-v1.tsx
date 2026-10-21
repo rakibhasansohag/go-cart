@@ -141,6 +141,7 @@ const ImageUpload = ({
 							<>
 								<button
 									type='button'
+									aria-label='Upload profile image'
 									className='z-20 absolute right-0 bottom-6 flex items-center font-medium text-base h-14 w-14 justify-center  text-white bg-gradient-to-t from-blue-500 to-blue-300 border-none shadow-lg rounded-full hover:shadow-md active:shadow-sm'
 									disabled={disabled}
 									onClick={onClick}
@@ -202,6 +203,7 @@ const ImageUpload = ({
 						return (
 							<button
 								type='button'
+								aria-label='Upload cover image'
 								className='absolute bottom-4 right-4 flex items-center font-medium text-base py-3 px-6 text-white bg-gradient-to-t from-blue-500 to-blue-300 border-none shadow-lg rounded-full hover:shadow-md active:shadow-sm'
 								disabled={disabled}
 								onClick={onClick}
@@ -242,6 +244,7 @@ const ImageUpload = ({
 										type='button'
 										variant='destructive'
 										size='icon'
+										aria-label='Delete image'
 										className='rounded-full'
 									>
 										<Trash className='w-4 h-4' />
@@ -276,6 +279,7 @@ const ImageUpload = ({
 							<>
 								<button
 									type='button'
+									aria-label='Upload images'
 									className='flex items-center font-medium text-base py-3 px-6 text-white bg-gradient-to-t from-blue-500 to-blue-300 border-none shadow-lg rounded-full hover:shadow-md active:shadow-sm'
 									disabled={disabled}
 									onClick={handleUploadClick}
