@@ -1,0 +1,1 @@
+## 2026-09-24 - Added ARIA labels to search input\n**Learning:** Found an icon-only button without an ARIA label in the search input component.\n**Action:** Ensure all new icon-only buttons in the codebase have proper ARIA labels added for screen reader accessibility.
