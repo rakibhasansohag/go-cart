@@ -53,6 +53,7 @@ const ImageUploadStore: FC<ImageUploadProps> = ({
 								type='button'
 								variant='destructive'
 								size='icon'
+								aria-label='Remove image'
 								className='rounded-full hidden'
 							>
 								<Trash className='w-4 h-4' />
