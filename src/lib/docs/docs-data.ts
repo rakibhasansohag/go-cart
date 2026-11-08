@@ -114,7 +114,7 @@ export const DOC_ARTICLES: Record<string, DocArticle> = {
 		tags: ['demo', 'login', 'password', 'quick start', 'test payment'],
 		sections: [
 			{ id: 'customer-tour', title: 'Try shopping as a customer', content: [
-				'1. Sign in with the Customer account shown above.',
+				'1. On [Sign in](/sign-in#demo-accounts), choose Customer for one-click access.',
 				'2. Open the [storefront](/), choose a product, pick a size or option and add it to your cart.',
 				'3. Open [Cart](/cart). Change the quantity or remove an item. Check the total before checkout.',
 				'4. At checkout, choose an address and an available payment method. For a Stripe sandbox checkout, use the test card below.',
@@ -307,7 +307,7 @@ export const DOC_ARTICLES: Record<string, DocArticle> = {
 		description: 'Quick answers about demo logins, orders, store access and refunds.',
 		intro: 'Start here if you are unsure what to do next.', tags: ['help', 'FAQ', 'login', 'password', 'payment'],
 		sections: [
-			{ id: 'login-help', title: 'How do I sign in or switch roles?', content: ['The demo emails and passwords are shown in [Try the demo](/documentation/quick-start) and on [Sign in](/sign-in).', 'To switch roles, sign out first. Sign in again with the Customer, Seller or Admin demo account you want to use.'] },
+			{ id: 'login-help', title: 'How do I sign in or switch roles?', content: ['Choose Customer, Seller or Admin on [Sign in](/sign-in#demo-accounts). For manual sign-in, open Login details next to the role to see its email and password.', 'To switch roles, sign out first, then pick a different demo account.'] },
 			{ id: 'order-help', title: 'Why is my paid order still pending?', content: ['Paid means the payment was confirmed. Pending can mean the store has not started preparing its package yet.', 'Open the order and check both payment and package status. See [Orders, delivery and returns](/documentation/order-tracking-returns).'] },
 			{ id: 'access-help', title: 'Why can’t I open a dashboard or store?', content: ['Check which account you signed in with. Customers cannot open the admin dashboard, and sellers manage only stores they own.', 'Use the matching demo account, then open its dashboard. A missing or unavailable store may also need review by an admin.'] },
 			{ id: 'return-help', title: 'Does a return request guarantee a refund?', content: ['No. The seller or admin reviews the request first. Check the decision and refund status in your Returns page.'] },
