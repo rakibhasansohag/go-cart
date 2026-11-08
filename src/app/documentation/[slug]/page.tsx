@@ -246,7 +246,7 @@ export default async function DocumentationArticlePage({
 				{/* Optional Top Callout */}
 				{article.topCallout && <DocsCallout callout={article.topCallout} />}
 				{(slug === 'introduction' || slug === 'quick-start') && (
-					<div className='mb-8'><DemoAccountCard layout='grid' /></div>
+				<div className='mb-8'><DemoAccountCard /></div>
 				)}
 
 				{/* Article Body Sections */}
