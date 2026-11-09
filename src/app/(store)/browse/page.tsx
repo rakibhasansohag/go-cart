@@ -14,12 +14,7 @@ import { queryKeys } from '@/lib/query-keys';
 import BrowseProductsList, { BrowseProductsSkeleton } from '@/components/store/browse-page/products-list';
 import type { Metadata } from 'next';
 
-export async function generateMetadata({
-	searchParams,
-}: {
-	searchParams: Promise<FiltersQueryType>;
-}): Promise<Metadata> {
-	const resolvedParams = await searchParams;
+function getBrowseCopy(resolvedParams: FiltersQueryType): { title: string; description: string } {
 	const category = typeof resolvedParams.category === 'string' ? resolvedParams.category : undefined;
 	const subCategory = typeof resolvedParams.subCategory === 'string' ? resolvedParams.subCategory : undefined;
 	const offer = typeof resolvedParams.offer === 'string' ? resolvedParams.offer : undefined;
@@ -44,6 +39,17 @@ export async function generateMetadata({
 		title = `${formattedOffer} Deals & Discounts`;
 		description = `Explore special offers, deals, and discounts on GoCart.`;
 	}
+
+	return { title, description };
+}
+
+export async function generateMetadata({
+	searchParams,
+}: {
+	searchParams: Promise<FiltersQueryType>;
+}): Promise<Metadata> {
+	const resolvedParams = await searchParams;
+	const { title, description } = getBrowseCopy(resolvedParams);
 
 	const listing = listingMetadata('/browse', resolvedParams, ['category', 'subCategory', 'offer']);
 	const canonicalUrl = String(listing.alternates?.canonical);
@@ -149,6 +155,7 @@ export default async function BrowsePage({
 			<HydrationBoundary state={dehydrate(queryClient)}>
 				{/* Header */}
 				<Header />
+				<h1 className='sr-only'>{getBrowseCopy(resolvedParams).title}</h1>
 
 				{/* Collapsible Layout */}
 				<BrowseLayoutClient

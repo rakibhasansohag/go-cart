@@ -61,9 +61,9 @@ export default function FullScreenLoader() {
 				</div>
 
 				{/* Brand Header */}
-				<h1 className='mt-6 text-2xl font-extrabold font-mono tracking-wider bg-gradient-to-r from-foreground via-emerald-500 to-teal-500 bg-clip-text text-transparent'>
+				<p className='mt-6 text-2xl font-extrabold font-mono tracking-wider bg-gradient-to-r from-foreground via-emerald-500 to-teal-500 bg-clip-text text-transparent'>
 					GoCart
-				</h1>
+				</p>
 
 				{/* Loading indicator */}
 				<p className='mt-2 text-xs font-semibold text-muted-foreground/75 uppercase tracking-[0.2em] animate-pulse'>

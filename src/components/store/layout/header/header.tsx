@@ -12,6 +12,7 @@ import ThemeToggle from '@/components/shared/theme-toggle';
 import NotificationBell from '@/components/shared/notification-bell';
 import CheckInTrigger from '@/components/store/checkin/checkin-trigger';
 import { BookOpen } from 'lucide-react';
+import Logo from '@/components/shared/logo';
 
 export default async function Header() {
 	// Get cookies from the store
@@ -29,9 +30,14 @@ export default async function Header() {
 		<div className='bg-gradient-to-r from-slate-500 to-slate-800 sticky top-0 z-50'>
 			<div className='h-full w-full max-w-[1600px] mx-auto overflow-visible lg:flex text-white px-4 sm:px-6 lg:px-12'>
 				<div className='flex lg:w-full lg:flex-1 flex-col lg:flex-row gap-2.5 sm:gap-3 py-2.5 sm:py-3 min-w-0'>
-					<div className='flex items-center justify-between gap-1 sm:gap-2 min-w-0'>
-						<Link href='/' className='shrink-0'>
-							<h1 className='font-extrabold text-2xl sm:text-3xl font-mono tracking-tight'>GoCart</h1>
+					<div className='flex items-center justify-between gap-1 sm:gap-2 min-w-0 lg:shrink-0'>
+						<Link href='/' className='shrink-0' aria-label='GoCart home'>
+							<Logo
+								className='gap-2'
+								markClassName='size-8 sm:size-9'
+								wordmarkClassName='text-2xl sm:text-3xl lg:max-[1359px]:hidden'
+								accentClassName='text-emerald-300'
+							/>
 						</Link>
 						<div className='flex items-center gap-1 sm:gap-1.5 md:gap-2 lg:hidden shrink-0'>
 							<CheckInTrigger variant='mobile' />

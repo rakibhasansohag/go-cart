@@ -205,7 +205,7 @@ export const generateWebsiteJsonLd = (): Record<string, unknown>[] => {
 		'@type': 'Organization',
 		name: 'GoCart',
 		url: baseUrl,
-		logo: `${baseUrl}/goCart.svg`,
+		logo: `${baseUrl}/icon-512.png`,
 		sameAs: [
 			'https://github.com/rakibhasansohag/go-cart',
 		],

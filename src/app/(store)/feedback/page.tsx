@@ -1,5 +1,6 @@
 import React from 'react';
 import type { Metadata } from 'next';
+import { publicPageMetadata } from '@/lib/seo/page-metadata';
 import { currentUser } from '@clerk/nextjs/server';
 import { db } from '@/lib/db';
 import Header from '@/components/store/layout/header/header';
@@ -18,11 +19,11 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 
-export const metadata: Metadata = {
-	title: 'Platform Feedback & Developer Showcase | GoCart',
-	description:
-		'Share feature requests, bug reports, UX suggestions, or developer feedback for the GoCart multi-vendor marketplace.',
-};
+export const metadata: Metadata = publicPageMetadata(
+	'/feedback',
+	'Platform Feedback & Developer Showcase',
+	'Share feature requests, bug reports, UX suggestions, or developer feedback for the GoCart multi-vendor marketplace.',
+);
 
 export default async function FeedbackPage() {
 	const clerkUser = await currentUser();

@@ -2,25 +2,35 @@
 import { FC } from 'react';
 import Image from 'next/image';
 
-// Logo image
-import LogoImg from '../../../public/assets/icons/logo-1.png';
+import { cn } from '@/lib/utils';
 
 interface LogoProps {
-	width: string;
-	height: string;
+	className?: string;
+	markClassName?: string;
+	wordmarkClassName?: string;
+	accentClassName?: string;
 }
 
-const Logo: FC<LogoProps> = ({ width, height }) => {
+const Logo: FC<LogoProps> = ({ className, markClassName, wordmarkClassName, accentClassName }) => {
 	return (
-		<div className='z-50' style={{ width: width, height: height }}>
+		<span className={cn('inline-flex items-center gap-2.5', className)}>
 			<Image
-				src={LogoImg}
-				alt='GoCart'
-				loading='eager'
-				fetchPriority='high'
-				className='w-full h-full object-cover overflow-visible'
+				src='/goCart.svg'
+				alt=''
+				width={40}
+				height={40}
+				priority
+				className={cn('size-10 shrink-0 drop-shadow-sm', markClassName)}
 			/>
-		</div>
+			<span
+				className={cn(
+					'font-barlow text-3xl font-extrabold leading-none tracking-tight',
+					wordmarkClassName,
+				)}
+			>
+				Go<span className={cn('text-emerald-500', accentClassName)}>Cart</span>
+			</span>
+		</span>
 	);
 };
 
