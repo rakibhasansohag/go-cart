@@ -3,6 +3,7 @@ import { currentUser } from '@clerk/nextjs/server';
 import { ChevronDown, Globe } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import Logo from '@/components/shared/logo';
 
 export default async function MinimalHeader() {
 	const user = await currentUser();
@@ -10,8 +11,8 @@ export default async function MinimalHeader() {
 		<div className='bg-transparent h-16 w-full border-b'>
 			<div className='mx-auto px-6'>
 				<div className='relative flex items-center justify-between py-2'>
-					<Link href='/'>
-						<h1 className='font-extrabold text-2xl font-mono'>GoCart</h1>
+					<Link href='/' aria-label='GoCart home'>
+						<Logo markClassName='size-9' wordmarkClassName='text-2xl' />
 					</Link>
 					<div className='flex items-center gap-x-5'>
 						<div className='flex items-center gap-x-1'>

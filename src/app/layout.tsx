@@ -1,7 +1,7 @@
 import { serializeJsonLd } from '@/lib/seo/serialize-jsonld';
 import { getSiteUrl } from '@/lib/seo/site-url';
 // Next.js
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Geist, Geist_Mono, Barlow } from 'next/font/google';
 
 
@@ -89,10 +89,22 @@ export const metadata: Metadata = {
 		description: 'A full-featured marketplace built with Next.js and PostgreSQL.',
 		images: ['/opengraph-image'],
 	},
+	applicationName: 'GoCart',
 	icons: {
-		icon: '/goCart.svg',
-		apple: '/goCart.svg',
+		icon: [
+			{ url: '/favicon.ico', sizes: '48x48' },
+			{ url: '/goCart.svg', type: 'image/svg+xml' },
+			{ url: '/icon-192.png', type: 'image/png', sizes: '192x192' },
+		],
+		apple: [{ url: '/apple-touch-icon.png', sizes: '180x180' }],
 	},
+};
+
+export const viewport: Viewport = {
+	themeColor: [
+		{ media: '(prefers-color-scheme: light)', color: '#ffffff' },
+		{ media: '(prefers-color-scheme: dark)', color: '#09090b' },
+	],
 };
 
 export default function RootLayout({
@@ -106,7 +118,6 @@ export default function RootLayout({
 	const content = (
 		<html lang='en' suppressHydrationWarning>
 			<head>
-				<link rel='icon' type='image/svg+xml' href='/goCart.svg' />
 				<script
 					type='application/ld+json'
 					dangerouslySetInnerHTML={{ __html: serializeJsonLd(websiteJsonLd) }}

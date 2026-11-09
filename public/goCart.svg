@@ -1,10 +1,22 @@
-
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#10b981">
-  <path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zm10 
-           0c-1.1 0-1.99.9-1.99 2S15.9 22 17 22s2-.9 
-           2-2-.9-2-2-2zM7.16 14h9.68c.75 0 
-           1.41-.41 1.75-1.03l3.58-6.49a1 1 0 
-           0 0-.87-1.48H6.21L5.27 2H1v2h2l3.6 
-           7.59-1.35 2.45c-.16.28-.25.61-.25.96 
-           0 1.1.9 2 2 2z"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <title>GoCart</title>
+  <defs>
+    <linearGradient id="gocart-tile" x1="48" y1="24" x2="464" y2="488" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#34D399"/>
+      <stop offset="0.5" stop-color="#059669"/>
+      <stop offset="1" stop-color="#064E3B"/>
+    </linearGradient>
+    <linearGradient id="gocart-sheen" x1="256" y1="0" x2="256" y2="512" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.35"/>
+      <stop offset="0.45" stop-color="#FFFFFF" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="120" fill="url(#gocart-tile)"/>
+  <rect x="6" y="6" width="500" height="500" rx="114" stroke="url(#gocart-sheen)" stroke-width="12"/>
+  <g transform="translate(2 -16)">
+    <path d="M112 148h40l38 170h172l34-122H163" stroke="#FFFFFF" stroke-width="36" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M264 234l26 23-26 23" stroke="#FFFFFF" stroke-width="28" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="214" cy="384" r="30" fill="#FFFFFF"/>
+    <circle cx="338" cy="384" r="30" fill="#FFFFFF"/>
+  </g>
 </svg>

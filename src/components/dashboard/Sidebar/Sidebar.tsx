@@ -35,7 +35,7 @@ const Sidebar: FC<SidebarProps> = async ({ isAdmin, stores }) => {
 	return (
 		<aside className='hidden lg:flex w-[300px] border-r border-border/60 h-screen p-4 flex-col fixed top-0 left-0 bottom-0 bg-background z-30 overflow-y-auto scrollbar-none'>
 			<Link href='/' replace className='shrink-0'>
-				<Logo width='100%' height='180px' />
+				<Logo className='px-2 py-4' />
 			</Link>
 			<Separator className='mt-3 shrink-0' />
 			{user && <UserInfo user={user} />}

@@ -80,6 +80,7 @@ migrate-to-neon.ts
 !/docs/
 !/docs/testing.md
 !/docs/testing-and-quality-overview.md
+!/docs/README.md
 
 .next-e2e
 

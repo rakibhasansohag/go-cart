@@ -8,6 +8,12 @@ import { queryKeys } from '@/lib/query-keys';
 import { getOrder } from '@/queries/order';
 import { getShipmentTracking } from '@/queries/fulfillment';
 import { auth } from '@clerk/nextjs/server';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+	title: 'Order Details',
+	robots: { index: false, follow: false },
+};
 
 export default async function OrderPage({
 	params,

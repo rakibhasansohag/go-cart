@@ -67,7 +67,7 @@ export default function Header({ isAdmin: propIsAdmin, stores }: HeaderProps) {
 							className='shrink-0 mb-1'
 							onClick={() => setOpenMobile(false)}
 						>
-							<Logo width='100%' height='160px' />
+							<Logo className='px-2 py-3' />
 						</Link>
 						{user && <UserInfo user={user} />}
 						{!isAdmin && stores && stores.length > 0 && (

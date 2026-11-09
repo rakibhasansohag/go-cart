@@ -7,13 +7,14 @@ export const size = {
 };
 export const contentType = 'image/png';
 
+const highlights = ['Independent stores', 'Secure checkout', 'Seller payouts'];
+
 export default async function Image() {
 	return new ImageResponse(
 		(
 			<div
 				style={{
-					fontSize: 60,
-					background: 'linear-gradient(135deg, #09090b 0%, #18181b 100%)',
+					background: 'radial-gradient(circle at 50% 0%, #064e3b 0%, #09090b 62%)',
 					color: 'white',
 					width: '100%',
 					height: '100%',
@@ -22,48 +23,70 @@ export default async function Image() {
 					alignItems: 'center',
 					justifyContent: 'center',
 					fontFamily: 'sans-serif',
-					position: 'relative',
 				}}
 			>
 				<div
 					style={{
 						display: 'flex',
 						alignItems: 'center',
-						gap: 20,
-						marginBottom: 20,
+						gap: 32,
+						marginBottom: 28,
 					}}
 				>
-					<svg
-						xmlns='http://www.w3.org/2000/svg'
-						viewBox='0 0 24 24'
-						width='90'
-						height='90'
-						fill='#10b981'
-					>
-						<path d='M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zm10 0c-1.1 0-1.99.9-1.99 2S15.9 22 17 22s2-.9 2-2-.9-2-2-2zM7.16 14h9.68c.75 0 1.41-.41 1.75-1.03l3.58-6.49a1 1 0 0 0-.87-1.48H6.21L5.27 2H1v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2z' />
-					</svg>
-					<span
+					<div
 						style={{
-							fontSize: 80,
-							fontWeight: 800,
-							letterSpacing: '-2px',
-							color: '#10b981',
+							width: 132,
+							height: 132,
+							borderRadius: 31,
+							background: 'linear-gradient(135deg, #34d399 0%, #059669 50%, #064e3b 100%)',
+							border: '3px solid rgba(255, 255, 255, 0.18)',
+							display: 'flex',
+							alignItems: 'center',
+							justifyContent: 'center',
+							boxShadow: '0 24px 60px rgba(16, 185, 129, 0.35)',
 						}}
 					>
-						GoCart
-					</span>
+						<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512' width='132' height='132' fill='none'>
+							<g transform='translate(2 -16)'>
+								<path d='M112 148h40l38 170h172l34-122H163' stroke='#FFFFFF' strokeWidth='36' strokeLinecap='round' strokeLinejoin='round' />
+								<path d='M264 234l26 23-26 23' stroke='#FFFFFF' strokeWidth='28' strokeLinecap='round' strokeLinejoin='round' />
+								<circle cx='214' cy='384' r='30' fill='#FFFFFF' />
+								<circle cx='338' cy='384' r='30' fill='#FFFFFF' />
+							</g>
+						</svg>
+					</div>
+					<div style={{ display: 'flex', fontSize: 112, fontWeight: 800, letterSpacing: '-4px' }}>
+						<span style={{ color: '#f8fafc' }}>Go</span>
+						<span style={{ color: '#34d399' }}>Cart</span>
+					</div>
 				</div>
 				<p
 					style={{
-						fontSize: 28,
-						color: '#a1a1aa',
-						maxWidth: 800,
-						textAlign: 'center',
+						fontSize: 34,
+						color: '#d4d4d8',
 						margin: 0,
 					}}
 				>
 					Multi-Vendor E-Commerce Marketplace
 				</p>
+				<div style={{ display: 'flex', gap: 16, marginTop: 40 }}>
+					{highlights.map((label) => (
+						<div
+							key={label}
+							style={{
+								display: 'flex',
+								fontSize: 24,
+								color: '#a7f3d0',
+								padding: '10px 22px',
+								borderRadius: 999,
+								border: '1px solid rgba(52, 211, 153, 0.35)',
+								background: 'rgba(16, 185, 129, 0.12)',
+							}}
+						>
+							{label}
+						</div>
+					))}
+				</div>
 			</div>
 		),
 		{

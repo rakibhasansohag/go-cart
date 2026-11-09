@@ -191,7 +191,7 @@ export default async function DocumentationArticlePage({
 			publisher: {
 				'@type': 'Organization',
 				name: 'GoCart',
-				logo: `${baseUrl}/goCart.svg`,
+				logo: `${baseUrl}/icon-512.png`,
 			},
 		},
 	];
